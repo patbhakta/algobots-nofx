@@ -1,17 +1,16 @@
 id: algobots-daily-analysis
 namespace: algobots
-description: "Daily stock technical analysis — fetch, calculate, report"
+description: "Daily stock technical analysis"
 
 triggers:
   - id: market-open
     type: io.kestra.plugin.core.trigger.Schedule
     cron: "30 13 * * 1-5"
-    timezone: America/New_York
 
 inputs:
   - id: tickers
     type: ARRAY
-    itemtype: STRING
+    itemType: STRING
     defaults:
       - AAPL
       - GOOGL
@@ -24,7 +23,8 @@ tasks:
     namespaceFiles:
       enabled: true
     commands:
-      - python src/algobots/fetcher.py --tickers {{ inputs.tickers | join(' ') }} --output data.json --period 3mo
+      - pip install yfinance pandas numpy -q
+      - python src/algobots/fetcher.py --tickers AAPL GOOGL TSLA --output data.json --period 3mo
     outputFiles:
       - "data.json"
 
@@ -36,6 +36,7 @@ tasks:
     inputFiles:
       data.json: "{{ outputs.fetch.outputFiles['data.json'] }}"
     commands:
+      - pip install pandas numpy -q
       - python src/algobots/indicators.py --input data.json --output indicators.json
     outputFiles:
       - "indicators.json"
