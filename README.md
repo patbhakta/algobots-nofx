@@ -41,3 +41,29 @@ pytest
 ```
 
 CI runs ruff + pytest on every push and pull request.
+
+## Control-plane API (S0.2)
+
+FastAPI service with JWT auth, invite-code registration, tenant-scoped CRUD,
+and an audit trail on every mutation. Full details: [docs/control-plane.md](docs/control-plane.md).
+
+```bash
+pip install -e ".[dev]"
+alembic upgrade head                    # schema: users, invite_codes, accounts,
+                                        # strategies, deployments, orders,
+                                        # decisions, clamp_events, audit_log
+uvicorn algobots.api.main:app --reload
+
+# first user registers with the bootstrap invite code (owner role)
+curl -s localhost:8000/api/auth/register -H 'content-type: application/json' -d '{
+  "email": "you@example.com", "password": "a-long-password",
+  "display_name": "You", "invite_code": "ALGOBOTS-BOOTSTRAP"}'
+
+# login → bearer token → create an invite for the next user
+curl -s localhost:8000/api/auth/login -H 'content-type: application/json' \
+  -d '{"email": "you@example.com", "password": "a-long-password"}'
+curl -s localhost:8000/api/auth/invites -H "authorization: Bearer $TOKEN" -X POST
+```
+
+Every mutating request (POST/PUT/PATCH/DELETE) writes an `audit_log` row —
+read your tenant's trail at `GET /api/audit`.

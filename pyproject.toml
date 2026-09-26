@@ -14,9 +14,16 @@ dependencies = [
     "uvicorn[standard]>=0.32",
     "pydantic>=2.9",
     "pydantic-settings>=2.6",
+    "sqlalchemy>=2.0",
+    "alembic>=1.13",
+    "pyjwt>=2.9",
+    "email-validator>=2.0",
 ]
 
 [project.optional-dependencies]
+postgres = [
+    "psycopg[binary]>=3.2",
+]
 dev = [
     "pytest>=8.3",
     "httpx>=0.27",
@@ -37,3 +44,5 @@ src = ["src", "tests"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B"]
+# B008: FastAPI dependency injection (`Depends(...)` in defaults) is idiomatic.
+ignore = ["B008"]
