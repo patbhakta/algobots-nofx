@@ -107,25 +107,7 @@ class StrategyOut(ORMModel):
     updated_at: datetime | None
 
 
-# --- deployments ---
-
-
-class DeploymentCreate(BaseModel):
-    strategy_id: UUID
-    account_id: UUID
-
-
-class DeploymentUpdate(BaseModel):
-    status: str = Field(pattern="^(running|paused|stopped)$")
-
-
-class DeploymentOut(ORMModel):
-    id: UUID
-    strategy_id: UUID
-    account_id: UUID
-    status: str
-    created_at: datetime
-    updated_at: datetime | None
+# --- deployments: see algobots.api.deployments.schemas (S4.2) ---
 
 
 # --- orders ---

@@ -13,7 +13,7 @@ from pathlib import Path
 
 from cryptography.fernet import Fernet
 
-REPO_ROOT = Path(__file__).resolve().parents[2]
+REPO_ROOT = Path(__file__).resolve().parents[1]
 
 _DB_PATH = (REPO_ROOT / ".pytest_tmp" / f"control-plane-{uuid.uuid4().hex}.db").resolve()
 _DB_URL = f"sqlite:///{_DB_PATH}"

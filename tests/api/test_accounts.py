@@ -58,7 +58,7 @@ def _db_session():
 
 
 def _db_file_bytes() -> bytes:
-    from tests.api.conftest import _DB_PATH
+    from tests.conftest import _DB_PATH
 
     return _DB_PATH.read_bytes()
 

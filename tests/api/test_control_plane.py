@@ -13,7 +13,7 @@ from sqlalchemy import inspect
 
 from algobots.api.database import get_session_factory
 from algobots.api.models import AuditLog
-from tests.api.conftest import TEST_PASSWORD, _alembic_config
+from tests.conftest import TEST_PASSWORD, _alembic_config
 
 EXPECTED_TABLES = {
     "users",
@@ -22,6 +22,7 @@ EXPECTED_TABLES = {
     "account_credentials",
     "strategies",
     "deployments",
+    "fleet_breakers",
     "orders",
     "decisions",
     "clamp_events",
@@ -154,6 +155,50 @@ def _make_strategy(client: TestClient, headers: dict) -> dict:
     return response.json()
 
 
+def _make_dsl_strategy(client: TestClient, headers: dict) -> dict:
+    """A deployable condition_dsl strategy (S4.2 shape)."""
+    response = client.post(
+        "/api/strategies",
+        json={
+            "name": "MA cross v1",
+            "kind": "condition_dsl",
+            "params": {
+                "version": 1,
+                "cadence": "5m",
+                "entry": {
+                    "left": {"indicator": "sma", "params": {"period": 2}},
+                    "op": "crosses_above",
+                    "right": {"indicator": "sma", "params": {"period": 3}},
+                },
+                "exit": {
+                    "left": {"indicator": "sma", "params": {"period": 2}},
+                    "op": "crosses_below",
+                    "right": {"indicator": "sma", "params": {"period": 3}},
+                },
+            },
+        },
+        headers=headers,
+    )
+    assert response.status_code == 201, response.text
+    return response.json()
+
+
+def _make_deployment(client: TestClient, headers: dict, strategy: dict, account: dict) -> dict:
+    response = client.post(
+        "/api/deployments",
+        json={
+            "strategy_id": strategy["id"],
+            "account_id": account["id"],
+            "symbol": "AAPL",
+            "max_order_value": "1000.00",
+            "max_daily_loss": "500.00",
+        },
+        headers=headers,
+    )
+    assert response.status_code == 201, response.text
+    return response.json()
+
+
 def test_account_crud(client: TestClient, member_headers: dict):
     account = _make_account(client, member_headers)
     assert account["status"] == "active"
@@ -205,15 +250,10 @@ def test_strategy_crud_roundtrip_params(client: TestClient, member_headers: dict
 
 def test_deployment_lifecycle(client: TestClient, member_headers: dict):
     account = _make_account(client, member_headers)
-    strategy = _make_strategy(client, member_headers)
-    created = client.post(
-        "/api/deployments",
-        json={"strategy_id": strategy["id"], "account_id": account["id"]},
-        headers=member_headers,
-    )
-    assert created.status_code == 201
-    deployment = created.json()
+    strategy = _make_dsl_strategy(client, member_headers)
+    deployment = _make_deployment(client, member_headers, strategy, account)
     assert deployment["status"] == "running"
+    assert deployment["effective_state"] == "running"
     stopped = client.patch(
         f"/api/deployments/{deployment['id']}",
         json={"status": "stopped"},
@@ -250,12 +290,8 @@ def test_order_create_update_delete(client: TestClient, member_headers: dict):
 
 def test_decision_and_clamp_event_records(client: TestClient, member_headers: dict):
     account = _make_account(client, member_headers)
-    strategy = _make_strategy(client, member_headers)
-    deployment = client.post(
-        "/api/deployments",
-        json={"strategy_id": strategy["id"], "account_id": account["id"]},
-        headers=member_headers,
-    ).json()
+    strategy = _make_dsl_strategy(client, member_headers)
+    deployment = _make_deployment(client, member_headers, strategy, account)
     decision = client.post(
         "/api/decisions",
         json={
@@ -342,12 +378,10 @@ def test_audit_row_written_for_every_mutation(client: TestClient, member_headers
     before = len(_audit_rows())
 
     account = _make_account(client, member_headers)  # POST /api/accounts → 201
-    strategy = _make_strategy(client, member_headers)  # POST /api/strategies → 201
-    deployment = client.post(
-        "/api/deployments",
-        json={"strategy_id": strategy["id"], "account_id": account["id"]},
-        headers=member_headers,
-    ).json()  # POST /api/deployments → 201
+    strategy = _make_dsl_strategy(client, member_headers)  # POST /api/strategies → 201
+    deployment = _make_deployment(
+        client, member_headers, strategy, account
+    )  # POST /api/deployments → 201
     client.patch(
         f"/api/deployments/{deployment['id']}", json={"status": "paused"}, headers=member_headers
     )  # PATCH → 200
