@@ -7,6 +7,7 @@ Run migrations before serving: `alembic upgrade head`.
 
 from fastapi import FastAPI
 
+from algobots.api.accounts.router import router as accounts_router
 from algobots.api.middleware import AccessLogMiddleware, AuditMiddleware
 from algobots.api.routers.auth import router as auth_router
 from algobots.api.routers.auth import users_router
@@ -14,7 +15,7 @@ from algobots.api.routers.resources import router as resources_router
 
 app = FastAPI(
     title="AlgoBots API",
-    version="0.2.0",
+    version="0.3.0",
     description="Control plane for the AlgoBots multi-account trading platform.",
 )
 
@@ -26,6 +27,7 @@ app.add_middleware(AuditMiddleware)
 app.include_router(auth_router)
 app.include_router(users_router)
 app.include_router(resources_router)
+app.include_router(accounts_router)
 
 
 @app.get("/healthz")

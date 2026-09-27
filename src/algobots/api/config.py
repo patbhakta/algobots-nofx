@@ -25,6 +25,13 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = Field(default=60)
     bootstrap_invite_code: str = Field(default="ALGOBOTS-BOOTSTRAP")
     invite_expire_days: int = Field(default=7)
+    # S4.1 account registry: urlsafe-base64 32-byte Fernet key. Generate with
+    # `python -c "from algobots.api.accounts.crypto import CredentialCipher; \
+    # print(CredentialCipher.generate_key())"`. Empty disables credential writes
+    # (they fail loudly) so a missing key can never degrade to plaintext.
+    credential_encryption_key: str = Field(default="")
+    # A token expiring within this window is refreshed proactively.
+    token_refresh_margin_seconds: int = Field(default=300)
 
     def sqlalchemy_url(self) -> str:
         """Normalize the configured URL for SQLAlchemy drivers.

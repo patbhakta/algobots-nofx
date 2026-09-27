@@ -76,9 +76,16 @@ class InviteCode(Base):
 
 
 class Account(Base):
-    """Broker account owned by a user (paper or live)."""
+    """Broker account owned by a user (paper or live).
+
+    Multi-account-per-user-per-broker is the core registry shape: no
+    uniqueness on (user_id, broker); labels are the per-user unique handle.
+    """
 
     __tablename__ = "accounts"
+    __table_args__ = (
+        Index("uq_accounts_user_label", "user_id", "label", unique=True),
+    )
 
     id: Mapped[UUID] = mapped_column(Uuid, primary_key=True, default=_new_uuid)
     user_id: Mapped[UUID] = mapped_column(Uuid, ForeignKey("users.id"), nullable=False, index=True)
@@ -234,3 +241,7 @@ class AuditLog(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_utcnow, nullable=False
     )
+
+
+# S4.1: import so AccountCredential registers on Base.metadata for Alembic.
+from algobots.api.accounts import models as _accounts_models  # noqa: E402, F401

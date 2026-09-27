@@ -10,8 +10,10 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from algobots.api.accounts.models import AccountCredential
 from algobots.api.database import get_db
 from algobots.api.dependencies import get_current_user
 from algobots.api.models import (
@@ -73,7 +75,15 @@ def create_account(
 ) -> Account:
     account = Account(user_id=current_user.id, **payload.model_dump())
     db.add(account)
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        # UNIQUE(user_id, label) from migration 0002 — one registry label per user.
+        db.rollback()
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            "Account label already in use for this user",
+        ) from None
     _audit(response, "accounts", account.id)
     return account
 
@@ -136,6 +146,13 @@ def delete_account(
             status.HTTP_409_CONFLICT,
             "Account has deployments, orders, or clamp events; close them first",
         )
+    # SQLite does not enforce FK cascades by default; drop credentials
+    # explicitly so sealed secrets never outlive their account.
+    credential = db.scalar(
+        select(AccountCredential).where(AccountCredential.account_id == account.id)
+    )
+    if credential is not None:
+        db.delete(credential)
     db.delete(account)
     db.commit()
     _audit(response, "accounts", account.id)

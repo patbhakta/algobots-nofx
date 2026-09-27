@@ -19,6 +19,7 @@ EXPECTED_TABLES = {
     "users",
     "invite_codes",
     "accounts",
+    "account_credentials",
     "strategies",
     "deployments",
     "orders",
@@ -128,9 +129,11 @@ def test_invite_flow_creates_member(client: TestClient, member_headers: dict):
 
 
 def _make_account(client: TestClient, headers: dict) -> dict:
+    # Labels are unique per user as of S4.1 (migration 0002), and the founder
+    # fixture is session-scoped — suffix to stay unique across tests.
     response = client.post(
         "/api/accounts",
-        json={"label": "Paper IBKR", "broker": "ibkr", "mode": "paper"},
+        json={"label": f"Paper IBKR {uuid.uuid4().hex[:8]}", "broker": "ibkr", "mode": "paper"},
         headers=headers,
     )
     assert response.status_code == 201, response.text
@@ -156,7 +159,7 @@ def test_account_crud(client: TestClient, member_headers: dict):
     assert account["status"] == "active"
     assert (
         client.get(f"/api/accounts/{account['id']}", headers=member_headers).json()["label"]
-        == "Paper IBKR"
+        == account["label"]
     )
     patched = client.patch(
         f"/api/accounts/{account['id']}", json={"status": "paused"}, headers=member_headers

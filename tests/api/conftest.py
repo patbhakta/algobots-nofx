@@ -11,6 +11,8 @@ import os
 import uuid
 from pathlib import Path
 
+from cryptography.fernet import Fernet
+
 REPO_ROOT = Path(__file__).resolve().parents[2]
 
 _DB_PATH = (REPO_ROOT / ".pytest_tmp" / f"control-plane-{uuid.uuid4().hex}.db").resolve()
@@ -20,6 +22,7 @@ _DB_URL = f"sqlite:///{_DB_PATH}"
 os.environ["ALGOBOTS_DATABASE_URL"] = _DB_URL
 os.environ["ALGOBOTS_JWT_SECRET"] = "test-jwt-secret-0123456789-0123456789"
 os.environ["ALGOBOTS_BOOTSTRAP_INVITE_CODE"] = "TEST-BOOTSTRAP"
+os.environ["ALGOBOTS_CREDENTIAL_ENCRYPTION_KEY"] = Fernet.generate_key().decode()
 
 import pytest  # noqa: E402
 from alembic import command  # noqa: E402
