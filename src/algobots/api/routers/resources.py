@@ -16,12 +16,12 @@ from sqlalchemy.orm import Session
 from algobots.api.accounts.models import AccountCredential
 from algobots.api.database import get_db
 from algobots.api.dependencies import get_current_user
+from algobots.api.deployments.models import Deployment
 from algobots.api.models import (
     Account,
     AuditLog,
     ClampEvent,
     Decision,
-    Deployment,
     Order,
     Strategy,
     User,
@@ -35,9 +35,6 @@ from algobots.api.schemas import (
     ClampEventOut,
     DecisionCreate,
     DecisionOut,
-    DeploymentCreate,
-    DeploymentOut,
-    DeploymentUpdate,
     OrderCreate,
     OrderOut,
     OrderUpdate,
@@ -244,79 +241,6 @@ def delete_strategy(
     db.delete(strategy)
     db.commit()
     _audit(response, "strategies", strategy.id)
-
-
-# --- deployments ---
-
-
-@router.post("/deployments", response_model=DeploymentOut, status_code=status.HTTP_201_CREATED)
-def create_deployment(
-    payload: DeploymentCreate,
-    response: Response,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
-) -> Deployment:
-    _owned_or_404(db, Strategy, current_user, payload.strategy_id)
-    _owned_or_404(db, Account, current_user, payload.account_id)
-    deployment = Deployment(
-        user_id=current_user.id,
-        strategy_id=payload.strategy_id,
-        account_id=payload.account_id,
-    )
-    db.add(deployment)
-    db.commit()
-    _audit(response, "deployments", deployment.id)
-    return deployment
-
-
-@router.get("/deployments", response_model=list[DeploymentOut])
-def list_deployments(
-    current_user: User = Depends(get_current_user), db: Session = Depends(get_db)
-) -> list[Deployment]:
-    return list(
-        db.scalars(
-            select(Deployment)
-            .where(Deployment.user_id == current_user.id)
-            .order_by(Deployment.created_at.desc())
-        )
-    )
-
-
-@router.get("/deployments/{deployment_id}", response_model=DeploymentOut)
-def get_deployment(
-    deployment_id: UUID,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
-) -> Deployment:
-    return _owned_or_404(db, Deployment, current_user, deployment_id)
-
-
-@router.patch("/deployments/{deployment_id}", response_model=DeploymentOut)
-def update_deployment(
-    deployment_id: UUID,
-    payload: DeploymentUpdate,
-    response: Response,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
-) -> Deployment:
-    deployment = _owned_or_404(db, Deployment, current_user, deployment_id)
-    deployment.status = payload.status
-    db.commit()
-    _audit(response, "deployments", deployment.id)
-    return deployment
-
-
-@router.delete("/deployments/{deployment_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_deployment(
-    deployment_id: UUID,
-    response: Response,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
-) -> None:
-    deployment = _owned_or_404(db, Deployment, current_user, deployment_id)
-    db.delete(deployment)
-    db.commit()
-    _audit(response, "deployments", deployment.id)
 
 
 # --- orders ---

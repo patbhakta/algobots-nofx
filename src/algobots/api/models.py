@@ -126,28 +126,6 @@ class Strategy(Base):
         return json.loads(self.params_json or "{}")
 
 
-class Deployment(Base):
-    """A strategy running against an account."""
-
-    __tablename__ = "deployments"
-
-    id: Mapped[UUID] = mapped_column(Uuid, primary_key=True, default=_new_uuid)
-    user_id: Mapped[UUID] = mapped_column(Uuid, ForeignKey("users.id"), nullable=False, index=True)
-    strategy_id: Mapped[UUID] = mapped_column(
-        Uuid, ForeignKey("strategies.id"), nullable=False, index=True
-    )
-    account_id: Mapped[UUID] = mapped_column(
-        Uuid, ForeignKey("accounts.id"), nullable=False, index=True
-    )
-    status: Mapped[str] = mapped_column(String(16), nullable=False, default="running")
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=_utcnow, nullable=False
-    )
-    updated_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), default=_utcnow, onupdate=_utcnow, nullable=True
-    )
-
-
 class Order(Base):
     """Order routed through a broker account (execution writes these)."""
 
@@ -245,3 +223,6 @@ class AuditLog(Base):
 
 # S4.1: import so AccountCredential registers on Base.metadata for Alembic.
 from algobots.api.accounts import models as _accounts_models  # noqa: E402, F401
+
+# S4.2: import so Deployment (frozen snapshots) + FleetBreaker register likewise.
+from algobots.api.deployments import models as _deployments_models  # noqa: E402, F401
