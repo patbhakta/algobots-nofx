@@ -1,19 +1,50 @@
 [build-system]
-requires = ["setuptools>=68"]
+requires = ["setuptools>=69"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "algobots"
 version = "0.1.0"
-description = "Algorithmic trading and bot platform"
+description = "AlgoBots — multi-account algorithmic trading platform (contracts, risk, execution, models, evals, engine, api, dashboard)"
+readme = "README.md"
 requires-python = ">=3.12"
-dependencies = ["pydantic>=2.7"]
+license = { text = "Proprietary" }
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.32",
+    "pydantic>=2.9",
+    "pydantic-settings>=2.6",
+    "sqlalchemy>=2.0",
+    "alembic>=1.13",
+    "pyjwt>=2.9",
+    "email-validator>=2.0",
+    "cryptography>=43",
+]
 
 [project.optional-dependencies]
-dev = ["pytest>=8", "hypothesis>=6"]
+postgres = [
+    "psycopg[binary]>=3.2",
+]
+dev = [
+    "pytest>=8.3",
+    "httpx>=0.27",
+    "ruff>=0.7",
+    "hypothesis>=6",
+]
 
 [tool.setuptools.packages.find]
 where = ["src"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+# B008: FastAPI dependency injection (`Depends(...)` in defaults) is idiomatic.
+ignore = ["B008"]
