@@ -27,6 +27,10 @@ EXPECTED_TABLES = {
     "decisions",
     "clamp_events",
     "audit_log",
+    # S4.3 (ALG-3092): approval queue + DB-enforced append-only ledger
+    "approval_requests",
+    "broadcasts",
+    "action_ledger",
 }
 
 

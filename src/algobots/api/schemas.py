@@ -60,13 +60,17 @@ class InviteOut(ORMModel):
 class AccountCreate(BaseModel):
     label: str = Field(min_length=1, max_length=120)
     broker: str = Field(min_length=1, max_length=64)
-    mode: str = Field(default="paper", pattern="^(paper|live)$")
+    # `semi_auto` (S4.3): orders on this account park for human approval
+    # instead of routing live — paper-only standing law, no live entitlement.
+    mode: str = Field(default="paper", pattern="^(paper|live|semi_auto)$")
     base_currency: str = Field(default="USD", min_length=3, max_length=8)
 
 
 class AccountUpdate(BaseModel):
     label: str | None = Field(default=None, min_length=1, max_length=120)
-    mode: str | None = Field(default=None, pattern="^(paper|live)$")
+    mode: str | None = Field(
+        default=None, pattern="^(paper|live|semi_auto)$"
+    )
     status: str | None = Field(default=None, pattern="^(active|paused|closed)$")
 
 

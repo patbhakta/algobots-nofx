@@ -14,6 +14,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from algobots.api.accounts.models import AccountCredential
+from algobots.api.approvals.service import park_order, parks
 from algobots.api.database import get_db
 from algobots.api.dependencies import get_current_user
 from algobots.api.deployments.models import Deployment
@@ -253,7 +254,14 @@ def create_order(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> Order:
-    _owned_or_404(db, Account, current_user, payload.account_id)
+    """Record an order; semi_auto accounts park it for human approval (S4.3).
+
+    Parking is the paper-only standing law: a live-bound order on a
+    `semi_auto` account never dispatches — it waits in the approval queue,
+    and the parked request id is surfaced via the X-Approval-Request-Id
+    response header.
+    """
+    account = _owned_or_404(db, Account, current_user, payload.account_id)
     if payload.deployment_id is not None:
         _owned_or_404(db, Deployment, current_user, payload.deployment_id)
     order = Order(
@@ -265,9 +273,13 @@ def create_order(
         order_type=payload.order_type,
         qty=payload.qty,
         limit_price=payload.limit_price,
+        status="parked" if parks(account) else "pending",
     )
     db.add(order)
     db.commit()
+    if parks(account):
+        request = park_order(db, order)
+        response.headers["X-Approval-Request-Id"] = str(request.id)
     _audit(response, "orders", order.id)
     return order
 

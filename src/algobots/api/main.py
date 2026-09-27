@@ -8,6 +8,7 @@ Run migrations before serving: `alembic upgrade head`.
 from fastapi import FastAPI
 
 from algobots.api.accounts.router import router as accounts_router
+from algobots.api.approvals.router import router as approvals_router
 from algobots.api.deployments.router import router as deployments_router
 from algobots.api.middleware import AccessLogMiddleware, AuditMiddleware
 from algobots.api.routers.auth import router as auth_router
@@ -30,6 +31,7 @@ app.include_router(users_router)
 app.include_router(resources_router)
 app.include_router(accounts_router)
 app.include_router(deployments_router)
+app.include_router(approvals_router)
 
 
 @app.get("/healthz")

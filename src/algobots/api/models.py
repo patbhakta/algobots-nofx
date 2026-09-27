@@ -224,5 +224,8 @@ class AuditLog(Base):
 # S4.1: import so AccountCredential registers on Base.metadata for Alembic.
 from algobots.api.accounts import models as _accounts_models  # noqa: E402, F401
 
+# S4.3: import so ApprovalRequest + Broadcast + ActionLedger register likewise.
+from algobots.api.approvals import models as _approvals_models  # noqa: E402, F401
+
 # S4.2: import so Deployment (frozen snapshots) + FleetBreaker register likewise.
 from algobots.api.deployments import models as _deployments_models  # noqa: E402, F401
