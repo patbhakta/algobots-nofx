@@ -20,8 +20,9 @@ from __future__ import annotations
 
 import time
 from collections import deque
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Callable, Literal
+from typing import Literal
 
 __all__ = ["BreakerConfig", "BreakerDecision", "OrderKind", "RateBreakers"]
 
@@ -151,11 +152,11 @@ class RateBreakers:
         return self._clock() if now is None else now
 
     @staticmethod
-    def _count_window(events: "deque[float]", now: float, window: float) -> int:
+    def _count_window(events: deque[float], now: float, window: float) -> int:
         cutoff = now - window
         return sum(1 for ts in events if ts > cutoff)
 
     @staticmethod
-    def _prune_day(events: "deque[float]", now: float) -> None:
+    def _prune_day(events: deque[float], now: float) -> None:
         while events and events[0] <= now - DAY_SECONDS:
             events.popleft()

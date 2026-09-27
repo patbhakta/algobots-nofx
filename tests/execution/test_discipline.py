@@ -111,7 +111,9 @@ def test_exit_without_a_position_holds():
 
 def test_unknown_upstream_holds():
     discipline = ExecutionDiscipline(tick_size=TICK)
-    market = MarketState(is_open=True, bid=Decimal("99"), ask=Decimal("101"), upstream_available=False)
+    market = MarketState(
+        is_open=True, bid=Decimal("99"), ask=Decimal("101"), upstream_available=False
+    )
     assert discipline.tick(make_plan([entry("X", "buy")]), market, ACCOUNT) is None
 
 

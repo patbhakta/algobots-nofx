@@ -71,7 +71,7 @@ def test_every_firing_emits_exactly_one_row(weights, limits):
     )
     result = gate.apply_weights(weights, deployment_id="prop")
     assert len(sink.rows) == len(result.clamps)
-    for row, clamp in zip(sink.rows, result.clamps):
+    for row, clamp in zip(sink.rows, result.clamps, strict=True):
         assert row.source == "limits"
         assert row.limit == clamp.limit
         assert row.ticker == clamp.ticker

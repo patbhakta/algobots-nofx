@@ -37,7 +37,7 @@ class RiskEnvelope(BaseModel):
         ),
     )
 
-    def clamp_order_value(self, requested: Decimal) -> "OrderValueCheck":
+    def clamp_order_value(self, requested: Decimal) -> OrderValueCheck:
         """Clamp a proposed entry notional to ``max_order_value``.
 
         Clamping only ever shrinks |notional|; the sign (long/short) is
@@ -51,7 +51,7 @@ class RiskEnvelope(BaseModel):
         approved = cap if requested > 0 else -cap
         return OrderValueCheck(requested=requested, approved=approved, fired=True)
 
-    def check_daily_loss(self, daily_pnl: Decimal) -> "DailyLossCheck":
+    def check_daily_loss(self, daily_pnl: Decimal) -> DailyLossCheck:
         """Check signed daily P&L against ``max_daily_loss``.
 
         Trips deterministically at loss >= cap: a loss equal to the cap has

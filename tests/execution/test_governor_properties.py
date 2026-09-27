@@ -8,8 +8,8 @@ from hypothesis import strategies as st
 from algobots.execution.governor import TurnoverGovernor
 from algobots.execution.planner import (
     MarketState,
-    PlannerConfig,
     PlannedOrder,
+    PlannerConfig,
     Position,
     plan_orders,
 )
