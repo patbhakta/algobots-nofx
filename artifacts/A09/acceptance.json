@@ -8,11 +8,14 @@
   "implementation_commit": "6dd2106",
   "make_targets_integration_commit": "178534b",
   "integrated_commit": null,
-  "integration_note": "pending independent Tech Lead review; merge --no-ff to main only after PASS",
+  "integration_note": "pending Tech Lead re-review of bc0183b; merge --no-ff to main only after PASS",
   "environment": {
     "python": "3.12.3",
     "browser": "Chrome for Testing 153.0.8010.12 (chrome-headless-shell, Playwright cache; nothing installed)",
-    "allowed": ["development", "synthetic-paper"],
+    "allowed": [
+      "development",
+      "synthetic-paper"
+    ],
     "fixtures": "synthetic only; no broker, feed, memory service or network contacted"
   },
   "verification": {
@@ -22,30 +25,32 @@
       "python -m pytest tests/packets/A09 -q -p no:cacheprovider -rs --junitxml=artifacts/A09/test-results/junit.xml",
       "sed strips timestamp/hostname/time from junit.xml"
     ],
-    "result": "198 passed, 0 failed, 0 skipped",
-    "full_suite": "python -m pytest -> 566 passed (368 pre-existing + 198 A09)",
+    "result": "199 passed, 0 failed, 0 skipped",
+    "full_suite": "python -m pytest -> 567 passed (368 pre-existing + 199 A09)",
     "regression": "make verify-A01 -> green (schema lock unchanged; every tracked file has an owner)",
     "lint": "ruff check . -> All checks passed; ruff format --check on A09 paths clean",
-    "screenshots": "make screenshots-A09 -> 38 screenshots; 0 with horizontal overflow (layout-audit.json)"
+    "screenshots": "make screenshots-A09 -> 38 screenshots; 0 with horizontal overflow or cell clipping (layout-audit.json); PNGs not byte-reproducible"
   },
   "acceptance_cases": [
     {
       "id": 1,
       "criterion": "Warm paper theme and compact hierarchy match the uploaded reference direction; no old dark-theme assumption remains.",
-      "result": "PASS (direction per roadmap text; video comparison by a human outstanding, see limitations)",
+      "result": "PENDING re-review (round 1 FAIL on B1 only; direction per roadmap text, Pat's eye-check against the MP4 is a non-blocking follow-up)",
       "evidence": [
         "tests/packets/A09/test_a09_tokens.py::test_spec_values_recorded_verbatim, test_surfaces_are_light_paper",
         "tests/packets/A09/test_a09_tokens.py::test_stylesheet_has_no_dark_theme, test_no_dark_theme_assumption_in_dashboard_sources (whole src/algobots/dashboard/)",
         "tests/packets/A09/test_a09_tokens.py::test_tabular_figures_for_financial_values, test_grain_opacity_and_type_sizes_follow_spec",
         "tests/packets/A09/test_a09_headless.py::test_no_horizontal_overflow_at_spec_sizes (4 screens x 5 states x 1920x1114/1440x900/1024x768/390x844)",
-        "artifacts/A09/screenshots/ (38 PNGs) and demo-and-limitations.md observed (per roadmap text) vs proposed table"
+        "artifacts/A09/screenshots/ (38 PNGs) and demo-and-limitations.md observed (per roadmap text) vs proposed table",
+        "tests/packets/A09/test_a09_headless.py::test_grain_is_actually_painted_and_texture_off_removes_it (pixel-level; fails on 262dbd4)"
       ]
     },
     {
       "id": 2,
       "criterion": "Text remains legible with grain; texture-off and reduced-motion settings work.",
-      "result": "PASS",
+      "result": "PENDING re-review (round 1 FAIL: grain not drawn, fixed in bc0183b)",
       "evidence": [
+        "tests/packets/A09/test_a09_headless.py::test_grain_is_actually_painted_and_texture_off_removes_it (grain within 3% of paper on, plain paper off)",
         "tests/packets/A09/test_a09_tokens.py::test_text_meets_wcag_aa_on_paper (6 text tokens x 2 surfaces x grain on/off, worst-case grain pixel)",
         "tests/packets/A09/test_a09_tokens.py::test_each_adjustment_is_needed_and_minimal (positive, attention, focus)",
         "tests/packets/A09/test_a09_grain_motion.py::test_tile_is_small_monochrome_and_deterministic, test_grain_layer_is_stationary_and_below_content",
@@ -57,7 +62,7 @@
     {
       "id": 3,
       "criterion": "Every financial fixture is marked synthetic and each action displays account and environment.",
-      "result": "PASS",
+      "result": "PASS (ALG-3182 round 1)",
       "evidence": [
         "tests/packets/A09/test_a09_fixtures.py::test_every_fixture_is_marked_synthetic, test_amounts_are_decimal_strings_with_currency",
         "tests/packets/A09/test_a09_storyboard.py::test_demo_banner_and_tags (every page banner; every financial panel tagged; every data-fin value inside a DEMO DATA section)",
@@ -69,10 +74,10 @@
   ],
   "blocked_cases": [],
   "required_artifacts": {
-    "implementation_commit": "6dd2106 (+ 178534b make-targets integration)",
-    "independent_review_receipt": "pending: Tech Lead review card",
+    "implementation_commit": "6dd2106 + bc0183b (+ 178534b make-targets integration)",
+    "independent_review_receipt": "ALG-3182 (11:00Z) at 262dbd4: case 3 PASS, cases 1-2 FAIL on B1 (grain never painted) -> fixed bc0183b; re-review pending",
     "acceptance_json": "artifacts/A09/acceptance.json",
-    "test_results": "artifacts/A09/test-results/ (junit.xml, pytest-summary.txt: 198 passed)",
+    "test_results": "artifacts/A09/test-results/ (junit.xml, pytest-summary.txt: 199 passed)",
     "demo_and_limitations": "artifacts/A09/demo-and-limitations.md (+ demo-output.txt)"
   },
   "output_contracts": {
@@ -80,5 +85,11 @@
     "component_inventory": "src/algobots/dashboard/design/components.py INVENTORY; artifacts/A09/components.json",
     "screenshots": "artifacts/A09/screenshots/, layout-audit.json",
     "clickable_fixture_storyboard": "artifacts/A09/storyboard/index.html (static, open from disk)"
-  }
+  },
+  "fix_commits": [
+    "bc0183b (ALG-3182 B1 grain stacking context + pixel test; N1-N4; metric cell overlap found on re-capture)"
+  ],
+  "follow_ups": [
+    "Non-blocking: Pat eye-checks the storyboard against the NoFX MP4 (not in any repo); a divergence becomes an A09 revision, not an A10 hold (ALG-3182 guidance)"
+  ]
 }
