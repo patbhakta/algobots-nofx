@@ -1,0 +1,8 @@
+## ps: one OS process per account (children of the API/supervisor)
+    PID    PPID   RSS     ELAPSED COMMAND
+3871132 3870831 354764      00:16 python -m algobots.workers.paper --account laya --poll 5.0
+3871133 3870831 351160      00:16 python -m algobots.workers.paper --account jev --poll 5.0
+3871134 3870831 353556      00:16 python -m algobots.workers.paper --account coin --poll 5.0
+
+## ledger fills per strategy (/demo/api/state) — must equal worker orders_filled
+{'laya': 164, 'jev': 83, 'coin': 130} intervals 397

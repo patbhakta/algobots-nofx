@@ -31,6 +31,9 @@ dev = [
     "ruff>=0.7",
     "hypothesis>=6",
 ]
+workers = [
+    "nautilus-trader>=1.231",
+]
 
 [tool.setuptools.packages.find]
 where = ["src"]

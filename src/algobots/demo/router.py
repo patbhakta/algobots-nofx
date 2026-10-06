@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import asdict
 from datetime import UTC, datetime
 from pathlib import Path
 from urllib.parse import parse_qs
@@ -13,8 +14,27 @@ from algobots.api.config import get_settings
 from algobots.demo import killswitch
 from algobots.demo import ledger as L
 from algobots.demo.page import render
+from algobots.workers.supervisor import Supervisor, WorkerStatus
 
 router = APIRouter(tags=["demo"])
+SUPERVISOR: Supervisor | None = None
+
+
+def start_workers() -> None:
+    """Spawn one paper worker per demo account when enabled (API lifespan)."""
+    global SUPERVISOR
+    s = get_settings()
+    if not s.demo_workers_enabled or SUPERVISOR is not None:
+        return
+    SUPERVISOR = Supervisor(list(L.STRATEGIES), Path(s.demo_state_dir), poll=s.demo_worker_poll_s)
+    SUPERVISOR.start()
+
+
+def stop_workers() -> None:
+    global SUPERVISOR
+    if SUPERVISOR is not None:
+        SUPERVISOR.stop()
+        SUPERVISOR = None
 
 
 def _ledger() -> tuple[L.Ledger, str]:
@@ -75,6 +95,20 @@ def demo_state() -> dict:
             }
             for k, b in lg.books.items()
         },
+    }
+
+
+@router.get("/demo/api/workers")
+def demo_workers() -> dict:
+    sup = SUPERVISOR
+    if sup is None:
+        workers = [asdict(WorkerStatus(account=a, state="not_started")) for a in L.STRATEGIES]
+    else:
+        workers = sup.snapshot()
+    return {
+        "enabled": sup is not None,
+        "ready": all(w["state"] == "ready" for w in workers),
+        "workers": workers,
     }
 
 

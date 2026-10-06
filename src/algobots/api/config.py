@@ -40,6 +40,11 @@ class Settings(BaseSettings):
     # Comma-separated UTC timestamps (YYYY-MM-DDTHH:MM) at which every demo
     # sleeve is topped back up to its starting capital. Empty = never.
     demo_sleeve_refills: str = Field(default="")
+    # ALG-3255: spawn one Nautilus paper worker process per demo account at
+    # API startup (needs the `workers` extra). Off by default so tests and
+    # dev servers never fork trading processes.
+    demo_workers_enabled: bool = Field(default=False)
+    demo_worker_poll_s: float = Field(default=15.0)
 
     def sqlalchemy_url(self) -> str:
         """Normalize the configured URL for SQLAlchemy drivers.
