@@ -138,3 +138,15 @@ def test_spread_keeps_labels_apart_and_in_bounds():
     ys = sorted(out.values())
     assert all(b - a >= 15 for a, b in zip(ys, ys[1:], strict=False))
     assert ys[0] >= 12 and ys[-1] <= 240
+
+
+def test_accounts_state_agrees_with_risk_and_return_ignores_refills():
+    rows = [_row(i, 0.70, 0) for i in range(6)]  # Laya trips its daily cap after 3 losses
+    lg = L.build(rows, refills=[rows[1].ts])
+    html = render(lg, start="2026-10-06", now=lg.last_ts + 60)
+    assert html.count("daily cap hit · resumes 00:00Z") >= 2  # risk table and accounts table
+    laya = lg.books["laya"]
+    pnl = sum((b.pnl for b in lg.books.values()), Decimal(0))
+    assert laya.refills  # the refill landed after the first loss
+    ret = f"{pnl / (L.SLEEVE * 3) * 100:.2f}"
+    assert ret.lstrip("-") in html and "refills excluded" in html

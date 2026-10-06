@@ -71,6 +71,21 @@ def _banner(start: str, now: float) -> str:
     )
 
 
+def _day_pnl(b: L.StrategyBook, today: str) -> Decimal:
+    return sum((d.pnl for d in b.fills if L._day(d.ts) == today), Decimal(0))
+
+
+def _halt(lg: L.Ledger, b: L.StrategyBook, today: str) -> str | None:
+    """Why new entries are blocked right now (None = trading); one answer for every panel."""
+    if lg.kill.get("engaged"):
+        return "kill switch"
+    if b.exhausted:
+        return "sleeve exhausted"
+    if L.ENVELOPE.check_daily_loss(_day_pnl(b, today)).tripped:
+        return "daily cap hit · resumes 00:00Z"
+    return None
+
+
 def _strip(lg: L.Ledger, now: float) -> str:
     books = lg.books.values()
     equity = sum((b.equity for b in books), Decimal(0))
@@ -79,16 +94,21 @@ def _strip(lg: L.Ledger, now: float) -> str:
     today = datetime.fromtimestamp(now, UTC).strftime("%Y-%m-%d")
     today_fills = [d for b in books for d in b.fills if L._day(d.ts) == today]
     blocked = sum(1 for b in books for d in b.decisions if d.status == "BLOCKED")
-    ret = f"{pnl / start * 100:.2f}"
+    opening = L.SLEEVE * len(lg.books)
+    ret = f"{pnl / opening * 100:.2f}"
     cells = [
         c.metric(
             "Account equity",
             c.money(_usd(equity)),
             f"3 sleeves × {L.SLEEVE} USD"
-            + (f" + {start - L.SLEEVE * len(lg.books)} refilled" if lg.refill_ts else ""),
+            + (f" + {start - opening} refilled" if lg.refill_ts else ""),
         ),
         c.metric("Net P&L", c.money(_usd(pnl), signed=True), "since open · net of fees"),
-        c.metric("Return", c.pct(ret, signed=True), "on capital allocated"),
+        c.metric(
+            "Return",
+            c.pct(ret, signed=True),
+            "on starting capital" + (" · refills excluded" if lg.refill_ts else ""),
+        ),
         c.metric(
             "Fees paid", c.money(_usd(sum((b.fees for b in books), Decimal(0)))), "Kalshi taker"
         ),
@@ -189,7 +209,8 @@ def _svg(lg: L.Ledger, W: int, H: int, LBL: int, fs: int, cls: str) -> str:
         if t0 <= ts <= t1:
             parts.append(
                 f'<line x1="{x(ts):.1f}" x2="{x(ts):.1f}" y1="{PAD}" y2="{H - PAD}" stroke="var(--c-attention)" stroke-dasharray="3 3"/>'
-                f'<text x="{x(ts) + 3:.1f}" y="{PAD + fs}" font-size="{fs - 1}" fill="var(--c-attention)">refill {_t(ts, "%b %d %H:%M")}</text>'
+                f'<text x="{x(ts) + (-3 if x(ts) > (W - LBL) / 2 else 3):.1f}" y="{PAD + fs}" font-size="{fs - 1}" '
+                f'text-anchor="{"end" if x(ts) > (W - LBL) / 2 else "start"}" fill="var(--c-attention)">refill {_t(ts)}</text>'
             )
     # end labels and the baseline label share the right gutter; spread them so none overlap
     targets = {k: y(float(b.curve[-1][1])) + fs / 3 for k, b in lg.books.items()}
@@ -256,9 +277,9 @@ def _risk(lg: L.Ledger, now: float) -> str:
     cap = L.ENVELOPE.max_daily_loss
     rows = []
     for b in lg.books.values():
-        day_pnl = sum((d.pnl for d in b.fills if L._day(d.ts) == today), Decimal(0))
+        day_pnl = _day_pnl(b, today)
         used = max(Decimal(0), -day_pnl)
-        tripped = L.ENVELOPE.check_daily_loss(day_pnl).tripped
+        halt = _halt(lg, b, today)
         rows.append(
             [
                 c.e(b.name),
@@ -267,12 +288,8 @@ def _risk(lg: L.Ledger, now: float) -> str:
                     float(min(Decimal(1), used / cap)), label=f"{used} of {cap} USD daily loss used"
                 )
                 + f'<span class="meta">{used} / {cap}</span>',
-                c.status("BLOCKED", "kill switch — entries blocked")
-                if lg.kill.get("engaged")
-                else c.status("BLOCKED", "sleeve exhausted — entries blocked")
-                if b.exhausted
-                else c.status("BLOCKED", "daily cap hit — entries blocked")
-                if tripped
+                c.status("BLOCKED", f"{halt} — entries blocked")
+                if halt
                 else c.status("ready", "within cap"),
             ]
         )
@@ -339,7 +356,8 @@ def _decisions(lg: L.Ledger, limit: int = 12) -> str:
     )
 
 
-def _accounts(lg: L.Ledger) -> str:
+def _accounts(lg: L.Ledger, now: float) -> str:
+    today = datetime.fromtimestamp(now, UTC).strftime("%Y-%m-%d")
     rows = [
         [
             c.e(ACCOUNT["label"]) + " / " + c.e(b.name),
@@ -347,13 +365,10 @@ def _accounts(lg: L.Ledger) -> str:
             c.money(_usd(b.allocated)),
             c.money(_usd(b.equity)),
             c.money(_usd(b.pnl), signed=True),
-            c.status("BLOCKED", "halted — kill switch")
-            if lg.kill.get("engaged")
-            else c.status("BLOCKED", "halted — sleeve exhausted")
-            if b.exhausted
-            else c.status("connected", "running"),
+            c.status("BLOCKED", f"halted — {halt}") if halt else c.status("connected", "running"),
         ]
         for b in lg.books.values()
+        for halt in [_halt(lg, b, today)]
     ]
     return c.table(
         ["Account / deployment", "Mode", "Allocated", "Equity", "Net P&L", "State"],
@@ -373,7 +388,7 @@ def render(lg: L.Ledger, *, start: str, now: float | None = None) -> str:
         + "</div>"
         + c.panel("Equity by strategy", _curve(lg), financial=True, tag=TAG)
         + c.panel("Recent decisions and reasons", _decisions(lg), financial=True, tag=TAG)
-        + c.panel("Accounts", _accounts(lg), financial=True, tag=TAG)
+        + c.panel("Accounts", _accounts(lg, now), financial=True, tag=TAG)
     )
     title = "AlgoBots — live paper trading"
     return (
@@ -384,7 +399,7 @@ def render(lg: L.Ledger, *, start: str, now: float | None = None) -> str:
         ".panel{margin-bottom:var(--space-4,16px)} .panel h3{font-size:13px;margin:8px 0 4px}"
         " table.data td{vertical-align:top} table.data td:first-child{white-space:nowrap}"
         " .halt-note{margin:8px 0;padding:6px 8px;border-left:3px solid var(--c-attention)}"
-        " .actions .field input{margin-right:8px} .chart-m{display:none} .panel .body{overflow-x:auto}"
+        " .panel header .demo-tag{white-space:nowrap} .actions .field input{margin-right:8px} .chart-m{display:none} .panel .body{overflow-x:auto}"
         " @media (min-width:1101px){.cols.two{grid-template-columns:minmax(0,3fr) minmax(0,2fr)}}"
         " @media (max-width:700px){.chart-d{display:none} .chart-m{display:block}"
         " table.data.stack thead{display:none}"
@@ -392,7 +407,7 @@ def render(lg: L.Ledger, *, start: str, now: float | None = None) -> str:
         " table.data.stack tr{border-bottom:var(--rule);padding:6px 0}"
         " table.data.stack td{display:flex;justify-content:space-between;gap:12px;padding:2px 0;border:0;text-align:right;white-space:normal}"
         " table.data.stack td::before{content:attr(data-label);color:var(--c-muted);text-align:left;flex:none}"
-        " table.data.stack td:empty{display:none}"
+        " table.data.stack td:empty{display:none} table.data.stack td .status{white-space:normal;text-align:right;min-width:0}"
         " table.data.stack td[data-label=Reason]{display:block;text-align:left}"
         " table.data.stack td[data-label=Reason]::before{display:block}}</style>\n</head>\n<body>\n"
         f'<div class="chrome">{_banner(start, now)}{_header(lg, now)}</div>\n'
