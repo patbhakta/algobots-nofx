@@ -51,9 +51,12 @@ shadow is a 1px restrained one.
 ## Grain
 
 There is one 96×96 8-bit grayscale tile, generated once from a fixed-seed xorshift PRNG using only
-the stdlib. Its sha256 is pinned in the tests. It is embedded as a data URI on a `position: fixed`
-layer at `z-index: -1`, with no animation and no pointer events, at 3% opacity (the spec allows
-2–4%). There is no SVG filter, canvas or per-frame work. Texture off is `html[data-texture="off"]`
+the stdlib. Its sha256 is pinned in the tests. It is embedded as a data URI on a `body::before` layer with
+`position: fixed` and `z-index: -1`, with no animation and no pointer events, at 3% opacity (the
+spec allows 2–4%). `body` sets `isolation: isolate`, so the layer paints above body's own paper
+background but below all content. Without that, the root stacking context paints the grain under
+body's opaque background and it never shows ([ALG-3182](/ALG/issues/ALG-3182) B1). A browser pixel
+test now guards this: grain present inside the body box with texture on, plain paper with it off. There is no SVG filter, canvas or per-frame work. Texture off is `html[data-texture="off"]`
 and is set by the header toggle (persisted) or `?texture=off`.
 
 ## Motion
@@ -77,8 +80,10 @@ not emitted, and the topology says "Animation frozen".
 invariants are enforced in code:
 
 - `action()` raises unless it gets an account (id + label) and an environment of `PAPER` or
-  `LIVE` that matches the account. It prints `account label · ENV` inside the control and in its
-  aria-label. When disabled, it shows the reason.
+  `LIVE` that matches the account. It prints `account label · ENV` inside the control. The
+  visible text is the accessible name, so screen readers also hear the disabled reason. A
+  disabled action uses `aria-disabled="true"`, not `disabled`, so keyboard users can still focus
+  it and read why. **Consumers must check `aria-disabled` in their click handlers.**
 - `money()`, `pct()` and `stat()` render a missing value as **Unavailable** with its reason, never
   as 0 or ∞. Signs are text (`+`, `−`) and screen readers also get "gain"/"loss", so values are
   readable without color.

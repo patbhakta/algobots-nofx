@@ -42,7 +42,10 @@ Output captured in `demo-output.txt`:
   - every other state at 1440×900;
   - the overview's other states at 390×844;
   - texture off and motion off.
-  No page overflows horizontally.
+  No page overflows horizontally, and no metric, action, badge or status overflows its own cell.
+  The PNGs are **not byte-reproducible**: re-running `make screenshots-A09` rewrites some files
+  even on the same host, so a diff after a re-run is not a regression. `make verify-A09` does not
+  touch them and stays clean.
 - `test-results/`: `junit.xml` and `pytest-summary.txt` from `make verify-A09`.
 
 ## Reference comparison: observed vs proposed
@@ -66,6 +69,29 @@ against the video itself.
 | Evolving flow → signal → decision → execute → hold topology | Trace rows market → signal → risk → order → position. Abstain stops at signal ("hold, no execution"). Outcomes cover APPROVED, REJECTED, AWAITING_APPROVAL, ABSTAIN, UNKNOWN and RECONCILING. Clicking a row opens its reason. One edge pulse plays for the newest real event only |
 | Animations | Short, token-driven, one-shot. Reduced motion and motion off set them to 0ms |
 | Reference returns are demonstration content | All values are synthetic and labelled DEMO DATA on every page and every financial panel |
+
+## Review round 1 ([ALG-3182](/ALG/issues/ALG-3182): FAIL at `262dbd4`)
+
+- **B1 (blocking): grain never rendered.** `body::before` (z-index -1) sat in the root stacking
+  context, under body's opaque background. Fixed with `body { isolation: isolate; }`. New test
+  `test_grain_is_actually_painted_and_texture_off_removes_it` reads pixels from a headless
+  screenshot of a paper-only gutter inside the body box. It fails on `262dbd4` (1 distinct
+  colour) and passes now. The texture-on and texture-off screenshots now differ, and the grain
+  was checked by eye for legibility.
+- **N1:** the `tokens.py` docstring now says the adjustments land in the 4.6–4.8:1 band the tests
+  enforce, within one or two RGB steps of the exact minimum. Values unchanged; the reviewer
+  accepted them.
+- **N2:** actions no longer set an overriding `aria-label`. The visible text, including the
+  disabled reason, is the accessible name, and disabled actions use focusable
+  `aria-disabled="true"`.
+- **N3:** the candle chart now spans the full panel width (fixed 180px height,
+  non-scaling strokes).
+- **N4:** PNG non-reproducibility documented above.
+- **Found while re-capturing:** with the grain fixed, headline metric values overlapped the next
+  cell at 1440 wide (a `nowrap` from round 0). Headline size is now fluid (18–26px) and the
+  currency code may wrap. The layout audit also flags any metric, action, badge or status whose
+  content is wider than its cell; it catches the old overlap.
+- **Index page:** now carries the toggle script too, so `?texture=off` works there.
 
 ## Known limitations
 

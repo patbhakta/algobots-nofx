@@ -47,13 +47,14 @@ def main() -> int:
                 "query": query,
                 "png": out.relative_to(ROOT).as_posix(),
                 "overflowing": result["overflowing"],
+                "clipped": result["clipped"],
                 "scroll_within_viewport": result["scrollWidth"] <= result["innerWidth"],
             }
         )
     (ROOT / "artifacts" / "A09" / "layout-audit.json").write_text(
         json.dumps({"browser": Path(chrome()).name, "pages": report}, indent=2) + "\n"
     )
-    bad = [r for r in report if r["overflowing"] or not r["scroll_within_viewport"]]
+    bad = [r for r in report if r["overflowing"] or r["clipped"] or not r["scroll_within_viewport"]]
     print(f"{len(report)} screenshots; {len(bad)} with horizontal overflow")
     return 1 if bad else 0
 

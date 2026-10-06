@@ -215,13 +215,16 @@ def action(
             f"action {label!r}: environment {environment} != account {account['environment']}"
         )
     ctx = f"{account['label']} · {environment}"
-    dis = ' disabled aria-disabled="true"' if disabled_reason else ""
-    why = f'<span class="why">{e(disabled_reason)}</span>' if disabled_reason else ""
+    # The visible spans form the accessible name, so screen readers hear the
+    # account, environment and any disabled reason. aria-disabled (not
+    # `disabled`) keeps the control focusable; handlers must check it.
+    sep = '<span class="sr-only">, </span>'
+    dis = ' aria-disabled="true"' if disabled_reason else ""
+    why = f'{sep}<span class="why">{e(disabled_reason)}</span>' if disabled_reason else ""
     return (
         f'<button type="button" class="action" data-action="{e(label)}" '
-        f'data-account="{e(account["id"])}" data-environment="{environment}" '
-        f'aria-label="{e(label)} — account {e(account["label"])}, {environment}"{dis}>'
-        f'<span>{e(label)}</span><span class="ctx">{e(ctx)}</span>{why}</button>'
+        f'data-account="{e(account["id"])}" data-environment="{environment}"{dis}>'
+        f'<span>{e(label)}</span>{sep}<span class="ctx">{e(ctx)}</span>{why}</button>'
     )
 
 

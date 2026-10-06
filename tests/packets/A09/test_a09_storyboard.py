@@ -127,9 +127,10 @@ def test_every_action_shows_account_and_environment(name, parsed):
         acct = labels[a["data-account"]]
         assert a["data-environment"] == acct["environment"]
         assert acct["label"] in el["text"] and a["data-environment"] in el["text"], el["text"]
-        assert acct["label"] in a["aria-label"] and a["data-environment"] in a["aria-label"]
+        assert "aria-label" not in a, "visible content is the accessible name"
+        assert "disabled" not in a, "aria-disabled keeps the reason focusable"
         if acct["environment"] == "LIVE":
-            assert "disabled" in a and "not authorized" in el["text"]
+            assert a.get("aria-disabled") == "true" and "not authorized" in el["text"]
     assert not parsed[name].find(
         lambda e: (
             e["tag"] == "button"
@@ -166,12 +167,13 @@ def test_header_shows_account_mode_and_freshness(name, parsed):
 def test_paused_actions_say_why_and_stop_access_stays_open(parsed):
     stale = parsed["overview-stale.html"]
     approve = stale.find(lambda e: e["attrs"].get("data-action", "").startswith("Approve"))[0]
-    assert "disabled" in approve["attrs"] and "market data 7m 11s old" in approve["text"]
+    assert approve["attrs"].get("aria-disabled") == "true"
+    assert "market data 7m 11s old" in approve["text"]
     pause = stale.find(lambda e: e["attrs"].get("data-action") == "Pause all strategies")[0]
-    assert "disabled" not in pause["attrs"]
+    assert "aria-disabled" not in pause["attrs"]
     ws = parsed["workspace-unknown.html"]
     cancel = ws.find(lambda e: e["attrs"].get("data-action", "").startswith("Request cancel"))[0]
-    assert "disabled" not in cancel["attrs"]
+    assert "aria-disabled" not in cancel["attrs"]
 
 
 @pytest.mark.parametrize("name", CONTENT_PAGES)

@@ -49,7 +49,10 @@ _SCRIPT = """
     });
   });
   if (q.get("audit") === "1") {
-    var w = window.innerWidth, over = [];
+    var w = window.innerWidth, over = [], clipped = [];
+    document.querySelectorAll(".metric, .action, .badge, .status").forEach(function (el) {
+      if (el.scrollWidth > el.clientWidth + 1) clipped.push(el.className + ":" + el.textContent.trim().slice(0, 24));
+    });
     document.querySelectorAll("body *").forEach(function (el) {
       var b = el.getBoundingClientRect();
       if (b.width && b.right > w + 1 && !el.closest(".body")) {
@@ -60,7 +63,7 @@ _SCRIPT = """
     pre.id = "audit";
     pre.textContent = JSON.stringify({
       innerWidth: w, scrollWidth: document.documentElement.scrollWidth,
-      overflowing: over.slice(0, 20),
+      overflowing: over.slice(0, 20), clipped: clipped.slice(0, 20),
       texture: r.dataset.texture, motion: r.dataset.motion,
       grainDisplay: getComputedStyle(document.body, "::before").display,
       reducedDuration: getComputedStyle(r).getPropertyValue("--dur-drawer").trim()
@@ -387,9 +390,9 @@ def _candles(f: dict) -> str:
         top, bottom = (cl, o) if up else (o, cl)
         height = max(1.0, float(y(bottom)) - float(y(top)))
         parts.append(
-            f'<line x1="{x}" x2="{x}" y1="{y(hgh)}" y2="{y(low)}" stroke="{color}" stroke-width="1"/>'
+            f'<line x1="{x}" x2="{x}" y1="{y(hgh)}" y2="{y(low)}" stroke="{color}" stroke-width="1" vector-effect="non-scaling-stroke"/>'
             f'<rect x="{x - 4}" y="{y(top)}" width="8" height="{height:.1f}" '
-            f'fill="{"none" if up else color}" stroke="{color}" stroke-width="1"/>'
+            f'fill="{"none" if up else color}" stroke="{color}" stroke-width="1" vector-effect="non-scaling-stroke"/>'
         )
     gap = (
         f'<p class="meta attn">{c.status("stale", "data gap: bars after last update missing")}</p>'
@@ -399,7 +402,7 @@ def _candles(f: dict) -> str:
     width = 30 + len(k["bars"]) * step
     return (
         f'<p class="meta">{meta}</p>{gap}<div class="candles">'
-        f'<svg viewBox="0 0 {width} 160" preserveAspectRatio="xMinYMid meet" role="img" '
+        f'<svg viewBox="0 0 {width} 160" preserveAspectRatio="none" role="img" '
         f'aria-label="{c.e(k["symbol"])} {c.e(k["timeframe"])} candles, low {lo}, high {hi}">'
         f'<line x1="0" x2="{width}" y1="155" y2="155" stroke="var(--c-rule-faint)"/>{"".join(parts)}</svg></div>'
     )
@@ -700,7 +703,7 @@ def index() -> str:
             + "".join(f'<th scope="col">{s}</th>' for s in STATES)
             + f"</tr></thead><tbody>{rows}</tbody></table>",
         )
-        + "</main>\n</body>\n</html>\n"
+        + f"</main>\n<script>{_SCRIPT}</script>\n</body>\n</html>\n"
     )
 
 

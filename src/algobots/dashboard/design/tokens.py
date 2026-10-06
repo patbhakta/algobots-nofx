@@ -4,8 +4,9 @@ The spec lists proposed values and asks for contrast validation in
 implementation. `SPEC_COLORS` keeps the proposed values verbatim; `COLORS` is
 what ships. A text token differs from the spec only where the spec value fails
 WCAG AA (4.5:1) on a paper surface under the worst-case grain composite; each
-change is the smallest lightness reduction (same hue and saturation) that
-clears 4.6:1, and is listed in `ADJUSTMENTS`.
+change is a small lightness reduction (same hue and saturation) landing in
+4.6-4.8:1 (the band the tests enforce; within 1-2 RGB steps of the exact
+minimum), and is listed in `ADJUSTMENTS`.
 """
 
 from types import MappingProxyType

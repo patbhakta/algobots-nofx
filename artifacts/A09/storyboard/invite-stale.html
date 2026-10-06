@@ -41,6 +41,7 @@
 
 html { background: var(--c-paper); color: var(--c-ink); }
 body {
+  isolation: isolate;  /* own stacking context: the z-index -1 grain paints above body's background */
   margin: 0; font: var(--fs-body)/1.45 var(--font-sans);
   background: var(--c-paper); color: var(--c-ink);
 }
@@ -118,7 +119,7 @@ main { padding: var(--space-4); display: grid; gap: var(--space-4); max-width: 1
 }
 .metric { padding: var(--space-2) var(--space-3); border-right: var(--rule); min-width: 0; }
 .metric .label { font: var(--fs-meta)/1.3 var(--font-mono); color: var(--c-muted); text-transform: uppercase; letter-spacing: .04em; }
-.metric .value { font-size: var(--fs-headline); line-height: 1.2; white-space: nowrap; }
+.metric .value { font-size: clamp(18px, 1.5vw, var(--fs-headline)); line-height: 1.2; }
 .ccy { color: var(--c-muted); }
 .metric .value .ccy { font-size: .62em; }
 .metric .value .meta { white-space: normal; }
@@ -155,12 +156,13 @@ table.data td.n, table.data th.n { text-align: right; white-space: nowrap; }
 .status.neutral { color: var(--c-muted); }
 
 .action {
+  position: relative;
   display: inline-flex; flex-direction: column; align-items: flex-start; gap: 1px;
   font: inherit; color: var(--c-ink); background: var(--c-raised); cursor: pointer;
   border: var(--rule-strong); border-radius: var(--radius); padding: 4px 10px; text-align: left;
 }
 .action .ctx { font: var(--fs-meta)/1.2 var(--font-mono); color: var(--c-muted); }
-.action[disabled] { cursor: not-allowed; color: var(--c-muted); border-style: dashed; }
+.action[aria-disabled="true"] { cursor: not-allowed; color: var(--c-muted); border-style: dashed; }
 .action .why { font-size: var(--fs-meta); color: var(--c-attention); }
 .actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
 
@@ -193,7 +195,7 @@ details.explain[open] { background: var(--c-raised); padding: var(--space-2); bo
 .field input[aria-invalid="true"] { border-color: var(--c-negative); border-width: 2px; }
 .settings { display: flex; gap: var(--space-2); }
 .settings button { font: var(--fs-meta)/1.2 var(--font-mono); background: transparent; color: var(--c-ink); border: var(--rule-strong); border-radius: var(--radius); padding: 3px 6px; cursor: pointer; }
-.candles svg { width: 100%; max-width: 760px; height: auto; display: block; }
+.candles svg { width: 100%; height: 180px; display: block; }
 
 @media (max-width: 1100px) {
   .cols { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -214,7 +216,7 @@ details.explain[open] { background: var(--c-raised); padding: var(--space-2); bo
 <nav class="screens" aria-label="Screens"><a href="overview-stale.html">Overview</a><a href="workspace-stale.html">Advanced workspace</a><a href="studio-stale.html">Strategy studio</a><a href="invite-stale.html" aria-current=page>Invitation &amp; onboarding</a><a href="index.html">All pages</a><span class="spacer"></span><div class="settings" role="group" aria-label="Display settings"><button type="button" data-toggle="texture" aria-pressed="true">Texture: on</button><button type="button" data-toggle="motion" aria-pressed="true">Motion: on</button></div></nav><nav class="screens states" aria-label="Fixture state"><span class="meta">fixture:</span><a href="invite-good.html">good</a><a href="invite-loss.html">loss</a><a href="invite-empty.html">empty</a><a href="invite-stale.html" aria-current=page>stale</a><a href="invite-unknown.html">unknown</a></nav>
 <main id="main" data-screen="invite" data-state="stale">
 <h1 class="sr-only">Invitation &amp; onboarding — stale — AlgoBots DEMO DATA</h1>
-<div class="cols"><section class="panel raised" data-financial="false" aria-label="Join account"><header><h2>Join account</h2><span></span></header><div class="body"><p class="meta">No public signup. Invited by Pat (operator, demo). An invite grants membership, not trade permission.</p><ul class="steps"><li><span><strong>Single-use invite</strong> <span class="num">demo-…-7Q2K</span></span><span class="status warn" role="status" aria-label="expired" data-status="expired"><span class="glyph" aria-hidden="true">!</span>expired</span></li><li><span><strong>Account identity</strong> Family Growth (demo) · SIMULATED <span class="badge env-paper" aria-label="Paper trading account" data-environment="PAPER">PAPER</span></span><span class="status ok" role="status" aria-label="ready" data-status="ready"><span class="glyph" aria-hidden="true">✓</span>ready</span></li><li><span><strong>Membership</strong> role viewer · trade permission no</span><span class="status warn" role="status" aria-label="expired" data-status="expired"><span class="glyph" aria-hidden="true">!</span>expired</span></li><li><span><strong>MFA enrollment (optional)</strong> </span><span class="status neutral" role="status" aria-label="optional" data-status="optional"><span class="glyph" aria-hidden="true">○</span>optional</span></li><li><span><strong>Paper setup</strong> </span><span class="status warn" role="status" aria-label="pending" data-status="pending"><span class="glyph" aria-hidden="true">…</span>pending</span></li></ul><div class="actions"><button type="button" class="action" data-action="Accept invitation" data-account="demo-acct-001" data-environment="PAPER" aria-label="Accept invitation — account Family Growth (demo), PAPER" disabled aria-disabled="true"><span>Accept invitation</span><span class="ctx">Family Growth (demo) · PAPER</span><span class="why">Invite expired: ask the operator for a new one</span></button></div></div></section><section class="panel" data-financial="false" aria-label="Capability status"><header><h2>Capability status</h2><span></span></header><div class="body"><ul class="steps"><li><span>View portfolio</span><span class="status ok" role="status" aria-label="ready" data-status="ready"><span class="glyph" aria-hidden="true">✓</span>ready</span></li><li><span>Approve orders</span><span class="status neutral" role="status" aria-label="not granted" data-status="not_granted"><span class="glyph" aria-hidden="true">–</span>not granted</span></li><li><span>Live trading</span><span class="status neutral" role="status" aria-label="not authorized" data-status="not_authorized"><span class="glyph" aria-hidden="true">–</span>not authorized</span></li></ul></div></section><section class="panel" data-financial="true" aria-label="Account you are joining"><header><h2>Account you are joining</h2><span><span class="demo-tag">DEMO DATA</span></span></header><div class="body"><table class="data"><thead><tr><th scope="col"></th><th scope="col" class=n>USD</th></tr></thead><tbody><tr><td>Equity</td><td class=n><span class="num" data-fin="money">125,430.18 <span class="ccy">USD</span></span></td></tr><tr><td>Net P&L</td><td class=n><span class="num pos" data-fin="money">+4,210.55 <span class="ccy">USD</span><span class="sr-only"> gain</span></span></td></tr></tbody></table></div></section></div>
+<div class="cols"><section class="panel raised" data-financial="false" aria-label="Join account"><header><h2>Join account</h2><span></span></header><div class="body"><p class="meta">No public signup. Invited by Pat (operator, demo). An invite grants membership, not trade permission.</p><ul class="steps"><li><span><strong>Single-use invite</strong> <span class="num">demo-…-7Q2K</span></span><span class="status warn" role="status" aria-label="expired" data-status="expired"><span class="glyph" aria-hidden="true">!</span>expired</span></li><li><span><strong>Account identity</strong> Family Growth (demo) · SIMULATED <span class="badge env-paper" aria-label="Paper trading account" data-environment="PAPER">PAPER</span></span><span class="status ok" role="status" aria-label="ready" data-status="ready"><span class="glyph" aria-hidden="true">✓</span>ready</span></li><li><span><strong>Membership</strong> role viewer · trade permission no</span><span class="status warn" role="status" aria-label="expired" data-status="expired"><span class="glyph" aria-hidden="true">!</span>expired</span></li><li><span><strong>MFA enrollment (optional)</strong> </span><span class="status neutral" role="status" aria-label="optional" data-status="optional"><span class="glyph" aria-hidden="true">○</span>optional</span></li><li><span><strong>Paper setup</strong> </span><span class="status warn" role="status" aria-label="pending" data-status="pending"><span class="glyph" aria-hidden="true">…</span>pending</span></li></ul><div class="actions"><button type="button" class="action" data-action="Accept invitation" data-account="demo-acct-001" data-environment="PAPER" aria-disabled="true"><span>Accept invitation</span><span class="sr-only">, </span><span class="ctx">Family Growth (demo) · PAPER</span><span class="sr-only">, </span><span class="why">Invite expired: ask the operator for a new one</span></button></div></div></section><section class="panel" data-financial="false" aria-label="Capability status"><header><h2>Capability status</h2><span></span></header><div class="body"><ul class="steps"><li><span>View portfolio</span><span class="status ok" role="status" aria-label="ready" data-status="ready"><span class="glyph" aria-hidden="true">✓</span>ready</span></li><li><span>Approve orders</span><span class="status neutral" role="status" aria-label="not granted" data-status="not_granted"><span class="glyph" aria-hidden="true">–</span>not granted</span></li><li><span>Live trading</span><span class="status neutral" role="status" aria-label="not authorized" data-status="not_authorized"><span class="glyph" aria-hidden="true">–</span>not authorized</span></li></ul></div></section><section class="panel" data-financial="true" aria-label="Account you are joining"><header><h2>Account you are joining</h2><span><span class="demo-tag">DEMO DATA</span></span></header><div class="body"><table class="data"><thead><tr><th scope="col"></th><th scope="col" class=n>USD</th></tr></thead><tbody><tr><td>Equity</td><td class=n><span class="num" data-fin="money">125,430.18 <span class="ccy">USD</span></span></td></tr><tr><td>Net P&L</td><td class=n><span class="num pos" data-fin="money">+4,210.55 <span class="ccy">USD</span><span class="sr-only"> gain</span></span></td></tr></tbody></table></div></section></div>
 </main>
 <script>
 (function () {
@@ -239,7 +241,10 @@ details.explain[open] { background: var(--c-raised); padding: var(--space-2); bo
     });
   });
   if (q.get("audit") === "1") {
-    var w = window.innerWidth, over = [];
+    var w = window.innerWidth, over = [], clipped = [];
+    document.querySelectorAll(".metric, .action, .badge, .status").forEach(function (el) {
+      if (el.scrollWidth > el.clientWidth + 1) clipped.push(el.className + ":" + el.textContent.trim().slice(0, 24));
+    });
     document.querySelectorAll("body *").forEach(function (el) {
       var b = el.getBoundingClientRect();
       if (b.width && b.right > w + 1 && !el.closest(".body")) {
@@ -250,7 +255,7 @@ details.explain[open] { background: var(--c-raised); padding: var(--space-2); bo
     pre.id = "audit";
     pre.textContent = JSON.stringify({
       innerWidth: w, scrollWidth: document.documentElement.scrollWidth,
-      overflowing: over.slice(0, 20),
+      overflowing: over.slice(0, 20), clipped: clipped.slice(0, 20),
       texture: r.dataset.texture, motion: r.dataset.motion,
       grainDisplay: getComputedStyle(document.body, "::before").display,
       reducedDuration: getComputedStyle(r).getPropertyValue("--dur-drawer").trim()

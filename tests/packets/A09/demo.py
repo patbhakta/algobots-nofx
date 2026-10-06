@@ -38,8 +38,8 @@ approve = stale[stale.index('data-action="Approve') :].split("</button>", 1)[0]
 pause = stale[stale.index('data-action="Pause all strategies"') :].split("</button>", 1)[0]
 print(
     "[paused] stale feed: approve disabled "
-    f"({'disabled' in approve and 'market data 7m 11s old' in approve}); "
-    f"pause stays available ({'disabled' not in pause})"
+    f"({'aria-disabled="true"' in approve and 'market data 7m 11s old' in approve}); "
+    f"pause stays available ({'aria-disabled' not in pause})"
 )
 
 unknown = built["overview-unknown.html"]

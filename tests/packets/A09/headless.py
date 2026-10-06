@@ -80,3 +80,48 @@ def screenshot(page: str, size: tuple[int, int], out: Path, **query: str) -> Pat
         ]
     )
     return out
+
+
+def _unfilter(raw: bytes, width: int, height: int, bpp: int) -> list[bytearray]:
+    stride, rows, prev = width * bpp, [], bytearray(width * bpp)
+    for y in range(height):
+        start = y * (stride + 1)
+        ftype, line = raw[start], bytearray(raw[start + 1 : start + 1 + stride])
+        for i in range(stride):
+            a = line[i - bpp] if i >= bpp else 0
+            b, c = prev[i], prev[i - bpp] if i >= bpp else 0
+            if ftype == 1:
+                line[i] = (line[i] + a) & 0xFF
+            elif ftype == 2:
+                line[i] = (line[i] + b) & 0xFF
+            elif ftype == 3:
+                line[i] = (line[i] + ((a + b) >> 1)) & 0xFF
+            elif ftype == 4:
+                p = a + b - c
+                pa, pb, pc = abs(p - a), abs(p - b), abs(p - c)
+                pred = a if pa <= pb and pa <= pc else (b if pb <= pc else c)
+                line[i] = (line[i] + pred) & 0xFF
+        rows.append(line)
+        prev = line
+    return rows
+
+
+def png_pixels(path: Path, box: tuple[int, int, int, int]) -> list[tuple[int, int, int]]:
+    """RGB pixels inside box (x0, y0, x1, y1) of an 8-bit RGB/RGBA PNG (stdlib only)."""
+    import struct
+    import zlib
+
+    data = path.read_bytes()
+    width, height, depth, ctype = struct.unpack(">IIBB", data[16:26])
+    if depth != 8 or ctype not in (2, 6):
+        raise ValueError(f"unsupported PNG: depth {depth}, color type {ctype}")
+    bpp = 4 if ctype == 6 else 3
+    idat, pos = b"", 8
+    while pos < len(data):
+        length, kind = struct.unpack(">I4s", data[pos : pos + 8])
+        if kind == b"IDAT":
+            idat += data[pos + 8 : pos + 8 + length]
+        pos += 12 + length
+    rows = _unfilter(zlib.decompress(idat), width, height, bpp)
+    x0, y0, x1, y1 = box
+    return [tuple(rows[y][x * bpp : x * bpp + 3]) for y in range(y0, y1) for x in range(x0, x1)]

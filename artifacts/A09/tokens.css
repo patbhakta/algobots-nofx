@@ -34,6 +34,7 @@
 
 html { background: var(--c-paper); color: var(--c-ink); }
 body {
+  isolation: isolate;  /* own stacking context: the z-index -1 grain paints above body's background */
   margin: 0; font: var(--fs-body)/1.45 var(--font-sans);
   background: var(--c-paper); color: var(--c-ink);
 }
@@ -111,7 +112,7 @@ main { padding: var(--space-4); display: grid; gap: var(--space-4); max-width: 1
 }
 .metric { padding: var(--space-2) var(--space-3); border-right: var(--rule); min-width: 0; }
 .metric .label { font: var(--fs-meta)/1.3 var(--font-mono); color: var(--c-muted); text-transform: uppercase; letter-spacing: .04em; }
-.metric .value { font-size: var(--fs-headline); line-height: 1.2; white-space: nowrap; }
+.metric .value { font-size: clamp(18px, 1.5vw, var(--fs-headline)); line-height: 1.2; }
 .ccy { color: var(--c-muted); }
 .metric .value .ccy { font-size: .62em; }
 .metric .value .meta { white-space: normal; }
@@ -148,12 +149,13 @@ table.data td.n, table.data th.n { text-align: right; white-space: nowrap; }
 .status.neutral { color: var(--c-muted); }
 
 .action {
+  position: relative;
   display: inline-flex; flex-direction: column; align-items: flex-start; gap: 1px;
   font: inherit; color: var(--c-ink); background: var(--c-raised); cursor: pointer;
   border: var(--rule-strong); border-radius: var(--radius); padding: 4px 10px; text-align: left;
 }
 .action .ctx { font: var(--fs-meta)/1.2 var(--font-mono); color: var(--c-muted); }
-.action[disabled] { cursor: not-allowed; color: var(--c-muted); border-style: dashed; }
+.action[aria-disabled="true"] { cursor: not-allowed; color: var(--c-muted); border-style: dashed; }
 .action .why { font-size: var(--fs-meta); color: var(--c-attention); }
 .actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
 
@@ -186,7 +188,7 @@ details.explain[open] { background: var(--c-raised); padding: var(--space-2); bo
 .field input[aria-invalid="true"] { border-color: var(--c-negative); border-width: 2px; }
 .settings { display: flex; gap: var(--space-2); }
 .settings button { font: var(--fs-meta)/1.2 var(--font-mono); background: transparent; color: var(--c-ink); border: var(--rule-strong); border-radius: var(--radius); padding: 3px 6px; cursor: pointer; }
-.candles svg { width: 100%; max-width: 760px; height: auto; display: block; }
+.candles svg { width: 100%; height: 180px; display: block; }
 
 @media (max-width: 1100px) {
   .cols { grid-template-columns: repeat(2, minmax(0, 1fr)); }
