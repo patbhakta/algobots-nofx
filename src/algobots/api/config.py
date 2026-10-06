@@ -32,6 +32,11 @@ class Settings(BaseSettings):
     credential_encryption_key: str = Field(default="")
     # A token expiring within this window is refreshed proactively.
     token_refresh_margin_seconds: int = Field(default=300)
+    # ALG-3248 live paper demo: Laya forward-observer feed, kill-switch state
+    # dir, and the UTC date the paper account opened.
+    demo_feed_path: str = Field(default="/opt/laya/kalshi/observations.jsonl")
+    demo_state_dir: str = Field(default="./.demo-state")
+    demo_start: str = Field(default="2026-10-03")
 
     def sqlalchemy_url(self) -> str:
         """Normalize the configured URL for SQLAlchemy drivers.

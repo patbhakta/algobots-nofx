@@ -40,6 +40,12 @@ services:
       # in the host shell (e.g. an agent runtime's own DB) must never leak in.
       DATABASE_URL: postgresql://${POSTGRES_USER:-algobots}:${POSTGRES_PASSWORD:-algobots}@postgres:5432/${POSTGRES_DB:-algobots}
       REDIS_URL: redis://redis:6379/0
+      # ALG-3248 demo: the Laya forward observer writes here every 15 min (read-only).
+      ALGOBOTS_DEMO_FEED_PATH: /feeds/kalshi/observations.jsonl
+      ALGOBOTS_DEMO_STATE_DIR: /var/lib/algobots-demo
+    volumes:
+      - ${LAYA_KALSHI_DIR:-/opt/laya/kalshi}:/feeds/kalshi:ro
+      - demostate:/var/lib/algobots-demo
     ports:
       - "${API_BIND:-127.0.0.1}:${API_PORT:-8000}:8000"
     depends_on:
@@ -52,3 +58,4 @@ services:
 volumes:
   pgdata:
   redisdata:
+  demostate:

@@ -14,6 +14,7 @@ from algobots.api.middleware import AccessLogMiddleware, AuditMiddleware
 from algobots.api.routers.auth import router as auth_router
 from algobots.api.routers.auth import users_router
 from algobots.api.routers.resources import router as resources_router
+from algobots.demo.router import router as demo_router
 
 app = FastAPI(
     title="AlgoBots API",
@@ -32,6 +33,7 @@ app.include_router(resources_router)
 app.include_router(accounts_router)
 app.include_router(deployments_router)
 app.include_router(approvals_router)
+app.include_router(demo_router)
 
 
 @app.get("/healthz")
