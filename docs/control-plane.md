@@ -203,3 +203,5 @@ Without the variable those cases skip as BLOCKED.
   runs locally against real PostgreSQL 16 and skips in CI.
 - `tenant_id` + RLS on `deployments`, `account_credentials` and the approval
   tables (owned by their packets); service roles for background sweeps.
+- Tenant-scope `fleet_breakers` (A11, [ALG-3186](/ALG/issues/ALG-3186)): the breaker is per
+  user, so a reset un-halts that user's deployments in every tenant.

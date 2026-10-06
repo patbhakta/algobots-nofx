@@ -66,8 +66,13 @@ same isolation against PostgreSQL row-level security is shown by
    second tenant are refused (`tests/packets/A03/test_routers_outside_a03.py`).
    What remains: there is no PostgreSQL RLS on those tables, and two members of
    the same workspace still can't act on each other's deployments or
-   approvals. `fleet_breakers` stays a per-user kill switch: it can only halt
-   that user's own deployments, never start them. The owning packets should add
+   approvals. `fleet_breakers` is still one row per **user**, and
+   `effective_state` applies it to that user's deployments in every tenant.
+   Tripping it only halts, but **a reset clears the halt in every tenant**,
+   including tenants where the user is now a viewer or has been revoked
+   ([ALG-3184](/ALG/issues/ALG-3184) finding 2). A03 does not gate this.
+   Tenant-scoping the breaker is filed for A11, which owns
+   `deployments/`, as [ALG-3186](/ALG/issues/ALG-3186). The owning packets should add
    `tenant_id` + RLS on top of 0005.
 5. **OIDC is a development seam**: an HS256 shared secret for a local or fake
    provider, with no JWKS, nonce or PKCE. It authenticates existing users only
