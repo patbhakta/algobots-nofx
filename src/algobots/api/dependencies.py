@@ -7,7 +7,13 @@ every request, never from a request body or header. It is bound to the DB
 session (`algobots.api.auth.context.set_tenant`) so PostgreSQL row-level
 policies see it in every transaction of the request.
 
-`get_current_user` keeps its S0.2 signature for routers outside A03.
+`get_current_user` keeps its S0.2 signature for routers outside A03
+(deployments, account credentials, approvals) but now enforces tenancy for
+them: it requires an active membership and applies the role matrix by HTTP
+method (reads need `tenant.read`, anything else `resource.write`). Their rows
+are also filtered to the active tenant by the ORM criteria in
+`algobots.api.auth.context`. Tenant-independent routes (platform invites,
+`/api/users/me`) use `get_authenticated_user`.
 """
 
 from dataclasses import dataclass
@@ -109,8 +115,11 @@ def get_auth_context(
     return AuthContext(user=user, session=auth_session, tenant_id=tenant_id, role=role)
 
 
-def get_current_user(ctx: AuthContext = Depends(get_auth_context)) -> User:
-    """Resolve the bearer token to an active User row, else 401."""
+_READ_METHODS = frozenset({"GET", "HEAD", "OPTIONS"})
+
+
+def get_authenticated_user(ctx: AuthContext = Depends(get_auth_context)) -> User:
+    """Authenticated user with no tenant requirement (platform-level routes)."""
     return ctx.user
 
 
@@ -121,24 +130,33 @@ def get_tenant_context(ctx: AuthContext = Depends(get_auth_context)) -> TenantCo
     return TenantContext(user=ctx.user, session=ctx.session, tenant_id=ctx.tenant_id, role=ctx.role)
 
 
+def _enforce(request: Request, ctx: TenantContext, action: Action) -> None:
+    if not is_allowed(ctx.role, action):
+        record_denial(
+            method=request.method,
+            path=request.url.path,
+            actor_user_id=ctx.user.id,
+            tenant_id=ctx.tenant_id,
+            role=ctx.role,
+            action=action.value,
+        )
+        raise HTTPException(
+            status.HTTP_403_FORBIDDEN, f"Role '{ctx.role}' may not perform {action.value}"
+        )
+
+
+def get_current_user(request: Request, ctx: TenantContext = Depends(get_tenant_context)) -> User:
+    """Active tenant member allowed this request's method by the role matrix."""
+    action = Action.TENANT_READ if request.method in _READ_METHODS else Action.RESOURCE_WRITE
+    _enforce(request, ctx, action)
+    return ctx.user
+
+
 def require(action: Action):
     """Dependency factory: the active role must allow `action`, else audit + 403."""
 
-    def _check(
-        request: Request, ctx: TenantContext = Depends(get_tenant_context)
-    ) -> TenantContext:
-        if not is_allowed(ctx.role, action):
-            record_denial(
-                method=request.method,
-                path=request.url.path,
-                actor_user_id=ctx.user.id,
-                tenant_id=ctx.tenant_id,
-                role=ctx.role,
-                action=action.value,
-            )
-            raise HTTPException(
-                status.HTTP_403_FORBIDDEN, f"Role '{ctx.role}' may not perform {action.value}"
-            )
+    def _check(request: Request, ctx: TenantContext = Depends(get_tenant_context)) -> TenantContext:
+        _enforce(request, ctx, action)
         return ctx
 
     return _check

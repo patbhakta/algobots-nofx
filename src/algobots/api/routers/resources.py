@@ -62,13 +62,8 @@ def _owned_or_404(db: Session, model, ctx: TenantContext, row_id: UUID):
     row = db.get(model, row_id)
     # Tables outside the A03 schema change (e.g. deployments) are still
     # user-scoped; tenant-owned tables match on the active tenant.
-    owned = (
-        row is not None
-        and (
-            row.tenant_id == ctx.tenant_id
-            if hasattr(row, "tenant_id")
-            else row.user_id == ctx.user.id
-        )
+    owned = row is not None and (
+        row.tenant_id == ctx.tenant_id if hasattr(row, "tenant_id") else row.user_id == ctx.user.id
     )
     if not owned:
         raise HTTPException(status.HTTP_404_NOT_FOUND, f"{model.__name__} not found")
@@ -85,8 +80,7 @@ def create_account(
     ctx: TenantContext = Depends(require(Action.RESOURCE_WRITE)),
     db: Session = Depends(get_db),
 ) -> Account:
-    account = Account(tenant_id=ctx.tenant_id,
-        user_id=ctx.user.id, **payload.model_dump())
+    account = Account(tenant_id=ctx.tenant_id, user_id=ctx.user.id, **payload.model_dump())
     db.add(account)
     try:
         db.commit()
@@ -111,7 +105,12 @@ def list_accounts(
 ) -> list[Account]:
     query = select(Account).where(Account.tenant_id == ctx.tenant_id)
     return paginate(
-        db, query, Account, tenant_id=ctx.tenant_id, cursor=cursor, limit=limit,
+        db,
+        query,
+        Account,
+        tenant_id=ctx.tenant_id,
+        cursor=cursor,
+        limit=limit,
         response=response,
     )
 
@@ -207,7 +206,12 @@ def list_strategies(
 ) -> list[Strategy]:
     query = select(Strategy).where(Strategy.tenant_id == ctx.tenant_id)
     return paginate(
-        db, query, Strategy, tenant_id=ctx.tenant_id, cursor=cursor, limit=limit,
+        db,
+        query,
+        Strategy,
+        tenant_id=ctx.tenant_id,
+        cursor=cursor,
+        limit=limit,
         response=response,
     )
 
@@ -315,7 +319,12 @@ def list_orders(
 ) -> list[Order]:
     query = select(Order).where(Order.tenant_id == ctx.tenant_id)
     return paginate(
-        db, query, Order, tenant_id=ctx.tenant_id, cursor=cursor, limit=limit,
+        db,
+        query,
+        Order,
+        tenant_id=ctx.tenant_id,
+        cursor=cursor,
+        limit=limit,
         response=response,
     )
 
@@ -400,7 +409,12 @@ def list_decisions(
 ) -> list[Decision]:
     query = select(Decision).where(Decision.tenant_id == ctx.tenant_id)
     return paginate(
-        db, query, Decision, tenant_id=ctx.tenant_id, cursor=cursor, limit=limit,
+        db,
+        query,
+        Decision,
+        tenant_id=ctx.tenant_id,
+        cursor=cursor,
+        limit=limit,
         response=response,
     )
 
@@ -445,7 +459,12 @@ def list_clamp_events(
 ) -> list[ClampEvent]:
     query = select(ClampEvent).where(ClampEvent.tenant_id == ctx.tenant_id)
     return paginate(
-        db, query, ClampEvent, tenant_id=ctx.tenant_id, cursor=cursor, limit=limit,
+        db,
+        query,
+        ClampEvent,
+        tenant_id=ctx.tenant_id,
+        cursor=cursor,
+        limit=limit,
         response=response,
     )
 
@@ -492,8 +511,7 @@ def list_audit(
         query = query.where(AuditLog.user_id == ctx.user.id)
     rows = list(
         db.scalars(
-            query.order_by(AuditLog.created_at.desc(), AuditLog.id.desc())
-            .limit(min(limit, 1000))
+            query.order_by(AuditLog.created_at.desc(), AuditLog.id.desc()).limit(min(limit, 1000))
         )
     )
     out: list[AuditLogOut] = []

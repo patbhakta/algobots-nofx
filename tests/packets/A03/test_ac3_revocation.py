@@ -88,3 +88,58 @@ def test_ac3_last_owner_cannot_be_removed(client: TestClient, founder_headers: d
         f"/api/memberships/{mine['id']}", headers=owner["headers"], json={"role": "member"}
     )
     assert demote.status_code == 409
+
+
+def test_ac3_concurrent_mutual_demotion_keeps_an_owner(client: TestClient, founder_headers: dict):
+    """ALG-3183 finding 2: two owners demoting each other at once."""
+    import threading
+
+    from algobots.api.main import app
+
+    def once() -> None:
+        first = make_owner(client, founder_headers)
+        second = make_member(client, first, "member")
+        promoted = client.patch(
+            f"/api/memberships/{second['membership_id']}",
+            headers=first["headers"],
+            json={"role": "owner"},
+        )
+        assert promoted.status_code == 200
+        first_mid = next(
+            m["id"]
+            for m in client.get("/api/memberships", headers=first["headers"]).json()
+            if m["user_id"] == first["user_id"]
+        )
+        barrier = threading.Barrier(2)
+        statuses: list[int] = []
+
+        def demote(headers: dict, membership_id: str) -> None:
+            local = TestClient(app, raise_server_exceptions=False)
+            barrier.wait()
+            r = local.patch(
+                f"/api/memberships/{membership_id}", headers=headers, json={"role": "member"}
+            )
+            statuses.append(r.status_code)
+
+        threads = [
+            threading.Thread(target=demote, args=(first["headers"], second["membership_id"])),
+            threading.Thread(target=demote, args=(second["headers"], first_mid)),
+        ]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+        assert len(statuses) == 2 and statuses.count(200) == 1, statuses
+        assert all(s in (200, 403, 409) for s in statuses), statuses
+        owners = [
+            m
+            for m in client.get(
+                "/api/memberships",
+                headers=bearer(login(client, first["email"])),
+            ).json()
+            if m["role"] == "owner" and m["status"] == "active"
+        ]
+        assert len(owners) == 1
+
+    for _ in range(5):
+        once()

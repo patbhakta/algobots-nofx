@@ -220,9 +220,7 @@ def list_requests(
 
 def broadcast_for(db: Session, request: ApprovalRequest) -> Broadcast | None:
     """The broadcast outcome row for one request, if any."""
-    return db.scalar(
-        select(Broadcast).where(Broadcast.approval_request_id == request.id)
-    )
+    return db.scalar(select(Broadcast).where(Broadcast.approval_request_id == request.id))
 
 
 # --- state machine ----------------------------------------------------------------
@@ -267,9 +265,7 @@ def decide_request(
     if verdict == ApprovalStatus.REJECTED.value and not reason.strip():
         raise ApprovalError(422, "A rejection requires a reason (recorded in the ledger)")
     decided_at = decided_at or _utcnow()
-    _transition(
-        request, verdict, actor_id=user.id, now=decided_at
-    )
+    _transition(request, verdict, actor_id=user.id, now=decided_at)
     request.decision_reason = reason.strip()
     order = db.get(Order, request.order_id)
     if order is not None:
@@ -339,9 +335,7 @@ def expire_overdue(
         expired.append(request)
     if expired:
         db.commit()
-        logger.info(
-            "approval_expiry_swept user_id=%s expired=%d", user.id, len(expired)
-        )
+        logger.info("approval_expiry_swept user_id=%s expired=%d", user.id, len(expired))
     return expired
 
 
@@ -404,9 +398,7 @@ def report_broadcast(
 
     created_at = created_at or _utcnow()
     state = classify_broadcast(request.qty, sent_qty, queued_qty)
-    latency = (
-        _latency_ms(request.decided_at, created_at) if request.decided_at else None
-    )
+    latency = _latency_ms(request.decided_at, created_at) if request.decided_at else None
     outcome_reason = (
         reason.strip()
         or f"sent {sent_qty}/{request.qty}, queued {queued_qty}/{request.qty} -> {state}"

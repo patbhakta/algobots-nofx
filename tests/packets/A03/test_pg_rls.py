@@ -406,3 +406,74 @@ def test_ac5_concurrent_redemption_postgres(pg, tenants):
             )
         ).all()
         assert len(rows) == 1
+
+
+def test_last_owner_guard_serializes_on_postgres(pg):
+    """ALG-3183 finding 2 on real row locks: mutual demotion leaves one owner."""
+    engine = sa.create_engine(pg["app_url"], pool_size=2, max_overflow=0)
+    factory = sessionmaker(bind=engine, expire_on_commit=False)
+
+    def once() -> None:
+        with Session(pg["owner"]) as s:
+            users = [
+                User(
+                    email=f"own-{uuid.uuid4().hex[:8]}@example.com",
+                    password_hash="x",
+                    display_name="O",
+                    role="member",
+                )
+                for _ in range(2)
+            ]
+            s.add_all(users)
+            s.flush()
+            tenant = service.create_personal_tenant(s, users[0])
+            s.add(TenantMembership(tenant_id=tenant.id, user_id=users[1].id, role="owner"))
+            s.commit()
+            tenant_id, ids = tenant.id, [u.id for u in users]
+
+        barrier = threading.Barrier(2)
+        outcomes: list[str] = []
+        lock = threading.Lock()
+
+        def demote(actor_id, target_id) -> None:
+            with factory() as s:
+                actor = s.get(User, actor_id)
+                target = s.scalar(
+                    sa.select(TenantMembership).where(
+                        TenantMembership.tenant_id == tenant_id,
+                        TenantMembership.user_id == target_id,
+                    )
+                )
+                barrier.wait()
+                try:
+                    service.change_role(s, actor=actor, membership=target, role="member")
+                    s.commit()
+                    result = "ok"
+                except HTTPException as exc:
+                    s.rollback()
+                    result = f"refused:{exc.status_code}"
+            with lock:
+                outcomes.append(result)
+
+        threads = [
+            threading.Thread(target=demote, args=(ids[0], ids[1])),
+            threading.Thread(target=demote, args=(ids[1], ids[0])),
+        ]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+        assert sorted(outcomes) == ["ok", "refused:409"], outcomes
+        with Session(pg["owner"]) as s:
+            owners = s.scalars(
+                sa.select(TenantMembership).where(
+                    TenantMembership.tenant_id == tenant_id,
+                    TenantMembership.role == "owner",
+                    TenantMembership.status == "active",
+                )
+            ).all()
+            assert len(owners) == 1
+
+    for _ in range(5):
+        once()
+    engine.dispose()

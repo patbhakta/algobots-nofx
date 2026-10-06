@@ -14,13 +14,23 @@ fails, so even a stray session-level `SET` can't reach the next borrower.
 
 SQLite has no row-level security; there, isolation rests on the application
 filters (every tenant-owned query filters on `tenant_id`).
+
+Application-level criteria (both dialects): once a request has bound a session
+(`set_tenant`, even to "no tenant"), every ORM SELECT/UPDATE/DELETE on a
+tenant-owned table is narrowed to that tenant via `with_loader_criteria`. That
+includes the tables owned by other packets that still carry only `user_id`
+(deployments, account credentials, approval requests, broadcasts, action
+ledger): they are narrowed through the tenant's accounts/approvals/orders, so a
+user who belongs to two tenants can't reach one tenant's rows from the other.
+With no tenant bound the criteria match nothing. Sessions that never call
+`set_tenant` (migrations, background sweeps, the audit writer) are unfiltered.
 """
 
 from uuid import UUID
 
-from sqlalchemy import event, select, text
+from sqlalchemy import event, false, or_, select, text
 from sqlalchemy.engine import Engine
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import ORMExecuteState, Session, with_loader_criteria
 
 TENANT_SETTING = "app.tenant_id"
 # Tables whose rows must carry a tenant (NOT NULL since migration 0005).
@@ -46,6 +56,62 @@ def set_tenant(session: Session, tenant_id: UUID | None) -> None:
     session.info["tenant_id"] = tenant_id
     if tenant_id is not None and session.in_transaction() and _is_postgres(session):
         session.execute(_SET_TENANT, {"tenant_id": str(tenant_id)})
+
+
+def _tenant_criteria(tenant_id: UUID | None) -> list:
+    from algobots.api.accounts.models import AccountCredential
+    from algobots.api.approvals.models import ActionLedger, ApprovalRequest, Broadcast
+    from algobots.api.deployments.models import Deployment
+    from algobots.api.memberships.models import AccountGrant
+    from algobots.api.models import Account, ClampEvent, Decision, Order, Strategy
+
+    if tenant_id is None:
+        models = (
+            Account, Strategy, Order, Decision, ClampEvent, AccountGrant,
+            Deployment, AccountCredential, ApprovalRequest, Broadcast, ActionLedger,
+        )  # fmt: skip
+        return [with_loader_criteria(m, false(), include_aliases=True) for m in models]
+
+    tenant_accounts = select(Account.id).where(Account.tenant_id == tenant_id)
+    tenant_approvals = select(ApprovalRequest.id).where(
+        ApprovalRequest.account_id.in_(tenant_accounts)
+    )
+    tenant_orders = select(Order.id).where(Order.tenant_id == tenant_id)
+    tenant_deployments = select(Deployment.id).where(Deployment.account_id.in_(tenant_accounts))
+    criteria = [
+        with_loader_criteria(m, m.tenant_id == tenant_id, include_aliases=True)
+        for m in (Account, Strategy, Order, Decision, ClampEvent, AccountGrant)
+    ]
+    criteria += [
+        with_loader_criteria(m, m.account_id.in_(tenant_accounts), include_aliases=True)
+        for m in (Deployment, AccountCredential, ApprovalRequest)
+    ]
+    criteria.append(
+        with_loader_criteria(
+            Broadcast, Broadcast.approval_request_id.in_(tenant_approvals), include_aliases=True
+        )
+    )
+    criteria.append(
+        with_loader_criteria(
+            ActionLedger,
+            or_(
+                ActionLedger.subject_id.in_(tenant_approvals),
+                ActionLedger.subject_id.in_(tenant_orders),
+                ActionLedger.subject_id.in_(tenant_deployments),
+            ),
+            include_aliases=True,
+        )
+    )
+    return criteria
+
+
+@event.listens_for(Session, "do_orm_execute")
+def _scope_to_tenant(state: ORMExecuteState) -> None:
+    if "tenant_id" not in state.session.info:
+        return
+    if not (state.is_select or state.is_update or state.is_delete):
+        return
+    state.statement = state.statement.options(*_tenant_criteria(state.session.info["tenant_id"]))
 
 
 @event.listens_for(Session, "after_begin")

@@ -50,7 +50,10 @@ Migration `0005_tenant_memberships` (A03) adds `tenants`,
 stamps `tenant_id` (NOT NULL) on `accounts`, `strategies`, `orders`,
 `decisions` and `clamp_events` (backfilled from each writer's personal tenant),
 and a nullable `tenant_id` on `audit_log`. `deployments`, `account_credentials`
-and the S4.3 approval tables are still `user_id`-scoped.
+and the S4.3 approval tables have no `tenant_id` column yet. Their routers
+check `user_id`, and A03 additionally requires an active membership and the
+role matrix for them (`get_current_user`) and filters them to the active
+tenant's accounts with ORM criteria (`algobots.api.auth.context`).
 
 ## Auth flow
 
@@ -89,8 +92,12 @@ Registration is invite-only; there is no public path.
 | `membership.manage`: invite, change role, revoke, grants | ✓ | — | — |
 | `audit.read_all`: all tenant audit rows, not only one's own | ✓ | — | — |
 
-Unknown roles are denied. A tenant always keeps one active owner, and
-ownership is never conferred by invite. Denials return 403 and write a
+Routers outside A03 that depend on `get_current_user` get the same matrix by
+HTTP method: reads need `tenant.read`, every other method needs
+`resource.write`. Unknown roles are denied. A tenant always keeps one active
+owner: owner rows are locked (`FOR UPDATE`) before a demotion or revocation and
+re-checked afterwards, so concurrent demotions can't remove the last one.
+Ownership is never conferred by invite. Denials return 403 and write a
 `DENY` audit row with the action and role, never the body. **Trading authority
 is separate from membership**: `account_grants` rows (per account, per member,
 from `ALLOWED_GRANTS[USER]`, viewers only `ACCOUNT_READ`) are the only source

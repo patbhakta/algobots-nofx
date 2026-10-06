@@ -82,9 +82,7 @@ class AccountCreate(BaseModel):
 
 class AccountUpdate(BaseModel):
     label: str | None = Field(default=None, min_length=1, max_length=120)
-    mode: str | None = Field(
-        default=None, pattern="^(paper|live|semi_auto)$"
-    )
+    mode: str | None = Field(default=None, pattern="^(paper|live|semi_auto)$")
     status: str | None = Field(default=None, pattern="^(active|paused|closed)$")
 
 

@@ -18,7 +18,7 @@ from sqlalchemy.orm import Session
 
 from algobots.api.config import get_settings
 from algobots.api.database import get_db
-from algobots.api.dependencies import AuthContext, get_auth_context, get_current_user
+from algobots.api.dependencies import AuthContext, get_auth_context, get_authenticated_user
 from algobots.api.memberships import service as memberships
 from algobots.api.models import InviteCode, User, UserRole
 from algobots.api.schemas import (
@@ -161,7 +161,7 @@ def logout(
 @router.post("/invites", response_model=InviteOut, status_code=status.HTTP_201_CREATED)
 def create_invite(
     response: Response,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_authenticated_user),
     db: Session = Depends(get_db),
 ) -> InviteOut:
     """Platform invite code (new user + personal tenant). Platform owners only."""
@@ -182,7 +182,7 @@ def create_invite(
 
 @router.get("/invites", response_model=list[InviteOut])
 def list_invites(
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_authenticated_user),
     db: Session = Depends(get_db),
 ) -> list[InviteCode]:
     return list(
@@ -195,5 +195,5 @@ def list_invites(
 
 
 @users_router.get("/me", response_model=UserOut)
-def me(current_user: User = Depends(get_current_user)) -> User:
+def me(current_user: User = Depends(get_authenticated_user)) -> User:
     return current_user

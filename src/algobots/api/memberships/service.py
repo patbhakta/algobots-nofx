@@ -20,7 +20,7 @@ from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
 from fastapi import HTTPException, status
-from sqlalchemy import delete, func, select, update
+from sqlalchemy import delete, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -275,14 +275,23 @@ def tenant_membership_or_404(db: Session, tenant_id: UUID, membership_id: UUID) 
 
 
 def _active_owner_count(db: Session, tenant_id: UUID) -> int:
-    return db.scalar(
-        select(func.count())
-        .select_from(TenantMembership)
-        .where(
-            TenantMembership.tenant_id == tenant_id,
-            TenantMembership.role == TenantRole.OWNER.value,
-            TenantMembership.status == MembershipStatus.ACTIVE,
-        )
+    """Count active owners, locking their rows (FOR UPDATE) on PostgreSQL.
+
+    The lock serializes concurrent demotions/revocations within one tenant: a
+    second writer waits, then re-evaluates against the committed state, so two
+    owners demoting each other can't both pass. SQLite ignores FOR UPDATE but
+    serializes writers; `_ensure_owner_remains` re-checks after the change.
+    """
+    return len(
+        db.scalars(
+            select(TenantMembership.id)
+            .where(
+                TenantMembership.tenant_id == tenant_id,
+                TenantMembership.role == TenantRole.OWNER.value,
+                TenantMembership.status == MembershipStatus.ACTIVE,
+            )
+            .with_for_update()
+        ).all()
     )
 
 
@@ -292,6 +301,12 @@ def _guard_last_owner(db: Session, membership: TenantMembership) -> None:
         and membership.status == MembershipStatus.ACTIVE
         and _active_owner_count(db, membership.tenant_id) <= 1
     ):
+        raise HTTPException(status.HTTP_409_CONFLICT, "A tenant must keep at least one owner")
+
+
+def _ensure_owner_remains(db: Session, tenant_id: UUID) -> None:
+    db.flush()
+    if _active_owner_count(db, tenant_id) == 0:
         raise HTTPException(status.HTTP_409_CONFLICT, "A tenant must keep at least one owner")
 
 
@@ -306,6 +321,7 @@ def change_role(db: Session, *, actor: User, membership: TenantMembership, role:
         _guard_last_owner(db, membership)
     old = membership.role
     membership.role = role
+    _ensure_owner_remains(db, membership.tenant_id)
     if role == TenantRole.VIEWER.value:
         # Viewers keep at most read access to accounts.
         db.execute(
@@ -334,6 +350,7 @@ def revoke_membership(db: Session, *, actor: User, membership: TenantMembership)
     _guard_last_owner(db, membership)
     membership.status = MembershipStatus.REVOKED
     membership.revoked_at = _now()
+    _ensure_owner_remains(db, membership.tenant_id)
     sessions = revoke_sessions(db, membership.user_id, membership.tenant_id)
     grants = (
         db.execute(

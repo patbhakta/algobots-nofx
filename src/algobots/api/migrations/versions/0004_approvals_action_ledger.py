@@ -76,9 +76,7 @@ def upgrade() -> None:
     op.create_index("ix_approval_requests_user_id", "approval_requests", ["user_id"])
     op.create_index("ix_approval_requests_account_id", "approval_requests", ["account_id"])
     op.create_index("ix_approval_requests_deployment_id", "approval_requests", ["deployment_id"])
-    op.create_index(
-        "ix_approval_requests_user_status", "approval_requests", ["user_id", "status"]
-    )
+    op.create_index("ix_approval_requests_user_status", "approval_requests", ["user_id", "status"])
     op.create_index(
         "ix_approval_requests_user_parked", "approval_requests", ["user_id", "parked_at"]
     )

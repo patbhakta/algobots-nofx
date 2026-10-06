@@ -41,9 +41,7 @@ def upgrade() -> None:
         "uq_account_credentials_account_id", "account_credentials", ["account_id"], unique=True
     )
     op.create_index("ix_account_credentials_user_id", "account_credentials", ["user_id"])
-    op.create_index(
-        "ix_account_credentials_token_status", "account_credentials", ["token_status"]
-    )
+    op.create_index("ix_account_credentials_token_status", "account_credentials", ["token_status"])
     # Registry semantics: labels are the per-user account nickname, unique per
     # tenant (multi-account-per-user-per-broker needs distinct handles).
     op.create_index("uq_accounts_user_label", "accounts", ["user_id", "label"], unique=True)
