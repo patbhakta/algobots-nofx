@@ -1,5 +1,5 @@
 # ruff: noqa: E501  (HTML templates: markup fragments stay on one line)
-"""One-page live paper-trading dashboard, rendered with the A09 design system."""
+"""One-page live paper-trading terminal: accounts, positions, orders and risk."""
 
 from __future__ import annotations
 
@@ -8,9 +8,8 @@ from datetime import UTC, datetime
 from decimal import Decimal
 
 from algobots.dashboard.design import components as c
-from algobots.dashboard.design.css import stylesheet
-from algobots.dashboard.design.storyboard import _SCRIPT
 from algobots.demo import ledger as L
+from algobots.demo.theme import CLOCK, CSS
 
 INTERVAL_S = 15 * 60
 STALE_AFTER_S = 25 * 60  # one missed observer run plus slack
@@ -41,33 +40,35 @@ def _pctx(x: float | None) -> str:
 
 
 def _header(lg: L.Ledger, now: float) -> str:
+    """Status bar: mode · feed age · next decision · kill switch · UTC clock."""
     last = lg.last_ts
     if last is None:
-        feed = c.status("disconnected", "Laya feed: no data")
+        feed = c.status("disconnected", "feed: no data")
     else:
         age = now - last
-        feed = c.status("connected" if age < STALE_AFTER_S else "stale", f"Laya feed {_age(age)}")
-    nxt = f"next decision ≈ {_t(last + INTERVAL_S)}" if last else ""
+        feed = c.status("connected" if age < STALE_AFTER_S else "stale", f"feed {_age(age)}")
     kill = (
-        c.status("BLOCKED", "kill switch ENGAGED")
+        c.status("BLOCKED", "KILL ENGAGED")
         if lg.kill.get("engaged")
-        else c.status("ready", "kill switch armed · trading")
+        else c.status("ready", "kill armed")
     )
     return (
-        '<header class="app-header">'
-        '<span class="crumb wide">AlgoBots</span><span class="wide" aria-hidden="true">→</span>'
-        f'<span class="crumb">{c.e(ACCOUNT["label"])}</span>{c.env_badge("PAPER")}'
-        '<span class="meta wide">Kalshi KXBTC15M · USD</span>'
-        f'{feed}<span class="meta">{c.e(nxt)}</span>{kill}</header>'
+        '<header class="statusbar"><span class="brand">ALGOBOTS</span>'
+        f"<span>{c.env_badge('PAPER')}</span>"
+        f'<span class="wide">{c.e(ACCOUNT["label"])} · KXBTC15M · USD</span>'
+        f"<span>{feed}</span>"
+        f"<span>next {_t(last + INTERVAL_S) if last else '—'}</span>"
+        f'<span>{kill}</span><span class="spacer"></span>'
+        f'<span id="utc" class="num">{_t(now, "%H:%M:%S")}</span></header>'
     )
 
 
-def _banner(start: str, now: float) -> str:
+def _banner(start: str) -> str:
     return (
-        '<div class="demo-banner" role="note"><strong>PAPER TRADING</strong>'
-        f"<span>since {c.e(start)} · $5–15 per trade</span>"
+        '<div class="disclosure" role="note"><strong>PAPER TRADING</strong>'
+        f"<span>since {c.e(start)} · $5–15/trade</span>"
         "<span>simulated fills at assumed 50¢ mid + Kalshi taker fee · no broker orders</span>"
-        f'<span class="meta wide">as of {_t(now, "%Y-%m-%d %H:%M")} · refreshes every 60s</span></div>'
+        '<span class="wide">decides from prior settled intervals only · refresh 60s</span></div>'
     )
 
 
@@ -140,9 +141,8 @@ def _performance(lg: L.Ledger) -> str:
         )
     brier = L.brier(lg.rows)
     note = (
-        f'<p class="meta">Laya calibrated Brier {brier:.4f} over {len(lg.rows)} intervals vs coin 0.2500 '
-        f"(lower is better). Break-even hit rate at 50¢ after fees ≈ 51.8%. "
-        f"Mean/σ = mean ÷ standard deviation of per-fill net P&L (unitless, not annualized).</p>"
+        f'<p class="meta">Brier {brier:.4f} (n={len(lg.rows)}) vs coin 0.2500 · '
+        "break-even hit 51.8% · Mean/σ = per-fill net P&L, not annualized</p>"
         if brier is not None
         else ""
     )
@@ -150,8 +150,7 @@ def _performance(lg: L.Ledger) -> str:
     if halted:
         note = (
             f'<p class="halt-note"><strong>Stopped by risk rails:</strong> {c.e(", ".join(halted))} '
-            "lost their sleeve and can no longer afford the $5 minimum stake. This is the result, "
-            "not an outage: every 15m interval is still decided and logged below with a reason.</p>"
+            "· sleeve below $5 min stake · intervals still decided and logged</p>"
         ) + note
     return (
         c.table(
@@ -164,7 +163,7 @@ def _performance(lg: L.Ledger) -> str:
                 "Fees",
                 "Max DD",
                 "Mean/σ",
-                "Blocked / abst.",
+                "Blk / abst.",
             ],
             rows,
             numeric={1, 2, 3, 4, 5, 6, 7, 8},
@@ -294,17 +293,17 @@ def _risk(lg: L.Ledger, now: float) -> str:
             ]
         )
     caps = (
-        f'<p class="meta">Per-strategy <code>RiskEnvelope</code>: max order value {L.ENVELOPE.max_order_value} USD, '
-        f"max daily loss {cap} USD (UTC day). Size clamps fired: {len(lg.clamp_events)}.</p>"
+        f'<p class="meta">RiskEnvelope/strategy: max order {L.ENVELOPE.max_order_value} USD · '
+        f"max daily loss {cap} USD (UTC) · size clamps {len(lg.clamp_events)}</p>"
     )
     hist = kill.get("history") or []
     last_flip = (
-        f'<p class="meta">Last flip: {"engaged" if hist[-1]["engaged"] else "released"} by {c.e(hist[-1]["actor"])} at {_t(hist[-1]["ts"], "%b %d %H:%M")}</p>'
+        f'<p class="meta">last flip: {"engaged" if hist[-1]["engaged"] else "released"} by {c.e(hist[-1]["actor"])} at {_t(hist[-1]["ts"], "%b %d %H:%M")}</p>'
         if hist
         else ""
     )
     return (
-        f"<h3>Kill switch</h3><p>{state}</p>{form}{last_flip}"
+        f'<h3>Kill switch</h3><div class="risk-head">{state}{form}</div>{last_flip}'
         f"<h3>Daily-loss envelopes · {today}</h3>"
         + c.table(
             ["Strategy", "P&L today", "Loss cap used", "State"], rows, numeric={1}, stack=True
@@ -334,7 +333,7 @@ def _decisions(lg: L.Ledger, limit: int = 12) -> str:
                 [
                     _t(r.ts) if first else "",
                     (
-                        f"{c.e(event.split('-')[-1])}<br><span class='meta'>${r.strike:,.0f} · closed {'UP' if r.outcome else 'DOWN'}</span>"
+                        f"{c.e(event.split('-')[-1])} <span class='meta'>${r.strike:,.0f} {'UP' if r.outcome else 'DN'}</span>"
                     )
                     if first
                     else "",
@@ -344,7 +343,7 @@ def _decisions(lg: L.Ledger, limit: int = 12) -> str:
                     if d.status == "FILLED"
                     else '<span class="meta">—</span>',
                     res,
-                    f'<span class="meta">{c.e(d.reason)}</span>',
+                    f'<span class="meta" title="{c.e(d.reason)}">{c.e(d.reason)}</span>',
                 ]
             )
     return c.table(
@@ -360,7 +359,7 @@ def _accounts(lg: L.Ledger, now: float) -> str:
     today = datetime.fromtimestamp(now, UTC).strftime("%Y-%m-%d")
     rows = [
         [
-            c.e(ACCOUNT["label"]) + " / " + c.e(b.name),
+            c.e(b.name),
             c.env_badge("PAPER"),
             c.money(_usd(b.allocated)),
             c.money(_usd(b.equity)),
@@ -371,7 +370,7 @@ def _accounts(lg: L.Ledger, now: float) -> str:
         for halt in [_halt(lg, b, today)]
     ]
     return c.table(
-        ["Account / deployment", "Mode", "Allocated", "Equity", "Net P&L", "State"],
+        ["Deployment", "Mode", "Allocated", "Equity", "Net P&L", "State"],
         rows,
         numeric={2, 3, 4},
         stack=True,
@@ -382,36 +381,27 @@ def render(lg: L.Ledger, *, start: str, now: float | None = None) -> str:
     now = time.time() if now is None else now
     body = (
         _strip(lg, now)
-        + '<div class="cols two">'
-        + c.panel("Strategy performance", _performance(lg), financial=True, tag=TAG)
-        + c.panel("Risk state", _risk(lg, now), raised=True)
+        + '<div class="grid">'
+        + c.panel("Accounts", _accounts(lg, now), financial=True, tag=TAG, cls="full")
+        + c.panel("Positions · Strategy performance", _performance(lg), financial=True, tag=TAG)
+        + c.panel("Risk state", _risk(lg, now))
+        + c.panel(
+            "Orders · Recent decisions and reasons",
+            _decisions(lg),
+            financial=True,
+            tag=TAG,
+            cls="full",
+        )
+        + c.panel("Equity by strategy", _curve(lg), financial=True, tag=TAG, cls="full")
         + "</div>"
-        + c.panel("Equity by strategy", _curve(lg), financial=True, tag=TAG)
-        + c.panel("Recent decisions and reasons", _decisions(lg), financial=True, tag=TAG)
-        + c.panel("Accounts", _accounts(lg, now), financial=True, tag=TAG)
     )
     title = "AlgoBots — live paper trading"
     return (
-        '<!doctype html>\n<html lang="en" data-texture="on" data-motion="on">\n<head>\n'
+        '<!doctype html>\n<html lang="en">\n<head>\n'
         '<meta charset="utf-8">\n<meta name="viewport" content="width=device-width, initial-scale=1">\n'
         '<meta http-equiv="refresh" content="60">\n'
-        f"<title>{title}</title>\n<style>\n{stylesheet()}"
-        ".panel{margin-bottom:var(--space-4,16px)} .panel h3{font-size:13px;margin:8px 0 4px}"
-        " table.data td{vertical-align:top} table.data td:first-child{white-space:nowrap}"
-        " .halt-note{margin:8px 0;padding:6px 8px;border-left:3px solid var(--c-attention)}"
-        " .panel header .demo-tag{white-space:nowrap} .actions .field input{margin-right:8px} .chart-m{display:none} .panel .body{overflow-x:auto}"
-        " @media (min-width:1101px){.cols.two{grid-template-columns:minmax(0,3fr) minmax(0,2fr)}}"
-        " @media (max-width:700px){.chart-d{display:none} .chart-m{display:block}"
-        " table.data.stack thead{display:none}"
-        " table.data.stack,table.data.stack tbody,table.data.stack tr{display:block;width:100%}"
-        " table.data.stack tr{border-bottom:var(--rule);padding:6px 0}"
-        " table.data.stack td{display:flex;justify-content:space-between;gap:12px;padding:2px 0;border:0;text-align:right;white-space:normal}"
-        " table.data.stack td::before{content:attr(data-label);color:var(--c-muted);text-align:left;flex:none}"
-        " table.data.stack td:empty{display:none} table.data.stack td .status{white-space:normal;text-align:right;min-width:0}"
-        " table.data.stack td[data-label=Reason]{display:block;text-align:left}"
-        " table.data.stack td[data-label=Reason]::before{display:block}}</style>\n</head>\n<body>\n"
-        f'<div class="chrome">{_banner(start, now)}{_header(lg, now)}</div>\n'
-        f'<nav class="screens" aria-label="Settings"><span class="meta">Live feed: the Laya observer scores each Kalshi BTC 15m interval as it settles. Each strategy decides from earlier intervals only; fills are simulated, never sent to a broker.</span><span class="spacer"></span>{c.settings()}</nav>\n'
+        f"<title>{title}</title>\n<style>{CSS}</style>\n</head>\n<body>\n"
+        f'<div class="chrome">{_header(lg, now)}{_banner(start)}</div>\n'
         f'<main id="main" data-screen="demo">\n<h1 class="sr-only">{title}</h1>\n{body}\n</main>\n'
-        f"<script>{_SCRIPT}</script>\n</body>\n</html>\n"
+        f"<script>{CLOCK}</script>\n</body>\n</html>\n"
     )
