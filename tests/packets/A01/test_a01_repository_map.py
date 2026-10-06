@@ -136,12 +136,14 @@ def test_every_tracked_file_has_an_owner():
 
 def test_a01_commits_stay_inside_a01_scope():
     try:
+        if _git("rev-parse", "--is-shallow-repository").strip() == "true":
+            pytest.skip("shallow clone: commit parents unavailable")
         shas = _git("log", "--no-merges", "--format=%H", "--grep=ALG-3097").split()
     except (OSError, subprocess.CalledProcessError):
         pytest.skip("git history unavailable")
     if not shas:
-        pytest.skip("no A01 commits in this checkout (shallow clone or pre-commit run)")
+        pytest.skip("no A01 commits in this checkout (pre-commit run)")
     for sha in shas:
-        changed = _git("show", "--name-only", "--format=", sha).split()
+        changed = _git("diff-tree", "--no-commit-id", "--name-only", "-r", f"{sha}^", sha).split()
         outside = [f for f in changed if owner_of("algobots", f) != "A01"]
         assert outside == [], f"{sha[:7]} writes outside A01 scope: {outside}"
