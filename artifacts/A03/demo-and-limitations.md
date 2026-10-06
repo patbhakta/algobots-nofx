@@ -56,11 +56,19 @@ same isolation against PostgreSQL row-level security is shown by
 3. **Background jobs** that read across tenants (the S4.1 token-health sweep)
    see no rows as the app role. They need their own service role, which is an
    ops or A04 decision.
-4. **Tables outside A03 scope stay user-scoped.** `deployments`,
+4. **Tables outside A03 scope have no `tenant_id` column yet.** `deployments`,
    `account_credentials`, `approval_requests`, `broadcasts` and `action_ledger`
-   still filter on `user_id`. That still isolates tenants, but a second member
-   of a workspace can't act on a deployment another member created. Their
-   owning packets should add `tenant_id` and RLS on top of 0005.
+   still check `user_id` in their own routers. Since review round 1
+   ([ALG-3183](/ALG/issues/ALG-3183) finding 1), A03 narrows them anyway:
+   `get_current_user` requires an active membership and applies the role
+   matrix by method, and ORM criteria filter those tables to the active
+   tenant's accounts. A revoked member, a viewer, and a user acting from a
+   second tenant are refused (`tests/packets/A03/test_routers_outside_a03.py`).
+   What remains: there is no PostgreSQL RLS on those tables, and two members of
+   the same workspace still can't act on each other's deployments or
+   approvals. `fleet_breakers` stays a per-user kill switch: it can only halt
+   that user's own deployments, never start them. The owning packets should add
+   `tenant_id` + RLS on top of 0005.
 5. **OIDC is a development seam**: an HS256 shared secret for a local or fake
    provider, with no JWKS, nonce or PKCE. It authenticates existing users only
    and never provisions anyone. A real IdP needs separate authorization.

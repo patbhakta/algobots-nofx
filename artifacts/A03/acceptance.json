@@ -5,14 +5,15 @@
   "repository": "algobots",
   "baseline_commit": "48642df",
   "branch": "feat/alg-3099-a03-tenant-auth",
-  "implementation_commit": "010a959",
+  "implementation_commit": "1fcb716",
   "implementation_commits": [
     "4dbe9a5 feat: tenant memberships, hashed invites, sessions, RLS (migration 0005)",
     "74ee656 test: acceptance cases 1-5, PostgreSQL RLS and pooled connections",
     "fde90f1 feat: dashboard tenant switcher fragment and two-workspace demo",
     "2205b07 docs: control-plane tenancy, roles/grants, RLS and invite flow",
     "8fc3997 chore: proposed verify-A03 / demo-A03 make targets (for A01, owner of make-targets)",
-    "010a959 fix: concurrent registration losers get 409, not 500"
+    "010a959 fix: concurrent registration losers get 409, not 500",
+    "1fcb716 fix: close ALG-3183 review findings 1, 2, 4 (tenant/role enforcement for routers outside A03, ORM tenant criteria, last-owner lock)"
   ],
   "integrated_commit": null,
   "review_receipt": null,
@@ -22,7 +23,10 @@
     "psycopg": "3.3.6 (declared optional extra `postgres`, no relock)",
     "fastapi": "0.141.1",
     "postgresql": "16.15, throwaway socket-only cluster (initdb, trust auth), never the shared host databases",
-    "allowed": ["development", "synthetic-paper"],
+    "allowed": [
+      "development",
+      "synthetic-paper"
+    ],
     "fixtures": "synthetic users only; local HS256 OIDC seam; no IdP, broker or external service contacted"
   },
   "verification": {
@@ -31,15 +35,17 @@
       "python -m pytest tests/packets/A03 tests/api -q -rs -p no:cacheprovider --junitxml=artifacts/A03/test-results/junit.xml",
       "sed strips timestamp/hostname/time from junit.xml"
     ],
-    "result": "71 passed, 0 failed, 0 skipped (33 A03 + 38 S0.2/S4.1 control-plane in tests/api)",
-    "without_postgres": "25 passed, 8 skipped; every skip carries the BLOCKED reason in test_pg_rls.py",
-    "full_suite": "python -m pytest -> 401 passed (368 pre-existing + 33 A03), with PostgreSQL enabled",
+    "result": "76 passed, 0 failed, 0 skipped (38 A03 + 38 control-plane in tests/api)",
+    "without_postgres": "29 passed, 9 skipped; every skip carries the BLOCKED reason in test_pg_rls.py",
+    "full_suite": "python -m pytest -> 406 passed (368 pre-existing + 38 A03), with PostgreSQL enabled",
     "contracts": "python -m algobots.contracts --check-transition -> schema lock in sync (19 contracts); transition from 48642df ok. No file under src/algobots/contracts/ changed",
     "lint": "ruff check . -> All checks passed",
     "migrations": "0005 upgrade/backfill/downgrade round-tripped with data on SQLite and PostgreSQL 16; 0001-0004 rows and audit rows kept on downgrade; tests/api/test_control_plane.py::test_migrations_up_down_clean covers the cycle",
     "negative_controls": [
       "pool checkin RESET disabled -> test_ac2_stray_session_level_set_is_reset_on_checkin fails",
-      "registration IntegrityError handling reverted -> test_ac5_concurrent_registration_with_one_token fails 3/3"
+      "registration IntegrityError handling reverted -> test_ac5_concurrent_registration_with_one_token fails 3/3",
+      "test_routers_outside_a03.py run against f11ab2a -> 3/3 fail (ALG-3183 finding 1 reproduced)",
+      "last-owner FOR UPDATE + re-check reverted -> test_ac3_concurrent_mutual_demotion_keeps_an_owner and test_last_owner_guard_serializes_on_postgres fail (2/2 runs)"
     ],
     "ci": "GitHub CI has no PostgreSQL service, so test_pg_rls.py skips there; the PostgreSQL evidence is local (see environment). Proposed follow-up: add a postgres service to .github/workflows (not in A03 write scope)"
   },
@@ -58,7 +64,8 @@
         "tests/packets/A03/test_pg_rls.py::test_ac1_rls_app_role_is_not_privileged (NOSUPERUSER NOBYPASSRLS; FORCE RLS on 6 tables)",
         "tests/packets/A03/test_pg_rls.py::test_ac1_rls_tenant_sees_and_touches_only_own_rows (visibility, UPDATE/DELETE rowcount 0, WITH CHECK rejects a smuggled insert, no context -> no rows)",
         "tests/packets/A03/test_pg_rls.py::test_ac1_rls_cannot_be_switched_off_by_app_role",
-        "tests/packets/A03/test_pg_rls.py::test_ac2_http_requests_interleaved_on_pooled_connections (full HTTP stack on PostgreSQL as the app role)"
+        "tests/packets/A03/test_pg_rls.py::test_ac2_http_requests_interleaved_on_pooled_connections (full HTTP stack on PostgreSQL as the app role)",
+        "tests/packets/A03/test_routers_outside_a03.py::test_member_of_two_tenants_cannot_reach_rows_across_them (deployments, credentials, approvals: 404 from the user's other tenant, before and after revocation)"
       ]
     },
     {
@@ -83,7 +90,10 @@
         "tests/packets/A03/test_ac3_revocation.py::test_ac3_revocation_is_audited",
         "tests/packets/A03/test_ac3_revocation.py::test_ac3_demotion_applies_on_next_request",
         "tests/packets/A03/test_ac3_revocation.py::test_ac3_logout_revokes_token",
-        "tests/packets/A03/test_ac3_revocation.py::test_ac3_last_owner_cannot_be_removed"
+        "tests/packets/A03/test_ac3_revocation.py::test_ac3_last_owner_cannot_be_removed",
+        "tests/packets/A03/test_routers_outside_a03.py::test_revoked_member_new_session_cannot_use_other_routers (re-login after revocation: deployments/approvals/credentials -> 403, rows untouched)",
+        "tests/packets/A03/test_ac3_revocation.py::test_ac3_concurrent_mutual_demotion_keeps_an_owner",
+        "tests/packets/A03/test_pg_rls.py::test_last_owner_guard_serializes_on_postgres"
       ]
     },
     {
@@ -93,7 +103,8 @@
       "evidence": [
         "tests/packets/A03/test_ac4_viewer_denied.py::test_ac4_viewer_denied_and_attempts_audited_without_secrets (7 attempts -> 403, nothing changed, 7 DENY rows with action, role and tenant; bearer token, password and request body absent from the whole audit table)",
         "tests/packets/A03/test_ac4_viewer_denied.py::test_ac4_viewer_can_read",
-        "tests/packets/A03/test_ac4_viewer_denied.py::test_ac4_member_cannot_manage_memberships"
+        "tests/packets/A03/test_ac4_viewer_denied.py::test_ac4_member_cannot_manage_memberships",
+        "tests/packets/A03/test_routers_outside_a03.py::test_viewer_cannot_mutate_through_other_routers (PATCH deployment, PUT credentials, approval decide, fleet breaker, token sweep -> 403 with DENY rows)"
       ]
     },
     {
@@ -113,7 +124,10 @@
       ]
     }
   ],
-  "contract_pins": {"Envelope": "1.0", "Principal": "1.0"},
+  "contract_pins": {
+    "Envelope": "1.0",
+    "Principal": "1.0"
+  },
   "shared_resources": {
     "db-migrations": "one new revision 0005 on top of 0004; history stays linear; downgrade guidance in the migration docstring",
     "auth-contract": "security.py: tokens carry sid; dependencies.py: tenant derived from session + membership on every request"
@@ -123,5 +137,19 @@
     "CI: add a postgres:16 service and export ALGOBOTS_A03_PG_ADMIN_URL so test_pg_rls.py runs on every push",
     "Owners of deployments/, accounts/ (credentials) and approvals/: add tenant_id + RLS to their tables on top of 0005"
   ],
-  "demo": "make demo-A03 -> artifacts/A03/demo-output.txt"
+  "demo": "make demo-A03 -> artifacts/A03/demo-output.txt",
+  "review_rounds": [
+    {
+      "round": 1,
+      "review_issue": "ALG-3183",
+      "reviewed_head": "f11ab2a",
+      "verdict": "FAIL",
+      "findings": {
+        "1 (blocker)": "fixed in 1fcb716: get_current_user enforces membership + role by method; ORM tenant criteria cover deployments/credentials/approvals/broadcasts/ledger; probes are permanent tests",
+        "2": "fixed in 1fcb716: owner rows locked FOR UPDATE before the guard, re-checked after the change",
+        "3": "fixed: limitation 4 reworded in demo-and-limitations.md",
+        "4": "fixed in 1fcb716: ruff format on the touched lines"
+      }
+    }
+  ]
 }
