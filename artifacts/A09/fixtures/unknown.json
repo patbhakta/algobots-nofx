@@ -1,0 +1,625 @@
+{
+  "account_id": "demo-acct-001",
+  "accounts": [
+    {
+      "broker": "SIMULATED",
+      "currency": "USD",
+      "environment": "PAPER",
+      "id": "demo-acct-001",
+      "label": "Family Growth (demo)"
+    },
+    {
+      "broker": "SIMULATED",
+      "currency": "EUR",
+      "environment": "PAPER",
+      "id": "demo-acct-002",
+      "label": "EUR Income (demo)"
+    },
+    {
+      "broker": "SIMULATED",
+      "currency": "USD",
+      "environment": "LIVE",
+      "id": "demo-acct-003",
+      "label": "Live mirror (demo, not authorized)"
+    }
+  ],
+  "allocation": [
+    {
+      "capital": {
+        "amount": "60000.00",
+        "currency": "USD"
+      },
+      "strategy": "Momentum ETF rotation v3",
+      "weight_pct": "47.8"
+    },
+    {
+      "capital": {
+        "amount": "30000.00",
+        "currency": "USD"
+      },
+      "strategy": "Mean reversion large-cap v1",
+      "weight_pct": "23.9"
+    },
+    {
+      "capital": {
+        "amount": "35430.18",
+        "currency": "USD"
+      },
+      "strategy": "Unallocated cash",
+      "weight_pct": "28.3"
+    }
+  ],
+  "as_of": "2026-10-06T14:30:00Z",
+  "candles": {
+    "bars": [
+      [
+        "566.00",
+        "566.60",
+        "564.90",
+        "564.90"
+      ],
+      [
+        "564.90",
+        "565.00",
+        "564.20",
+        "564.30"
+      ],
+      [
+        "564.30",
+        "566.50",
+        "563.70",
+        "566.20"
+      ],
+      [
+        "566.20",
+        "567.00",
+        "565.60",
+        "566.60"
+      ],
+      [
+        "566.60",
+        "566.60",
+        "565.20",
+        "565.70"
+      ],
+      [
+        "565.70",
+        "567.90",
+        "565.40",
+        "567.30"
+      ],
+      [
+        "567.30",
+        "567.60",
+        "567.20",
+        "567.50"
+      ],
+      [
+        "567.50",
+        "569.60",
+        "567.00",
+        "569.00"
+      ],
+      [
+        "569.00",
+        "569.60",
+        "568.20",
+        "568.20"
+      ],
+      [
+        "568.20",
+        "568.70",
+        "566.40",
+        "566.90"
+      ],
+      [
+        "566.90",
+        "567.30",
+        "565.80",
+        "565.80"
+      ],
+      [
+        "565.80",
+        "566.30",
+        "565.00",
+        "565.00"
+      ],
+      [
+        "565.00",
+        "565.60",
+        "564.50",
+        "565.60"
+      ],
+      [
+        "565.60",
+        "566.40",
+        "565.50",
+        "566.00"
+      ],
+      [
+        "566.00",
+        "568.80",
+        "565.40",
+        "568.20"
+      ],
+      [
+        "568.20",
+        "568.30",
+        "567.60",
+        "567.60"
+      ],
+      [
+        "567.60",
+        "568.00",
+        "566.30",
+        "566.80"
+      ],
+      [
+        "566.80",
+        "566.90",
+        "566.00",
+        "566.10"
+      ],
+      [
+        "566.10",
+        "566.40",
+        "564.30",
+        "564.90"
+      ],
+      [
+        "564.90",
+        "565.30",
+        "563.80",
+        "564.40"
+      ],
+      [
+        "564.40",
+        "566.60",
+        "564.30",
+        "566.30"
+      ],
+      [
+        "566.30",
+        "568.40",
+        "566.10",
+        "567.90"
+      ],
+      [
+        "567.90",
+        "569.60",
+        "567.60",
+        "569.30"
+      ],
+      [
+        "569.30",
+        "571.50",
+        "569.20",
+        "571.30"
+      ],
+      [
+        "571.30",
+        "572.20",
+        "571.10",
+        "572.10"
+      ],
+      [
+        "572.10",
+        "572.30",
+        "570.60",
+        "570.80"
+      ],
+      [
+        "570.80",
+        "571.10",
+        "570.30",
+        "570.90"
+      ],
+      [
+        "570.90",
+        "571.40",
+        "570.80",
+        "570.80"
+      ],
+      [
+        "570.80",
+        "571.30",
+        "570.50",
+        "570.80"
+      ],
+      [
+        "570.80",
+        "571.20",
+        "570.40",
+        "571.20"
+      ],
+      [
+        "571.20",
+        "571.20",
+        "570.30",
+        "570.30"
+      ],
+      [
+        "570.30",
+        "570.90",
+        "570.30",
+        "570.80"
+      ]
+    ],
+    "gap": false,
+    "symbol": "SPY",
+    "timeframe": "15m",
+    "timezone": "America/New_York",
+    "venue": "ARCX",
+    "warmup_complete": true
+  },
+  "cost_distribution": [
+    {
+      "bucket": "560-565",
+      "qty": "8"
+    },
+    {
+      "bucket": "565-570",
+      "qty": "14"
+    },
+    {
+      "bucket": "570-575",
+      "qty": "18"
+    }
+  ],
+  "depth": {
+    "entitled": false,
+    "reason": "no L2 depth entitlement for this account",
+    "symbol": "SPY",
+    "venue": "ARCX"
+  },
+  "exceptions": [
+    {
+      "kind": "unknown",
+      "text": "demo-ord-1042 status UNKNOWN; reconciling with broker"
+    }
+  ],
+  "feed": {
+    "age_s": 3,
+    "recon_age_s": 95,
+    "reconciliation": "reconciling",
+    "status": "connected"
+  },
+  "invite": {
+    "account_id": "demo-acct-001",
+    "capabilities": [
+      {
+        "name": "View portfolio",
+        "status": "unknown"
+      },
+      {
+        "name": "Approve orders",
+        "status": "not_granted"
+      },
+      {
+        "name": "Live trading",
+        "status": "not_authorized"
+      }
+    ],
+    "code_hint": "demo-\u2026-7Q2K",
+    "inviter": "Pat (operator, demo)",
+    "mfa": "enrolled",
+    "paper_setup": "complete",
+    "role": "viewer",
+    "single_use": true,
+    "status": "accepted",
+    "trade_permission": false
+  },
+  "label": "DEMO DATA",
+  "orders": [
+    {
+      "filled": "10",
+      "id": "demo-ord-1041",
+      "limit": {
+        "amount": "571.90",
+        "currency": "USD"
+      },
+      "qty": "10",
+      "side": "BUY",
+      "status": "FILLED",
+      "symbol": "SPY"
+    },
+    {
+      "filled": null,
+      "id": "demo-ord-1042",
+      "limit": {
+        "amount": "504.10",
+        "currency": "USD"
+      },
+      "qty": "10",
+      "reason": "broker acknowledgement not received; reconciling",
+      "side": "BUY",
+      "status": "UNKNOWN",
+      "symbol": "QQQ"
+    },
+    {
+      "filled": "0",
+      "id": "demo-ord-1043",
+      "limit": {
+        "amount": "251.00",
+        "currency": "USD"
+      },
+      "qty": "15",
+      "reason": "risk: single-name cap 5%",
+      "side": "BUY",
+      "status": "REJECTED",
+      "symbol": "TSLA"
+    }
+  ],
+  "pending_approvals": 1,
+  "period": "2026-09-01/2026-10-06",
+  "portfolio": {
+    "available_cash": {
+      "amount": "38112.40",
+      "currency": "USD"
+    },
+    "deposits": {
+      "amount": "10000.00",
+      "currency": "USD"
+    },
+    "drawdown_pct": null,
+    "equity": null,
+    "exposure_pct": "69.6",
+    "fees": {
+      "amount": "38.20",
+      "currency": "USD"
+    },
+    "net_pnl": null,
+    "net_pnl_pct": null,
+    "open_positions": 3,
+    "reserved_cash": {
+      "amount": "2500.00",
+      "currency": "USD"
+    },
+    "valuation_unavailable_reason": "position valuations pending reconciliation",
+    "withdrawals": {
+      "amount": "0.00",
+      "currency": "USD"
+    }
+  },
+  "positions": [
+    {
+      "cost": {
+        "amount": "21450.00",
+        "currency": "USD"
+      },
+      "pnl": {
+        "amount": "1430.40",
+        "currency": "USD"
+      },
+      "qty": "40",
+      "symbol": "SPY",
+      "value": {
+        "amount": "22880.40",
+        "currency": "USD"
+      },
+      "venue": "ARCX"
+    },
+    {
+      "cost": {
+        "amount": "11950.00",
+        "currency": "USD"
+      },
+      "pnl": {
+        "amount": "660.25",
+        "currency": "USD"
+      },
+      "qty": "25",
+      "symbol": "QQQ",
+      "value": {
+        "amount": "12610.25",
+        "currency": "USD"
+      },
+      "venue": "XNAS"
+    },
+    {
+      "cost": {
+        "amount": "5520.00",
+        "currency": "USD"
+      },
+      "pnl": {
+        "amount": "-217.20",
+        "currency": "USD"
+      },
+      "qty": "60",
+      "symbol": "XLE",
+      "value": {
+        "amount": "5302.80",
+        "currency": "USD"
+      },
+      "venue": "ARCX"
+    }
+  ],
+  "secondary_balance": {
+    "account_id": "demo-acct-002",
+    "equity": {
+      "amount": "48210.00",
+      "currency": "EUR"
+    }
+  },
+  "signals": [
+    {
+      "eligible": true,
+      "evaluated": "14:29Z",
+      "state": "LONG",
+      "strategy": "Momentum v3",
+      "symbol": "SPY",
+      "version": "3.2.0"
+    },
+    {
+      "eligible": true,
+      "evaluated": "14:29Z",
+      "state": "LONG",
+      "strategy": "Momentum v3",
+      "symbol": "QQQ",
+      "version": "3.2.0"
+    },
+    {
+      "eligible": true,
+      "evaluated": "14:25Z",
+      "state": "ABSTAIN",
+      "strategy": "Mean rev v1",
+      "symbol": "XLE",
+      "version": "1.0.4"
+    },
+    {
+      "eligible": false,
+      "evaluated": "14:25Z",
+      "state": "BLOCKED",
+      "strategy": "Mean rev v1",
+      "symbol": "TSLA",
+      "version": "1.0.4"
+    }
+  ],
+  "state": "unknown",
+  "stats": {
+    "avg_loss": {
+      "unavailable_reason": null,
+      "value": "-148.90"
+    },
+    "avg_win": {
+      "unavailable_reason": null,
+      "value": "212.40"
+    },
+    "costs_included": true,
+    "profit_factor": {
+      "unavailable_reason": "sample of 9 trades below 30-trade minimum",
+      "value": null
+    },
+    "sample": 9,
+    "sharpe": {
+      "unavailable_reason": "sample of 9 trades below 30-trade minimum",
+      "value": null
+    },
+    "trades": {
+      "unavailable_reason": null,
+      "value": "9"
+    },
+    "win_rate_pct": {
+      "unavailable_reason": null,
+      "value": "57.1"
+    }
+  },
+  "studio": {
+    "capital": {
+      "amount": "60000.00",
+      "currency": "USD"
+    },
+    "draft_version": "3.3.0-draft",
+    "params": [
+      {
+        "error": null,
+        "name": "lookback",
+        "unit": "trading days",
+        "value": "126"
+      },
+      {
+        "error": null,
+        "name": "top_n",
+        "unit": "instruments",
+        "value": "2"
+      },
+      {
+        "error": null,
+        "name": "sleeve_cap",
+        "unit": "% of account equity",
+        "value": "20"
+      },
+      {
+        "error": null,
+        "name": "stop_loss",
+        "unit": "% below entry",
+        "value": "8"
+      }
+    ],
+    "pipeline": {
+      "backtest": "done",
+      "draft": "done",
+      "live_review": "not_authorized",
+      "paper_deploy": "ready",
+      "validate": "done"
+    },
+    "results": {
+      "benchmark": "SPY total return 12.1%",
+      "cagr_pct": "9.8",
+      "costs": "5 bps + $0 commission",
+      "kind": "backtest",
+      "max_dd_pct": "-14.2",
+      "period": "2019-01-02/2026-09-30",
+      "trades": "312"
+    },
+    "selected": "Momentum ETF rotation",
+    "templates": [
+      "Momentum ETF rotation",
+      "Mean reversion large-cap",
+      "Covered call income"
+    ],
+    "universe": "SPY, QQQ, IWM, XLE, XLK",
+    "version": "3.2.0",
+    "warmup": "200 trading days"
+  },
+  "synthetic": true,
+  "topology": [
+    {
+      "outcome": "APPROVED",
+      "path": [
+        "market",
+        "signal",
+        "risk",
+        "order",
+        "position"
+      ],
+      "reason": "momentum rank 1; within 20% sleeve cap",
+      "symbol": "SPY",
+      "trace": "tr-7781"
+    },
+    {
+      "outcome": "ABSTAIN",
+      "path": [
+        "market",
+        "signal"
+      ],
+      "reason": "z-score -0.4 inside entry band; hold",
+      "symbol": "XLE",
+      "trace": "tr-7782"
+    },
+    {
+      "outcome": "REJECTED",
+      "path": [
+        "market",
+        "signal",
+        "risk"
+      ],
+      "reason": "single-name cap 5% would be exceeded",
+      "symbol": "TSLA",
+      "trace": "tr-7783"
+    },
+    {
+      "outcome": "RECONCILING",
+      "path": [
+        "market",
+        "signal",
+        "risk",
+        "order"
+      ],
+      "reason": "order sent; broker state unknown",
+      "symbol": "QQQ",
+      "trace": "tr-7784"
+    },
+    {
+      "outcome": "UNKNOWN",
+      "path": [
+        "market",
+        "signal"
+      ],
+      "reason": "evaluation result not recorded",
+      "symbol": "IWM",
+      "trace": "tr-7785"
+    }
+  ],
+  "workspace": "Bhakta Family Office (demo)"
+}

@@ -1,0 +1,170 @@
+[
+  {
+    "aa_text": true,
+    "fg": "ink",
+    "grain": false,
+    "ratio": 12.32,
+    "surface": "paper"
+  },
+  {
+    "aa_text": true,
+    "fg": "ink",
+    "grain": true,
+    "ratio": 11.54,
+    "surface": "paper"
+  },
+  {
+    "aa_text": true,
+    "fg": "muted",
+    "grain": false,
+    "ratio": 4.93,
+    "surface": "paper"
+  },
+  {
+    "aa_text": true,
+    "fg": "muted",
+    "grain": true,
+    "ratio": 4.62,
+    "surface": "paper"
+  },
+  {
+    "aa_text": true,
+    "fg": "positive",
+    "grain": false,
+    "ratio": 5.01,
+    "surface": "paper"
+  },
+  {
+    "aa_text": true,
+    "fg": "positive",
+    "grain": true,
+    "ratio": 4.7,
+    "surface": "paper"
+  },
+  {
+    "aa_text": true,
+    "fg": "negative",
+    "grain": false,
+    "ratio": 4.91,
+    "surface": "paper"
+  },
+  {
+    "aa_text": true,
+    "fg": "negative",
+    "grain": true,
+    "ratio": 4.6,
+    "surface": "paper"
+  },
+  {
+    "aa_text": true,
+    "fg": "attention",
+    "grain": false,
+    "ratio": 4.95,
+    "surface": "paper"
+  },
+  {
+    "aa_text": true,
+    "fg": "attention",
+    "grain": true,
+    "ratio": 4.64,
+    "surface": "paper"
+  },
+  {
+    "aa_text": true,
+    "fg": "focus",
+    "grain": false,
+    "ratio": 4.98,
+    "surface": "paper"
+  },
+  {
+    "aa_text": true,
+    "fg": "focus",
+    "grain": true,
+    "ratio": 4.67,
+    "surface": "paper"
+  },
+  {
+    "aa_text": true,
+    "fg": "ink",
+    "grain": false,
+    "ratio": 13.24,
+    "surface": "raised"
+  },
+  {
+    "aa_text": true,
+    "fg": "ink",
+    "grain": true,
+    "ratio": 12.43,
+    "surface": "raised"
+  },
+  {
+    "aa_text": true,
+    "fg": "muted",
+    "grain": false,
+    "ratio": 5.3,
+    "surface": "raised"
+  },
+  {
+    "aa_text": true,
+    "fg": "muted",
+    "grain": true,
+    "ratio": 4.98,
+    "surface": "raised"
+  },
+  {
+    "aa_text": true,
+    "fg": "positive",
+    "grain": false,
+    "ratio": 5.39,
+    "surface": "raised"
+  },
+  {
+    "aa_text": true,
+    "fg": "positive",
+    "grain": true,
+    "ratio": 5.06,
+    "surface": "raised"
+  },
+  {
+    "aa_text": true,
+    "fg": "negative",
+    "grain": false,
+    "ratio": 5.27,
+    "surface": "raised"
+  },
+  {
+    "aa_text": true,
+    "fg": "negative",
+    "grain": true,
+    "ratio": 4.95,
+    "surface": "raised"
+  },
+  {
+    "aa_text": true,
+    "fg": "attention",
+    "grain": false,
+    "ratio": 5.32,
+    "surface": "raised"
+  },
+  {
+    "aa_text": true,
+    "fg": "attention",
+    "grain": true,
+    "ratio": 5.0,
+    "surface": "raised"
+  },
+  {
+    "aa_text": true,
+    "fg": "focus",
+    "grain": false,
+    "ratio": 5.36,
+    "surface": "raised"
+  },
+  {
+    "aa_text": true,
+    "fg": "focus",
+    "grain": true,
+    "ratio": 5.03,
+    "surface": "raised"
+  }
+]

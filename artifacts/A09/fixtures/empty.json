@@ -1,0 +1,217 @@
+{
+  "account_id": "demo-acct-001",
+  "accounts": [
+    {
+      "broker": "SIMULATED",
+      "currency": "USD",
+      "environment": "PAPER",
+      "id": "demo-acct-001",
+      "label": "New account (demo)"
+    }
+  ],
+  "allocation": [],
+  "as_of": "2026-10-06T14:30:00Z",
+  "candles": {
+    "bars": [],
+    "gap": false,
+    "symbol": "SPY",
+    "timeframe": "15m",
+    "timezone": "America/New_York",
+    "venue": "ARCX",
+    "warmup_complete": false
+  },
+  "cost_distribution": [],
+  "depth": {
+    "asks": [
+      [
+        "572.12",
+        "260"
+      ],
+      [
+        "572.13",
+        "450"
+      ],
+      [
+        "572.14",
+        "700"
+      ],
+      [
+        "572.15",
+        "390"
+      ]
+    ],
+    "bids": [
+      [
+        "572.10",
+        "300"
+      ],
+      [
+        "572.09",
+        "520"
+      ],
+      [
+        "572.08",
+        "410"
+      ],
+      [
+        "572.07",
+        "880"
+      ]
+    ],
+    "entitled": true,
+    "symbol": "SPY",
+    "venue": "ARCX"
+  },
+  "exceptions": [],
+  "feed": {
+    "age_s": 2,
+    "recon_age_s": 40,
+    "reconciliation": "matched",
+    "status": "connected"
+  },
+  "invite": {
+    "account_id": "demo-acct-001",
+    "capabilities": [
+      {
+        "name": "View portfolio",
+        "status": "pending"
+      },
+      {
+        "name": "Approve orders",
+        "status": "not_granted"
+      },
+      {
+        "name": "Live trading",
+        "status": "not_authorized"
+      }
+    ],
+    "code_hint": "demo-\u2026-7Q2K",
+    "inviter": "Pat (operator, demo)",
+    "mfa": "optional",
+    "paper_setup": "pending",
+    "role": "viewer",
+    "single_use": true,
+    "status": "pending",
+    "trade_permission": false
+  },
+  "label": "DEMO DATA",
+  "orders": [],
+  "pending_approvals": 0,
+  "period": "2026-09-01/2026-10-06",
+  "portfolio": {
+    "available_cash": {
+      "amount": "0.00",
+      "currency": "USD"
+    },
+    "deposits": {
+      "amount": "0.00",
+      "currency": "USD"
+    },
+    "drawdown_pct": null,
+    "equity": {
+      "amount": "0.00",
+      "currency": "USD"
+    },
+    "exposure_pct": null,
+    "fees": {
+      "amount": "0.00",
+      "currency": "USD"
+    },
+    "net_pnl": null,
+    "net_pnl_pct": null,
+    "open_positions": 0,
+    "reserved_cash": {
+      "amount": "0.00",
+      "currency": "USD"
+    },
+    "withdrawals": {
+      "amount": "0.00",
+      "currency": "USD"
+    }
+  },
+  "positions": [],
+  "secondary_balance": null,
+  "signals": [],
+  "state": "empty",
+  "stats": {
+    "avg_loss": {
+      "unavailable_reason": "no closed trades in period",
+      "value": null
+    },
+    "avg_win": {
+      "unavailable_reason": "no closed trades in period",
+      "value": null
+    },
+    "costs_included": true,
+    "profit_factor": {
+      "unavailable_reason": "no closed trades in period",
+      "value": null
+    },
+    "sample": 0,
+    "sharpe": {
+      "unavailable_reason": "no closed trades in period",
+      "value": null
+    },
+    "trades": {
+      "unavailable_reason": "no closed trades in period",
+      "value": null
+    },
+    "win_rate_pct": {
+      "unavailable_reason": "no closed trades in period",
+      "value": null
+    }
+  },
+  "studio": {
+    "capital": {
+      "amount": "60000.00",
+      "currency": "USD"
+    },
+    "draft_version": "3.3.0-draft",
+    "params": [
+      {
+        "error": null,
+        "name": "lookback",
+        "unit": "trading days",
+        "value": "126"
+      },
+      {
+        "error": null,
+        "name": "top_n",
+        "unit": "instruments",
+        "value": "2"
+      },
+      {
+        "error": null,
+        "name": "sleeve_cap",
+        "unit": "% of account equity",
+        "value": "20"
+      },
+      {
+        "error": null,
+        "name": "stop_loss",
+        "unit": "% below entry",
+        "value": "8"
+      }
+    ],
+    "pipeline": {
+      "backtest": "todo",
+      "draft": "todo",
+      "live_review": "not_authorized",
+      "paper_deploy": "todo",
+      "validate": "todo"
+    },
+    "results": null,
+    "selected": "Momentum ETF rotation",
+    "templates": [
+      "Momentum ETF rotation",
+      "Mean reversion large-cap",
+      "Covered call income"
+    ],
+    "universe": "SPY, QQQ, IWM, XLE, XLK",
+    "version": "3.2.0",
+    "warmup": "200 trading days"
+  },
+  "synthetic": true,
+  "topology": [],
+  "workspace": "Bhakta Family Office (demo)"
+}
