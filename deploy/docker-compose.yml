@@ -32,11 +32,16 @@ services:
     build:
       context: ..
       dockerfile: Dockerfile
+    env_file:
+      - path: .env
+        required: false
     environment:
-      DATABASE_URL: ${DATABASE_URL:-postgresql://algobots:algobots@postgres:5432/algobots}
-      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+      # Built from POSTGRES_* rather than ${DATABASE_URL}: a DATABASE_URL exported
+      # in the host shell (e.g. an agent runtime's own DB) must never leak in.
+      DATABASE_URL: postgresql://${POSTGRES_USER:-algobots}:${POSTGRES_PASSWORD:-algobots}@postgres:5432/${POSTGRES_DB:-algobots}
+      REDIS_URL: redis://redis:6379/0
     ports:
-      - "${API_PORT:-8000}:8000"
+      - "${API_BIND:-127.0.0.1}:${API_PORT:-8000}:8000"
     depends_on:
       postgres:
         condition: service_healthy

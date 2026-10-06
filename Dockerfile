@@ -10,7 +10,7 @@ COPY pyproject.toml README.md alembic.ini ./
 COPY src ./src
 COPY tests ./tests
 
-RUN pip install --no-cache-dir ".[dev]"
+RUN pip install --no-cache-dir ".[dev,postgres]"
 
 EXPOSE 8000
 
