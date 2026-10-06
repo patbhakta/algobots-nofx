@@ -1,0 +1,21 @@
+{
+  "contract": "IntentRequest",
+  "error_contains": "payload_hash mismatch",
+  "data": {
+    "schema_version": "1.0",
+    "action": "PLACE_ORDER",
+    "account_id": "acct-alpha-1",
+    "deployment_id": null,
+    "authority_ref": "grant-ana-paper",
+    "idempotency_key": "ik-20260922-0001",
+    "payload": {
+      "instrument_id": "XNAS:AAPL",
+      "side": "BUY",
+      "quantity": {
+        "value": "10",
+        "unit": "shares"
+      }
+    },
+    "payload_hash": "d9298a10d1b0735837dc4bd85dac641b0f3cef27a47e5d53a54f2f3f5b2fcffa"
+  }
+}

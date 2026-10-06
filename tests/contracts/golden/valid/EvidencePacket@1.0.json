@@ -1,0 +1,28 @@
+{
+  "schema_version": "1.0",
+  "packet_id": "evp-0001",
+  "tenant_id": "tenant-a",
+  "acl_revision": 5,
+  "query_hash": "a8b771920b8319e47251d1360f5e880bc18e8d329b0f0d003ea3c7e615558947",
+  "as_of": "2026-09-22T14:30:01.250000Z",
+  "available_at_cutoff": "2026-09-22T14:30:00Z",
+  "sources": [
+    {
+      "source_id": "note-rsi",
+      "version": "v12",
+      "content_hash": "edb465624291e4053c6c5ea4b7eb320dec773e10a57d26b95dcf0564f8e310f8"
+    }
+  ],
+  "excerpts": [
+    {
+      "anchor": "note-rsi#entry",
+      "stance": "contradicting",
+      "text": "RSI reversion failed in the 2022 drawdown regime."
+    }
+  ],
+  "missing_data": [
+    "earnings-calendar"
+  ],
+  "token_budget": 4000,
+  "tokens_used": 1210
+}

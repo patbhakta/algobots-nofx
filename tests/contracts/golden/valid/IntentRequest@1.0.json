@@ -1,0 +1,17 @@
+{
+  "schema_version": "1.0",
+  "action": "PLACE_ORDER",
+  "account_id": "acct-alpha-1",
+  "deployment_id": null,
+  "authority_ref": "grant-ana-paper",
+  "idempotency_key": "ik-20260922-0001",
+  "payload": {
+    "instrument_id": "XNAS:AAPL",
+    "side": "BUY",
+    "quantity": {
+      "value": "10",
+      "unit": "shares"
+    }
+  },
+  "payload_hash": "c1f2b0fad1e5090bb205c63ac31a40a8aa9e887ca417bf60c4253a4468b7d3fc"
+}

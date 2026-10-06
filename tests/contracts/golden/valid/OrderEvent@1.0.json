@@ -1,0 +1,28 @@
+{
+  "schema_version": "1.0",
+  "event_id": "oe-0001",
+  "broker_order_id": "brk-77",
+  "client_order_id": "ab-plan0001-1",
+  "account_id": "acct-alpha-1",
+  "environment": "synthetic-paper",
+  "product": "equity",
+  "instrument_id": "XNAS:AAPL",
+  "status": "PARTIALLY_FILLED",
+  "quantity": {
+    "value": "10",
+    "unit": "shares"
+  },
+  "filled_quantity": {
+    "value": "4",
+    "unit": "shares"
+  },
+  "limit_price": {
+    "amount": "187.25",
+    "currency": "USD"
+  },
+  "event_time": "2026-09-22T14:30:00Z",
+  "received_time": "2026-09-22T14:30:01.250000Z",
+  "reconciliation_origin": false,
+  "corrects_event_id": null,
+  "raw_payload_ref": "raw/oe-0001"
+}

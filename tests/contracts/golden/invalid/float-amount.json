@@ -1,0 +1,26 @@
+{
+  "contract": "Deployment",
+  "error_contains": "decimal amounts must be strings",
+  "data": {
+    "schema_version": "1.0",
+    "deployment_id": "dep-0001",
+    "tenant_id": "tenant-a",
+    "account_id": "acct-alpha-1",
+    "strategy_id": "strat-meanrev",
+    "strategy_version": 3,
+    "strategy_content_hash": "fd9f6e1db19229068bdf6ddb31b27b70a43c4cd40e77fcc115cce2b1f6588486",
+    "universe": [
+      "XNAS:AAPL",
+      "ARCX:SPY"
+    ],
+    "parameter_snapshot_hash": "a20b52fae57cc7a99c9651f1b573950fd211823e3ace3bb9c273c06430f24cd3",
+    "capital_budget": {
+      "amount": 25000.0,
+      "currency": "USD"
+    },
+    "risk_policy_revision": "risk-7",
+    "authority_mode": "PAPER",
+    "worker_generation": 1,
+    "owned_position_ids": []
+  }
+}

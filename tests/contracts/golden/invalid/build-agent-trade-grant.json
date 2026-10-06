@@ -1,0 +1,14 @@
+{
+  "contract": "Principal",
+  "error_contains": "BUILD_AGENT identities cannot hold TRADE_PAPER",
+  "data": {
+    "schema_version": "1.0",
+    "principal_id": "agent-rnd",
+    "kind": "BUILD_AGENT",
+    "tenant_id": null,
+    "grants": [
+      "REPO_WRITE",
+      "TRADE_PAPER"
+    ]
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "schema_version": "1.0",
+  "account_id": "acct-alpha-1",
+  "tenant_id": "tenant-a",
+  "broker_connection_ref": "conn-alpaca-paper-1",
+  "external_account_fingerprint": "9f86d081884c7d65",
+  "environment": "synthetic-paper",
+  "product_permissions": [
+    "equity",
+    "etf"
+  ],
+  "base_currency": "USD",
+  "settlement_currencies": [
+    "USD"
+  ],
+  "secret_ref": "secret://tenant-a/acct-alpha-1",
+  "capability_revision": 2,
+  "session_health": "CONNECTED",
+  "entry_status": "ACTIVE",
+  "ownership_epoch": 4,
+  "reconciliation_watermark": "2026-09-22T14:30:00Z"
+}

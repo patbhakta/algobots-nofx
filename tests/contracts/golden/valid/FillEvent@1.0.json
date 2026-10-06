@@ -1,0 +1,29 @@
+{
+  "schema_version": "1.0",
+  "fill_id": "fill-0001",
+  "broker_fill_id": null,
+  "composite_key": "brk-77|2026-09-22T14:30:00Z|4|187.24",
+  "broker_order_id": "brk-77",
+  "account_id": "acct-alpha-1",
+  "environment": "synthetic-paper",
+  "product": "equity",
+  "instrument_id": "XNAS:AAPL",
+  "side": "BUY",
+  "quantity": {
+    "value": "4",
+    "unit": "shares"
+  },
+  "price": {
+    "amount": "187.24",
+    "currency": "USD"
+  },
+  "fee": {
+    "amount": "0.000000",
+    "currency": "USD"
+  },
+  "event_time": "2026-09-22T14:30:00Z",
+  "received_time": "2026-09-22T14:30:01.250000Z",
+  "reconciliation_origin": true,
+  "corrects_fill_id": null,
+  "raw_payload_ref": "raw/fill-0001"
+}

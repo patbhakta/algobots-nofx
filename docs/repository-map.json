@@ -1,0 +1,2178 @@
+{
+  "schema": "repository-map/1.0",
+  "packet": "A01",
+  "issue": "ALG-3097",
+  "spec_source": {
+    "repo": "stock-vaults",
+    "path": "docs/algobots-v2-analysis-and-agent-roadmap.md",
+    "revision": "7ca5c8e"
+  },
+  "baseline_commits": {
+    "algobots": "b340c99",
+    "stock-vaults": "def7545",
+    "vps-infra": "45a9338"
+  },
+  "repositories": {
+    "algobots": {
+      "remote": "https://github.com/patbhakta/algobots.git",
+      "default_branch": "main"
+    },
+    "stock-vaults": {
+      "remote": "https://github.com/patbhakta/stock-vaults.git",
+      "default_branch": "main"
+    },
+    "vps-infra": {
+      "remote": "https://github.com/patbhakta/vps-infra.git",
+      "default_branch": "main"
+    }
+  },
+  "resolution_rules": [
+    "A path is owned by the packet whose write_scope entry is the longest matching prefix in the same repo; identical entries in two packets are forbidden.",
+    "Frozen paths override every write scope: no packet writes them without the recorded change_authority.",
+    "Shared-resource paths are written only through the resource's integration_owner; other packets propose changes.",
+    "Pre-roadmap files outside every scope are integrator_owned (A01 integration owner); writing one requires a recorded packet scope revision first.",
+    "status 'real' means the path existed at baseline; 'proposed' paths are created by their owning packet."
+  ],
+  "frozen_paths": [
+    {
+      "repo": "algobots",
+      "paths": [
+        "src/algobots/evals/harness/",
+        "tests/evals/harness/"
+      ],
+      "name": "decision-quality harness (S2.2)",
+      "source_issue": "ALG-3086",
+      "home": "algobots monorepo",
+      "head_commit": "b340c99",
+      "accepted_as": "A12 input + A28 substrate",
+      "readers": [
+        "A12",
+        "A18",
+        "A28"
+      ],
+      "writers": [],
+      "change_authority": "PM dispatch change recorded on ALG-3086 before any write"
+    }
+  ],
+  "shared_resources": {
+    "schema-registry": {
+      "integration_owner": "A01",
+      "paths": [
+        {
+          "repo": "algobots",
+          "path": "src/algobots/contracts/"
+        }
+      ],
+      "rule": "locked name@version is immutable; revisions register a new version; a version pinned by a queued packet cannot be removed (registry.check_lock_transition)"
+    },
+    "dependency-lockfiles": {
+      "integration_owner": "A01",
+      "paths": [
+        {
+          "repo": "algobots",
+          "path": "pyproject.toml"
+        },
+        {
+          "repo": "algobots",
+          "path": "uv.lock"
+        }
+      ],
+      "rule": "packets propose dependency changes; only the owner edits and relocks"
+    },
+    "generated-clients": {
+      "integration_owner": "A01",
+      "paths": [],
+      "rule": "none exist at baseline; any generated client is regenerated from the schema registry by the owner, never hand-edited"
+    },
+    "make-targets": {
+      "integration_owner": "A01",
+      "paths": [
+        {
+          "repo": "algobots",
+          "path": "Makefile"
+        }
+      ],
+      "rule": "each packet proposes its verify-Axx/demo-Axx targets; the owner integrates"
+    },
+    "db-migrations": {
+      "integration_owner": "A03",
+      "paths": [
+        {
+          "repo": "algobots",
+          "path": "src/algobots/api/migrations/"
+        },
+        {
+          "repo": "algobots",
+          "path": "alembic.ini"
+        }
+      ],
+      "rule": "single linear Alembic history; serialize merges; destructive migrations need release authorization"
+    },
+    "auth-contract": {
+      "integration_owner": "A03",
+      "paths": [
+        {
+          "repo": "algobots",
+          "path": "src/algobots/api/security.py"
+        },
+        {
+          "repo": "algobots",
+          "path": "src/algobots/api/dependencies.py"
+        }
+      ],
+      "rule": "tenant derives from identity; changes rerun cross-tenant denial tests"
+    },
+    "execution-contract": {
+      "integration_owner": "A07",
+      "paths": [
+        {
+          "repo": "algobots",
+          "path": "src/algobots/execution/__init__.py"
+        }
+      ],
+      "rule": "intent->plan->reservation->command route; A08 proposes, A07 integrates"
+    },
+    "task-authority": {
+      "integration_owner": "A02",
+      "paths": [
+        {
+          "repo": "algobots",
+          "path": "tools/agent_queue/"
+        }
+      ],
+      "rule": "one coordinator; no second claimant of the same work"
+    },
+    "infrastructure-state": {
+      "integration_owner": "A25",
+      "paths": [
+        {
+          "repo": "vps-infra",
+          "path": ""
+        }
+      ],
+      "rule": "vps-infra changes are serialized; host .243 is off-limits to packet runs"
+    }
+  },
+  "integrator_owned": [
+    {
+      "repo": "algobots",
+      "path": ".github/workflows/ci.yml"
+    },
+    {
+      "repo": "algobots",
+      "path": ".gitignore"
+    },
+    {
+      "repo": "algobots",
+      "path": ".pre-commit-config.yaml"
+    },
+    {
+      "repo": "algobots",
+      "path": "Dockerfile"
+    },
+    {
+      "repo": "algobots",
+      "path": "README.md"
+    },
+    {
+      "repo": "algobots",
+      "path": "deploy/.env.example"
+    },
+    {
+      "repo": "algobots",
+      "path": "deploy/docker-compose.yml"
+    },
+    {
+      "repo": "algobots",
+      "path": "src/algobots/__init__.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "src/algobots/evals/__init__.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "tests/__init__.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "tests/conftest.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "tests/evals/__init__.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "tests/test_scaffold.py"
+    }
+  ],
+  "scope_revisions": [
+    {
+      "packet": "A01",
+      "from_revision": 1,
+      "to_revision": 2,
+      "removed": [],
+      "added": [
+        "Makefile",
+        "pyproject.toml",
+        "uv.lock"
+      ],
+      "reason": "verify-A01 needs a Makefile; A01 owns the make-targets and dependency-lockfiles resources (pyproject.toml also declares schema-lock.json as package data)"
+    },
+    {
+      "packet": "A03",
+      "from_revision": 1,
+      "to_revision": 2,
+      "removed": [
+        "src/algobots/db/migrations/auth/"
+      ],
+      "added": [
+        "src/algobots/api/__init__.py",
+        "src/algobots/api/main.py",
+        "src/algobots/api/config.py",
+        "src/algobots/api/database.py",
+        "src/algobots/api/dependencies.py",
+        "src/algobots/api/middleware.py",
+        "src/algobots/api/models.py",
+        "src/algobots/api/schemas.py",
+        "src/algobots/api/security.py",
+        "src/algobots/api/routers/",
+        "tests/api/test_control_plane.py",
+        "tests/api/__init__.py",
+        "docs/control-plane.md"
+      ],
+      "reason": "one Alembic tree exists (src/algobots/api/migrations/, db-migrations lock); A03 inherits the ALG-3078 control-plane core (auth router, tenancy, security)"
+    },
+    {
+      "packet": "A04",
+      "from_revision": 1,
+      "to_revision": 2,
+      "removed": [],
+      "added": [
+        "src/algobots/api/accounts/",
+        "tests/api/test_accounts.py",
+        "docs/accounts.md"
+      ],
+      "reason": "S4.1 account registry (ALG-3090) already lives under api/accounts/"
+    },
+    {
+      "packet": "A07",
+      "from_revision": 1,
+      "to_revision": 2,
+      "removed": [
+        "src/algobots/db/migrations/execution/"
+      ],
+      "added": [],
+      "reason": "migrations go through the single Alembic tree under the db-migrations lock"
+    },
+    {
+      "packet": "A10",
+      "from_revision": 1,
+      "to_revision": 2,
+      "removed": [],
+      "added": [
+        "src/algobots/dashboard/__init__.py",
+        "src/algobots/dashboard/accounts.py"
+      ],
+      "reason": "existing dashboard package root and account view (S4.1)"
+    },
+    {
+      "packet": "A11",
+      "from_revision": 1,
+      "to_revision": 2,
+      "removed": [],
+      "added": [
+        "src/algobots/api/deployments/",
+        "docs/strategies.md"
+      ],
+      "reason": "S4.2 deployments API (ALG-3091) already lives under api/deployments/"
+    },
+    {
+      "packet": "A19",
+      "from_revision": 1,
+      "to_revision": 2,
+      "removed": [
+        "src/algobots/evals/",
+        "tests/evals/"
+      ],
+      "added": [
+        "src/algobots/evals/outcomes/",
+        "tests/evals/outcomes/"
+      ],
+      "reason": "evals/ would overlap the frozen ALG-3086 harness and A28 prospective/; narrowed"
+    },
+    {
+      "packet": "A20",
+      "from_revision": 1,
+      "to_revision": 2,
+      "removed": [
+        "src/algobots/execution/planner/",
+        "tests/execution/planner/"
+      ],
+      "added": [
+        "src/algobots/execution/planner.py",
+        "src/algobots/execution/governor.py",
+        "src/algobots/execution/discipline.py",
+        "src/algobots/execution/quantity.py",
+        "src/algobots/execution/README.md",
+        "tests/execution/"
+      ],
+      "reason": "planner/ package would shadow the existing S1.3 planner.py module; A20 inherits the S1.3 planner/governor/discipline (A07 keeps the nested tests/execution/ledger/)"
+    },
+    {
+      "packet": "A21",
+      "from_revision": 1,
+      "to_revision": 2,
+      "removed": [],
+      "added": [
+        "src/algobots/api/approvals/",
+        "src/algobots/dashboard/approvals.py",
+        "docs/approvals.md"
+      ],
+      "reason": "S4.3 approvals (ALG-3092) already live under api/approvals/ and dashboard/approvals.py"
+    },
+    {
+      "packet": "A29",
+      "from_revision": 1,
+      "to_revision": 2,
+      "removed": [
+        "tests/live-preflight/"
+      ],
+      "added": [
+        "tests/live_preflight/"
+      ],
+      "reason": "hyphenated directory is not importable as a test package"
+    },
+    {
+      "packet": "A37",
+      "from_revision": 1,
+      "to_revision": 2,
+      "removed": [
+        "src/algobots/dashboard/build-activity/"
+      ],
+      "added": [
+        "src/algobots/dashboard/build_activity/"
+      ],
+      "reason": "hyphenated directory is not a valid Python package name"
+    }
+  ],
+  "packets": {
+    "A00": {
+      "title": "Inventory repositories, services and exact versions",
+      "phase": "Paper core",
+      "optional": false,
+      "dependencies": [],
+      "revision": 1,
+      "repositories": [
+        "algobots",
+        "stock-vaults",
+        "vps-infra"
+      ],
+      "write_scope": [
+        {
+          "repo": "stock-vaults",
+          "path": "docs/inventory/",
+          "status": "real"
+        },
+        {
+          "repo": "stock-vaults",
+          "path": "docs/dependency-manifest.json",
+          "status": "real"
+        },
+        {
+          "repo": "stock-vaults",
+          "path": "tests/packets/A00/",
+          "status": "real"
+        },
+        {
+          "repo": "stock-vaults",
+          "path": "artifacts/A00/",
+          "status": "real"
+        }
+      ],
+      "shared_resources": [],
+      "contract_pins": {}
+    },
+    "A01": {
+      "title": "Freeze contracts and repository ownership map",
+      "phase": "Paper core",
+      "optional": false,
+      "dependencies": [
+        "A00"
+      ],
+      "revision": 2,
+      "repositories": [
+        "algobots"
+      ],
+      "write_scope": [
+        {
+          "repo": "algobots",
+          "path": "src/algobots/contracts/",
+          "status": "real"
+        },
+        {
+          "repo": "algobots",
+          "path": "docs/repository-map.json",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "tests/contracts/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "tests/packets/A01/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "artifacts/A01/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "Makefile",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "pyproject.toml",
+          "status": "real"
+        },
+        {
+          "repo": "algobots",
+          "path": "uv.lock",
+          "status": "real"
+        }
+      ],
+      "shared_resources": [
+        "dependency-lockfiles",
+        "generated-clients",
+        "make-targets",
+        "schema-registry"
+      ],
+      "contract_pins": {}
+    },
+    "A02": {
+      "title": "Atomic task queue, leases and integration receipts",
+      "phase": "Paper core",
+      "optional": false,
+      "dependencies": [
+        "A01"
+      ],
+      "revision": 1,
+      "repositories": [
+        "algobots"
+      ],
+      "write_scope": [
+        {
+          "repo": "algobots",
+          "path": "tools/agent_queue/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "tests/agent_queue/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "tests/packets/A02/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "artifacts/A02/",
+          "status": "proposed"
+        }
+      ],
+      "shared_resources": [
+        "task-authority"
+      ],
+      "contract_pins": {
+        "Envelope": "1.0",
+        "Principal": "1.0"
+      }
+    },
+    "A03": {
+      "title": "Invite-only memberships and tenant authorization",
+      "phase": "Paper core",
+      "optional": false,
+      "dependencies": [
+        "A01"
+      ],
+      "revision": 2,
+      "repositories": [
+        "algobots"
+      ],
+      "write_scope": [
+        {
+          "repo": "algobots",
+          "path": "src/algobots/api/auth/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "src/algobots/api/memberships/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "src/algobots/dashboard/auth/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "tests/packets/A03/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "artifacts/A03/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "src/algobots/api/__init__.py",
+          "status": "real"
+        },
+        {
+          "repo": "algobots",
+          "path": "src/algobots/api/main.py",
+          "status": "real"
+        },
+        {
+          "repo": "algobots",
+          "path": "src/algobots/api/config.py",
+          "status": "real"
+        },
+        {
+          "repo": "algobots",
+          "path": "src/algobots/api/database.py",
+          "status": "real"
+        },
+        {
+          "repo": "algobots",
+          "path": "src/algobots/api/dependencies.py",
+          "status": "real"
+        },
+        {
+          "repo": "algobots",
+          "path": "src/algobots/api/middleware.py",
+          "status": "real"
+        },
+        {
+          "repo": "algobots",
+          "path": "src/algobots/api/models.py",
+          "status": "real"
+        },
+        {
+          "repo": "algobots",
+          "path": "src/algobots/api/schemas.py",
+          "status": "real"
+        },
+        {
+          "repo": "algobots",
+          "path": "src/algobots/api/security.py",
+          "status": "real"
+        },
+        {
+          "repo": "algobots",
+          "path": "src/algobots/api/routers/",
+          "status": "real"
+        },
+        {
+          "repo": "algobots",
+          "path": "tests/api/test_control_plane.py",
+          "status": "real"
+        },
+        {
+          "repo": "algobots",
+          "path": "tests/api/__init__.py",
+          "status": "real"
+        },
+        {
+          "repo": "algobots",
+          "path": "docs/control-plane.md",
+          "status": "real"
+        }
+      ],
+      "shared_resources": [
+        "db-migrations",
+        "auth-contract"
+      ],
+      "contract_pins": {
+        "Envelope": "1.0",
+        "Principal": "1.0"
+      }
+    },
+    "A04": {
+      "title": "Accounts, secrets, and capability registry",
+      "phase": "Paper core",
+      "optional": false,
+      "dependencies": [
+        "A03"
+      ],
+      "revision": 2,
+      "repositories": [
+        "algobots"
+      ],
+      "write_scope": [
+        {
+          "repo": "algobots",
+          "path": "src/algobots/accounts/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "src/algobots/secrets/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "tests/accounts/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "tests/packets/A04/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "artifacts/A04/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "src/algobots/api/accounts/",
+          "status": "real"
+        },
+        {
+          "repo": "algobots",
+          "path": "tests/api/test_accounts.py",
+          "status": "real"
+        },
+        {
+          "repo": "algobots",
+          "path": "docs/accounts.md",
+          "status": "real"
+        }
+      ],
+      "shared_resources": [
+        "db-migrations"
+      ],
+      "contract_pins": {
+        "BrokerAccount": "1.0",
+        "Capabilities": "1.0",
+        "Principal": "1.0"
+      }
+    },
+    "A05": {
+      "title": "Instrument and market-data contracts",
+      "phase": "Paper core",
+      "optional": false,
+      "dependencies": [
+        "A01",
+        "A04"
+      ],
+      "revision": 1,
+      "repositories": [
+        "algobots"
+      ],
+      "write_scope": [
+        {
+          "repo": "algobots",
+          "path": "src/algobots/instruments/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "src/algobots/marketdata/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "tests/marketdata/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "tests/packets/A05/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "artifacts/A05/",
+          "status": "proposed"
+        }
+      ],
+      "shared_resources": [],
+      "contract_pins": {
+        "Envelope": "1.0"
+      }
+    },
+    "A06": {
+      "title": "Isolated Nautilus paper workers",
+      "phase": "Paper core",
+      "optional": false,
+      "dependencies": [
+        "A04",
+        "A05"
+      ],
+      "revision": 1,
+      "repositories": [
+        "algobots"
+      ],
+      "write_scope": [
+        {
+          "repo": "algobots",
+          "path": "src/algobots/engine/",
+          "status": "real"
+        },
+        {
+          "repo": "algobots",
+          "path": "deploy/workers/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "tests/engine/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "tests/packets/A06/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "artifacts/A06/",
+          "status": "proposed"
+        }
+      ],
+      "shared_resources": [],
+      "contract_pins": {
+        "Capabilities": "1.0",
+        "ExecutionCommand": "1.0",
+        "FillEvent": "1.0",
+        "OrderEvent": "1.0"
+      }
+    },
+    "A07": {
+      "title": "Intent ledger, deduplication, and order state",
+      "phase": "Paper core",
+      "optional": false,
+      "dependencies": [
+        "A06"
+      ],
+      "revision": 2,
+      "repositories": [
+        "algobots"
+      ],
+      "write_scope": [
+        {
+          "repo": "algobots",
+          "path": "src/algobots/execution/ledger/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "tests/execution/ledger/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "tests/packets/A07/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "artifacts/A07/",
+          "status": "proposed"
+        }
+      ],
+      "shared_resources": [
+        "db-migrations",
+        "execution-contract"
+      ],
+      "contract_pins": {
+        "ExecutionCommand": "1.0",
+        "FillEvent": "1.0",
+        "IntentRequest": "1.0",
+        "OrderEvent": "1.0",
+        "OrderPlan": "1.0"
+      }
+    },
+    "A08": {
+      "title": "Account risk and capital reservations",
+      "phase": "Paper core",
+      "optional": false,
+      "dependencies": [
+        "A07"
+      ],
+      "revision": 1,
+      "repositories": [
+        "algobots"
+      ],
+      "write_scope": [
+        {
+          "repo": "algobots",
+          "path": "src/algobots/risk/",
+          "status": "real"
+        },
+        {
+          "repo": "algobots",
+          "path": "src/algobots/execution/admission/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "tests/risk/",
+          "status": "real"
+        },
+        {
+          "repo": "algobots",
+          "path": "tests/packets/A08/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "artifacts/A08/",
+          "status": "proposed"
+        }
+      ],
+      "shared_resources": [
+        "execution-contract",
+        "db-migrations"
+      ],
+      "contract_pins": {
+        "OrderPlan": "1.0",
+        "Reservation": "1.0"
+      }
+    },
+    "A09": {
+      "title": "Warm paper design system and fixture storyboard",
+      "phase": "Paper core",
+      "optional": false,
+      "dependencies": [
+        "A01"
+      ],
+      "revision": 1,
+      "repositories": [
+        "algobots"
+      ],
+      "write_scope": [
+        {
+          "repo": "algobots",
+          "path": "src/algobots/dashboard/design/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "src/algobots/dashboard/fixtures/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "docs/design/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "tests/packets/A09/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "artifacts/A09/",
+          "status": "proposed"
+        }
+      ],
+      "shared_resources": [],
+      "contract_pins": {}
+    },
+    "A10": {
+      "title": "Dashboard shell and account context",
+      "phase": "Paper core",
+      "optional": false,
+      "dependencies": [
+        "A03",
+        "A09"
+      ],
+      "revision": 2,
+      "repositories": [
+        "algobots"
+      ],
+      "write_scope": [
+        {
+          "repo": "algobots",
+          "path": "src/algobots/dashboard/shell/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "src/algobots/dashboard/overview/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "tests/ui/shell/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "tests/packets/A10/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "artifacts/A10/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "src/algobots/dashboard/__init__.py",
+          "status": "real"
+        },
+        {
+          "repo": "algobots",
+          "path": "src/algobots/dashboard/accounts.py",
+          "status": "real"
+        }
+      ],
+      "shared_resources": [],
+      "contract_pins": {
+        "BrokerAccount": "1.0"
+      }
+    },
+    "A11": {
+      "title": "Minimal strategy studio and account fan-out",
+      "phase": "Paper core",
+      "optional": false,
+      "dependencies": [
+        "A08",
+        "A10"
+      ],
+      "revision": 2,
+      "repositories": [
+        "algobots"
+      ],
+      "write_scope": [
+        {
+          "repo": "algobots",
+          "path": "src/algobots/strategies/",
+          "status": "real"
+        },
+        {
+          "repo": "algobots",
+          "path": "src/algobots/dashboard/studio/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "tests/strategies/",
+          "status": "real"
+        },
+        {
+          "repo": "algobots",
+          "path": "tests/packets/A11/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "artifacts/A11/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "src/algobots/api/deployments/",
+          "status": "real"
+        },
+        {
+          "repo": "algobots",
+          "path": "docs/strategies.md",
+          "status": "real"
+        }
+      ],
+      "shared_resources": [],
+      "contract_pins": {
+        "Deployment": "1.0",
+        "StrategyVersion": "1.0"
+      }
+    },
+    "A12": {
+      "title": "G1 integrated five-capability paper demonstration",
+      "phase": "Paper core",
+      "optional": false,
+      "dependencies": [
+        "A11"
+      ],
+      "revision": 1,
+      "repositories": [
+        "algobots"
+      ],
+      "write_scope": [
+        {
+          "repo": "algobots",
+          "path": "tests/e2e/poc/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "docs/gates/G1/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "tests/packets/A12/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "artifacts/A12/",
+          "status": "proposed"
+        }
+      ],
+      "shared_resources": [],
+      "contract_pins": {
+        "Envelope": "1.0"
+      }
+    },
+    "A13": {
+      "title": "Reproducible backtests and promotion evidence",
+      "phase": "Paper core",
+      "optional": false,
+      "dependencies": [
+        "A01",
+        "A05",
+        "A06"
+      ],
+      "revision": 1,
+      "repositories": [
+        "algobots"
+      ],
+      "write_scope": [
+        {
+          "repo": "algobots",
+          "path": "src/algobots/backtests/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "tests/backtests/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "tests/packets/A13/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "artifacts/A13/",
+          "status": "proposed"
+        }
+      ],
+      "shared_resources": [],
+      "contract_pins": {
+        "StrategyVersion": "1.0"
+      }
+    },
+    "A14": {
+      "title": "Production Obsidian ingestion and lineage",
+      "phase": "Paper core",
+      "optional": false,
+      "dependencies": [
+        "A01",
+        "A03"
+      ],
+      "revision": 1,
+      "repositories": [
+        "algobots",
+        "stock-vaults"
+      ],
+      "write_scope": [
+        {
+          "repo": "stock-vaults",
+          "path": "pipeline/flows/algobots-ingest.yaml",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "src/algobots/knowledge/ingest/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "tests/knowledge/ingest/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "tests/packets/A14/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "artifacts/A14/",
+          "status": "proposed"
+        }
+      ],
+      "shared_resources": [],
+      "contract_pins": {
+        "MemoryRecord": "1.0"
+      }
+    },
+    "A15": {
+      "title": "TencentDB MemoryStore adapter and scope enforcement",
+      "phase": "Paper core",
+      "optional": false,
+      "dependencies": [
+        "A01",
+        "A03",
+        "A14"
+      ],
+      "revision": 1,
+      "repositories": [
+        "algobots"
+      ],
+      "write_scope": [
+        {
+          "repo": "algobots",
+          "path": "src/algobots/memory/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "tests/memory/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "tests/packets/A15/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "artifacts/A15/",
+          "status": "proposed"
+        }
+      ],
+      "shared_resources": [],
+      "contract_pins": {
+        "MemoryRecord": "1.0",
+        "Principal": "1.0"
+      }
+    },
+    "A16": {
+      "title": "DuckDB isolated research and outcome analytics",
+      "phase": "Paper core",
+      "optional": false,
+      "dependencies": [
+        "A13"
+      ],
+      "revision": 1,
+      "repositories": [
+        "algobots"
+      ],
+      "write_scope": [
+        {
+          "repo": "algobots",
+          "path": "src/algobots/analytics/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "tests/analytics/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "flows/analytics/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "tests/packets/A16/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "artifacts/A16/",
+          "status": "proposed"
+        }
+      ],
+      "shared_resources": [],
+      "contract_pins": {
+        "MemoryRecord": "1.0"
+      }
+    },
+    "A17": {
+      "title": "RAG retrieval and knowledge-to-strategy drafts",
+      "phase": "Paper core",
+      "optional": false,
+      "dependencies": [
+        "A13",
+        "A14",
+        "A15"
+      ],
+      "revision": 1,
+      "repositories": [
+        "algobots"
+      ],
+      "write_scope": [
+        {
+          "repo": "algobots",
+          "path": "src/algobots/knowledge/retrieval/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "src/algobots/research/drafts/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "tests/retrieval/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "tests/packets/A17/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "artifacts/A17/",
+          "status": "proposed"
+        }
+      ],
+      "shared_resources": [],
+      "contract_pins": {
+        "EvidencePacket": "1.0",
+        "MemoryRecord": "1.0",
+        "StrategyVersion": "1.0"
+      }
+    },
+    "A18": {
+      "title": "Jev adapter, decision graph, and usage budgets",
+      "phase": "Paper core",
+      "optional": false,
+      "dependencies": [
+        "A08",
+        "A17"
+      ],
+      "revision": 1,
+      "repositories": [
+        "algobots"
+      ],
+      "write_scope": [
+        {
+          "repo": "algobots",
+          "path": "src/algobots/models/",
+          "status": "real"
+        },
+        {
+          "repo": "algobots",
+          "path": "src/algobots/decisions/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "tests/decisions/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "tests/packets/A18/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "artifacts/A18/",
+          "status": "proposed"
+        }
+      ],
+      "shared_resources": [],
+      "contract_pins": {
+        "DecisionRequest": "1.0",
+        "DecisionResponse": "1.0",
+        "EvidencePacket": "1.0",
+        "Signal": "1.0"
+      }
+    },
+    "A19": {
+      "title": "Outcome settlement and governed memory",
+      "phase": "Paper core",
+      "optional": false,
+      "dependencies": [
+        "A16",
+        "A17",
+        "A18"
+      ],
+      "revision": 2,
+      "repositories": [
+        "algobots"
+      ],
+      "write_scope": [
+        {
+          "repo": "algobots",
+          "path": "src/algobots/memory/lessons/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "tests/packets/A19/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "artifacts/A19/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "src/algobots/evals/outcomes/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "tests/evals/outcomes/",
+          "status": "proposed"
+        }
+      ],
+      "shared_resources": [],
+      "contract_pins": {
+        "DecisionResponse": "1.0",
+        "MemoryRecord": "1.0",
+        "Signal": "1.0"
+      }
+    },
+    "A20": {
+      "title": "Portfolio targets and strategy conflict handling",
+      "phase": "Paper core",
+      "optional": false,
+      "dependencies": [
+        "A08",
+        "A13"
+      ],
+      "revision": 2,
+      "repositories": [
+        "algobots"
+      ],
+      "write_scope": [
+        {
+          "repo": "algobots",
+          "path": "tests/packets/A20/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "artifacts/A20/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "src/algobots/execution/planner.py",
+          "status": "real"
+        },
+        {
+          "repo": "algobots",
+          "path": "src/algobots/execution/governor.py",
+          "status": "real"
+        },
+        {
+          "repo": "algobots",
+          "path": "src/algobots/execution/discipline.py",
+          "status": "real"
+        },
+        {
+          "repo": "algobots",
+          "path": "src/algobots/execution/quantity.py",
+          "status": "real"
+        },
+        {
+          "repo": "algobots",
+          "path": "src/algobots/execution/README.md",
+          "status": "real"
+        },
+        {
+          "repo": "algobots",
+          "path": "tests/execution/",
+          "status": "real"
+        }
+      ],
+      "shared_resources": [],
+      "contract_pins": {
+        "OrderPlan": "1.0",
+        "Signal": "1.0",
+        "TargetPortfolio": "1.0"
+      }
+    },
+    "A21": {
+      "title": "Approvals, deployment lifecycle, and user trust",
+      "phase": "Paper core",
+      "optional": false,
+      "dependencies": [
+        "A11",
+        "A18",
+        "A20"
+      ],
+      "revision": 2,
+      "repositories": [
+        "algobots"
+      ],
+      "write_scope": [
+        {
+          "repo": "algobots",
+          "path": "src/algobots/approvals/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "src/algobots/dashboard/approvals/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "tests/approvals/",
+          "status": "real"
+        },
+        {
+          "repo": "algobots",
+          "path": "tests/packets/A21/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "artifacts/A21/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "src/algobots/api/approvals/",
+          "status": "real"
+        },
+        {
+          "repo": "algobots",
+          "path": "src/algobots/dashboard/approvals.py",
+          "status": "real"
+        },
+        {
+          "repo": "algobots",
+          "path": "docs/approvals.md",
+          "status": "real"
+        }
+      ],
+      "shared_resources": [],
+      "contract_pins": {
+        "ApprovalEnvelope": "1.0",
+        "Deployment": "1.0",
+        "OrderPlan": "1.0"
+      }
+    },
+    "A22": {
+      "title": "Live projections and event-driven dashboard motion",
+      "phase": "Paper core",
+      "optional": false,
+      "dependencies": [
+        "A10",
+        "A19",
+        "A21",
+        "A30"
+      ],
+      "revision": 1,
+      "repositories": [
+        "algobots"
+      ],
+      "write_scope": [
+        {
+          "repo": "algobots",
+          "path": "src/algobots/dashboard/trading/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "src/algobots/api/projections/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "tests/ui/trading/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "tests/packets/A22/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "artifacts/A22/",
+          "status": "proposed"
+        }
+      ],
+      "shared_resources": [],
+      "contract_pins": {
+        "Envelope": "1.0"
+      }
+    },
+    "A23": {
+      "title": "Broker conformance and second asset-class integration",
+      "phase": "Broker qualification",
+      "optional": false,
+      "dependencies": [
+        "A07",
+        "A08",
+        "A13",
+        "A21"
+      ],
+      "revision": 1,
+      "repositories": [
+        "algobots"
+      ],
+      "write_scope": [
+        {
+          "repo": "algobots",
+          "path": "src/algobots/adapters/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "tests/adapters/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "tests/packets/A23/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "artifacts/A23/",
+          "status": "proposed"
+        }
+      ],
+      "shared_resources": [],
+      "contract_pins": {
+        "BrokerAccount": "1.0",
+        "Capabilities": "1.0",
+        "FillEvent": "1.0",
+        "OrderEvent": "1.0"
+      }
+    },
+    "A24": {
+      "title": "Observability, support, and incident operations",
+      "phase": "Paper core",
+      "optional": false,
+      "dependencies": [
+        "A12",
+        "A21"
+      ],
+      "revision": 1,
+      "repositories": [
+        "algobots",
+        "vps-infra"
+      ],
+      "write_scope": [
+        {
+          "repo": "algobots",
+          "path": "src/algobots/observability/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "flows/operations/",
+          "status": "proposed"
+        },
+        {
+          "repo": "vps-infra",
+          "path": "monitoring/algobots/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "tests/packets/A24/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "artifacts/A24/",
+          "status": "proposed"
+        }
+      ],
+      "shared_resources": [],
+      "contract_pins": {
+        "Envelope": "1.0"
+      }
+    },
+    "A25": {
+      "title": "Security, isolation, backups, and restore",
+      "phase": "Paper core",
+      "optional": false,
+      "dependencies": [
+        "A15",
+        "A21",
+        "A24"
+      ],
+      "revision": 1,
+      "repositories": [
+        "algobots",
+        "vps-infra"
+      ],
+      "write_scope": [
+        {
+          "repo": "algobots",
+          "path": "tests/security/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "deploy/backup/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "docs/runbooks/restore/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "tests/packets/A25/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "artifacts/A25/",
+          "status": "proposed"
+        }
+      ],
+      "shared_resources": [
+        "infrastructure-state"
+      ],
+      "contract_pins": {
+        "Principal": "1.0"
+      }
+    },
+    "A26": {
+      "title": "Capacity, ownership fencing, and fault tolerance",
+      "phase": "Paper core",
+      "optional": false,
+      "dependencies": [
+        "A24",
+        "A25"
+      ],
+      "revision": 1,
+      "repositories": [
+        "algobots"
+      ],
+      "write_scope": [
+        {
+          "repo": "algobots",
+          "path": "src/algobots/engine/fencing/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "tests/faults/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "tests/capacity/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "tests/packets/A26/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "artifacts/A26/",
+          "status": "proposed"
+        }
+      ],
+      "shared_resources": [],
+      "contract_pins": {
+        "ExecutionCommand": "1.0"
+      }
+    },
+    "A27": {
+      "title": "Private paper pilot acceptance and release dossier",
+      "phase": "Paper core",
+      "optional": false,
+      "dependencies": [
+        "A12",
+        "A19",
+        "A22",
+        "A24",
+        "A25",
+        "A26",
+        "A36"
+      ],
+      "revision": 1,
+      "repositories": [
+        "algobots"
+      ],
+      "write_scope": [
+        {
+          "repo": "algobots",
+          "path": "tests/e2e/pilot/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "docs/gates/G2/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "docs/gates/G3/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "tests/packets/A27/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "artifacts/A27/",
+          "status": "proposed"
+        }
+      ],
+      "shared_resources": [],
+      "contract_pins": {
+        "Envelope": "1.0"
+      }
+    },
+    "A28": {
+      "title": "Prospective strategy and model qualification",
+      "phase": "Optional live qualification",
+      "optional": true,
+      "dependencies": [
+        "A19",
+        "A23"
+      ],
+      "revision": 1,
+      "repositories": [
+        "algobots"
+      ],
+      "write_scope": [
+        {
+          "repo": "algobots",
+          "path": "src/algobots/evals/prospective/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "docs/qualification/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "tests/evals/prospective/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "tests/packets/A28/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "artifacts/A28/",
+          "status": "proposed"
+        }
+      ],
+      "shared_resources": [],
+      "contract_pins": {
+        "DecisionResponse": "1.0",
+        "Signal": "1.0"
+      }
+    },
+    "A29": {
+      "title": "Stable engine and bounded live canary",
+      "phase": "Optional live",
+      "optional": true,
+      "dependencies": [
+        "A27",
+        "A28",
+        "A23",
+        "A24",
+        "A25",
+        "A26"
+      ],
+      "revision": 2,
+      "repositories": [
+        "algobots"
+      ],
+      "write_scope": [
+        {
+          "repo": "algobots",
+          "path": "deploy/live-policy/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "docs/gates/G4/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "tests/packets/A29/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "artifacts/A29/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "tests/live_preflight/",
+          "status": "proposed"
+        }
+      ],
+      "shared_resources": [],
+      "contract_pins": {
+        "ApprovalEnvelope": "1.0",
+        "ExecutionCommand": "1.0"
+      }
+    },
+    "A30": {
+      "title": "Fee-neutral accounting, performance and usage",
+      "phase": "Paper core",
+      "optional": false,
+      "dependencies": [
+        "A07",
+        "A08"
+      ],
+      "revision": 1,
+      "repositories": [
+        "algobots"
+      ],
+      "write_scope": [
+        {
+          "repo": "algobots",
+          "path": "src/algobots/accounting/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "src/algobots/usage/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "tests/accounting/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "tests/packets/A30/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "artifacts/A30/",
+          "status": "proposed"
+        }
+      ],
+      "shared_resources": [],
+      "contract_pins": {
+        "FillEvent": "1.0"
+      }
+    },
+    "A31": {
+      "title": "Optional membership or performance-fee design and shadow ledger",
+      "phase": "Deferred fee option",
+      "optional": true,
+      "dependencies": [
+        "A27",
+        "A30",
+        "A18"
+      ],
+      "revision": 1,
+      "repositories": [
+        "algobots"
+      ],
+      "write_scope": [
+        {
+          "repo": "algobots",
+          "path": "src/algobots/billing/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "tests/billing/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "docs/fees/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "tests/packets/A31/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "artifacts/A31/",
+          "status": "proposed"
+        }
+      ],
+      "shared_resources": [],
+      "contract_pins": {}
+    },
+    "A32": {
+      "title": "Derivatives and advanced execution",
+      "phase": "Deferred expansion",
+      "optional": true,
+      "dependencies": [
+        "A27",
+        "A29"
+      ],
+      "revision": 1,
+      "repositories": [
+        "algobots"
+      ],
+      "write_scope": [
+        {
+          "repo": "algobots",
+          "path": "src/algobots/products/derivatives/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "tests/products/derivatives/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "tests/packets/A32/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "artifacts/A32/",
+          "status": "proposed"
+        }
+      ],
+      "shared_resources": [],
+      "contract_pins": {
+        "OrderPlan": "1.0"
+      }
+    },
+    "A33": {
+      "title": "Optional OpenAlgo venue bridge",
+      "phase": "Deferred expansion",
+      "optional": true,
+      "dependencies": [
+        "A27",
+        "A23"
+      ],
+      "revision": 1,
+      "repositories": [
+        "algobots"
+      ],
+      "write_scope": [
+        {
+          "repo": "algobots",
+          "path": "src/algobots/adapters/openalgo/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "tests/adapters/openalgo/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "tests/packets/A33/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "artifacts/A33/",
+          "status": "proposed"
+        }
+      ],
+      "shared_resources": [],
+      "contract_pins": {
+        "Capabilities": "1.0",
+        "FillEvent": "1.0",
+        "OrderEvent": "1.0"
+      }
+    },
+    "A34": {
+      "title": "FinRL research and advanced analyst experiments",
+      "phase": "Deferred expansion",
+      "optional": true,
+      "dependencies": [
+        "A19",
+        "A27"
+      ],
+      "revision": 1,
+      "repositories": [
+        "algobots"
+      ],
+      "write_scope": [
+        {
+          "repo": "algobots",
+          "path": "src/algobots/research/experiments/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "tests/research/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "tests/packets/A34/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "artifacts/A34/",
+          "status": "proposed"
+        }
+      ],
+      "shared_resources": [],
+      "contract_pins": {
+        "MemoryRecord": "1.0"
+      }
+    },
+    "A35": {
+      "title": "Multiple payment merchant accounts",
+      "phase": "Deferred fee option",
+      "optional": true,
+      "dependencies": [
+        "A31"
+      ],
+      "revision": 1,
+      "repositories": [
+        "algobots"
+      ],
+      "write_scope": [
+        {
+          "repo": "algobots",
+          "path": "src/algobots/billing/merchants/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "tests/billing/merchants/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "tests/packets/A35/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "artifacts/A35/",
+          "status": "proposed"
+        }
+      ],
+      "shared_resources": [],
+      "contract_pins": {}
+    },
+    "A36": {
+      "title": "Governed vault documentation and evidence publishing",
+      "phase": "Paper core",
+      "optional": false,
+      "dependencies": [
+        "A14",
+        "A19"
+      ],
+      "revision": 1,
+      "repositories": [
+        "stock-vaults",
+        "algobots"
+      ],
+      "write_scope": [
+        {
+          "repo": "stock-vaults",
+          "path": "vaults/investing/algobots/",
+          "status": "real"
+        },
+        {
+          "repo": "stock-vaults",
+          "path": "pipeline/flows/algobots-docs.yaml",
+          "status": "proposed"
+        },
+        {
+          "repo": "stock-vaults",
+          "path": "tests/vault_publish/",
+          "status": "proposed"
+        },
+        {
+          "repo": "stock-vaults",
+          "path": "tests/packets/A36/",
+          "status": "proposed"
+        },
+        {
+          "repo": "stock-vaults",
+          "path": "artifacts/A36/",
+          "status": "proposed"
+        }
+      ],
+      "shared_resources": [],
+      "contract_pins": {
+        "MemoryRecord": "1.0"
+      }
+    },
+    "A37": {
+      "title": "Codex, Claude Code, agy and OpenCode executor adapters",
+      "phase": "Paper core",
+      "optional": false,
+      "dependencies": [
+        "A02"
+      ],
+      "revision": 2,
+      "repositories": [
+        "algobots"
+      ],
+      "write_scope": [
+        {
+          "repo": "algobots",
+          "path": "tools/executors/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "tests/executors/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "tests/packets/A37/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "artifacts/A37/",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "src/algobots/dashboard/build_activity/",
+          "status": "proposed"
+        }
+      ],
+      "shared_resources": [],
+      "contract_pins": {
+        "Principal": "1.0"
+      }
+    }
+  }
+}

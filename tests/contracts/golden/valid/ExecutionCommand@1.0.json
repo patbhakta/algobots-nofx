@@ -1,0 +1,11 @@
+{
+  "schema_version": "1.0",
+  "command_id": "cmd-0001",
+  "account_id": "acct-alpha-1",
+  "ownership_epoch": 4,
+  "plan_id": "plan-0001",
+  "plan_hash": "d129262c7772059f5d77659a30bdff984a9736bc6c2bda56965af740bb423e41",
+  "policy_revision": "risk-7",
+  "deadline": "2026-09-23T14:30:00Z",
+  "action": "PLACE_ORDER"
+}
