@@ -1,0 +1,127 @@
+{
+  "packet": "A03",
+  "revision": 2,
+  "issue": "ALG-3099",
+  "repository": "algobots",
+  "baseline_commit": "48642df",
+  "branch": "feat/alg-3099-a03-tenant-auth",
+  "implementation_commit": "010a959",
+  "implementation_commits": [
+    "4dbe9a5 feat: tenant memberships, hashed invites, sessions, RLS (migration 0005)",
+    "74ee656 test: acceptance cases 1-5, PostgreSQL RLS and pooled connections",
+    "fde90f1 feat: dashboard tenant switcher fragment and two-workspace demo",
+    "2205b07 docs: control-plane tenancy, roles/grants, RLS and invite flow",
+    "8fc3997 chore: proposed verify-A03 / demo-A03 make targets (for A01, owner of make-targets)",
+    "010a959 fix: concurrent registration losers get 409, not 500"
+  ],
+  "integrated_commit": null,
+  "review_receipt": null,
+  "environment": {
+    "python": "3.12.3",
+    "sqlalchemy": "2.1.1",
+    "psycopg": "3.3.6 (declared optional extra `postgres`, no relock)",
+    "fastapi": "0.141.1",
+    "postgresql": "16.15, throwaway socket-only cluster (initdb, trust auth), never the shared host databases",
+    "allowed": ["development", "synthetic-paper"],
+    "fixtures": "synthetic users only; local HS256 OIDC seam; no IdP, broker or external service contacted"
+  },
+  "verification": {
+    "command": "ALGOBOTS_A03_PG_ADMIN_URL='postgresql+psycopg://a03admin@/postgres?host=<socket dir>&port=55432' make verify-A03",
+    "steps": [
+      "python -m pytest tests/packets/A03 tests/api -q -rs -p no:cacheprovider --junitxml=artifacts/A03/test-results/junit.xml",
+      "sed strips timestamp/hostname/time from junit.xml"
+    ],
+    "result": "71 passed, 0 failed, 0 skipped (33 A03 + 38 S0.2/S4.1 control-plane in tests/api)",
+    "without_postgres": "25 passed, 8 skipped; every skip carries the BLOCKED reason in test_pg_rls.py",
+    "full_suite": "python -m pytest -> 401 passed (368 pre-existing + 33 A03), with PostgreSQL enabled",
+    "contracts": "python -m algobots.contracts --check-transition -> schema lock in sync (19 contracts); transition from 48642df ok. No file under src/algobots/contracts/ changed",
+    "lint": "ruff check . -> All checks passed",
+    "migrations": "0005 upgrade/backfill/downgrade round-tripped with data on SQLite and PostgreSQL 16; 0001-0004 rows and audit rows kept on downgrade; tests/api/test_control_plane.py::test_migrations_up_down_clean covers the cycle",
+    "negative_controls": [
+      "pool checkin RESET disabled -> test_ac2_stray_session_level_set_is_reset_on_checkin fails",
+      "registration IntegrityError handling reverted -> test_ac5_concurrent_registration_with_one_token fails 3/3"
+    ],
+    "ci": "GitHub CI has no PostgreSQL service, so test_pg_rls.py skips there; the PostgreSQL evidence is local (see environment). Proposed follow-up: add a postgres service to .github/workflows (not in A03 write scope)"
+  },
+  "acceptance_cases": [
+    {
+      "id": 1,
+      "criterion": "GIVEN tenant A and B with overlapping object labels WHEN A guesses B IDs through read/write/list/export endpoints THEN all attempts are denied and no B data appears.",
+      "result": "PASS",
+      "evidence": [
+        "tests/packets/A03/test_ac1_tenant_isolation.py::test_ac1_guessed_ids_denied_on_read_write_delete (owner and member of A; GET/PATCH/DELETE on B's account, strategy and order -> 404; B's rows unchanged)",
+        "tests/packets/A03/test_ac1_tenant_isolation.py::test_ac1_cannot_attach_rows_to_other_tenant_parents",
+        "tests/packets/A03/test_ac1_tenant_isolation.py::test_ac1_lists_and_export_contain_no_other_tenant_data (7 list endpoints + GET /api/export)",
+        "tests/packets/A03/test_ac1_tenant_isolation.py::test_ac1_cursor_from_other_tenant_rejected",
+        "tests/packets/A03/test_ac1_tenant_isolation.py::test_ac1_switch_to_non_member_tenant_denied",
+        "tests/packets/A03/test_ac1_tenant_isolation.py::test_ac1_membership_management_cannot_target_other_tenant",
+        "tests/packets/A03/test_pg_rls.py::test_ac1_rls_app_role_is_not_privileged (NOSUPERUSER NOBYPASSRLS; FORCE RLS on 6 tables)",
+        "tests/packets/A03/test_pg_rls.py::test_ac1_rls_tenant_sees_and_touches_only_own_rows (visibility, UPDATE/DELETE rowcount 0, WITH CHECK rejects a smuggled insert, no context -> no rows)",
+        "tests/packets/A03/test_pg_rls.py::test_ac1_rls_cannot_be_switched_off_by_app_role",
+        "tests/packets/A03/test_pg_rls.py::test_ac2_http_requests_interleaved_on_pooled_connections (full HTTP stack on PostgreSQL as the app role)"
+      ]
+    },
+    {
+      "id": 2,
+      "criterion": "GIVEN a pooled DB connection used by A WHEN it serves B next THEN no tenant context survives the transaction boundary.",
+      "result": "PASS",
+      "evidence": [
+        "tests/packets/A03/test_pg_rls.py::test_ac2_pooled_connection_carries_no_tenant_across_transactions (pool_size=1, same pg_backend_pid: next borrower sees an empty app.tenant_id and no rows, then only B's rows)",
+        "tests/packets/A03/test_pg_rls.py::test_ac2_rollback_and_error_leave_no_context",
+        "tests/packets/A03/test_pg_rls.py::test_ac2_stray_session_level_set_is_reset_on_checkin (a non-local SET is cleared by the pool checkin RESET; negative control fails without it)",
+        "tests/packets/A03/test_pg_rls.py::test_ac2_http_requests_interleaved_on_pooled_connections (A/B requests interleaved 5x on a 1+1 pool, pids reused)"
+      ],
+      "note": "Run against real PostgreSQL 16 locally. CI skips these cases (no PostgreSQL service); they are not claimed on SQLite."
+    },
+    {
+      "id": 3,
+      "criterion": "GIVEN a revoked member WHEN an old session makes a privileged request THEN it is rejected within the declared revocation window (target <= 60s).",
+      "result": "PASS",
+      "declared_revocation_window_seconds": 0,
+      "evidence": [
+        "tests/packets/A03/test_ac3_revocation.py::test_ac3_revoked_member_old_session_rejected (next request 401, elapsed asserted < 60 s; reads also 401; a fresh login has no tenant and gets 403)",
+        "tests/packets/A03/test_ac3_revocation.py::test_ac3_revocation_is_audited",
+        "tests/packets/A03/test_ac3_revocation.py::test_ac3_demotion_applies_on_next_request",
+        "tests/packets/A03/test_ac3_revocation.py::test_ac3_logout_revokes_token",
+        "tests/packets/A03/test_ac3_revocation.py::test_ac3_last_owner_cannot_be_removed"
+      ]
+    },
+    {
+      "id": 4,
+      "criterion": "GIVEN a viewer WHEN changing membership or posting a command THEN policy denies the action and records the attempt without secrets.",
+      "result": "PASS",
+      "evidence": [
+        "tests/packets/A03/test_ac4_viewer_denied.py::test_ac4_viewer_denied_and_attempts_audited_without_secrets (7 attempts -> 403, nothing changed, 7 DENY rows with action, role and tenant; bearer token, password and request body absent from the whole audit table)",
+        "tests/packets/A03/test_ac4_viewer_denied.py::test_ac4_viewer_can_read",
+        "tests/packets/A03/test_ac4_viewer_denied.py::test_ac4_member_cannot_manage_memberships"
+      ]
+    },
+    {
+      "id": 5,
+      "criterion": "Concurrent invite redemption creates one authorized membership; revoked/expired invitations fail; a new member gains no implicit account trading grant.",
+      "result": "PASS",
+      "evidence": [
+        "tests/packets/A03/test_ac5_invites.py::test_ac5_concurrent_redemption_creates_one_membership (8 racers -> [201, 409 x7], 1 membership row)",
+        "tests/packets/A03/test_ac5_invites.py::test_ac5_concurrent_registration_with_one_token (8 racers, each must respond)",
+        "tests/packets/A03/test_pg_rls.py::test_ac5_concurrent_redemption_postgres (8 racers on PostgreSQL row locks -> 1 won, 7 x 409)",
+        "tests/packets/A03/test_ac5_invites.py::test_ac5_revoked_and_expired_invites_fail (revoked, expired, already used)",
+        "tests/packets/A03/test_ac5_invites.py::test_ac5_invite_bound_to_recipient",
+        "tests/packets/A03/test_ac5_invites.py::test_ac5_new_member_has_no_implicit_trading_grant (GET /api/me grants [], principal_for -> Principal@1.0 with grants (); grants explicit and audited; viewers can't hold TRADE_*; REPO_WRITE refused by ALLOWED_GRANTS[USER])",
+        "tests/packets/A03/test_ac5_invites.py::test_ac5_invite_token_stored_hashed_and_shown_once",
+        "tests/packets/A03/test_ac5_invites.py::test_ac5_public_registration_disabled",
+        "tests/packets/A03/test_ac5_invites.py::test_ac5_owner_role_not_invitable"
+      ]
+    }
+  ],
+  "contract_pins": {"Envelope": "1.0", "Principal": "1.0"},
+  "shared_resources": {
+    "db-migrations": "one new revision 0005 on top of 0004; history stays linear; downgrade guidance in the migration docstring",
+    "auth-contract": "security.py: tokens carry sid; dependencies.py: tenant derived from session + membership on every request"
+  },
+  "proposals_for_other_owners": [
+    "A01 (make-targets): integrate the verify-A03 / demo-A03 targets from commit 8fc3997",
+    "CI: add a postgres:16 service and export ALGOBOTS_A03_PG_ADMIN_URL so test_pg_rls.py runs on every push",
+    "Owners of deployments/, accounts/ (credentials) and approvals/: add tenant_id + RLS to their tables on top of 0005"
+  ],
+  "demo": "make demo-A03 -> artifacts/A03/demo-output.txt"
+}

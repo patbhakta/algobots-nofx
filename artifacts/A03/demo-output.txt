@@ -1,0 +1,9 @@
+[alice] tenant 16b4ca17 role=owner grants=[] accounts=[('main', 'b519dfbb')]
+[alice] switcher: <section class='tenant-switcher'><h2>Workspace</h2><ul class='tenant-list'><li class='tenant-active'><strong>alice (pers...
+[bob] tenant 14fe4fe5 role=owner grants=[] accounts=[('main', 'c95341c5')]
+[bob] switcher: <section class='tenant-switcher'><h2>Workspace</h2><ul class='tenant-list'><li class='tenant-active'><strong>bob (person...
+[alice -> bob's account] GET 404 PATCH 404 DELETE 404 export-leak=False
+[bob -> alice's account] GET 404 PATCH 404 DELETE 404 export-leak=False
+[viewer in alice's tenant] read accounts 200, post order 403
+[invite reuse] 409 Email already registered
+[revoked viewer, old session] GET /api/accounts -> 401
