@@ -7,8 +7,8 @@
   "branch": "feat/alg-3105-a09-design-system",
   "implementation_commit": "6dd2106",
   "make_targets_integration_commit": "178534b",
-  "integrated_commit": null,
-  "integration_note": "pending Tech Lead re-review of bc0183b; merge --no-ff to main only after PASS",
+  "integrated_commit": "98d9423",
+  "integration_note": "merged to main as 98d9423 (--no-ff of feat/alg-3105-a09-design-system @ c71557a) after independent re-review PASS on ALG-3185",
   "environment": {
     "python": "3.12.3",
     "browser": "Chrome for Testing 153.0.8010.12 (chrome-headless-shell, Playwright cache; nothing installed)",
@@ -29,13 +29,14 @@
     "full_suite": "python -m pytest -> 567 passed (368 pre-existing + 199 A09)",
     "regression": "make verify-A01 -> green (schema lock unchanged; every tracked file has an owner)",
     "lint": "ruff check . -> All checks passed; ruff format --check on A09 paths clean",
-    "screenshots": "make screenshots-A09 -> 38 screenshots; 0 with horizontal overflow or cell clipping (layout-audit.json); PNGs not byte-reproducible"
+    "screenshots": "make screenshots-A09 -> 38 screenshots; 0 with horizontal overflow or cell clipping (layout-audit.json); PNGs not byte-reproducible",
+    "main_merge": "at 98d9423: make verify-A09 199 passed 0 skipped; python -m pytest 567 passed; make verify-A01 green; ruff clean"
   },
   "acceptance_cases": [
     {
       "id": 1,
       "criterion": "Warm paper theme and compact hierarchy match the uploaded reference direction; no old dark-theme assumption remains.",
-      "result": "PENDING re-review (round 1 FAIL on B1 only; direction per roadmap text, Pat's eye-check against the MP4 is a non-blocking follow-up)",
+      "result": "PASS (ALG-3185; direction per roadmap text, Pat's eye-check against the MP4 is a non-blocking follow-up)",
       "evidence": [
         "tests/packets/A09/test_a09_tokens.py::test_spec_values_recorded_verbatim, test_surfaces_are_light_paper",
         "tests/packets/A09/test_a09_tokens.py::test_stylesheet_has_no_dark_theme, test_no_dark_theme_assumption_in_dashboard_sources (whole src/algobots/dashboard/)",
@@ -48,7 +49,7 @@
     {
       "id": 2,
       "criterion": "Text remains legible with grain; texture-off and reduced-motion settings work.",
-      "result": "PENDING re-review (round 1 FAIL: grain not drawn, fixed in bc0183b)",
+      "result": "PASS (ALG-3185; grain visible and legible by eye at 1440/1920, pixel test proves texture-off)",
       "evidence": [
         "tests/packets/A09/test_a09_headless.py::test_grain_is_actually_painted_and_texture_off_removes_it (grain within 3% of paper on, plain paper off)",
         "tests/packets/A09/test_a09_tokens.py::test_text_meets_wcag_aa_on_paper (6 text tokens x 2 surfaces x grain on/off, worst-case grain pixel)",
@@ -62,7 +63,7 @@
     {
       "id": 3,
       "criterion": "Every financial fixture is marked synthetic and each action displays account and environment.",
-      "result": "PASS (ALG-3182 round 1)",
+      "result": "PASS (ALG-3182, reconfirmed ALG-3185)",
       "evidence": [
         "tests/packets/A09/test_a09_fixtures.py::test_every_fixture_is_marked_synthetic, test_amounts_are_decimal_strings_with_currency",
         "tests/packets/A09/test_a09_storyboard.py::test_demo_banner_and_tags (every page banner; every financial panel tagged; every data-fin value inside a DEMO DATA section)",
@@ -74,8 +75,8 @@
   ],
   "blocked_cases": [],
   "required_artifacts": {
-    "implementation_commit": "6dd2106 + bc0183b (+ 178534b make-targets integration)",
-    "independent_review_receipt": "ALG-3182 (11:00Z) at 262dbd4: case 3 PASS, cases 1-2 FAIL on B1 (grain never painted) -> fixed bc0183b; re-review pending",
+    "implementation_commit": "6dd2106 + bc0183b (+ 178534b make-targets integration); integrated as 98d9423",
+    "independent_review_receipt": "ALG-3182 (11:00Z) at 262dbd4: case 3 PASS, cases 1-2 FAIL on B1 (grain never painted) -> fixed bc0183b. ALG-3185 (11:24Z, comment 29dbc3c7) at c71557a: cases 1, 2, 3 PASS; mutation checks: 262dbd4 storyboard fails the pixel grain test, restored nowrap fails the clipped audit. Overall PASS",
     "acceptance_json": "artifacts/A09/acceptance.json",
     "test_results": "artifacts/A09/test-results/ (junit.xml, pytest-summary.txt: 199 passed)",
     "demo_and_limitations": "artifacts/A09/demo-and-limitations.md (+ demo-output.txt)"
