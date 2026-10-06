@@ -10,7 +10,10 @@
   "environment": {
     "python": "3.12.3",
     "pydantic": "2.13.5",
-    "allowed": ["development", "synthetic-paper"],
+    "allowed": [
+      "development",
+      "synthetic-paper"
+    ],
     "fixtures": "synthetic only; no credentials, no broker or memory service contacted"
   },
   "verification": {
@@ -21,7 +24,8 @@
     ],
     "result": "113 passed, 0 failed, 0 skipped",
     "full_suite": "python -m pytest -> 309 passed (196 pre-existing + 113 A01)",
-    "lint": "ruff check . -> All checks passed"
+    "lint": "ruff check . -> All checks passed",
+    "ci": "branch CI run id recorded on ALG-3097 after push"
   },
   "acceptance_cases": [
     {
@@ -64,17 +68,23 @@
   ],
   "blocked_cases": [],
   "required_artifacts": {
-    "implementation_commit": "4b80d80",
+    "implementation_commit": "4b80d80 + 9821449",
     "independent_review_receipt": "PENDING - review card linked from ALG-3097",
     "acceptance_json": "artifacts/A01/acceptance.json",
     "test_results": "artifacts/A01/test-results/ (junit.xml, pytest-summary.txt: 113 passed)",
     "demo_and_limitations": "artifacts/A01/demo-and-limitations.md (+ demo-output.txt)"
   },
   "harness_freeze": {
-    "paths": ["src/algobots/evals/harness/", "tests/evals/harness/"],
+    "paths": [
+      "src/algobots/evals/harness/",
+      "tests/evals/harness/"
+    ],
     "home": "algobots monorepo",
     "head_commit": "b340c99",
     "source_issue": "ALG-3086",
     "merge_ci_run": "37396961518"
-  }
+  },
+  "fix_commits": [
+    "9821449 (commit-scope test skips shallow clones; CI run 37398196561 failed on this before the fix)"
+  ]
 }

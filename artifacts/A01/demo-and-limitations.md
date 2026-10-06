@@ -73,7 +73,7 @@ Revisions were needed because roadmap paths are proposals (A00/A01 resolve them)
 - **`FillEvent.fee` must be ≥ 0.** Maker rebates are expected as separate cash-flow records (A30). Changing that means a new version.
 - **Path status is a baseline snapshot.** `real` and `proposed` reflect `b340c99`. Proposed paths become real as their packets land. The test enforces only that `real` paths in algobots exist. Paths in stock-vaults and vps-infra are not checked in CI, which checks out algobots only.
 - **Kestra flow paths are unresolved.** A16 `flows/analytics/` and A24 `flows/operations/` stay proposed in algobots. Deploying them to vps-infra `kestra/flows/` is an `infrastructure-state` change for A25 to own.
-- **The commit-scope test** (`test_a01_commits_stay_inside_a01_scope`) inspects commits whose message cites ALG-3097. It skips on shallow clones such as CI.
+- **The commit-scope test** (`test_a01_commits_stay_inside_a01_scope`) inspects commits whose message cites ALG-3097, diffing each against its parent. It skips on shallow clones such as CI. CI run 37398196561 failed before fix `9821449` because a depth-1 checkout makes the commit look like a root commit.
 - **Independent review is pending.** `integrated_commit` is null until the review passes and the branch merges to `main`.
 
 ## Recovery
