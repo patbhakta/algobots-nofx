@@ -21,7 +21,11 @@ if problems:
 if "--check-transition" in args:
     rest = args[args.index("--check-transition") + 1 :]
     ref = rest[0] if rest and not rest[0].startswith("--") else registry.transition_base()
-    old = registry.load_lock_at(ref)
+    try:
+        old = registry.load_lock_at(ref)
+    except registry.SchemaRevisionError as exc:
+        print(exc)
+        sys.exit(1)
     if old is None:
         print(f"no schema lock at {ref[:12]}: first introduction, nothing to extend")
     else:

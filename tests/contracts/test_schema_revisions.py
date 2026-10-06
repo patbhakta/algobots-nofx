@@ -125,3 +125,9 @@ def test_additive_revision_keeps_queued_payloads_valid(monkeypatch):
 def test_removing_an_unpinned_version_is_allowed():
     old = {"Legacy": {"0.9": "a" * 64}, **registry.load_lock()}
     registry.check_lock_transition(old, registry.load_lock(), PINS)
+
+
+def test_unresolvable_transition_base_is_an_error():
+    """N1 (ALG-3176): a mistyped base must not pass as a first introduction."""
+    with pytest.raises(registry.SchemaRevisionError, match="'no-such-ref' is not a commit"):
+        registry.load_lock_at("no-such-ref")

@@ -23,8 +23,8 @@
       "python -m pytest tests/contracts tests/packets/A01 -q -p no:cacheprovider --junitxml=artifacts/A01/test-results/junit.xml",
       "sed strips timestamp/hostname/time from junit.xml so unchanged results leave the tree clean"
     ],
-    "result": "152 passed, 0 failed, 0 skipped",
-    "full_suite": "python -m pytest -> 348 passed (196 pre-existing + 152 A01)",
+    "result": "172 passed, 0 failed, 0 skipped",
+    "full_suite": "python -m pytest -> 368 passed (196 pre-existing + 172 A01)",
     "lint": "ruff check . -> All checks passed",
     "ci": "CI adds a 'Schema lock transition' step (fetch-depth 0); run id recorded on ALG-3097 after push"
   },
@@ -39,7 +39,8 @@
         "tests/contracts/test_golden.py::test_invalid_golden_fails_with_clear_message (38 cases, asserted message substrings)",
         "tests/contracts/test_golden.py::test_decimals_stay_exact_strings_with_units",
         "tests/contracts/test_golden.py::test_non_string_or_non_finite_amounts_rejected",
-        "tests/contracts/test_contract_rules.py::test_plan_hash_is_bound_to_content, test_approval_enforces_products_and_actions, test_inventory_reservation_holds_a_quantity, test_credential_keys_are_screened (ALG-3175 A3-A5, C7)"
+        "tests/contracts/test_contract_rules.py::test_plan_hash_is_bound_to_content, test_approval_enforces_products_and_actions, test_inventory_reservation_holds_a_quantity, test_credential_keys_are_screened (ALG-3175 A3-A5, C7)",
+        "tests/contracts/test_contract_rules.py::test_credential_shaped_values_are_screened (ALG-3176 N2)"
       ]
     },
     {
@@ -64,22 +65,26 @@
         "tests/contracts/test_schema_revisions.py::test_shape_change_without_version_bump_is_detected",
         "tests/contracts/test_schema_revisions.py::test_validator_tightening_without_schema_change_is_detected (ALG-3175 A2)",
         "tests/contracts/test_schema_revisions.py::test_editing_a_shared_validator_helper_is_detected (helpers/constants referenced by validators)",
+        "tests/contracts/test_contract_rules.py::test_grant_table_is_fingerprinted (ALG-3176 R1: dict constants such as identity.ALLOWED_GRANTS)",
+        "tests/contracts/test_contract_rules.py::test_unknown_constant_type_fails_closed",
+        "tests/contracts/test_schema_revisions.py::test_unresolvable_transition_base_is_an_error (ALG-3176 N1)",
         "tests/contracts/test_schema_revisions.py::test_in_place_lock_regeneration_fails_the_transition_check (ALG-3175 A1)",
         "tests/contracts/test_schema_revisions.py::test_rewriting_a_locked_fingerprint_is_rejected",
         "tests/contracts/test_schema_revisions.py::test_removing_a_pinned_version_names_the_stranded_packets",
         "tests/contracts/test_schema_revisions.py::test_additive_revision_keeps_queued_payloads_valid",
         "tests/contracts/test_schema_revisions.py::test_every_queued_pin_resolves",
         "manual repro: Signal@1.0 horizon tightened in place + --write-lock -> `make verify-A01 SCHEMA_BASE=HEAD` exits 1 'Signal@1.0 fingerprint rewritten in place'",
-        "manual repro: TargetPortfolio long-only cap 1 -> 0.5 with no version bump -> `python -m algobots.contracts` exits 1 'changed schema or validators without a version bump'"
+        "manual repro: TargetPortfolio long-only cap 1 -> 0.5 with no version bump -> `python -m algobots.contracts` exits 1 'changed schema or validators without a version bump'",
+        "manual repro (ALG-3176 R1): TRADE_LIVE removed from EXECUTION_SERVICE -> `python -m algobots.contracts` exits 1 'Principal@1.0 changed schema or validators without a version bump'"
       ]
     }
   ],
   "blocked_cases": [],
   "required_artifacts": {
-    "implementation_commit": "4b80d80 + 9821449 + f92e6e0 + follow-up (ALG-3175 fixes)",
-    "independent_review_receipt": "ALG-3175 verdict 2026-10-06T01:22Z: case 1 PASS, case 2 PASS, case 3 FAIL (A1, A2); fixes in f92e6e0; re-review requested",
+    "implementation_commit": "4b80d80 + 9821449 + f92e6e0 + bdd20d1 + R1 follow-up (ALG-3175/ALG-3176 fixes)",
+    "independent_review_receipt": "ALG-3175 (01:22Z): cases 1-2 PASS, case 3 FAIL (A1, A2), fixed in f92e6e0/bdd20d1. ALG-3176 (01:37Z) at bdd20d1: cases 1-2 PASS, A1-A6 and C1-C7 verified closed, case 3 FAIL on R1 only; R1, N1, N2 fixed in the follow-up commit; re-review requested",
     "acceptance_json": "artifacts/A01/acceptance.json",
-    "test_results": "artifacts/A01/test-results/ (junit.xml, pytest-summary.txt: 152 passed)",
+    "test_results": "artifacts/A01/test-results/ (junit.xml, pytest-summary.txt: 172 passed)",
     "demo_and_limitations": "artifacts/A01/demo-and-limitations.md (+ demo-output.txt)"
   },
   "harness_freeze": {
@@ -94,6 +99,7 @@
   },
   "fix_commits": [
     "9821449 (commit-scope test skips shallow clones; CI run 37398196561 failed on this before the fix)",
-    "f92e6e0 (ALG-3175 findings A1-A6, C2-C7; C1 evidence count corrected to 11 scope revisions)"
+    "f92e6e0 (ALG-3175 findings A1-A6, C2-C7; C1 evidence count corrected to 11 scope revisions)",
+    "ALG-3176 follow-up: Mapping constants fingerprinted, unknown constant types fail closed (R1); unresolvable --check-transition base is an error (N1); secret screen covers auth/cookie/session keys and Bearer/JWT/sk-ant/glpat/AIza values (N2)"
   ]
 }

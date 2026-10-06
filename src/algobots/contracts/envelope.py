@@ -15,20 +15,44 @@ from .enums import RuntimeEnvironment
 __all__ = ["Envelope"]
 
 # A payload key is treated as a credential when its last word is one of these
-# (``client_secret``, ``access_token``, ``db_password``), or its last two words
-# are one of the key pairs (``api_key``, ``privateKey``). ``secret_ref`` and
-# ``token_budget`` end in other words and stay allowed.
+# (``client_secret``, ``access_token``, ``Authorization``, ``cookie``), or its last
+# two words are one of the key pairs (``api_key``, ``privateKey``, ``session_id``).
+# ``secret_ref`` and ``token_budget`` end in other words and stay allowed.
 _SECRET_WORDS = frozenset(
-    {"secret", "password", "passwd", "passphrase", "token", "credential", "credentials"}
+    {
+        "secret",
+        "password",
+        "passwd",
+        "passphrase",
+        "token",
+        "credential",
+        "credentials",
+        "authorization",
+        "auth",
+        "bearer",
+        "cookie",
+        "cookies",
+    }
 )
 _SECRET_PAIRS = frozenset(
-    {("api", "key"), ("private", "key"), ("access", "key"), ("secret", "key")}
+    {
+        ("api", "key"),
+        ("private", "key"),
+        ("access", "key"),
+        ("secret", "key"),
+        ("session", "id"),
+        ("set", "cookie"),
+    }
 )
-_SECRET_JOINED = frozenset({"apikey", "privatekey", "accesskey", "secretkey", "apisecret"})
+_SECRET_JOINED = frozenset(
+    {"apikey", "privatekey", "accesskey", "secretkey", "apisecret", "sessionid", "setcookie"}
+)
 # Well-known credential formats, matched anywhere in a string value.
 _SECRET_VALUE = re.compile(
-    r"sk[-_](live|test)[-_]|\bsk-[A-Za-z0-9]{16,}|\bgh[pousr]_[A-Za-z0-9]{20,}"
-    r"|\bxox[abpr]-|\bAKIA[0-9A-Z]{16}\b|-----BEGIN [A-Z ]*PRIVATE KEY-----"
+    r"sk[-_](live|test)[-_]|\bsk-[A-Za-z0-9]{16,}|\bsk-ant-|\bgh[pousr]_[A-Za-z0-9]{20,}"
+    r"|\bglpat-|\bAIza[0-9A-Za-z_-]{30,}|\bxox[abpr]-|\bAKIA[0-9A-Z]{16}\b"
+    r"|\b[Bb]earer\s+\S{8,}|\beyJ[A-Za-z0-9_-]+\.eyJ[A-Za-z0-9_-]+\."
+    r"|-----BEGIN [A-Z ]*PRIVATE KEY-----"
 )
 
 

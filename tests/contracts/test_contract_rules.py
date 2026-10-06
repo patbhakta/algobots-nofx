@@ -130,13 +130,40 @@ def test_inventory_reservation_holds_a_quantity():
 
 @pytest.mark.parametrize(
     "key",
-    ["client_secret", "access_token", "refreshToken", "db_password", "api_key", "privateKey"],
+    [
+        "client_secret",
+        "access_token",
+        "refreshToken",
+        "db_password",
+        "api_key",
+        "privateKey",
+        "Authorization",
+        "auth",
+        "bearer",
+        "cookie",
+        "Set-Cookie",
+        "sessionid",
+        "session_id",
+        "x-api-key",
+    ],
 )
 def test_credential_keys_are_screened(key):
     assert _is_secret_key(key)
 
 
-@pytest.mark.parametrize("key", ["secret_ref", "token_budget", "tokens_used", "keyword", "monkey"])
+@pytest.mark.parametrize(
+    "key",
+    [
+        "secret_ref",
+        "token_budget",
+        "tokens_used",
+        "keyword",
+        "monkey",
+        "authority_ref",
+        "authority_mode",
+        "session_health",
+    ],
+)
 def test_reference_and_budget_keys_are_allowed(key):
     assert not _is_secret_key(key)
 
@@ -180,3 +207,41 @@ def test_unknown_namespace_rejected():
 def test_build_agent_cannot_be_tenant_scoped():
     with pytest.raises(ValidationError, match="not tenant-scoped"):
         _principal("BUILD_AGENT", "tenant-a", ["REPO_WRITE"])
+
+
+@pytest.mark.parametrize(
+    "value",
+    [
+        "Bearer abcdefgh12345678",
+        "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIn0.sig",
+        "sk-ant-api03-xyz",
+        "glpat-abcdefghij",
+        "AIzaSyA1234567890abcdefghijklmnopqrstu",
+        "sk-live-4f9a8b7c6d5e",
+    ],
+)
+def test_credential_shaped_values_are_screened(value):
+    data = load("Envelope")
+    data["payload"]["reason_codes"] = [value]
+    with pytest.raises(ValidationError, match="credential-shaped value"):
+        Envelope.model_validate(data)
+
+
+def test_grant_table_is_fingerprinted(monkeypatch):
+    """R1 (ALG-3176): dict constants read by validators are part of the fingerprint."""
+    from algobots.contracts import identity
+
+    table = {k: frozenset(v) for k, v in identity.ALLOWED_GRANTS.items()}
+    kind = identity.IdentityKind.EXECUTION_SERVICE
+    table[kind] = table[kind] - {identity.Grant.TRADE_LIVE}
+    monkeypatch.setattr(identity, "ALLOWED_GRANTS", table)
+    drifted = [p for p in registry.verify_lock(registry.load_lock()) if p.startswith("Principal@")]
+    assert drifted, "removing TRADE_LIVE from EXECUTION_SERVICE kept Principal@1.0's fingerprint"
+
+
+def test_unknown_constant_type_fails_closed():
+    class Opaque:
+        pass
+
+    with pytest.raises(TypeError, match="cannot fingerprint constant 'X'"):
+        registry._constant_repr("X", Opaque())

@@ -27,6 +27,9 @@ import subprocess
 import textwrap
 import typing
 from collections.abc import Callable, Iterator, Mapping
+from datetime import tzinfo
+from decimal import Decimal
+from enum import Enum
 from pathlib import Path
 from typing import Any
 
@@ -143,14 +146,38 @@ def _code_names(code: Any) -> Iterator[str]:
             yield from _code_names(const)
 
 
-def _constant_repr(value: Any) -> str | None:
+def _constant_repr(name: str, value: Any) -> str | None:
+    """Canonical text of a constant a validator reads; ``None`` for code objects
+    (functions, classes, modules, type aliases), which are covered elsewhere.
+
+    Fails closed: an unrecognized value type raises instead of silently
+    dropping out of the fingerprint.
+    """
+    if (
+        inspect.isfunction(value)
+        or inspect.isclass(value)
+        or inspect.ismodule(value)
+        or inspect.isbuiltin(value)
+        or typing.get_origin(value) is not None
+    ):
+        return None
     if isinstance(value, re.Pattern):
         return f"re:{value.pattern}"
+    if isinstance(value, Enum):
+        return f"{type(value).__qualname__}.{value.name}"
+    if isinstance(value, Mapping):
+        items = sorted((_constant_repr(name, k), _constant_repr(name, v)) for k, v in value.items())
+        return "{" + ",".join(f"{k}:{v}" for k, v in items) + "}"
     if isinstance(value, frozenset | set):
-        return repr(sorted(map(str, value)))
-    if isinstance(value, str | int | float | tuple | bool):
+        return "{" + ",".join(sorted(str(_constant_repr(name, v)) for v in value)) + "}"
+    if isinstance(value, tuple | list):
+        return "(" + ",".join(str(_constant_repr(name, v)) for v in value) + ")"
+    if value is None or isinstance(value, str | int | float | bool | Decimal | tzinfo):
         return repr(value)
-    return None
+    raise TypeError(
+        f"cannot fingerprint constant {name!r} of type {type(value).__qualname__}; "
+        "teach registry._constant_repr how to canonicalize it"
+    )
 
 
 def _source_hash(func: Callable[..., Any], owner: type | None = None) -> str:
@@ -173,7 +200,7 @@ def _source_hash(func: Callable[..., Any], owner: type | None = None) -> str:
             target = getattr(target, "__func__", target)
             if inspect.isfunction(target) and target.__module__.startswith(__package__):
                 stack.append(target)
-            elif in_package and name in scope and (rep := _constant_repr(target)) is not None:
+            elif in_package and name in scope and (rep := _constant_repr(name, target)) is not None:
                 parts.append(f"{name}={rep}")
     return hashlib.sha256("\n".join(parts).encode()).hexdigest()
 
@@ -225,8 +252,16 @@ def transition_base(upstream: str = "origin/main") -> str:
 
 
 def load_lock_at(ref: str) -> dict[str, dict[str, str]] | None:
-    """The lock committed at ``ref``, or ``None`` when ``ref`` predates the lock."""
+    """The lock committed at ``ref``, or ``None`` when ``ref`` predates the lock.
+
+    Raises :class:`SchemaRevisionError` when ``ref`` does not resolve to a commit,
+    so a mistyped base cannot pass as a first introduction.
+    """
     rel = LOCK_PATH.relative_to(Path(_git("rev-parse", "--show-toplevel")))
+    try:
+        _git("rev-parse", "--verify", "--quiet", f"{ref}^{{commit}}")
+    except subprocess.CalledProcessError:
+        raise SchemaRevisionError(f"--check-transition base {ref!r} is not a commit") from None
     try:
         body = _git("show", f"{ref}:{rel.as_posix()}")
     except subprocess.CalledProcessError:
