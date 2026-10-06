@@ -8,7 +8,7 @@ import time
 
 from fastapi.testclient import TestClient
 
-from algobots.workers.supervisor import Supervisor, proc_stats
+from algobots.engine.workers.supervisor import Supervisor, proc_stats
 
 FAKE_WORKER = textwrap.dedent(
     """

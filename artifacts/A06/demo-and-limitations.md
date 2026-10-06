@@ -5,12 +5,12 @@ Parent: ALG-3248 (demo sprint) · Packet: A06 (ALG-3102) · nautilus_trader 1.23
 ## What runs
 
 `ALGOBOTS_DEMO_WORKERS_ENABLED=1` makes the API's lifespan start a
-`Supervisor` (`src/algobots/workers/supervisor.py`), which spawns one OS
+`Supervisor` (`src/algobots/engine/workers/supervisor.py`), which spawns one OS
 process per demo account:
 
-    python -m algobots.workers.paper --account {laya|jev|coin} --poll 15
+    python -m algobots.engine.workers.paper --account {laya|jev|coin} --poll 15
 
-Each worker (`src/algobots/workers/paper.py`) owns its own Nautilus kernel:
+Each worker (`src/algobots/engine/workers/paper.py`) owns its own Nautilus kernel:
 
 | account | trader_id   | strategy_id      | order_id_tag | paper venue  | venue account   |
 |---------|-------------|------------------|--------------|--------------|-----------------|
@@ -46,6 +46,11 @@ kill stays visible. `Supervisor.start("<acct>")` restarts a single account.
 
 ## Evidence (live feed, 2026-10-06 ~22:49Z, poll 5s)
 
+Captured at commit 761ccf8, when the module was still `algobots.workers`
+(hence the `ps` command lines). It moved to `algobots.engine.workers` to sit
+inside A06's write scope in `docs/repository-map.json`, and the code is
+otherwise unchanged; `smoke-after-move.txt` re-runs it from the new path.
+
 - `processes.txt`: three separate PIDs, all children of the API process. The
   ledger's fills (`laya 164 / jev 83 / coin 130`) equal each worker's
   `orders_filled`.
@@ -60,8 +65,8 @@ kill stays visible. `Supervisor.start("<acct>")` restarts a single account.
   Coin hit the −$40 daily cap), so correctly no new orders were placed. Order
   submission on new intervals is covered by
   `test_worker_submits_exactly_the_ledger_fills_and_only_new_ones`.
-- Tests: `tests/workers/test_supervisor.py` covers N processes, kill
-  isolation, restart and stop. `tests/workers/test_paper.py` checks that
+- Tests: `tests/engine/workers/test_supervisor.py` covers N processes, kill
+  isolation, restart and stop. `tests/engine/workers/test_paper.py` checks that
   orders equal ledger fills, that nothing is resubmitted, that the kill
   switch blocks orders, and that IDs are unique.
 

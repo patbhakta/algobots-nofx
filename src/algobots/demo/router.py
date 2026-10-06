@@ -14,7 +14,7 @@ from algobots.api.config import get_settings
 from algobots.demo import killswitch
 from algobots.demo import ledger as L
 from algobots.demo.page import render
-from algobots.workers.supervisor import Supervisor, WorkerStatus
+from algobots.engine.workers.supervisor import Supervisor, WorkerStatus
 
 router = APIRouter(tags=["demo"])
 SUPERVISOR: Supervisor | None = None

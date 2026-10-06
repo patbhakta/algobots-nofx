@@ -232,6 +232,10 @@
     },
     {
       "repo": "algobots",
+      "path": "src/algobots/demo/theme.py"
+    },
+    {
+      "repo": "algobots",
       "path": "tests/demo/test_ledger.py"
     }
   ],

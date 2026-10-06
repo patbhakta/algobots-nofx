@@ -79,7 +79,7 @@ class Supervisor:
         self.state_dir = Path(state_dir)
         self.poll = poll
         # Overridable for tests; the account key and poll are appended per worker.
-        self.command = command or [sys.executable, "-m", "algobots.workers.paper"]
+        self.command = command or [sys.executable, "-m", "algobots.engine.workers.paper"]
         self.env = env
         self.procs: dict[str, subprocess.Popen] = {}
         self.spawned_at: dict[str, float] = {}

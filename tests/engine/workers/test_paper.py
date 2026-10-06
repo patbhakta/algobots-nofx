@@ -8,7 +8,7 @@ pytest.importorskip("nautilus_trader")
 
 from algobots.demo import killswitch  # noqa: E402
 from algobots.demo import ledger as L  # noqa: E402
-from algobots.workers.paper import PaperWorker, ids  # noqa: E402
+from algobots.engine.workers.paper import PaperWorker, ids  # noqa: E402
 
 T0 = 1791244800.0  # 2026-10-06T00:00Z
 

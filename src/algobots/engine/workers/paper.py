@@ -1,6 +1,6 @@
 """One Nautilus paper worker per demo account (ALG-3255, A06 slice 1).
 
-Run as its own OS process: ``python -m algobots.workers.paper --account laya``.
+Run as its own OS process: ``python -m algobots.engine.workers.paper --account laya``.
 
 Each worker owns a Nautilus kernel with a unique trader ID, its own simulated
 (paper) venue ``PAPER_<ACCT>`` holding a frozen cash account, and one
