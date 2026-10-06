@@ -1,0 +1,351 @@
+{
+  "browser": "chrome-headless-shell",
+  "pages": [
+    {
+      "page": "overview-good.html",
+      "size": "1920x1114",
+      "query": {},
+      "png": "artifacts/A09/screenshots/overview-good-1920x1114.png",
+      "overflowing": [],
+      "clipped": [],
+      "scroll_within_viewport": true
+    },
+    {
+      "page": "overview-good.html",
+      "size": "1440x900",
+      "query": {},
+      "png": "artifacts/A09/screenshots/overview-good-1440x900.png",
+      "overflowing": [],
+      "clipped": [],
+      "scroll_within_viewport": true
+    },
+    {
+      "page": "overview-good.html",
+      "size": "1024x768",
+      "query": {},
+      "png": "artifacts/A09/screenshots/overview-good-1024x768.png",
+      "overflowing": [],
+      "clipped": [],
+      "scroll_within_viewport": true
+    },
+    {
+      "page": "overview-good.html",
+      "size": "390x844",
+      "query": {},
+      "png": "artifacts/A09/screenshots/overview-good-390x844.png",
+      "overflowing": [],
+      "clipped": [],
+      "scroll_within_viewport": true
+    },
+    {
+      "page": "workspace-good.html",
+      "size": "1920x1114",
+      "query": {},
+      "png": "artifacts/A09/screenshots/workspace-good-1920x1114.png",
+      "overflowing": [],
+      "clipped": [],
+      "scroll_within_viewport": true
+    },
+    {
+      "page": "workspace-good.html",
+      "size": "1440x900",
+      "query": {},
+      "png": "artifacts/A09/screenshots/workspace-good-1440x900.png",
+      "overflowing": [],
+      "clipped": [],
+      "scroll_within_viewport": true
+    },
+    {
+      "page": "workspace-good.html",
+      "size": "1024x768",
+      "query": {},
+      "png": "artifacts/A09/screenshots/workspace-good-1024x768.png",
+      "overflowing": [],
+      "clipped": [],
+      "scroll_within_viewport": true
+    },
+    {
+      "page": "workspace-good.html",
+      "size": "390x844",
+      "query": {},
+      "png": "artifacts/A09/screenshots/workspace-good-390x844.png",
+      "overflowing": [],
+      "clipped": [],
+      "scroll_within_viewport": true
+    },
+    {
+      "page": "studio-good.html",
+      "size": "1920x1114",
+      "query": {},
+      "png": "artifacts/A09/screenshots/studio-good-1920x1114.png",
+      "overflowing": [],
+      "clipped": [],
+      "scroll_within_viewport": true
+    },
+    {
+      "page": "studio-good.html",
+      "size": "1440x900",
+      "query": {},
+      "png": "artifacts/A09/screenshots/studio-good-1440x900.png",
+      "overflowing": [],
+      "clipped": [],
+      "scroll_within_viewport": true
+    },
+    {
+      "page": "studio-good.html",
+      "size": "1024x768",
+      "query": {},
+      "png": "artifacts/A09/screenshots/studio-good-1024x768.png",
+      "overflowing": [],
+      "clipped": [],
+      "scroll_within_viewport": true
+    },
+    {
+      "page": "studio-good.html",
+      "size": "390x844",
+      "query": {},
+      "png": "artifacts/A09/screenshots/studio-good-390x844.png",
+      "overflowing": [],
+      "clipped": [],
+      "scroll_within_viewport": true
+    },
+    {
+      "page": "invite-good.html",
+      "size": "1920x1114",
+      "query": {},
+      "png": "artifacts/A09/screenshots/invite-good-1920x1114.png",
+      "overflowing": [],
+      "clipped": [],
+      "scroll_within_viewport": true
+    },
+    {
+      "page": "invite-good.html",
+      "size": "1440x900",
+      "query": {},
+      "png": "artifacts/A09/screenshots/invite-good-1440x900.png",
+      "overflowing": [],
+      "clipped": [],
+      "scroll_within_viewport": true
+    },
+    {
+      "page": "invite-good.html",
+      "size": "1024x768",
+      "query": {},
+      "png": "artifacts/A09/screenshots/invite-good-1024x768.png",
+      "overflowing": [],
+      "clipped": [],
+      "scroll_within_viewport": true
+    },
+    {
+      "page": "invite-good.html",
+      "size": "390x844",
+      "query": {},
+      "png": "artifacts/A09/screenshots/invite-good-390x844.png",
+      "overflowing": [],
+      "clipped": [],
+      "scroll_within_viewport": true
+    },
+    {
+      "page": "overview-loss.html",
+      "size": "1440x900",
+      "query": {},
+      "png": "artifacts/A09/screenshots/overview-loss-1440x900.png",
+      "overflowing": [],
+      "clipped": [],
+      "scroll_within_viewport": true
+    },
+    {
+      "page": "overview-empty.html",
+      "size": "1440x900",
+      "query": {},
+      "png": "artifacts/A09/screenshots/overview-empty-1440x900.png",
+      "overflowing": [],
+      "clipped": [],
+      "scroll_within_viewport": true
+    },
+    {
+      "page": "overview-stale.html",
+      "size": "1440x900",
+      "query": {},
+      "png": "artifacts/A09/screenshots/overview-stale-1440x900.png",
+      "overflowing": [],
+      "clipped": [],
+      "scroll_within_viewport": true
+    },
+    {
+      "page": "overview-unknown.html",
+      "size": "1440x900",
+      "query": {},
+      "png": "artifacts/A09/screenshots/overview-unknown-1440x900.png",
+      "overflowing": [],
+      "clipped": [],
+      "scroll_within_viewport": true
+    },
+    {
+      "page": "workspace-loss.html",
+      "size": "1440x900",
+      "query": {},
+      "png": "artifacts/A09/screenshots/workspace-loss-1440x900.png",
+      "overflowing": [],
+      "clipped": [],
+      "scroll_within_viewport": true
+    },
+    {
+      "page": "workspace-empty.html",
+      "size": "1440x900",
+      "query": {},
+      "png": "artifacts/A09/screenshots/workspace-empty-1440x900.png",
+      "overflowing": [],
+      "clipped": [],
+      "scroll_within_viewport": true
+    },
+    {
+      "page": "workspace-stale.html",
+      "size": "1440x900",
+      "query": {},
+      "png": "artifacts/A09/screenshots/workspace-stale-1440x900.png",
+      "overflowing": [],
+      "clipped": [],
+      "scroll_within_viewport": true
+    },
+    {
+      "page": "workspace-unknown.html",
+      "size": "1440x900",
+      "query": {},
+      "png": "artifacts/A09/screenshots/workspace-unknown-1440x900.png",
+      "overflowing": [],
+      "clipped": [],
+      "scroll_within_viewport": true
+    },
+    {
+      "page": "studio-loss.html",
+      "size": "1440x900",
+      "query": {},
+      "png": "artifacts/A09/screenshots/studio-loss-1440x900.png",
+      "overflowing": [],
+      "clipped": [],
+      "scroll_within_viewport": true
+    },
+    {
+      "page": "studio-empty.html",
+      "size": "1440x900",
+      "query": {},
+      "png": "artifacts/A09/screenshots/studio-empty-1440x900.png",
+      "overflowing": [],
+      "clipped": [],
+      "scroll_within_viewport": true
+    },
+    {
+      "page": "studio-stale.html",
+      "size": "1440x900",
+      "query": {},
+      "png": "artifacts/A09/screenshots/studio-stale-1440x900.png",
+      "overflowing": [],
+      "clipped": [],
+      "scroll_within_viewport": true
+    },
+    {
+      "page": "studio-unknown.html",
+      "size": "1440x900",
+      "query": {},
+      "png": "artifacts/A09/screenshots/studio-unknown-1440x900.png",
+      "overflowing": [],
+      "clipped": [],
+      "scroll_within_viewport": true
+    },
+    {
+      "page": "invite-loss.html",
+      "size": "1440x900",
+      "query": {},
+      "png": "artifacts/A09/screenshots/invite-loss-1440x900.png",
+      "overflowing": [],
+      "clipped": [],
+      "scroll_within_viewport": true
+    },
+    {
+      "page": "invite-empty.html",
+      "size": "1440x900",
+      "query": {},
+      "png": "artifacts/A09/screenshots/invite-empty-1440x900.png",
+      "overflowing": [],
+      "clipped": [],
+      "scroll_within_viewport": true
+    },
+    {
+      "page": "invite-stale.html",
+      "size": "1440x900",
+      "query": {},
+      "png": "artifacts/A09/screenshots/invite-stale-1440x900.png",
+      "overflowing": [],
+      "clipped": [],
+      "scroll_within_viewport": true
+    },
+    {
+      "page": "invite-unknown.html",
+      "size": "1440x900",
+      "query": {},
+      "png": "artifacts/A09/screenshots/invite-unknown-1440x900.png",
+      "overflowing": [],
+      "clipped": [],
+      "scroll_within_viewport": true
+    },
+    {
+      "page": "overview-loss.html",
+      "size": "390x844",
+      "query": {},
+      "png": "artifacts/A09/screenshots/overview-loss-390x844.png",
+      "overflowing": [],
+      "clipped": [],
+      "scroll_within_viewport": true
+    },
+    {
+      "page": "overview-empty.html",
+      "size": "390x844",
+      "query": {},
+      "png": "artifacts/A09/screenshots/overview-empty-390x844.png",
+      "overflowing": [],
+      "clipped": [],
+      "scroll_within_viewport": true
+    },
+    {
+      "page": "overview-stale.html",
+      "size": "390x844",
+      "query": {},
+      "png": "artifacts/A09/screenshots/overview-stale-390x844.png",
+      "overflowing": [],
+      "clipped": [],
+      "scroll_within_viewport": true
+    },
+    {
+      "page": "overview-unknown.html",
+      "size": "390x844",
+      "query": {},
+      "png": "artifacts/A09/screenshots/overview-unknown-390x844.png",
+      "overflowing": [],
+      "clipped": [],
+      "scroll_within_viewport": true
+    },
+    {
+      "page": "workspace-good.html",
+      "size": "1440x900",
+      "query": {
+        "texture": "off"
+      },
+      "png": "artifacts/A09/screenshots/workspace-good-1440x900-texture-off.png",
+      "overflowing": [],
+      "clipped": [],
+      "scroll_within_viewport": true
+    },
+    {
+      "page": "overview-good.html",
+      "size": "390x844",
+      "query": {
+        "motion": "off"
+      },
+      "png": "artifacts/A09/screenshots/overview-good-390x844-motion-off.png",
+      "overflowing": [],
+      "clipped": [],
+      "scroll_within_viewport": true
+    }
+  ]
+}

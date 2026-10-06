@@ -1,0 +1,58 @@
+[
+  {
+    "name": "demo_banner",
+    "purpose": "Sticky DEMO DATA banner on every storyboard page"
+  },
+  {
+    "name": "app_header",
+    "purpose": "Workspace, account, PAPER/LIVE badge, data/reconciliation freshness, approvals"
+  },
+  {
+    "name": "env_badge",
+    "purpose": "PAPER/LIVE authority badge (text, not color alone)"
+  },
+  {
+    "name": "status",
+    "purpose": "Glyph + text + aria-label status chip for order/signal/topology/step states"
+  },
+  {
+    "name": "money",
+    "purpose": "Tabular currency value with explicit sign and Unavailable state"
+  },
+  {
+    "name": "metric",
+    "purpose": "KPI cell: label, tabular value, as-of/period/fees meta"
+  },
+  {
+    "name": "stat",
+    "purpose": "Advanced statistic with sample count, period, costs and Unavailable reason"
+  },
+  {
+    "name": "panel",
+    "purpose": "Thin-ruled panel with header; financial panels carry a DEMO DATA tag"
+  },
+  {
+    "name": "table",
+    "purpose": "Data table with right-aligned tabular numeric columns"
+  },
+  {
+    "name": "action",
+    "purpose": "Button that always shows account and environment; disabled state states why"
+  },
+  {
+    "name": "bar",
+    "purpose": "Thin horizontal bar for depth/cost distributions (real snapshot widths)"
+  },
+  {
+    "name": "trace",
+    "purpose": "Topology trail market \u2192 signal \u2192 risk \u2192 order \u2192 position with explain drawer"
+  },
+  {
+    "name": "field",
+    "purpose": "Typed parameter input with unit and field-level error"
+  },
+  {
+    "name": "settings",
+    "purpose": "Texture-off and motion-off toggles (persisted, URL-overridable)"
+  }
+]
