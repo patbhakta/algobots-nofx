@@ -53,8 +53,13 @@ kill stays visible. `Supervisor.start("<acct>")` restarts a single account.
 - `workers-after-kill.json`: after `kill -9` on jev, jev is `exited` with
   `exit_code -9`. laya and coin are still `ready`, with heartbeats after the
   kill.
-- `after-next-interval.json`: the next 15-minute interval arrived with jev
-  still dead, and the surviving workers' order counts advanced.
+- `after-next-interval.json` and `heartbeats-after-next-interval.txt` (23:00Z):
+  the next live interval arrived while jev was dead. laya and coin processed
+  it (`intervals` 397 → 398) and jev did not (stuck at 397). That interval had
+  no FILLED decision in the ledger (Laya abstained, Jev's sleeve is exhausted,
+  Coin hit the −$40 daily cap), so correctly no new orders were placed. Order
+  submission on new intervals is covered by
+  `test_worker_submits_exactly_the_ledger_fills_and_only_new_ones`.
 - Tests: `tests/workers/test_supervisor.py` covers N processes, kill
   isolation, restart and stop. `tests/workers/test_paper.py` checks that
   orders equal ledger fills, that nothing is resubmitted, that the kill

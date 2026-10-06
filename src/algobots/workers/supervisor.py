@@ -40,6 +40,7 @@ class WorkerStatus:
     trader_id: str | None = None
     account_id: str | None = None
     order_id_tag: str | None = None
+    intervals: int | None = None  # feed intervals processed so far
     orders_submitted: int | None = None
     orders_filled: int | None = None
     open_positions: int | None = None
@@ -137,6 +138,7 @@ class Supervisor:
             st.last_heartbeat = hb.get("last_heartbeat")
             st.trader_id, st.account_id = hb.get("trader_id"), hb.get("account_id")
             st.order_id_tag = hb.get("order_id_tag")
+            st.intervals = hb.get("intervals")
             st.orders_submitted, st.orders_filled = (
                 hb.get("orders_submitted"),
                 hb.get("orders_filled"),

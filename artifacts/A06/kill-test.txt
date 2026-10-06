@@ -1,1 +1,2 @@
 jev killed with SIGKILL (pid 3871133) at 1791326964.923248509; status sampled 12s later
+API SIGTERM -> lifespan Supervisor.stop(): 'Application shutdown complete', 0 worker processes remaining (ps check)
