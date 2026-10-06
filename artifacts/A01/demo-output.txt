@@ -1,0 +1,4 @@
+registry: 19 contracts; lock drift: none
+[ok] OrderPlan@1.0 child child-1: 10 shares <= 1872.50 USD; round-trip exact: True
+[rejected] float amount: Value error, decimal amounts must be strings, got float 1.0
+[rejected] schema revision: OrderPlan@1.0 removed while queued packets pin it: A07, A08, A20, A21, A32

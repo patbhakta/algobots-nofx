@@ -1,0 +1,80 @@
+{
+  "packet": "A01",
+  "revision": 2,
+  "issue": "ALG-3097",
+  "repository": "algobots",
+  "baseline_commit": "b340c99",
+  "implementation_commit": "4b80d80",
+  "integrated_commit": null,
+  "integration_note": "integrated_commit is recorded at merge to main after independent review; A01 is not DONE until then",
+  "environment": {
+    "python": "3.12.3",
+    "pydantic": "2.13.5",
+    "allowed": ["development", "synthetic-paper"],
+    "fixtures": "synthetic only; no credentials, no broker or memory service contacted"
+  },
+  "verification": {
+    "command": "make verify-A01",
+    "steps": [
+      "python -m algobots.contracts  -> schema lock in sync (19 contracts)",
+      "python -m pytest tests/contracts tests/packets/A01 -q -p no:cacheprovider --junitxml=artifacts/A01/test-results/junit.xml"
+    ],
+    "result": "113 passed, 0 failed, 0 skipped",
+    "full_suite": "python -m pytest -> 309 passed (196 pre-existing + 113 A01)",
+    "lint": "ruff check . -> All checks passed"
+  },
+  "acceptance_cases": [
+    {
+      "id": 1,
+      "criterion": "Golden contracts round-trip with decimal amounts and explicit units; incompatible fields fail clearly.",
+      "result": "PASS",
+      "evidence": [
+        "tests/contracts/test_golden.py::test_every_registered_contract_has_a_valid_golden",
+        "tests/contracts/test_golden.py::test_valid_golden_round_trips_exactly (19 contracts, exact JSON equality)",
+        "tests/contracts/test_golden.py::test_invalid_golden_fails_with_clear_message (24 cases, asserted message substrings)",
+        "tests/contracts/test_golden.py::test_decimals_stay_exact_strings_with_units",
+        "tests/contracts/test_golden.py::test_non_string_or_non_finite_amounts_rejected"
+      ]
+    },
+    {
+      "id": 2,
+      "criterion": "Every packet resolves to real/proposed paths and each shared resource has one integration owner.",
+      "result": "PASS",
+      "evidence": [
+        "docs/repository-map.json (38 packets, 12 scope revisions, 9 shared resources, 1 frozen path set)",
+        "tests/packets/A01/test_a01_repository_map.py::test_packet_resolves_to_real_or_proposed_paths (38 parametrized)",
+        "tests/packets/A01/test_a01_repository_map.py::test_each_shared_resource_has_exactly_one_known_integration_owner",
+        "tests/packets/A01/test_a01_repository_map.py::test_no_two_packets_declare_the_same_path",
+        "tests/packets/A01/test_a01_repository_map.py::test_every_tracked_file_has_an_owner",
+        "tests/packets/A01/test_a01_repository_map.py::test_harness_is_frozen_and_unwritable"
+      ]
+    },
+    {
+      "id": 3,
+      "criterion": "A schema revision cannot silently invalidate an already queued packet.",
+      "result": "PASS",
+      "evidence": [
+        "tests/contracts/test_schema_revisions.py::test_shape_change_without_version_bump_is_detected",
+        "tests/contracts/test_schema_revisions.py::test_rewriting_a_locked_fingerprint_is_rejected",
+        "tests/contracts/test_schema_revisions.py::test_removing_a_pinned_version_names_the_stranded_packets",
+        "tests/contracts/test_schema_revisions.py::test_additive_revision_keeps_queued_payloads_valid",
+        "tests/contracts/test_schema_revisions.py::test_every_queued_pin_resolves"
+      ]
+    }
+  ],
+  "blocked_cases": [],
+  "required_artifacts": {
+    "implementation_commit": "4b80d80",
+    "independent_review_receipt": "PENDING - review card linked from ALG-3097",
+    "acceptance_json": "artifacts/A01/acceptance.json",
+    "test_results": "artifacts/A01/test-results/ (junit.xml, pytest-summary.txt: 113 passed)",
+    "demo_and_limitations": "artifacts/A01/demo-and-limitations.md (+ demo-output.txt)"
+  },
+  "harness_freeze": {
+    "paths": ["src/algobots/evals/harness/", "tests/evals/harness/"],
+    "home": "algobots monorepo",
+    "head_commit": "b340c99",
+    "source_issue": "ALG-3086",
+    "merge_ci_run": "37396961518"
+  }
+}
