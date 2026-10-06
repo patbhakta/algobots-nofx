@@ -1,61 +1,61 @@
 {
   "contracts": {
     "ApprovalEnvelope": {
-      "1.0": "425be60abc03f12c9428de2e0256bf2390f85f6b2947461b4ff5a4b529b1089f"
+      "1.0": "7f3284fab4e737a59469d93d2a091a36e01c8e16b9c8c630c0eca4fcf3bceed6"
     },
     "BrokerAccount": {
       "1.0": "06b6cceb761ef4fad1cf0006cd88412ed687a7f2be08a4bc15163b860ce8e08e"
     },
     "Capabilities": {
-      "1.0": "306c33d04e3c3cfb9d8ce3c42db248629129f5aea17afa3391b0f81ac4efaae5"
+      "1.0": "088b17c97c25a6c5e4ca2b7d5f61a937a6157d7a95322987a5329417e19adac5"
     },
     "DecisionRequest": {
-      "1.0": "3fb390531917ac1643f99cd2b8903ffa56c9d3ffe39e2d6861f4b2d6b48555c4"
+      "1.0": "d8ebfc6f03ff07eb8293259c32f6dd4bc56aa2cbb12b0f1dafe39f68df2d750c"
     },
     "DecisionResponse": {
-      "1.0": "54462857107d0eb30fb230cf1b7aaf3577779f6d440933ce02d919198f871575"
+      "1.0": "42863336a3a09c3817698b6fec030d399f5845cec985bcfbf5deba2e0f8a764a"
     },
     "Deployment": {
-      "1.0": "d9a6866e1b8f525de3cc853eaa18f2cd320a527c8b8702c2cabe0615fdf98433"
+      "1.0": "0f5e5cab38e5a688529635d60e56b13c16fe1012dd195dbe0f6c74b858cf4a8a"
     },
     "Envelope": {
-      "1.0": "347251bb2598baee4bd8bc7c2d104ac1baad39aa22485deadf719266f9c0cd22"
+      "1.0": "be86461724fa641eb7bbacf296fac07697d9165889d3b6653ed419516624a57a"
     },
     "EvidencePacket": {
       "1.0": "5d38d9260c8da017e651b370fe75bdebe7f05dd841606beecb607b3e78a75cca"
     },
     "ExecutionCommand": {
-      "1.0": "97109242e6cb24bcaa656ff89b43f0772a541f57068fd344e12d4326872b67c7"
+      "1.0": "f49f1648384b1b302c4d1cea7c611cb3a43770c1b2445c3d39d4bf747e69ce11"
     },
     "FillEvent": {
-      "1.0": "bbf72b78b3022e7bad04885bd25d9fdd84821cffb87f5c74ed1ffc776c234c02"
+      "1.0": "cd560c4aa821ce58406ed5d1245a90c30de68875a85d5559fef21611fc548938"
     },
     "IntentRequest": {
-      "1.0": "07c1495b4c3770128bda73cec6ebed9e4a3c6ec32a97a31a1596a8678c2fb890"
+      "1.0": "17a2647122d720f28481a562a6f0f95155cf008155e25c6edba8434e1ce67b8a"
     },
     "MemoryRecord": {
-      "1.0": "265f131cede3615b7f153caa7442a272500ce8da4c2e2b6fa3347fbbcff3091b"
+      "1.0": "e1bc1df7439e8d3b56685b866803319afb5f93981543f02827d86a65f470d667"
     },
     "OrderEvent": {
-      "1.0": "997a11336df2281501b13071a1fb0275e37162977d40412bca96a378d25b9ccb"
+      "1.0": "096069238ed148e38a1ef7ffa43313edaf7c8f16a0429fd76863223e4409c44c"
     },
     "OrderPlan": {
-      "1.0": "19ebb1b3bc4d9630aa4c022eb01eac04e9892d15467462171a57cb82a67207b2"
+      "1.0": "2e99e0028d2411b1b73ce73f761f1e3f942b29f25a0d3e8419680b173c5c7361"
     },
     "Principal": {
       "1.0": "1d00e4695ae83a8986e84c0570a1971fdc52874cee5ec0d6f825beafa41a14a3"
     },
     "Reservation": {
-      "1.0": "449f21aea7abcd0ef34414501fa1fb54ddb6613ed6b1e8a54247c007f04dfa87"
+      "1.0": "2c028f7a2bf313e3b5bf886d7e14d5688f466f142afca749f5eaeb4205dcb9a2"
     },
     "Signal": {
       "1.0": "1768ffcb6d27eb6326e22e80a1746f79c7fa0d1019cfd3ad00b607328c713a2e"
     },
     "StrategyVersion": {
-      "1.0": "97b7127a9c47c87f7bc18bc4d941af8444f65225fae1da1153a4b990015ecefa"
+      "1.0": "91b4888a60517c87a69db5d1986372b426c2146905144eaf98a3cc783cbd55a0"
     },
     "TargetPortfolio": {
-      "1.0": "98d02d863797e8fb4d61b6b97bcfc81af979f502ece11e8d7033c3ab5dd63f20"
+      "1.0": "e52f462dccf70fa1a1a326fdf87527a56f001c728fd26941446124f083a2f8b7"
     }
   },
   "integration_owner": "A01",

@@ -22,6 +22,7 @@ from __future__ import annotations
 import hashlib
 import inspect
 import json
+import re
 import subprocess
 import textwrap
 import typing
@@ -105,7 +106,9 @@ def _annotation_parts(annotation: Any) -> Iterator[Any]:
         yield from _annotation_parts(arg)
 
 
-def _model_callables(cls: type[BaseModel]) -> Iterator[tuple[str, Callable[..., Any]]]:
+def _model_callables(
+    cls: type[BaseModel],
+) -> Iterator[tuple[str, Callable[..., Any], type[BaseModel]]]:
     """Validators/serializers of ``cls`` and of every model reachable through its fields."""
     seen: set[type[BaseModel]] = set()
     stack = [cls]
@@ -122,31 +125,71 @@ def _model_callables(cls: type[BaseModel]) -> Iterator[tuple[str, Callable[..., 
             decorators.model_serializers,
         ):
             for name, dec in group.items():
-                yield f"{model.__qualname__}.{name}", dec.func
+                yield f"{model.__qualname__}.{name}", dec.func, model
         for field_name, field in model.model_fields.items():
             parts = [*field.metadata, *_annotation_parts(field.annotation)]
             for part in parts:
                 if isinstance(part, type) and issubclass(part, BaseModel):
                     stack.append(part)
                 elif callable(getattr(part, "func", None)):
-                    yield f"{model.__qualname__}.{field_name}:{type(part).__name__}", part.func
+                    label = f"{model.__qualname__}.{field_name}:{type(part).__name__}"
+                    yield label, part.func, model
 
 
-def _source_hash(func: Callable[..., Any]) -> str:
-    func = inspect.unwrap(getattr(func, "__func__", func))
-    source = textwrap.dedent(inspect.getsource(func))
-    return hashlib.sha256(source.encode()).hexdigest()
+def _code_names(code: Any) -> Iterator[str]:
+    yield from code.co_names
+    for const in code.co_consts:
+        if inspect.iscode(const):
+            yield from _code_names(const)
+
+
+def _constant_repr(value: Any) -> str | None:
+    if isinstance(value, re.Pattern):
+        return f"re:{value.pattern}"
+    if isinstance(value, frozenset | set):
+        return repr(sorted(map(str, value)))
+    if isinstance(value, str | int | float | tuple | bool):
+        return repr(value)
+    return None
+
+
+def _source_hash(func: Callable[..., Any], owner: type | None = None) -> str:
+    """Hash ``func``'s source plus every contracts-package function and constant it
+    references (recursively), so editing a shared helper is drift too."""
+    parts: list[str] = []
+    seen: set[Callable[..., Any]] = set()
+    stack = [func]
+    while stack:
+        item = stack.pop()
+        fn = inspect.unwrap(getattr(item, "__func__", item))
+        if fn in seen:
+            continue
+        seen.add(fn)
+        parts.append(textwrap.dedent(inspect.getsource(fn)))
+        scope = fn.__globals__
+        in_package = scope.get("__name__", "").startswith(__package__)
+        for name in sorted(set(_code_names(fn.__code__))):
+            target = scope[name] if name in scope else getattr(owner, name, None)
+            target = getattr(target, "__func__", target)
+            if inspect.isfunction(target) and target.__module__.startswith(__package__):
+                stack.append(target)
+            elif in_package and name in scope and (rep := _constant_repr(target)) is not None:
+                parts.append(f"{name}={rep}")
+    return hashlib.sha256("\n".join(parts).encode()).hexdigest()
 
 
 def fingerprint(cls: type[VersionedContract]) -> str:
-    """sha256 over the JSON schema plus the source of every reachable validator/serializer.
+    """sha256 over the JSON schema plus the source of every reachable validator/serializer
+    and the contracts-package helpers and constants they reference.
 
     The JSON schema alone omits validator logic, so tightening a validator would
     otherwise keep the fingerprint and silently reject queued payloads.
     """
     body = {
         "schema": cls.model_json_schema(mode="validation"),
-        "callables": sorted({(name, _source_hash(f)) for name, f in _model_callables(cls)}),
+        "callables": sorted(
+            {(name, _source_hash(f, owner)) for name, f, owner in _model_callables(cls)}
+        ),
     }
     canonical = json.dumps(body, sort_keys=True, separators=(",", ":"))
     return hashlib.sha256(canonical.encode()).hexdigest()

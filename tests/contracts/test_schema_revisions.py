@@ -1,6 +1,7 @@
 """A01 acceptance case 3: a schema revision cannot silently invalidate a queued packet."""
 
 import json
+import re
 import runpy
 import sys
 from pathlib import Path
@@ -50,6 +51,19 @@ def test_validator_tightening_without_schema_change_is_detected(monkeypatch):
     monkeypatch.setitem(registry._REGISTRY, ("TargetPortfolio", "1.0"), TargetPortfolio)
     problems = registry.verify_lock(registry.load_lock())
     assert any(p.startswith("TargetPortfolio@1.0 changed") for p in problems)
+
+
+def test_editing_a_shared_validator_helper_is_detected(monkeypatch):
+    """Helpers and constants that validators reference are part of the fingerprint."""
+    from algobots.contracts import base, plan
+
+    def _order_action(value):  # looser: accepts CREATE_TARGET
+        return value
+
+    monkeypatch.setattr(plan, "_order_action", _order_action)
+    monkeypatch.setattr(base, "_DECIMAL_TEXT", re.compile(r"[0-9.]+"))
+    drifted = {p.split("@")[0] for p in registry.verify_lock(registry.load_lock())}
+    assert {"OrderPlan", "ExecutionCommand", "ApprovalEnvelope"} <= drifted
 
 
 def test_in_place_lock_regeneration_fails_the_transition_check(monkeypatch, capsys):
