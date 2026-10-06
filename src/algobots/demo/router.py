@@ -1,16 +1,18 @@
-"""Routes for the live paper-trading demo: page, JSON state, kill switch."""
+"""Routes for the live paper-trading demo: terminal page, JSON views, kill switch."""
 
 from __future__ import annotations
 
+import time
 from dataclasses import asdict
 from datetime import UTC, datetime
 from pathlib import Path
 from urllib.parse import parse_qs
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Query, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 
 from algobots.api.config import get_settings
+from algobots.demo import blotter as B
 from algobots.demo import killswitch
 from algobots.demo import ledger as L
 from algobots.demo.page import render
@@ -55,9 +57,26 @@ def root() -> RedirectResponse:
 
 
 @router.get("/demo", response_class=HTMLResponse)
-def demo_page() -> str:
+def demo_page(account: str | None = None, status: str | None = None) -> str:
     lg, start = _ledger()
-    return render(lg, start=start)
+    workers = {w["account"]: w for w in _workers()}
+    return render(lg, start=start, account=account, status=status, workers=workers)
+
+
+@router.get("/demo/api/positions")
+def demo_positions(account: str | None = None) -> dict:
+    lg, _ = _ledger()
+    key, now = B.account_key(account), time.time()
+    return {"account": key, "as_of": now, "positions": B.positions(lg, now, key)}
+
+
+@router.get("/demo/api/orders")
+def demo_orders(
+    account: str | None = None, status: str | None = None, limit: int = Query(200, ge=1, le=5000)
+) -> dict:
+    lg, _ = _ledger()
+    key, st = B.account_key(account), B.status_key(status)
+    return {"account": key, "status": st, "orders": B.orders(lg, key, st, limit)}
 
 
 @router.get("/demo/api/state")
@@ -98,13 +117,16 @@ def demo_state() -> dict:
     }
 
 
-@router.get("/demo/api/workers")
-def demo_workers() -> dict:
+def _workers() -> list[dict]:
     sup = SUPERVISOR
     if sup is None:
-        workers = [asdict(WorkerStatus(account=a, state="not_started")) for a in L.STRATEGIES]
-    else:
-        workers = sup.snapshot()
+        return [asdict(WorkerStatus(account=a, state="not_started")) for a in L.STRATEGIES]
+    return sup.snapshot()
+
+
+@router.get("/demo/api/workers")
+def demo_workers() -> dict:
+    sup, workers = SUPERVISOR, _workers()
     return {
         "enabled": sup is not None,
         "ready": all(w["state"] == "ready" for w in workers),
@@ -120,4 +142,5 @@ async def kill_switch(request: Request) -> RedirectResponse:
     name = form.get("actor", [""])[0].strip()[:40]
     actor = f"{name} via dashboard ({host})" if name else f"dashboard ({host})"
     killswitch.set_engaged(get_settings().demo_state_dir, engaged, actor=actor)
-    return RedirectResponse("/demo", status_code=303)
+    key = B.account_key(form.get("account", [None])[0])
+    return RedirectResponse("/demo" if key == B.ALL else f"/demo?account={key}", status_code=303)

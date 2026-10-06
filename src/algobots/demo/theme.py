@@ -65,6 +65,18 @@ table.data tbody tr:hover{background:var(--c-raised)}
 .chart-d{max-width:960px} .chart-m{display:none} svg text{font-family:var(--font-mono)}
 @media (min-width:701px){table.data td .ccy{display:none}}  /* every amount is USD; the status bar says so */
 .full{grid-column:1/-1}
+.ctxbar strong{color:var(--c-focus)}
+table.accounts tr.acct{cursor:pointer}
+table.accounts tr.acct td:first-child a{color:inherit;text-decoration:none}
+table.accounts tr.sel{background:var(--c-raised);box-shadow:inset 3px 0 0 var(--c-focus)}
+table.accounts tr.sel td:first-child a{color:var(--c-focus);font-weight:700}
+@media (min-width:701px){table.data td.n+td:not(.n),table.data th.n+th:not(.n){padding-left:14px}}
+.panel[aria-label=Risk] td[data-label=State]{white-space:normal}
+.panel[aria-label=Risk] td[data-label=State] .status{white-space:normal}
+.filters{display:flex;flex-wrap:wrap;gap:4px;align-items:center;padding:4px 0}
+.filters .filt{color:var(--c-muted);text-decoration:none;border:var(--rule-strong);padding:0 6px;line-height:20px;text-transform:uppercase;font-size:10.5px;letter-spacing:.04em}
+.filters .filt.on{color:var(--c-ink);border-color:var(--c-focus)}
+.filters .meta{margin-left:auto;font-size:10.5px}
 @media (max-width:1100px){.strip{grid-template-columns:repeat(4,minmax(0,1fr))}.grid{grid-template-columns:minmax(0,1fr)}}
 @media (max-width:700px){
 .wide{display:none}
@@ -72,12 +84,13 @@ table.data tbody tr:hover{background:var(--c-raised)}
 .metric:nth-child(2n){border-right:0} .metric{border-bottom:var(--rule)}
 .chart-d{display:none} .chart-m{display:block}
 .statusbar>*{padding:0 6px}
+.action{height:auto;min-height:24px;flex-wrap:wrap;gap:0 8px;text-align:left}
 table.data.stack thead{display:none}
 table.data.stack,table.data.stack tbody,table.data.stack tr{display:block;width:100%}
 table.data.stack tr{border-bottom:var(--rule-strong);padding:2px 0}
 table.data.stack td{display:flex;justify-content:space-between;gap:12px;height:auto;min-height:22px;align-items:center;padding:0;border:0;text-align:right;white-space:normal}
 table.data.stack td::before{content:attr(data-label);color:var(--c-muted);text-align:left;flex:none}
-table.data.stack td:empty{display:none} table.data.stack td .status{white-space:normal;text-align:right;min-width:0}
+table.data.stack td:empty,table.data.stack td:has(>.nil:only-child){display:none} table.data.stack td .status{white-space:normal;text-align:right;min-width:0}
 table.data.stack td[data-label=Reason]{display:block;text-align:left;width:auto;max-width:none}
 table.data.stack td[data-label=Reason]::before{display:block}}
 """
@@ -86,4 +99,13 @@ table.data.stack td[data-label=Reason]::before{display:block}}
 CLOCK = """
 (function(){var el=document.getElementById("utc");if(!el)return;
 function t(){el.textContent=new Date().toISOString().slice(11,19)+"Z";}t();setInterval(t,1000);})();
+"""
+
+# Accounts pane: ↑/↓ moves between rows, Enter (or a click) sets ?account=.
+KEYS = """
+(function(){var rows=[].slice.call(document.querySelectorAll("tr.acct"));if(!rows.length)return;
+rows.forEach(function(r,i){r.addEventListener("click",function(ev){if(ev.target.closest("a"))return;location.href=r.dataset.href;});
+r.addEventListener("keydown",function(ev){var k=ev.key;if(k==="Enter"){location.href=r.dataset.href;}
+else if(k==="ArrowDown"||k==="ArrowUp"){ev.preventDefault();var n=rows[(i+(k==="ArrowDown"?1:rows.length-1))%rows.length];n.focus();}});});
+var sel=document.querySelector("tr.acct.sel");if(sel&&location.hash!=="#nofocus")sel.focus({preventScroll:true});})();
 """

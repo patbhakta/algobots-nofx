@@ -220,6 +220,10 @@
     },
     {
       "repo": "algobots",
+      "path": "src/algobots/demo/blotter.py"
+    },
+    {
+      "repo": "algobots",
       "path": "src/algobots/demo/ledger.py"
     },
     {
