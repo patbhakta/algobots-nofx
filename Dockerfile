@@ -6,7 +6,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-COPY pyproject.toml README.md ./
+COPY pyproject.toml README.md alembic.ini ./
 COPY src ./src
 COPY tests ./tests
 
@@ -17,4 +17,4 @@ EXPOSE 8000
 HEALTHCHECK --interval=10s --timeout=5s --start-period=10s --retries=5 \
     CMD ["python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/healthz', timeout=3)"]
 
-CMD ["uvicorn", "algobots.api.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["sh", "-c", "alembic upgrade head && uvicorn algobots.api.main:app --host 0.0.0.0 --port 8000"]
