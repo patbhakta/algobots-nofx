@@ -237,11 +237,17 @@ class TargetPortfolio(VersionedContract):
             raise ValueError("duplicate instrument in target entries")
         if self.expires_at <= self.as_of:
             raise ValueError("expires_at must be after as_of")
-        if self.long_only_unlevered:
-            weights = [e.weight for e in self.entries if e.weight is not None]
-            if any(w < 0 for w in weights):
-                raise ValueError("long-only targets require weights >= 0")
-            total = sum(weights, Decimal(0))
-            if total > 1:
-                raise ValueError(f"long-only unlevered weights sum to {total} > 1")
+        if not self.long_only_unlevered:
+            raise ValueError(
+                "TargetPortfolio@1.0 supports long-only unlevered targets only; other modes "
+                "require product-specific approved constraints (a new contract version)"
+            )
+        weights = [e.weight for e in self.entries if e.weight is not None]
+        if any(w < 0 for w in weights):
+            raise ValueError("long-only targets require weights >= 0")
+        if any(e.quantity is not None and e.quantity.value < 0 for e in self.entries):
+            raise ValueError("long-only targets require quantities >= 0")
+        total = sum(weights, Decimal(0))
+        if total > 1:
+            raise ValueError(f"long-only unlevered weights sum to {total} > 1")
         return self

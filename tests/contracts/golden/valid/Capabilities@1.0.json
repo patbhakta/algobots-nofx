@@ -16,6 +16,21 @@
       },
       "client_order_id_max_length": 48,
       "client_order_id_reusable": false,
+      "client_order_id_uniqueness": "account",
+      "lookup_methods": [
+        "by-client-order-id",
+        "open-orders"
+      ],
+      "reconcile_methods": [
+        "positions",
+        "balances",
+        "open-orders",
+        "executions"
+      ],
+      "protection_options": [
+        "stop",
+        "bracket"
+      ],
       "cancel_semantics": "async-ack",
       "rate_limit_per_minute": 200,
       "market_data_entitled": true,

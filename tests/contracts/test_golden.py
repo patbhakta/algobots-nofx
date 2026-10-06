@@ -47,7 +47,9 @@ def test_decimals_stay_exact_strings_with_units():
     assert dumped["max_notional"] == {"amount": "1872.50", "currency": "USD"}
 
 
-@pytest.mark.parametrize("bad", [10, 10.5, True, "1e", "Infinity"])
+@pytest.mark.parametrize(
+    "bad", [10, 10.5, True, "1e", "Infinity", "1_000", " 5 ", "1E+3", "-0", "+5", "05", "1."]
+)
 def test_non_string_or_non_finite_amounts_rejected(bad):
     from algobots.contracts import Money
 

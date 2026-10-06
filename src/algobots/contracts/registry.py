@@ -3,7 +3,8 @@
 Every top-level contract registers as ``name@version``. ``schema-lock.json``
 freezes the JSON-schema fingerprint of each registered version. Rules:
 
-1. A registered version's shape is immutable: changing a model without a new
+1. A registered version is immutable: changing a model's JSON schema *or the
+   source of any validator/serializer it reaches* without a new
    ``contract_version`` makes its fingerprint differ from the lock, which
    :func:`verify_lock` reports as a silent revision.
 2. A revision adds a new version; the old version stays registered (and
@@ -19,10 +20,16 @@ updates the lock; other packets propose revisions.
 from __future__ import annotations
 
 import hashlib
+import inspect
 import json
-from collections.abc import Mapping
+import subprocess
+import textwrap
+import typing
+from collections.abc import Callable, Iterator, Mapping
 from pathlib import Path
 from typing import Any
+
+from pydantic import BaseModel
 
 from .base import VersionedContract
 
@@ -36,6 +43,9 @@ __all__ = [
     "fingerprint",
     "get",
     "load_lock",
+    "load_lock_at",
+    "load_pins",
+    "transition_base",
     "parse",
     "register",
     "registered",
@@ -87,9 +97,58 @@ def parse(name: str, data: Mapping[str, Any]) -> VersionedContract:
     return get(name, version).model_validate(data)
 
 
+def _annotation_parts(annotation: Any) -> Iterator[Any]:
+    """Yield ``annotation``, its type arguments and ``Annotated`` metadata, recursively."""
+    yield annotation
+    yield from getattr(annotation, "__metadata__", ())
+    for arg in typing.get_args(annotation):
+        yield from _annotation_parts(arg)
+
+
+def _model_callables(cls: type[BaseModel]) -> Iterator[tuple[str, Callable[..., Any]]]:
+    """Validators/serializers of ``cls`` and of every model reachable through its fields."""
+    seen: set[type[BaseModel]] = set()
+    stack = [cls]
+    while stack:
+        model = stack.pop()
+        if model in seen:
+            continue
+        seen.add(model)
+        decorators = model.__pydantic_decorators__
+        for group in (
+            decorators.field_validators,
+            decorators.model_validators,
+            decorators.field_serializers,
+            decorators.model_serializers,
+        ):
+            for name, dec in group.items():
+                yield f"{model.__qualname__}.{name}", dec.func
+        for field_name, field in model.model_fields.items():
+            parts = [*field.metadata, *_annotation_parts(field.annotation)]
+            for part in parts:
+                if isinstance(part, type) and issubclass(part, BaseModel):
+                    stack.append(part)
+                elif callable(getattr(part, "func", None)):
+                    yield f"{model.__qualname__}.{field_name}:{type(part).__name__}", part.func
+
+
+def _source_hash(func: Callable[..., Any]) -> str:
+    func = inspect.unwrap(getattr(func, "__func__", func))
+    source = textwrap.dedent(inspect.getsource(func))
+    return hashlib.sha256(source.encode()).hexdigest()
+
+
 def fingerprint(cls: type[VersionedContract]) -> str:
-    schema = cls.model_json_schema(mode="validation")
-    canonical = json.dumps(schema, sort_keys=True, separators=(",", ":"))
+    """sha256 over the JSON schema plus the source of every reachable validator/serializer.
+
+    The JSON schema alone omits validator logic, so tightening a validator would
+    otherwise keep the fingerprint and silently reject queued payloads.
+    """
+    body = {
+        "schema": cls.model_json_schema(mode="validation"),
+        "callables": sorted({(name, _source_hash(f)) for name, f in _model_callables(cls)}),
+    }
+    canonical = json.dumps(body, sort_keys=True, separators=(",", ":"))
     return hashlib.sha256(canonical.encode()).hexdigest()
 
 
@@ -104,6 +163,42 @@ def load_lock(path: Path = LOCK_PATH) -> dict[str, dict[str, str]]:
     return json.loads(path.read_text())["contracts"]
 
 
+def _git(*args: str) -> str:
+    root = Path(__file__).resolve().parent
+    return subprocess.run(
+        ["git", "-C", str(root), *args], capture_output=True, text=True, check=True
+    ).stdout.strip()
+
+
+def transition_base(upstream: str = "origin/main") -> str:
+    """The commit whose lock the working registry must extend.
+
+    The merge base with ``upstream``; on ``upstream`` itself (a push to main),
+    the first parent, so the newest commit is still checked.
+    """
+    head = _git("rev-parse", "HEAD")
+    base = _git("merge-base", "HEAD", upstream)
+    return _git("rev-parse", "HEAD^1") if base == head else base
+
+
+def load_lock_at(ref: str) -> dict[str, dict[str, str]] | None:
+    """The lock committed at ``ref``, or ``None`` when ``ref`` predates the lock."""
+    rel = LOCK_PATH.relative_to(Path(_git("rev-parse", "--show-toplevel")))
+    try:
+        body = _git("show", f"{ref}:{rel.as_posix()}")
+    except subprocess.CalledProcessError:
+        return None
+    return json.loads(body)["contracts"]
+
+
+def load_pins(map_path: Path | None = None) -> dict[str, dict[str, str]]:
+    """Queued packets' ``{contract: version}`` pins from ``docs/repository-map.json``."""
+    if map_path is None:
+        map_path = Path(_git("rev-parse", "--show-toplevel")) / "docs" / "repository-map.json"
+    packets = json.loads(map_path.read_text())["packets"]
+    return {pid: p.get("contract_pins", {}) for pid, p in packets.items()}
+
+
 def verify_lock(lock: Mapping[str, Mapping[str, str]]) -> list[str]:
     """Return human-readable drift between the registry and ``lock`` (empty = in sync)."""
     problems: list[str] = []
@@ -115,7 +210,7 @@ def verify_lock(lock: Mapping[str, Mapping[str, str]]) -> list[str]:
                 problems.append(f"{name}@{version} is registered but not in the lock")
             elif locked != fp:
                 problems.append(
-                    f"{name}@{version} changed shape without a version bump "
+                    f"{name}@{version} changed schema or validators without a version bump "
                     f"(lock {locked[:12]}, live {fp[:12]})"
                 )
     for name, versions in lock.items():

@@ -1,10 +1,13 @@
 """A01 acceptance case 3: a schema revision cannot silently invalidate a queued packet."""
 
 import json
+import runpy
+import sys
 from pathlib import Path
-from typing import ClassVar
+from typing import Annotated, ClassVar
 
 import pytest
+from pydantic import Field, model_validator
 
 from algobots.contracts import Signal, registry
 
@@ -28,7 +31,44 @@ def test_shape_change_without_version_bump_is_detected(monkeypatch):
 
     monkeypatch.setitem(registry._REGISTRY, ("Signal", "1.0"), MutatedSignal)
     problems = registry.verify_lock(registry.load_lock())
-    assert any("Signal@1.0 changed shape without a version bump" in p for p in problems)
+    expected = "Signal@1.0 changed schema or validators without a version bump"
+    assert any(expected in p for p in problems)
+
+
+def test_validator_tightening_without_schema_change_is_detected(monkeypatch):
+    """A2: the JSON schema omits validator logic; the fingerprint must not."""
+    from algobots.contracts import TargetPortfolio as Locked
+
+    class TargetPortfolio(Locked):
+        __doc__ = Locked.__doc__
+
+        @model_validator(mode="after")
+        def _weights(self):
+            return self
+
+    assert TargetPortfolio.model_json_schema() == Locked.model_json_schema()
+    monkeypatch.setitem(registry._REGISTRY, ("TargetPortfolio", "1.0"), TargetPortfolio)
+    problems = registry.verify_lock(registry.load_lock())
+    assert any(p.startswith("TargetPortfolio@1.0 changed") for p in problems)
+
+
+def test_in_place_lock_regeneration_fails_the_transition_check(monkeypatch, capsys):
+    """A1: tighten Signal@1.0 in place and rewrite the lock; verify-A01 must still fail."""
+
+    class TighterSignal(Signal):
+        horizon: Annotated[str, Field(pattern=r"^\d+(d)$")]
+
+    committed = registry.load_lock()
+    monkeypatch.setitem(registry._REGISTRY, ("Signal", "1.0"), TighterSignal)
+    monkeypatch.setattr(registry, "load_lock", registry.current_lock)  # as after --write-lock
+    monkeypatch.setattr(registry, "load_lock_at", lambda ref: committed)
+    monkeypatch.setattr(sys, "argv", ["algobots.contracts", "--check-transition", "base"])
+    with pytest.raises(SystemExit) as exc:
+        runpy.run_module("algobots.contracts", run_name="__main__")
+    out = capsys.readouterr().out
+    assert exc.value.code == 1
+    assert "schema lock in sync" in out  # the lock alone no longer catches it
+    assert "Signal@1.0 fingerprint rewritten in place" in out
 
 
 def test_rewriting_a_locked_fingerprint_is_rejected():

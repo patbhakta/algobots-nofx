@@ -1,0 +1,42 @@
+{
+  "contract": "OrderPlan",
+  "error_contains": "plan_hash mismatch",
+  "data": {
+    "schema_version": "1.0",
+    "plan_id": "plan-0001",
+    "plan_hash": "0e6bc601bda5054cc6c56da7d4c4d7896645d3fcdca9382a6489e4d796654b13",
+    "parent_plan_id": "fanout-0001",
+    "source_intent_id": "intent-0001",
+    "account_id": "acct-alpha-1",
+    "action": "PLACE_ORDER",
+    "children": [
+      {
+        "child_id": "child-1",
+        "client_order_id": "ab-plan0001-1",
+        "instrument_id": "XNAS:TSLA",
+        "product": "equity",
+        "side": "BUY",
+        "quantity": {
+          "value": "10",
+          "unit": "shares"
+        },
+        "limit_price": {
+          "amount": "187.25",
+          "currency": "USD"
+        },
+        "max_notional": {
+          "amount": "1872.50",
+          "currency": "USD"
+        }
+      }
+    ],
+    "risk_policy_revision": "risk-7",
+    "state_snapshot_hash": "16a0eeb0791b6c92451fd284dd9f599e0a7dbe7f6ebea6e2d2d06c7f74aec112",
+    "max_fee": {
+      "amount": "1.00",
+      "currency": "USD"
+    },
+    "max_slippage_bps": "15",
+    "valid_until": "2026-09-23T14:30:00Z"
+  }
+}

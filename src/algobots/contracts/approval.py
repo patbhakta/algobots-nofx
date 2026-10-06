@@ -47,6 +47,8 @@ class ApprovalEnvelope(VersionedContract):
     def violations(self, plan: OrderPlan, now: datetime) -> list[str]:
         """Reasons this approval does not cover ``plan`` at ``now`` (empty = covered)."""
         reasons: list[str] = []
+        if plan.content_hash() != plan.plan_hash:
+            reasons.append("plan content does not match its plan_hash")
         if plan.plan_hash != self.plan_hash:
             reasons.append("plan hash differs from the approved hash")
         if now >= self.expires_at:
@@ -57,7 +59,11 @@ class ApprovalEnvelope(VersionedContract):
             )
         if plan.account_id not in self.permitted_account_ids:
             reasons.append(f"account {plan.account_id} not permitted")
+        if plan.action not in self.permitted_actions:
+            reasons.append(f"action {plan.action} not permitted")
         for child in plan.children:
+            if child.product not in self.permitted_products:
+                reasons.append(f"{child.child_id}: product {child.product} not permitted")
             if child.quantity.unit != self.max_quantity.unit:
                 reasons.append(
                     f"{child.child_id}: quantity unit {child.quantity.unit} not approved"

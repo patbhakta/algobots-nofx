@@ -1,4 +1,7 @@
+uv run python tests/packets/A01/demo.py
 registry: 19 contracts; lock drift: none
-[ok] OrderPlan@1.0 child child-1: 10 shares <= 1872.50 USD; round-trip exact: True
+[ok] OrderPlan@1.0 child child-1: 10 shares x 187.25 = 1872.50 <= max_notional 1872.50 USD; round-trip exact: True
 [rejected] float amount: Value error, decimal amounts must be strings, got float 1.0
+[rejected] edited plan under an approved hash: Value error, plan_hash mismatch (computed 35c8a9f2f32b...)
 [rejected] schema revision: OrderPlan@1.0 removed while queued packets pin it: A07, A08, A20, A21, A32
+[rejected] in-place lock rewrite: Signal@1.0 fingerprint rewritten in place

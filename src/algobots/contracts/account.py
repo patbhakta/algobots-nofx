@@ -10,10 +10,24 @@ from . import registry
 from .base import ContractModel, Identifier, Quantity, UtcDatetime, VersionedContract
 from .enums import ConnectionState, OrderType, ProductClass, RuntimeEnvironment
 
-__all__ = ["BrokerAccount", "CapabilityEntry", "Capabilities", "SupportStatus"]
+__all__ = [
+    "BrokerAccount",
+    "CapabilityEntry",
+    "Capabilities",
+    "ClientOrderIdScope",
+    "LookupMethod",
+    "ProtectionOption",
+    "ReconcileMethod",
+    "SupportStatus",
+]
 
 Currency = Annotated[str, Field(pattern=r"^[A-Z0-9]{3,10}$")]
 SupportStatus = Literal["native", "emulated", "unsupported"]
+# Scope within which the venue enforces client-order-ID uniqueness.
+ClientOrderIdScope = Literal["account", "session", "trading-day", "venue", "unknown"]
+LookupMethod = Literal["by-client-order-id", "by-broker-order-id", "open-orders", "executions"]
+ReconcileMethod = Literal["positions", "balances", "open-orders", "executions"]
+ProtectionOption = Literal["stop", "stop-limit", "trailing-stop", "bracket", "oco"]
 
 
 @registry.register
@@ -40,6 +54,10 @@ class BrokerAccount(VersionedContract):
 
 
 class CapabilityEntry(ContractModel):
+    """One (product, order type) row. Omitted optional fields mean unknown, i.e. disabled:
+    no lookup/reconcile method, no protection option, uniqueness scope ``unknown``.
+    """
+
     product: ProductClass
     order_type: OrderType
     support: SupportStatus
@@ -48,6 +66,10 @@ class CapabilityEntry(ContractModel):
     min_order: Quantity
     client_order_id_max_length: Annotated[int, Field(ge=1)] | None = None
     client_order_id_reusable: bool
+    client_order_id_uniqueness: ClientOrderIdScope = "unknown"
+    lookup_methods: tuple[LookupMethod, ...] = ()
+    reconcile_methods: tuple[ReconcileMethod, ...] = ()
+    protection_options: tuple[ProtectionOption, ...] = ()
     cancel_semantics: Literal["sync", "async-ack", "best-effort"]
     rate_limit_per_minute: Annotated[int, Field(ge=1)] | None = None
     market_data_entitled: bool

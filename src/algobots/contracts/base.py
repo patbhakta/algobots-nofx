@@ -15,6 +15,7 @@
 
 from __future__ import annotations
 
+import re
 from datetime import UTC, datetime
 from decimal import Decimal, InvalidOperation
 from typing import Annotated, Any, ClassVar
@@ -43,6 +44,10 @@ __all__ = [
 ]
 
 
+# Plain fixed-point only: no exponent, separators, whitespace, sign on zero or '+'.
+_DECIMAL_TEXT = re.compile(r"-?(0|[1-9][0-9]*)(\.[0-9]+)?")
+
+
 def _parse_decimal(value: Any) -> Decimal:
     if isinstance(value, bool) or isinstance(value, int | float):
         raise ValueError(f"decimal amounts must be strings, got {type(value).__name__} {value!r}")
@@ -53,10 +58,14 @@ def _parse_decimal(value: Any) -> Decimal:
             parsed = Decimal(value)
         except InvalidOperation as exc:
             raise ValueError(f"not a decimal string: {value!r}") from exc
+        if parsed.is_finite() and not _DECIMAL_TEXT.fullmatch(value):
+            raise ValueError(f"not a canonical decimal string (e.g. '-12.50'): {value!r}")
     else:
         raise ValueError(f"decimal amounts must be strings, got {type(value).__name__}")
     if not parsed.is_finite():
         raise ValueError(f"decimal must be finite, got {value!r}")
+    if parsed.is_zero() and parsed.is_signed():
+        raise ValueError(f"negative zero is not a canonical decimal: {value!r}")
     return parsed
 
 

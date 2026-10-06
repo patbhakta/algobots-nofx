@@ -150,14 +150,18 @@
           "path": ""
         }
       ],
-      "rule": "vps-infra changes are serialized; host .243 is off-limits to packet runs"
+      "rule": "vps-infra changes are serialized through A25; host .243 is off-limits to packet runs; carve_outs list the only other packets' write scopes inside these paths",
+      "carve_outs": [
+        {
+          "repo": "vps-infra",
+          "path": "monitoring/algobots/",
+          "packet": "A24",
+          "reason": "A24 writes its own monitoring config; host-state changes it triggers still serialize through A25"
+        }
+      ]
     }
   },
   "integrator_owned": [
-    {
-      "repo": "algobots",
-      "path": ".github/workflows/ci.yml"
-    },
     {
       "repo": "algobots",
       "path": ".gitignore"
@@ -216,9 +220,10 @@
       "added": [
         "Makefile",
         "pyproject.toml",
-        "uv.lock"
+        "uv.lock",
+        ".github/workflows/ci.yml"
       ],
-      "reason": "verify-A01 needs a Makefile; A01 owns the make-targets and dependency-lockfiles resources (pyproject.toml also declares schema-lock.json as package data)"
+      "reason": "verify-A01 needs a Makefile; A01 owns the make-targets and dependency-lockfiles resources (pyproject.toml also declares schema-lock.json as package data). A01 also holds make-targets (it integrates every packet's verify-Axx/demo-Axx target) and generated-clients (checklist item 3: client generation is a schema-registry lock). CI runs the schema lock transition check against the merge base, so A01 owns .github/workflows/ci.yml (ALG-3175 A1)."
     },
     {
       "packet": "A03",
@@ -444,6 +449,11 @@
         {
           "repo": "algobots",
           "path": "uv.lock",
+          "status": "real"
+        },
+        {
+          "repo": "algobots",
+          "path": ".github/workflows/ci.yml",
           "status": "real"
         }
       ],

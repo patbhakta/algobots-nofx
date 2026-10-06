@@ -101,6 +101,27 @@ def test_each_shared_resource_has_exactly_one_known_integration_owner():
         assert name in PACKETS[owner]["shared_resources"], f"{owner} does not hold {name}"
 
 
+def test_shared_resource_paths_overlap_only_declared_carve_outs():
+    """A non-owner write scope inside a resource path must be a recorded carve-out."""
+    for name, res in RESOURCES.items():
+        carved = {(c["repo"], c["path"], c["packet"]) for c in res.get("carve_outs", [])}
+        for pid, packet in PACKETS.items():
+            if pid == res["integration_owner"]:
+                continue
+            for entry in packet["write_scope"]:
+                for rpath in res["paths"]:
+                    if rpath["repo"] != entry["repo"]:
+                        continue
+                    overlap = _covers(rpath["path"], entry["path"]) or _covers(
+                        entry["path"], rpath["path"]
+                    )
+                    if overlap:
+                        key = (entry["repo"], entry["path"], pid)
+                        assert key in carved, f"{pid} {entry['path']} overlaps resource {name}"
+        for repo, path, pid in carved:
+            assert any(e["repo"] == repo and e["path"] == path for e in PACKETS[pid]["write_scope"])
+
+
 def test_harness_is_frozen_and_unwritable():
     (harness,) = MAP["frozen_paths"]
     assert harness["paths"] == ["src/algobots/evals/harness/", "tests/evals/harness/"]

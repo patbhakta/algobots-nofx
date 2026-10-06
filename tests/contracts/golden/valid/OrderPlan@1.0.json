@@ -1,15 +1,17 @@
 {
   "schema_version": "1.0",
   "plan_id": "plan-0001",
-  "plan_hash": "d129262c7772059f5d77659a30bdff984a9736bc6c2bda56965af740bb423e41",
+  "plan_hash": "0e6bc601bda5054cc6c56da7d4c4d7896645d3fcdca9382a6489e4d796654b13",
   "parent_plan_id": "fanout-0001",
   "source_intent_id": "intent-0001",
   "account_id": "acct-alpha-1",
+  "action": "PLACE_ORDER",
   "children": [
     {
       "child_id": "child-1",
       "client_order_id": "ab-plan0001-1",
       "instrument_id": "XNAS:AAPL",
+      "product": "equity",
       "side": "BUY",
       "quantity": {
         "value": "10",

@@ -6,11 +6,15 @@ A01_RESULTS := artifacts/A01/test-results
 
 .PHONY: verify-A01 demo-A01
 
+# --check-transition compares the live registry with the schema lock at the
+# merge base with origin/main (override: SCHEMA_BASE=<ref>). The junit report is
+# stripped of run-specific attributes so an unchanged result leaves the tree clean.
 verify-A01:
 	mkdir -p $(A01_RESULTS)
-	$(PYTHON) -m algobots.contracts
+	$(PYTHON) -m algobots.contracts --check-transition $(SCHEMA_BASE)
 	$(PYTHON) -m pytest tests/contracts tests/packets/A01 -q -p no:cacheprovider \
 		--junitxml=$(A01_RESULTS)/junit.xml
+	sed -i -E 's/ (timestamp|hostname|time)="[^"]*"//g' $(A01_RESULTS)/junit.xml
 
 demo-A01:
 	$(PYTHON) tests/packets/A01/demo.py

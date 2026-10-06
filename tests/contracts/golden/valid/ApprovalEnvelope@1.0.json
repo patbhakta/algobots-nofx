@@ -4,7 +4,7 @@
   "approver_id": "user-ana",
   "approver_kind": "USER",
   "grant_revision": 3,
-  "plan_hash": "d129262c7772059f5d77659a30bdff984a9736bc6c2bda56965af740bb423e41",
+  "plan_hash": "0e6bc601bda5054cc6c56da7d4c4d7896645d3fcdca9382a6489e4d796654b13",
   "permitted_account_ids": [
     "acct-alpha-1"
   ],

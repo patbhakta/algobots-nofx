@@ -14,11 +14,14 @@ from algobots.contracts import (
     MemoryScope,
     OrderPlan,
     Principal,
+    Reservation,
     Signal,
+    canonical_hash,
     namespace_permits,
     registry,
 )
 from algobots.contracts.enums import OrderType, ProductClass
+from algobots.contracts.envelope import _is_secret_key
 
 VALID = Path(__file__).parent / "golden" / "valid"
 
@@ -63,6 +66,11 @@ def test_unknown_capability_means_disabled():
     assert caps.support_for(ProductClass.SPOT_CRYPTO, OrderType.MARKET) == "unsupported"
 
 
+def _rehash(plan):
+    plan["plan_hash"] = canonical_hash({k: v for k, v in plan.items() if k != "plan_hash"})
+    return plan
+
+
 def test_approval_covers_exact_plan_only():
     approval = ApprovalEnvelope.model_validate(load("ApprovalEnvelope"))
     plan = OrderPlan.model_validate(load("OrderPlan"))
@@ -71,16 +79,66 @@ def test_approval_covers_exact_plan_only():
     bigger = load("OrderPlan")
     bigger["children"][0]["quantity"]["value"] = "11"
     bigger["children"][0]["max_notional"]["amount"] = "2059.75"
-    reasons = approval.violations(OrderPlan.model_validate(bigger), NOW)
+    reasons = approval.violations(OrderPlan.model_validate(_rehash(bigger)), NOW)
     assert "child-1: quantity exceeds approved maximum" in reasons
     assert "child-1: notional exceeds approved maximum" in reasons
 
-    rehashed = load("OrderPlan")
-    rehashed["plan_hash"] = "0" * 64
+    other = load("OrderPlan")
+    other["children"][0]["instrument_id"] = "XNAS:TSLA"
     assert "plan hash differs from the approved hash" in approval.violations(
-        OrderPlan.model_validate(rehashed), NOW
+        OrderPlan.model_validate(_rehash(other)), NOW
     )
     assert "approval expired" in approval.violations(plan, datetime(2027, 1, 1, tzinfo=UTC))
+
+
+def test_plan_hash_is_bound_to_content():
+    tampered = load("OrderPlan")
+    tampered["children"][0]["instrument_id"] = "XNAS:TSLA"  # approved hash kept
+    with pytest.raises(ValidationError, match="plan_hash mismatch"):
+        OrderPlan.model_validate(tampered)
+    # Even a plan built without validation cannot pass the approval check.
+    unchecked = OrderPlan.model_construct(
+        **{**OrderPlan.model_validate(load("OrderPlan")).__dict__, "account_id": "acct-alpha-2"}
+    )
+    approval = ApprovalEnvelope.model_validate(load("ApprovalEnvelope"))
+    assert "plan content does not match its plan_hash" in approval.violations(unchecked, NOW)
+
+
+def test_approval_enforces_products_and_actions():
+    data = load("ApprovalEnvelope")
+    data["permitted_products"] = ["etf"]
+    data["permitted_actions"] = ["REDUCE"]
+    reasons = ApprovalEnvelope.model_validate(data).violations(
+        OrderPlan.model_validate(load("OrderPlan")), NOW
+    )
+    assert "action PLACE_ORDER not permitted" in reasons
+    assert "child-1: product equity not permitted" in reasons
+
+
+def test_inventory_reservation_holds_a_quantity():
+    data = load("Reservation")
+    data.update(
+        kind="INVENTORY",
+        amount={"value": "10", "unit": "shares"},
+        buffer={"value": "0", "unit": "shares"},
+    )
+    assert Reservation.model_validate(data).amount.unit == "shares"
+    data["instrument_id"] = None
+    with pytest.raises(ValidationError, match="requires instrument_id"):
+        Reservation.model_validate(data)
+
+
+@pytest.mark.parametrize(
+    "key",
+    ["client_secret", "access_token", "refreshToken", "db_password", "api_key", "privateKey"],
+)
+def test_credential_keys_are_screened(key):
+    assert _is_secret_key(key)
+
+
+@pytest.mark.parametrize("key", ["secret_ref", "token_budget", "tokens_used", "keyword", "monkey"])
+def test_reference_and_budget_keys_are_allowed(key):
+    assert not _is_secret_key(key)
 
 
 def _principal(kind, tenant, grants):
