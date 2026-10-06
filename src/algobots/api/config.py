@@ -37,6 +37,9 @@ class Settings(BaseSettings):
     demo_feed_path: str = Field(default="/opt/laya/kalshi/observations.jsonl")
     demo_state_dir: str = Field(default="./.demo-state")
     demo_start: str = Field(default="2026-10-03")
+    # Comma-separated UTC timestamps (YYYY-MM-DDTHH:MM) at which every demo
+    # sleeve is topped back up to its starting capital. Empty = never.
+    demo_sleeve_refills: str = Field(default="")
 
     def sqlalchemy_url(self) -> str:
         """Normalize the configured URL for SQLAlchemy drivers.

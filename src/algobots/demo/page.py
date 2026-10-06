@@ -20,6 +20,7 @@ SERIES = {  # strategy -> (stroke var, dash) — dash + direct label, never colo
     "coin": ("var(--c-muted)", "2 3"),
 }
 ACCOUNT = {"id": "pat-kalshi-paper", "label": "Pat · Kalshi paper", "environment": "PAPER"}
+TAG = "PAPER · SIMULATED FILLS"
 
 
 def _usd(x: Decimal) -> dict:
@@ -65,7 +66,7 @@ def _banner(start: str, now: float) -> str:
     return (
         '<div class="demo-banner" role="note"><strong>PAPER TRADING</strong>'
         f"<span>since {c.e(start)} · $5–15 per trade</span>"
-        '<span class="wide">simulated fills at assumed 50¢ mid + Kalshi taker fee · no broker orders</span>'
+        "<span>simulated fills at assumed 50¢ mid + Kalshi taker fee · no broker orders</span>"
         f'<span class="meta wide">as of {_t(now, "%Y-%m-%d %H:%M")} · refreshes every 60s</span></div>'
     )
 
@@ -73,16 +74,21 @@ def _banner(start: str, now: float) -> str:
 def _strip(lg: L.Ledger, now: float) -> str:
     books = lg.books.values()
     equity = sum((b.equity for b in books), Decimal(0))
-    start = L.SLEEVE * len(lg.books)
+    start = sum((b.allocated for b in books), Decimal(0))
     pnl = equity - start
     today = datetime.fromtimestamp(now, UTC).strftime("%Y-%m-%d")
     today_fills = [d for b in books for d in b.fills if L._day(d.ts) == today]
     blocked = sum(1 for b in books for d in b.decisions if d.status == "BLOCKED")
     ret = f"{pnl / start * 100:.2f}"
     cells = [
-        c.metric("Account equity", c.money(_usd(equity)), f"3 sleeves × {L.SLEEVE} USD"),
+        c.metric(
+            "Account equity",
+            c.money(_usd(equity)),
+            f"3 sleeves × {L.SLEEVE} USD"
+            + (f" + {start - L.SLEEVE * len(lg.books)} refilled" if lg.refill_ts else ""),
+        ),
         c.metric("Net P&L", c.money(_usd(pnl), signed=True), "since open · net of fees"),
-        c.metric("Return", c.pct(ret, signed=True), "on starting capital"),
+        c.metric("Return", c.pct(ret, signed=True), "on capital allocated"),
         c.metric(
             "Fees paid", c.money(_usd(sum((b.fees for b in books), Decimal(0)))), "Kalshi taker"
         ),
@@ -115,10 +121,18 @@ def _performance(lg: L.Ledger) -> str:
     brier = L.brier(lg.rows)
     note = (
         f'<p class="meta">Laya calibrated Brier {brier:.4f} over {len(lg.rows)} intervals vs coin 0.2500 '
-        f"(lower is better). Break-even hit rate at 50¢ after fees ≈ 51.8%.</p>"
+        f"(lower is better). Break-even hit rate at 50¢ after fees ≈ 51.8%. "
+        f"Mean/σ = mean ÷ standard deviation of per-fill net P&L (unitless, not annualized).</p>"
         if brier is not None
         else ""
     )
+    halted = [b.name for b in lg.books.values() if b.exhausted]
+    if halted:
+        note = (
+            f'<p class="halt-note"><strong>Stopped by risk rails:</strong> {c.e(", ".join(halted))} '
+            "lost their sleeve and can no longer afford the $5 minimum stake. This is the result, "
+            "not an outage: every 15m interval is still decided and logged below with a reason.</p>"
+        ) + note
     return (
         c.table(
             [
@@ -129,24 +143,36 @@ def _performance(lg: L.Ledger) -> str:
                 "Hit rate",
                 "Fees",
                 "Max DD",
-                "Mean/σ per fill",
-                "Blocked / abstain",
+                "Mean/σ",
+                "Blocked / abst.",
             ],
             rows,
             numeric={1, 2, 3, 4, 5, 6, 7, 8},
+            stack=True,
         )
         + note
     )
 
 
-def _curve(lg: L.Ledger) -> str:
+def _spread(targets: dict[str, float], gap: float, top: float, bottom: float) -> dict[str, float]:
+    """Move label baselines apart so none sit closer than ``gap``, keeping all in [top, bottom]."""
+    keys = sorted(targets, key=targets.get)
+    ys = [targets[k] for k in keys]
+    for i in range(len(ys)):
+        ys[i] = max(ys[i], top + i * gap, ys[i - 1] + gap if i else top)
+    for i in reversed(range(len(ys))):
+        ys[i] = min(
+            ys[i], bottom - (len(ys) - 1 - i) * gap, ys[i + 1] - gap if i + 1 < len(ys) else bottom
+        )
+    return dict(zip(keys, ys, strict=True))
+
+
+def _svg(lg: L.Ledger, W: int, H: int, LBL: int, fs: int, cls: str) -> str:
     pts = [(ts, eq) for b in lg.books.values() for ts, eq in b.curve]
-    if len(pts) < 2:
-        return '<p class="empty">Not enough decisions yet to draw an equity curve.</p>'
     t0, t1 = min(p[0] for p in pts), max(p[0] for p in pts)
     lo = min(min(float(p[1]) for p in pts), float(L.SLEEVE))
     hi = max(max(float(p[1]) for p in pts), float(L.SLEEVE))
-    W, H, PAD, LBL = 900, 220, 8, 130
+    PAD = 8
     span_t, span_v = (t1 - t0) or 1, (hi - lo) or 1
 
     def x(ts: float) -> float:
@@ -155,30 +181,54 @@ def _curve(lg: L.Ledger) -> str:
     def y(v: float) -> float:
         return PAD + (hi - v) / span_v * (H - 2 * PAD)
 
+    base = y(float(L.SLEEVE))
     parts = [
-        f'<line x1="{PAD}" x2="{W - LBL}" y1="{y(float(L.SLEEVE)):.1f}" y2="{y(float(L.SLEEVE)):.1f}" stroke="var(--c-rule-faint)" stroke-width="1"/>',
-        f'<text x="{PAD}" y="{y(float(L.SLEEVE)) - 4:.1f}" font-size="11" fill="var(--c-muted)">start {L.SLEEVE} USD</text>',
+        f'<line x1="{PAD}" x2="{W - LBL}" y1="{base:.1f}" y2="{base:.1f}" stroke="var(--c-rule-faint)" stroke-width="1"/>'
     ]
-    # end labels: sort by final value, then push apart so none overlap
-    label_y: dict[str, float] = {}
-    prev = -1e9
-    for key, b in sorted(lg.books.items(), key=lambda kv: -float(kv[1].curve[-1][1])):
-        prev = max(y(float(b.curve[-1][1])) + 4, prev + 14)
-        label_y[key] = prev
+    for ts in lg.refill_ts:
+        if t0 <= ts <= t1:
+            parts.append(
+                f'<line x1="{x(ts):.1f}" x2="{x(ts):.1f}" y1="{PAD}" y2="{H - PAD}" stroke="var(--c-attention)" stroke-dasharray="3 3"/>'
+                f'<text x="{x(ts) + 3:.1f}" y="{PAD + fs}" font-size="{fs - 1}" fill="var(--c-attention)">refill {_t(ts, "%b %d %H:%M")}</text>'
+            )
+    # end labels and the baseline label share the right gutter; spread them so none overlap
+    targets = {k: y(float(b.curve[-1][1])) + fs / 3 for k, b in lg.books.items()}
+    targets["_base"] = base + fs / 3
+    label_y = _spread(targets, fs + 3, fs, H + 20)
+    x_lbl = x(t1) + 6
+    parts.append(
+        f'<text x="{x_lbl:.1f}" y="{label_y["_base"]:.1f}" font-size="{fs}" fill="var(--c-muted)">start {L.SLEEVE}</text>'
+    )
     for key, b in lg.books.items():
         stroke, dash = SERIES[key]
         path = " ".join(f"{x(ts):.1f},{y(float(eq)):.1f}" for ts, eq in [(t0, L.SLEEVE), *b.curve])
-        last_ts, last_eq = b.curve[-1]
         parts.append(
             f'<polyline points="{path}" fill="none" stroke="{stroke}" stroke-width="1.75" '
             f'stroke-dasharray="{dash}" vector-effect="non-scaling-stroke"/>'
-            f'<text x="{x(last_ts) + 6:.1f}" y="{label_y[key]:.1f}" font-size="12" fill="{stroke}">'
-            f"{c.e(b.name.split()[0])} {float(last_eq):.0f}</text>"
+            f'<text x="{x_lbl:.1f}" y="{label_y[key]:.1f}" font-size="{fs}" fill="{stroke}">'
+            f"{c.e(b.name.split()[0])} {float(b.curve[-1][1]):.0f}</text>"
         )
     label = "; ".join(f"{b.name} ends at {b.equity} USD" for b in lg.books.values())
     return (
-        f'<p class="meta">Sleeve equity, USD · {_t(t0, "%b %d %H:%M")} → {_t(t1, "%b %d %H:%M")} · one point per 15m interval</p>'
-        f'<svg viewBox="0 0 {W} {H + 24}" width="100%" role="img" aria-label="{c.e(label)}">{"".join(parts)}</svg>'
+        f'<svg class="{cls}" viewBox="0 0 {W} {H + 24}" width="100%" role="img" '
+        f'aria-label="{c.e(label)}">{"".join(parts)}</svg>'
+    )
+
+
+def _curve(lg: L.Ledger) -> str:
+    pts = [p for b in lg.books.values() for p in b.curve]
+    if len(pts) < 2:
+        return '<p class="empty">Not enough decisions yet to draw an equity curve.</p>'
+    t0, t1 = min(p[0] for p in pts), max(p[0] for p in pts)
+    refills = (
+        f" · dashed orange line = sleeves refilled to {L.SLEEVE} USD (added capital, not P&L)"
+        if lg.refill_ts
+        else ""
+    )
+    return (
+        f'<p class="meta">Sleeve equity, USD · {_t(t0, "%b %d %H:%M")} → {_t(t1, "%b %d %H:%M")} · one point per 15m interval{refills}</p>'
+        + _svg(lg, 900, 220, 130, 12, "chart-d")
+        + _svg(lg, 420, 300, 110, 15, "chart-m")
     )
 
 
@@ -197,6 +247,8 @@ def _risk(lg: L.Ledger, now: float) -> str:
     form = (
         f'<form method="post" action="/demo/kill-switch" class="actions">'
         f'<input type="hidden" name="engaged" value="{val}">'
+        '<label class="field"><span class="sr-only">Your name for the audit log</span>'
+        '<input name="actor" maxlength="40" placeholder="your name (audit log)" autocomplete="name"></label>'
         f'<button type="submit" class="action" data-account="{ACCOUNT["id"]}" data-environment="PAPER">'
         f'<span>{verb}</span><span class="sr-only">, </span><span class="ctx">{c.e(ACCOUNT["label"])} · PAPER</span></button></form>'
     )
@@ -215,7 +267,11 @@ def _risk(lg: L.Ledger, now: float) -> str:
                     float(min(Decimal(1), used / cap)), label=f"{used} of {cap} USD daily loss used"
                 )
                 + f'<span class="meta">{used} / {cap}</span>',
-                c.status("BLOCKED", "exhausted — entries blocked")
+                c.status("BLOCKED", "kill switch — entries blocked")
+                if lg.kill.get("engaged")
+                else c.status("BLOCKED", "sleeve exhausted — entries blocked")
+                if b.exhausted
+                else c.status("BLOCKED", "daily cap hit — entries blocked")
                 if tripped
                 else c.status("ready", "within cap"),
             ]
@@ -233,7 +289,9 @@ def _risk(lg: L.Ledger, now: float) -> str:
     return (
         f"<h3>Kill switch</h3><p>{state}</p>{form}{last_flip}"
         f"<h3>Daily-loss envelopes · {today}</h3>"
-        + c.table(["Strategy", "P&L today", "Loss cap used", "State"], rows, numeric={1})
+        + c.table(
+            ["Strategy", "P&L today", "Loss cap used", "State"], rows, numeric={1}, stack=True
+        )
         + caps
     )
 
@@ -276,6 +334,7 @@ def _decisions(lg: L.Ledger, limit: int = 12) -> str:
         ["Time", "Interval", "Strategy", "Decision", "Stake", "P&L", "Reason"],
         out,
         numeric={4, 5},
+        stack=True,
         empty="No decisions yet — the Laya observer writes one per settled 15m interval.",
     )
 
@@ -285,13 +344,13 @@ def _accounts(lg: L.Ledger) -> str:
         [
             c.e(ACCOUNT["label"]) + " / " + c.e(b.name),
             c.env_badge("PAPER"),
-            c.money(_usd(L.SLEEVE)),
+            c.money(_usd(b.allocated)),
             c.money(_usd(b.equity)),
             c.money(_usd(b.pnl), signed=True),
             c.status("BLOCKED", "halted — kill switch")
             if lg.kill.get("engaged")
             else c.status("BLOCKED", "halted — sleeve exhausted")
-            if b.equity < L.MIN_STAKE + L.fee_for(L.MIN_STAKE)
+            if b.exhausted
             else c.status("connected", "running"),
         ]
         for b in lg.books.values()
@@ -300,6 +359,7 @@ def _accounts(lg: L.Ledger) -> str:
         ["Account / deployment", "Mode", "Allocated", "Equity", "Net P&L", "State"],
         rows,
         numeric={2, 3, 4},
+        stack=True,
     )
 
 
@@ -308,12 +368,12 @@ def render(lg: L.Ledger, *, start: str, now: float | None = None) -> str:
     body = (
         _strip(lg, now)
         + '<div class="cols two">'
-        + c.panel("Strategy performance", _performance(lg), financial=True)
+        + c.panel("Strategy performance", _performance(lg), financial=True, tag=TAG)
         + c.panel("Risk state", _risk(lg, now), raised=True)
         + "</div>"
-        + c.panel("Equity by strategy", _curve(lg), financial=True)
-        + c.panel("Recent decisions and reasons", _decisions(lg), financial=True)
-        + c.panel("Accounts", _accounts(lg), financial=True)
+        + c.panel("Equity by strategy", _curve(lg), financial=True, tag=TAG)
+        + c.panel("Recent decisions and reasons", _decisions(lg), financial=True, tag=TAG)
+        + c.panel("Accounts", _accounts(lg), financial=True, tag=TAG)
     )
     title = "AlgoBots — live paper trading"
     return (
@@ -322,10 +382,21 @@ def render(lg: L.Ledger, *, start: str, now: float | None = None) -> str:
         '<meta http-equiv="refresh" content="60">\n'
         f"<title>{title}</title>\n<style>\n{stylesheet()}"
         ".panel{margin-bottom:var(--space-4,16px)} .panel h3{font-size:13px;margin:8px 0 4px}"
-        " table.data td{vertical-align:top}"
-        " @media (max-width:720px){.panel .body{overflow-x:auto} table.data{min-width:680px}}</style>\n</head>\n<body>\n"
+        " table.data td{vertical-align:top} table.data td:first-child{white-space:nowrap}"
+        " .halt-note{margin:8px 0;padding:6px 8px;border-left:3px solid var(--c-attention)}"
+        " .actions .field input{margin-right:8px} .chart-m{display:none} .panel .body{overflow-x:auto}"
+        " @media (min-width:1101px){.cols.two{grid-template-columns:minmax(0,3fr) minmax(0,2fr)}}"
+        " @media (max-width:700px){.chart-d{display:none} .chart-m{display:block}"
+        " table.data.stack thead{display:none}"
+        " table.data.stack,table.data.stack tbody,table.data.stack tr{display:block;width:100%}"
+        " table.data.stack tr{border-bottom:var(--rule);padding:6px 0}"
+        " table.data.stack td{display:flex;justify-content:space-between;gap:12px;padding:2px 0;border:0;text-align:right;white-space:normal}"
+        " table.data.stack td::before{content:attr(data-label);color:var(--c-muted);text-align:left;flex:none}"
+        " table.data.stack td:empty{display:none}"
+        " table.data.stack td[data-label=Reason]{display:block;text-align:left}"
+        " table.data.stack td[data-label=Reason]::before{display:block}}</style>\n</head>\n<body>\n"
         f'<div class="chrome">{_banner(start, now)}{_header(lg, now)}</div>\n'
-        f'<nav class="screens" aria-label="Settings"><span class="meta">Strategies replay the Laya forward observer: each decision uses only prior intervals, scored at Kalshi settlement.</span><span class="spacer"></span>{c.settings()}</nav>\n'
+        f'<nav class="screens" aria-label="Settings"><span class="meta">Live feed: the Laya observer scores each Kalshi BTC 15m interval as it settles. Each strategy decides from earlier intervals only; fills are simulated, never sent to a broker.</span><span class="spacer"></span>{c.settings()}</nav>\n'
         f'<main id="main" data-screen="demo">\n<h1 class="sr-only">{title}</h1>\n{body}\n</main>\n'
         f"<script>{_SCRIPT}</script>\n</body>\n</html>\n"
     )

@@ -73,6 +73,11 @@ class StrategyBook:
     name: str
     decisions: list[Decision] = field(default_factory=list)
     curve: list[tuple[float, Decimal]] = field(default_factory=list)
+    refills: list[tuple[float, Decimal]] = field(default_factory=list)  # (ts, USD added)
+
+    @property
+    def allocated(self) -> Decimal:
+        return SLEEVE + sum((amt for _, amt in self.refills), Decimal(0))
 
     @property
     def fills(self) -> list[Decision]:
@@ -92,15 +97,30 @@ class StrategyBook:
 
     @property
     def equity(self) -> Decimal:
-        return SLEEVE + self.pnl
+        return self.allocated + self.pnl
+
+    @property
+    def exhausted(self) -> bool:
+        return self.equity < MIN_STAKE + fee_for(MIN_STAKE)
 
     @property
     def max_drawdown(self) -> Decimal:
-        peak, worst = SLEEVE, Decimal(0)
-        for _, eq in self.curve:
-            peak = max(peak, eq)
-            worst = min(worst, eq - peak)
+        # drawdown on cumulative P&L, so a refill never looks like a recovery
+        peak, worst = Decimal(0), Decimal(0)
+        for _, pnl in self.pnl_curve:
+            peak = max(peak, pnl)
+            worst = min(worst, pnl - peak)
         return worst
+
+    @property
+    def pnl_curve(self) -> list[tuple[float, Decimal]]:
+        out, added, i = [], Decimal(0), 0
+        for ts, eq in self.curve:
+            while i < len(self.refills) and self.refills[i][0] <= ts:
+                added += self.refills[i][1]
+                i += 1
+            out.append((ts, eq - SLEEVE - added))
+        return out
 
 
 @dataclass
@@ -109,6 +129,7 @@ class Ledger:
     books: dict[str, StrategyBook]
     kill: dict
     clamp_events: list[Decision]
+    refill_ts: list[float] = field(default_factory=list)
 
     @property
     def last_ts(self) -> float | None:
@@ -187,16 +208,29 @@ def _day(ts: float) -> str:
     return datetime.fromtimestamp(ts, UTC).strftime("%Y-%m-%d")
 
 
-def build(rows: Iterable[Row], kill: dict | None = None) -> Ledger:
-    """Replay rows through every strategy behind the risk envelope + kill switch."""
+def build(rows: Iterable[Row], kill: dict | None = None, refills: Iterable[float] = ()) -> Ledger:
+    """Replay rows through every strategy behind the risk envelope + kill switch.
+
+    ``refills`` are timestamps at which every sleeve is topped back up to
+    SLEEVE. The top-up is recorded as added capital, never as P&L, so net
+    P&L stays cumulative and honest across refills.
+    """
     rows = list(rows)
+    refill_ts = sorted(refills)
     kill = kill or {"engaged": False}
     books = {k: StrategyBook(k, n) for k, n in STRATEGIES.items()}
     clamps: list[Decision] = []
     for key, book in books.items():
         equity = SLEEVE
         daily: dict[str, Decimal] = {}
+        pending = list(refill_ts)
         for row in rows:
+            while pending and pending[0] <= row.ts:
+                top_up = SLEEVE - equity
+                if top_up > 0:
+                    book.refills.append((pending[0], top_up))
+                    equity = SLEEVE
+                pending.pop(0)
             side, req, why = _intent(key, row)
             d = Decision(key, row.event, row.ts, side, "ABSTAIN", why, requested=req)
             day = _day(row.ts)
@@ -208,7 +242,7 @@ def build(rows: Iterable[Row], kill: dict | None = None) -> Ledger:
                     d.reason = (
                         f"{why}; daily-loss envelope (−{ENVELOPE.max_daily_loss} USD) exhausted"
                     )
-                elif equity < MIN_STAKE + fee_for(MIN_STAKE):
+                elif equity < MIN_STAKE + fee_for(MIN_STAKE):  # == StrategyBook.exhausted
                     d.status = "BLOCKED"
                     d.reason = f"{why}; sleeve equity {equity} USD below minimum stake + fee"
                 else:
@@ -228,7 +262,7 @@ def build(rows: Iterable[Row], kill: dict | None = None) -> Ledger:
                     equity += d.pnl
             book.decisions.append(d)
             book.curve.append((row.ts, equity))
-    return Ledger(rows=rows, books=books, kill=kill, clamp_events=clamps)
+    return Ledger(rows=rows, books=books, kill=kill, clamp_events=clamps, refill_ts=refill_ts)
 
 
 def brier(rows: list[Row]) -> float | None:

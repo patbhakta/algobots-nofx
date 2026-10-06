@@ -10,7 +10,7 @@ Invariants enforced here, not by convention:
   text (+ / −), so a value is readable without color.
 * `status()` always pairs a glyph and a text label with an aria-label, so
   color is never the only signal.
-* `panel(financial=True)` adds a visible DEMO DATA tag to the panel header.
+* `panel(financial=True)` adds a visible tag (default DEMO DATA) to the panel header.
 
 All text is HTML-escaped.
 """
@@ -170,8 +170,9 @@ def panel(
     extra: str = "",
     raised: bool = False,
     cls: str = "",
+    tag: str = "DEMO DATA",
 ) -> str:
-    tag = '<span class="demo-tag">DEMO DATA</span>' if financial else ""
+    tag = f'<span class="demo-tag">{e(tag)}</span>' if financial else ""
     classes = " ".join(c for c in ("panel", "raised" if raised else "", cls) if c)
     return (
         f'<section class="{classes}" data-financial="{str(financial).lower()}" '
@@ -187,20 +188,26 @@ def table(
     *,
     numeric: set[int] = frozenset(),
     empty: str = "Nothing to show yet.",
+    stack: bool = False,
 ) -> str:
+    """``stack=True``: below 700px each row becomes a card, cells labelled by header."""
     if not rows:
         return f'<p class="empty">{e(empty)}</p>'
+    labels = [f' data-label="{e(h)}"' if stack else "" for h in headers]
     th = "".join(
         f'<th scope="col"{" class=n" if i in numeric else ""}>{e(h)}</th>'
         for i, h in enumerate(headers)
     )
     body = "".join(
         "<tr>"
-        + "".join(f"<td{' class=n' if i in numeric else ''}>{c}</td>" for i, c in enumerate(r))
+        + "".join(
+            f"<td{' class=n' if i in numeric else ''}{labels[i]}>{c}</td>" for i, c in enumerate(r)
+        )
         + "</tr>"
         for r in rows
     )
-    return f'<table class="data"><thead><tr>{th}</tr></thead><tbody>{body}</tbody></table>'
+    cls = "data stack" if stack else "data"
+    return f'<table class="{cls}"><thead><tr>{th}</tr></thead><tbody>{body}</tbody></table>'
 
 
 def action(

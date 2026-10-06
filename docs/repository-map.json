@@ -209,6 +209,30 @@
     {
       "repo": "algobots",
       "path": "tests/test_scaffold.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "src/algobots/demo/__init__.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "src/algobots/demo/killswitch.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "src/algobots/demo/ledger.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "src/algobots/demo/page.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "src/algobots/demo/router.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "tests/demo/test_ledger.py"
     }
   ],
   "scope_revisions": [

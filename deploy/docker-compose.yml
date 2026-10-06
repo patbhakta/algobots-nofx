@@ -43,6 +43,7 @@ services:
       # ALG-3248 demo: the Laya forward observer writes here every 15 min (read-only).
       ALGOBOTS_DEMO_FEED_PATH: /feeds/kalshi/observations.jsonl
       ALGOBOTS_DEMO_STATE_DIR: /var/lib/algobots-demo
+      ALGOBOTS_DEMO_SLEEVE_REFILLS: ${ALGOBOTS_DEMO_SLEEVE_REFILLS:-}
     volumes:
       - ${LAYA_KALSHI_DIR:-/opt/laya/kalshi}:/feeds/kalshi:ro
       - demostate:/var/lib/algobots-demo
