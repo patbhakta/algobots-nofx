@@ -32,6 +32,12 @@ class Settings(BaseSettings):
     credential_encryption_key: str = Field(default="")
     # A token expiring within this window is refreshed proactively.
     token_refresh_margin_seconds: int = Field(default=300)
+    # A03 OIDC seam (development/synthetic-paper only): an HS256 shared secret
+    # for a local or fake provider. Empty issuer disables OIDC login. OIDC
+    # authenticates existing members only; it never provisions accounts.
+    oidc_issuer: str = Field(default="")
+    oidc_audience: str = Field(default="algobots")
+    oidc_shared_secret: str = Field(default="")
 
     def sqlalchemy_url(self) -> str:
         """Normalize the configured URL for SQLAlchemy drivers.

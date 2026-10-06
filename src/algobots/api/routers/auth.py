@@ -1,19 +1,29 @@
-"""Auth routes: invite-code registration, JWT login, invite management."""
+"""Auth routes: invite-only registration, session-bound login/logout, OIDC, invites.
+
+Registration has no public path (A03): a new user needs either the bootstrap
+code (first user only), a platform invite code from a platform owner, or a
+tenant invite token addressed to their email. Platform-invite and bootstrap
+users get a personal tenant they own; tenant-invite users join the inviting
+tenant with the invited role and get no personal tenant.
+"""
 
 import secrets
 from datetime import UTC, datetime, timedelta
 
+import jwt as pyjwt
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from algobots.api.config import get_settings
 from algobots.api.database import get_db
-from algobots.api.dependencies import get_current_user
+from algobots.api.dependencies import AuthContext, get_auth_context, get_current_user
+from algobots.api.memberships import service as memberships
 from algobots.api.models import InviteCode, User, UserRole
 from algobots.api.schemas import (
     InviteOut,
     LoginRequest,
+    OIDCLoginRequest,
     RegisterRequest,
     TokenResponse,
     UserOut,
@@ -32,11 +42,15 @@ def register(payload: RegisterRequest, db: Session = Depends(get_db)) -> Respons
         raise HTTPException(status.HTTP_409_CONFLICT, "Email already registered")
 
     settings = get_settings()
-    user_count = db.scalar(select(func.count()).select_from(User))
-    bootstrap = user_count == 0 and payload.invite_code == settings.bootstrap_invite_code
-
+    bootstrap = False
     invite: InviteCode | None = None
-    if not bootstrap:
+    tenant_invite = None
+    if payload.tenant_invite_token is not None:
+        tenant_invite = memberships.find_redeemable_invite(db, payload.tenant_invite_token, email)
+    else:
+        user_count = db.scalar(select(func.count()).select_from(User))
+        bootstrap = user_count == 0 and payload.invite_code == settings.bootstrap_invite_code
+    if tenant_invite is None and not bootstrap:
         invite = db.scalar(select(InviteCode).where(InviteCode.code == payload.invite_code))
         if invite is None:
             raise HTTPException(status.HTTP_409_CONFLICT, "Invalid invite code")
@@ -56,6 +70,11 @@ def register(payload: RegisterRequest, db: Session = Depends(get_db)) -> Respons
     )
     db.add(user)
     db.flush()
+    if tenant_invite is not None:
+        # Atomic single-use redemption; a lost race rolls the user back too.
+        memberships.redeem_invite(db, tenant_invite, user)
+    else:
+        memberships.create_personal_tenant(db, user)
     if invite is not None:
         invite.claimed_by_user_id = user.id
         invite.claimed_at = datetime.now(UTC)
@@ -70,6 +89,16 @@ def register(payload: RegisterRequest, db: Session = Depends(get_db)) -> Respons
     )
 
 
+def _issue_token(db: Session, user: User) -> TokenResponse:
+    session = memberships.start_session(db, user)
+    db.commit()
+    settings = get_settings()
+    return TokenResponse(
+        access_token=create_access_token(user.id, session.id),
+        expires_in=settings.access_token_expire_minutes * 60,
+    )
+
+
 @router.post("/login", response_model=TokenResponse)
 def login(payload: LoginRequest, db: Session = Depends(get_db)) -> TokenResponse:
     user = db.scalar(select(User).where(User.email == payload.email.lower()))
@@ -77,11 +106,50 @@ def login(payload: LoginRequest, db: Session = Depends(get_db)) -> TokenResponse
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Invalid email or password")
     if not user.is_active:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "User inactive")
+    return _issue_token(db, user)
+
+
+@router.post("/oidc/login", response_model=TokenResponse)
+def oidc_login(payload: OIDCLoginRequest, db: Session = Depends(get_db)) -> TokenResponse:
+    """Exchange an ID token from the configured (local/fake) provider for a session.
+
+    Verifies signature, issuer, audience and expiry, and requires a verified
+    email that belongs to an existing active user. Unknown emails are refused:
+    OIDC is a login method, not a registration path.
+    """
     settings = get_settings()
-    return TokenResponse(
-        access_token=create_access_token(user.id),
-        expires_in=settings.access_token_expire_minutes * 60,
-    )
+    if not settings.oidc_issuer or not settings.oidc_shared_secret:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "OIDC login is not configured")
+    try:
+        claims = pyjwt.decode(
+            payload.id_token,
+            settings.oidc_shared_secret,
+            algorithms=["HS256"],
+            issuer=settings.oidc_issuer,
+            audience=settings.oidc_audience,
+            options={"require": ["exp", "iat", "iss", "aud", "sub", "email"]},
+        )
+    except pyjwt.PyJWTError:
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Invalid ID token") from None
+    if claims.get("email_verified") is not True:
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Email not verified by provider")
+    user = db.scalar(select(User).where(User.email == str(claims["email"]).lower()))
+    if user is None or not user.is_active:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "No invited account for this identity")
+    return _issue_token(db, user)
+
+
+@router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
+def logout(
+    response: Response,
+    ctx: AuthContext = Depends(get_auth_context),
+    db: Session = Depends(get_db),
+) -> None:
+    """Revoke the calling session; its token is rejected from the next request."""
+    ctx.session.revoked_at = datetime.now(UTC)
+    db.commit()
+    response.headers["X-Audit-Resource"] = "auth_sessions"
+    response.headers["X-Audit-Resource-Id"] = str(ctx.session.id)
 
 
 @router.post("/invites", response_model=InviteOut, status_code=status.HTTP_201_CREATED)
@@ -90,6 +158,9 @@ def create_invite(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> InviteOut:
+    """Platform invite code (new user + personal tenant). Platform owners only."""
+    if current_user.role != UserRole.OWNER.value:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Only platform owners mint platform invites")
     settings = get_settings()
     invite = InviteCode(
         code=f"ALG-{secrets.token_urlsafe(18)}",

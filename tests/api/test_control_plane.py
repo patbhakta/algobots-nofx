@@ -31,6 +31,12 @@ EXPECTED_TABLES = {
     "approval_requests",
     "broadcasts",
     "action_ledger",
+    # A03 (ALG-3099): tenants, memberships, hashed invites, sessions, grants
+    "tenants",
+    "tenant_memberships",
+    "tenant_invites",
+    "auth_sessions",
+    "account_grants",
 }
 
 
