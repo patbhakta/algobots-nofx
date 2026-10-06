@@ -64,9 +64,7 @@ class TenantMembership(Base):
     tenant_id: Mapped[UUID] = mapped_column(Uuid, ForeignKey("tenants.id"), nullable=False)
     user_id: Mapped[UUID] = mapped_column(Uuid, ForeignKey("users.id"), nullable=False)
     role: Mapped[str] = mapped_column(String(16), nullable=False)
-    status: Mapped[str] = mapped_column(
-        String(16), nullable=False, default=MembershipStatus.ACTIVE
-    )
+    status: Mapped[str] = mapped_column(String(16), nullable=False, default=MembershipStatus.ACTIVE)
     invited_by_user_id: Mapped[UUID | None] = mapped_column(
         Uuid, ForeignKey("users.id"), nullable=True
     )

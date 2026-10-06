@@ -145,9 +145,7 @@ def create_invite(
     )
     db.commit()
     _audit(response, "tenant_invites", invite.id)
-    return TenantInviteCreated(
-        **TenantInviteOut.model_validate(invite).model_dump(), token=token
-    )
+    return TenantInviteCreated(**TenantInviteOut.model_validate(invite).model_dump(), token=token)
 
 
 @router.get("/invites", response_model=list[TenantInviteOut])
@@ -160,7 +158,12 @@ def list_invites(
 ) -> list[TenantInvite]:
     query = select(TenantInvite).where(TenantInvite.tenant_id == ctx.tenant_id)
     return paginate(
-        db, query, TenantInvite, tenant_id=ctx.tenant_id, cursor=cursor, limit=limit,
+        db,
+        query,
+        TenantInvite,
+        tenant_id=ctx.tenant_id,
+        cursor=cursor,
+        limit=limit,
         response=response,
     )
 
@@ -205,7 +208,12 @@ def list_memberships(
 ) -> list[TenantMembership]:
     query = select(TenantMembership).where(TenantMembership.tenant_id == ctx.tenant_id)
     return paginate(
-        db, query, TenantMembership, tenant_id=ctx.tenant_id, cursor=cursor, limit=limit,
+        db,
+        query,
+        TenantMembership,
+        tenant_id=ctx.tenant_id,
+        cursor=cursor,
+        limit=limit,
         response=response,
     )
 
@@ -272,7 +280,10 @@ def add_grant(
 ) -> AccountGrant:
     membership = service.tenant_membership_or_404(db, ctx.tenant_id, membership_id)
     row = service.add_grant(
-        db, actor=ctx.user, membership=membership, account_id=payload.account_id,
+        db,
+        actor=ctx.user,
+        membership=membership,
+        account_id=payload.account_id,
         grant=payload.grant,
     )
     db.commit()
