@@ -13,6 +13,7 @@ from datetime import UTC, datetime, timedelta
 import jwt as pyjwt
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy import func, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from algobots.api.config import get_settings
@@ -69,7 +70,12 @@ def register(payload: RegisterRequest, db: Session = Depends(get_db)) -> Respons
         role=(UserRole.OWNER if bootstrap else UserRole.MEMBER).value,
     )
     db.add(user)
-    db.flush()
+    try:
+        db.flush()
+    except IntegrityError:
+        # A concurrent registration won the race for this email.
+        db.rollback()
+        raise HTTPException(status.HTTP_409_CONFLICT, "Email already registered") from None
     if tenant_invite is not None:
         # Atomic single-use redemption; a lost race rolls the user back too.
         memberships.redeem_invite(db, tenant_invite, user)

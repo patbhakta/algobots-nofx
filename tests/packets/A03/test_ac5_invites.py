@@ -71,7 +71,7 @@ def test_ac5_concurrent_redemption_creates_one_membership(
     lock = threading.Lock()
 
     def redeem() -> None:
-        local = TestClient(app)
+        local = TestClient(app, raise_server_exceptions=False)
         barrier.wait()
         response = local.post(
             "/api/memberships/invites/redeem", headers=headers, json={"token": token}
@@ -85,6 +85,7 @@ def test_ac5_concurrent_redemption_creates_one_membership(
     for t in threads:
         t.join()
 
+    assert len(statuses) == RACERS, "every racer must get a response"
     assert sorted(statuses) == [201] + [409] * (RACERS - 1)
     user_id = client.get("/api/me", headers=headers).json()["id"]
     assert len(_memberships(owner["tenant_id"], user_id)) == 1
@@ -99,7 +100,7 @@ def test_ac5_concurrent_registration_with_one_token(client: TestClient, founder_
     lock = threading.Lock()
 
     def register() -> None:
-        local = TestClient(app)
+        local = TestClient(app, raise_server_exceptions=False)
         barrier.wait()
         response = local.post(
             "/api/auth/register",
@@ -118,8 +119,8 @@ def test_ac5_concurrent_registration_with_one_token(client: TestClient, founder_
         t.start()
     for t in threads:
         t.join()
-    assert statuses.count(201) == 1
-    assert all(s in (201, 409) for s in statuses)
+    assert len(statuses) == RACERS, "every racer must get a response"
+    assert sorted(statuses) == [201] + [409] * (RACERS - 1)
     members = client.get("/api/memberships", headers=owner["headers"]).json()
     assert len(members) == 2  # owner + the one winner
 

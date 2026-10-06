@@ -135,7 +135,7 @@ def create_invite(
 ) -> tuple[TenantInvite, str]:
     """Mint an invite; returns the row and the plaintext token (shown once)."""
     if role not in {r.value for r in INVITABLE_ROLES}:
-        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, f"Role '{role}' is not invitable")
+        raise HTTPException(422, f"Role '{role}' is not invitable")
     email = email.lower()
     existing = db.scalar(
         select(TenantMembership.id)
@@ -297,7 +297,7 @@ def _guard_last_owner(db: Session, membership: TenantMembership) -> None:
 
 def change_role(db: Session, *, actor: User, membership: TenantMembership, role: str) -> None:
     if role not in {r.value for r in TenantRole}:
-        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, f"Unknown role '{role}'")
+        raise HTTPException(422, f"Unknown role '{role}'")
     if membership.status != MembershipStatus.ACTIVE:
         raise HTTPException(status.HTTP_409_CONFLICT, "Membership is revoked")
     if role == membership.role:
@@ -371,11 +371,9 @@ def add_grant(
     try:
         grant_enum = Grant(grant)
     except ValueError:
-        raise HTTPException(
-            status.HTTP_422_UNPROCESSABLE_ENTITY, f"Unknown grant '{grant}'"
-        ) from None
+        raise HTTPException(422, f"Unknown grant '{grant}'") from None
     if grant_enum not in ALLOWED_GRANTS[IdentityKind.USER]:
-        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, f"Users cannot hold {grant}")
+        raise HTTPException(422, f"Users cannot hold {grant}")
     if membership.status != MembershipStatus.ACTIVE:
         raise HTTPException(status.HTTP_409_CONFLICT, "Membership is revoked")
     if membership.role == TenantRole.VIEWER.value and grant_enum not in VIEWER_GRANTS:
