@@ -29,7 +29,9 @@ class AccountCredential(Base):
     account_id: Mapped[UUID] = mapped_column(
         Uuid, ForeignKey("accounts.id", ondelete="CASCADE"), unique=True, nullable=False
     )
-    user_id: Mapped[UUID] = mapped_column(Uuid, ForeignKey("users.id"), nullable=False, index=True)
+    user_id: Mapped[UUID] = mapped_column(
+        Uuid, ForeignKey("users.id"), nullable=False, index=True
+    )
     encrypted_secrets: Mapped[str] = mapped_column(Text, nullable=False)
     key_id: Mapped[str] = mapped_column(String(16), nullable=False, default="")
     token_status: Mapped[str] = mapped_column(String(16), nullable=False, default="active")
@@ -39,7 +41,9 @@ class AccountCredential(Base):
     last_refreshed_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
-    last_checked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    last_checked_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     last_refresh_error: Mapped[str] = mapped_column(Text, nullable=False, default="")
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_utcnow, nullable=False

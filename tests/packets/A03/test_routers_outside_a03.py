@@ -137,7 +137,7 @@ def test_viewer_cannot_mutate_through_other_routers(client: TestClient, workspac
     assert client.get("/api/deployments", headers=h).status_code == 200  # reads still allowed
     for method, path, body in [
         *_attempts(rows),
-        ("POST", "/api/deployments/fleet/breaker", {"state": "open", "reason": "x"}),
+        ("POST", "/api/deployments/fleet/breaker", {"action": "trip", "reason": "x"}),
         ("POST", "/api/accounts/token-sweep", None),
     ]:
         response = client.request(method, path, headers=h, json=body)

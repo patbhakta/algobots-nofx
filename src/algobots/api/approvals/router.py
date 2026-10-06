@@ -69,7 +69,8 @@ def list_all(
 ) -> list[ApprovalOut]:
     """The caller's approval requests (optional status / order filters)."""
     return [
-        _out(db, request) for request in list_requests(db, current_user, status_filter, order_id)
+        _out(db, request)
+        for request in list_requests(db, current_user, status_filter, order_id)
     ]
 
 
@@ -113,7 +114,9 @@ def decide(
     """
     request = _owned_or_404(db, current_user, request_id)
     try:
-        request = decide_request(db, current_user, request, payload.verdict, payload.reason)
+        request = decide_request(
+            db, current_user, request, payload.verdict, payload.reason
+        )
     except ApprovalError as exc:
         db.rollback()
         raise HTTPException(exc.status_code, exc.message) from None

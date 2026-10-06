@@ -44,7 +44,9 @@ def _as_aware(dt: datetime) -> datetime:
 def set_credentials(db: Session, account: Account, secrets: CredentialSet) -> AccountCredential:
     """Create or replace the encrypted credential blob for one account."""
     cipher = get_credential_cipher()
-    row = db.scalar(select(AccountCredential).where(AccountCredential.account_id == account.id))
+    row = db.scalar(
+        select(AccountCredential).where(AccountCredential.account_id == account.id)
+    )
     if row is None:
         row = AccountCredential(account_id=account.id, user_id=account.user_id)
         db.add(row)
@@ -115,7 +117,9 @@ def sweep_token_health(
         checked += 1
         plain_secrets: dict[str, Any] | None = None
         try:
-            expires = _as_aware(row.token_expires_at) if row.token_expires_at is not None else None
+            expires = (
+                _as_aware(row.token_expires_at) if row.token_expires_at is not None else None
+            )
             if expires is None or expires > now + margin:
                 healthy += 1
                 continue
@@ -172,7 +176,9 @@ def sweep_token_health(
             failed += 1
             expired_account_ids.append(account.id)
             row.token_status = TOKEN_EXPIRED
-            known_secrets = [v for v in (plain_secrets or {}).values() if isinstance(v, str) and v]
+            known_secrets = [
+                v for v in (plain_secrets or {}).values() if isinstance(v, str) and v
+            ]
             row.last_refresh_error = redact(f"{type(exc).__name__}: {exc}", *known_secrets)
             logger.warning(
                 "token_refresh_failed account_id=%s broker=%s error=%s",
