@@ -5,8 +5,8 @@
   "repository": "algobots",
   "baseline_commit": "b340c99",
   "implementation_commit": "4b80d80",
-  "integrated_commit": null,
-  "integration_note": "integrated_commit is recorded at merge to main after independent review; A01 is not DONE until then",
+  "integrated_commit": "a7a0608",
+  "integration_note": "merged to main as a7a0608 (--no-ff of feat/alg-3097-a01-contracts @ 2eee286) after independent review PASS on ALG-3177",
   "environment": {
     "python": "3.12.3",
     "pydantic": "2.13.5",
@@ -26,7 +26,7 @@
     "result": "172 passed, 0 failed, 0 skipped",
     "full_suite": "python -m pytest -> 368 passed (196 pre-existing + 172 A01)",
     "lint": "ruff check . -> All checks passed",
-    "ci": "CI adds a 'Schema lock transition' step (fetch-depth 0); run id recorded on ALG-3097 after push"
+    "ci": "CI run 37400230152 success at 2eee286 (lint, schema lock transition, 368 passed); main merge CI recorded on ALG-3097"
   },
   "acceptance_cases": [
     {
@@ -81,8 +81,8 @@
   ],
   "blocked_cases": [],
   "required_artifacts": {
-    "implementation_commit": "4b80d80 + 9821449 + f92e6e0 + bdd20d1 + R1 follow-up (ALG-3175/ALG-3176 fixes)",
-    "independent_review_receipt": "ALG-3175 (01:22Z): cases 1-2 PASS, case 3 FAIL (A1, A2), fixed in f92e6e0/bdd20d1. ALG-3176 (01:37Z) at bdd20d1: cases 1-2 PASS, A1-A6 and C1-C7 verified closed, case 3 FAIL on R1 only; R1, N1, N2 fixed in the follow-up commit; re-review requested",
+    "implementation_commit": "4b80d80 + 9821449 + f92e6e0 + bdd20d1 + 2eee286; integrated as a7a0608",
+    "independent_review_receipt": "ALG-3175 (01:22Z) at 6b778ba: cases 1-2 PASS, case 3 FAIL (A1, A2) -> fixed f92e6e0/bdd20d1. ALG-3176 (01:37Z) at bdd20d1: case 3 FAIL on R1 only -> fixed 2eee286. ALG-3177 (01:42Z) at 2eee286: cases 1, 2, 3 PASS; overall PASS (CI run 37400230152)",
     "acceptance_json": "artifacts/A01/acceptance.json",
     "test_results": "artifacts/A01/test-results/ (junit.xml, pytest-summary.txt: 172 passed)",
     "demo_and_limitations": "artifacts/A01/demo-and-limitations.md (+ demo-output.txt)"
