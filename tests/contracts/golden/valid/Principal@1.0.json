@@ -1,0 +1,11 @@
+{
+  "schema_version": "1.0",
+  "principal_id": "user-ana",
+  "kind": "USER",
+  "tenant_id": "tenant-a",
+  "grants": [
+    "ACCOUNT_READ",
+    "TRADE_PAPER",
+    "INVESTMENT_MEMORY_READ"
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "schema_version": "1.0",
+  "account_id": "acct-alpha-1",
+  "capability_revision": 2,
+  "observed_at": "2026-09-22T14:30:00Z",
+  "entries": [
+    {
+      "product": "equity",
+      "order_type": "limit",
+      "support": "native",
+      "price_decimals": 2,
+      "quantity_decimals": 0,
+      "min_order": {
+        "value": "1",
+        "unit": "shares"
+      },
+      "client_order_id_max_length": 48,
+      "client_order_id_reusable": false,
+      "client_order_id_uniqueness": "account",
+      "lookup_methods": [
+        "by-client-order-id",
+        "open-orders"
+      ],
+      "reconcile_methods": [
+        "positions",
+        "balances",
+        "open-orders",
+        "executions"
+      ],
+      "protection_options": [
+        "stop",
+        "bracket"
+      ],
+      "cancel_semantics": "async-ack",
+      "rate_limit_per_minute": 200,
+      "market_data_entitled": true,
+      "test_environment_fidelity": "partial"
+    }
+  ]
+}

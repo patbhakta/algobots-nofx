@@ -1,0 +1,30 @@
+{
+  "schema_version": "1.0",
+  "approval_id": "appr-0001",
+  "approver_id": "user-ana",
+  "approver_kind": "USER",
+  "grant_revision": 3,
+  "plan_hash": "0e6bc601bda5054cc6c56da7d4c4d7896645d3fcdca9382a6489e4d796654b13",
+  "permitted_account_ids": [
+    "acct-alpha-1"
+  ],
+  "permitted_products": [
+    "equity"
+  ],
+  "permitted_actions": [
+    "PLACE_ORDER"
+  ],
+  "max_quantity": {
+    "value": "10",
+    "unit": "shares"
+  },
+  "max_notional": {
+    "amount": "2000.00",
+    "currency": "USD"
+  },
+  "price_tolerance_bps": "25",
+  "policy_revision": "risk-7",
+  "expires_at": "2026-09-23T14:30:00Z",
+  "required_approvals": 1,
+  "approvals_received": 1
+}

@@ -1,0 +1,38 @@
+{
+  "schema_version": "1.0",
+  "event_id": "evt-0001",
+  "tenant_id": "tenant-a",
+  "account_id": null,
+  "environment": "synthetic-paper",
+  "occurred_at": "2026-09-22T14:30:00Z",
+  "received_at": "2026-09-22T14:30:01.250000Z",
+  "correlation_id": "corr-0001",
+  "causation_id": null,
+  "producer": "rules-service",
+  "producer_revision": "b340c99",
+  "stream_id": "signals",
+  "sequence": 17,
+  "payload_schema": "Signal@1.0",
+  "payload": {
+    "schema_version": "1.0",
+    "signal_id": "sig-0001",
+    "instrument_id": "XNAS:AAPL",
+    "direction": "positive",
+    "score": 0.42,
+    "abstained": false,
+    "reason_codes": [
+      "rsi-oversold"
+    ],
+    "as_of": "2026-09-22T14:30:00Z",
+    "valid_until": "2026-09-23T14:30:00Z",
+    "horizon": "5d",
+    "strategy_id": "strat-meanrev",
+    "strategy_version": 3,
+    "evidence_refs": [
+      "ev-0001"
+    ],
+    "decision_refs": [
+      "dec-0001"
+    ]
+  }
+}

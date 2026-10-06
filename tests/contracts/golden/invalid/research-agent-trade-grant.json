@@ -1,0 +1,13 @@
+{
+  "contract": "Principal",
+  "error_contains": "RESEARCH_AGENT identities cannot hold TRADE_LIVE",
+  "data": {
+    "schema_version": "1.0",
+    "principal_id": "jev-research",
+    "kind": "RESEARCH_AGENT",
+    "tenant_id": "tenant-a",
+    "grants": [
+      "TRADE_LIVE"
+    ]
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "contract": "Reservation",
+  "error_contains": "INVENTORY reservation amount must be Quantity",
+  "data": {
+    "schema_version": "1.0",
+    "reservation_id": "res-0001",
+    "account_id": "acct-alpha-1",
+    "instrument_id": "XNAS:AAPL",
+    "plan_id": "plan-0001",
+    "child_id": "child-1",
+    "kind": "INVENTORY",
+    "amount": {
+      "amount": "1872.50",
+      "currency": "USD"
+    },
+    "buffer": {
+      "amount": "18.73",
+      "currency": "USD"
+    },
+    "state": "UNCERTAIN",
+    "version": 2
+  }
+}

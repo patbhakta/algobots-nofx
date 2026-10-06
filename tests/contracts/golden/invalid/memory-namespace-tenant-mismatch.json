@@ -1,0 +1,30 @@
+{
+  "contract": "MemoryRecord",
+  "error_contains": "do not match namespace",
+  "data": {
+    "schema_version": "1.0",
+    "record_id": "mem-0001",
+    "version": 2,
+    "namespace": "investment/tenant-a/research",
+    "tenant_id": "tenant-b",
+    "account_id": null,
+    "source_version": "v12",
+    "source_hash": "edb465624291e4053c6c5ea4b7eb320dec773e10a57d26b95dcf0564f8e310f8",
+    "source_anchor": "note-rsi#entry",
+    "source_event_time": "2026-09-22T14:30:00Z",
+    "available_at": "2026-09-22T14:30:00Z",
+    "ingested_at": "2026-09-22T14:30:01.250000Z",
+    "instrument_id": "XNAS:AAPL",
+    "horizon": "5d",
+    "regime_definition_version": "regime-1",
+    "revisions": {
+      "strategy": "strat-meanrev@3",
+      "data": "bars-2026-09"
+    },
+    "evidence_class": "HYPOTHESIS",
+    "approval_state": "PROPOSED",
+    "acl_revision": 5,
+    "tombstoned": false,
+    "replaces_record_id": "mem-0000"
+  }
+}

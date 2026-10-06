@@ -1,0 +1,105 @@
+{
+  "packet": "A01",
+  "revision": 2,
+  "issue": "ALG-3097",
+  "repository": "algobots",
+  "baseline_commit": "b340c99",
+  "implementation_commit": "4b80d80",
+  "integrated_commit": null,
+  "integration_note": "integrated_commit is recorded at merge to main after independent review; A01 is not DONE until then",
+  "environment": {
+    "python": "3.12.3",
+    "pydantic": "2.13.5",
+    "allowed": [
+      "development",
+      "synthetic-paper"
+    ],
+    "fixtures": "synthetic only; no credentials, no broker or memory service contacted"
+  },
+  "verification": {
+    "command": "make verify-A01",
+    "steps": [
+      "python -m algobots.contracts --check-transition  -> schema lock in sync (19 contracts); transition vs merge base with origin/main (b340c99 has no lock: first introduction)",
+      "python -m pytest tests/contracts tests/packets/A01 -q -p no:cacheprovider --junitxml=artifacts/A01/test-results/junit.xml",
+      "sed strips timestamp/hostname/time from junit.xml so unchanged results leave the tree clean"
+    ],
+    "result": "172 passed, 0 failed, 0 skipped",
+    "full_suite": "python -m pytest -> 368 passed (196 pre-existing + 172 A01)",
+    "lint": "ruff check . -> All checks passed",
+    "ci": "CI adds a 'Schema lock transition' step (fetch-depth 0); run id recorded on ALG-3097 after push"
+  },
+  "acceptance_cases": [
+    {
+      "id": 1,
+      "criterion": "Golden contracts round-trip with decimal amounts and explicit units; incompatible fields fail clearly.",
+      "result": "PASS",
+      "evidence": [
+        "tests/contracts/test_golden.py::test_every_registered_contract_has_a_valid_golden",
+        "tests/contracts/test_golden.py::test_valid_golden_round_trips_exactly (19 contracts, exact JSON equality)",
+        "tests/contracts/test_golden.py::test_invalid_golden_fails_with_clear_message (38 cases, asserted message substrings)",
+        "tests/contracts/test_golden.py::test_decimals_stay_exact_strings_with_units",
+        "tests/contracts/test_golden.py::test_non_string_or_non_finite_amounts_rejected",
+        "tests/contracts/test_contract_rules.py::test_plan_hash_is_bound_to_content, test_approval_enforces_products_and_actions, test_inventory_reservation_holds_a_quantity, test_credential_keys_are_screened (ALG-3175 A3-A5, C7)",
+        "tests/contracts/test_contract_rules.py::test_credential_shaped_values_are_screened (ALG-3176 N2)"
+      ]
+    },
+    {
+      "id": 2,
+      "criterion": "Every packet resolves to real/proposed paths and each shared resource has one integration owner.",
+      "result": "PASS",
+      "evidence": [
+        "docs/repository-map.json (38 packets, 11 scope revisions, 9 shared resources, 1 frozen path set)",
+        "tests/packets/A01/test_a01_repository_map.py::test_packet_resolves_to_real_or_proposed_paths (38 parametrized)",
+        "tests/packets/A01/test_a01_repository_map.py::test_each_shared_resource_has_exactly_one_known_integration_owner",
+        "tests/packets/A01/test_a01_repository_map.py::test_no_two_packets_declare_the_same_path",
+        "tests/packets/A01/test_a01_repository_map.py::test_every_tracked_file_has_an_owner",
+        "tests/packets/A01/test_a01_repository_map.py::test_harness_is_frozen_and_unwritable",
+        "tests/packets/A01/test_a01_repository_map.py::test_shared_resource_paths_overlap_only_declared_carve_outs (ALG-3175 C3)"
+      ]
+    },
+    {
+      "id": 3,
+      "criterion": "A schema revision cannot silently invalidate an already queued packet.",
+      "result": "PASS",
+      "evidence": [
+        "tests/contracts/test_schema_revisions.py::test_shape_change_without_version_bump_is_detected",
+        "tests/contracts/test_schema_revisions.py::test_validator_tightening_without_schema_change_is_detected (ALG-3175 A2)",
+        "tests/contracts/test_schema_revisions.py::test_editing_a_shared_validator_helper_is_detected (helpers/constants referenced by validators)",
+        "tests/contracts/test_contract_rules.py::test_grant_table_is_fingerprinted (ALG-3176 R1: dict constants such as identity.ALLOWED_GRANTS)",
+        "tests/contracts/test_contract_rules.py::test_unknown_constant_type_fails_closed",
+        "tests/contracts/test_schema_revisions.py::test_unresolvable_transition_base_is_an_error (ALG-3176 N1)",
+        "tests/contracts/test_schema_revisions.py::test_in_place_lock_regeneration_fails_the_transition_check (ALG-3175 A1)",
+        "tests/contracts/test_schema_revisions.py::test_rewriting_a_locked_fingerprint_is_rejected",
+        "tests/contracts/test_schema_revisions.py::test_removing_a_pinned_version_names_the_stranded_packets",
+        "tests/contracts/test_schema_revisions.py::test_additive_revision_keeps_queued_payloads_valid",
+        "tests/contracts/test_schema_revisions.py::test_every_queued_pin_resolves",
+        "manual repro: Signal@1.0 horizon tightened in place + --write-lock -> `make verify-A01 SCHEMA_BASE=HEAD` exits 1 'Signal@1.0 fingerprint rewritten in place'",
+        "manual repro: TargetPortfolio long-only cap 1 -> 0.5 with no version bump -> `python -m algobots.contracts` exits 1 'changed schema or validators without a version bump'",
+        "manual repro (ALG-3176 R1): TRADE_LIVE removed from EXECUTION_SERVICE -> `python -m algobots.contracts` exits 1 'Principal@1.0 changed schema or validators without a version bump'"
+      ]
+    }
+  ],
+  "blocked_cases": [],
+  "required_artifacts": {
+    "implementation_commit": "4b80d80 + 9821449 + f92e6e0 + bdd20d1 + R1 follow-up (ALG-3175/ALG-3176 fixes)",
+    "independent_review_receipt": "ALG-3175 (01:22Z): cases 1-2 PASS, case 3 FAIL (A1, A2), fixed in f92e6e0/bdd20d1. ALG-3176 (01:37Z) at bdd20d1: cases 1-2 PASS, A1-A6 and C1-C7 verified closed, case 3 FAIL on R1 only; R1, N1, N2 fixed in the follow-up commit; re-review requested",
+    "acceptance_json": "artifacts/A01/acceptance.json",
+    "test_results": "artifacts/A01/test-results/ (junit.xml, pytest-summary.txt: 172 passed)",
+    "demo_and_limitations": "artifacts/A01/demo-and-limitations.md (+ demo-output.txt)"
+  },
+  "harness_freeze": {
+    "paths": [
+      "src/algobots/evals/harness/",
+      "tests/evals/harness/"
+    ],
+    "home": "algobots monorepo",
+    "head_commit": "b340c99",
+    "source_issue": "ALG-3086",
+    "merge_ci_run": "37396961518"
+  },
+  "fix_commits": [
+    "9821449 (commit-scope test skips shallow clones; CI run 37398196561 failed on this before the fix)",
+    "f92e6e0 (ALG-3175 findings A1-A6, C2-C7; C1 evidence count corrected to 11 scope revisions)",
+    "ALG-3176 follow-up: Mapping constants fingerprinted, unknown constant types fail closed (R1); unresolvable --check-transition base is an error (N1); secret screen covers auth/cookie/session keys and Bearer/JWT/sk-ant/glpat/AIza values (N2)"
+  ]
+}

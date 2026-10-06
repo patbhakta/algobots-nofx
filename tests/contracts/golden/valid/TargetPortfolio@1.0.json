@@ -1,0 +1,27 @@
+{
+  "schema_version": "1.0",
+  "portfolio_id": "tp-0001",
+  "account_id": "acct-alpha-1",
+  "deployment_id": "dep-0001",
+  "snapshot_version": 9,
+  "update_mode": "PARTIAL",
+  "entries": [
+    {
+      "instrument_id": "XNAS:AAPL",
+      "weight": "0.35",
+      "quantity": null
+    },
+    {
+      "instrument_id": "ARCX:SPY",
+      "weight": "0.60",
+      "quantity": null
+    }
+  ],
+  "cash_policy": "RESIDUAL_CASH",
+  "long_only_unlevered": true,
+  "as_of": "2026-09-22T14:30:00Z",
+  "expires_at": "2026-09-23T14:30:00Z",
+  "source_signal_ids": [
+    "sig-0001"
+  ]
+}

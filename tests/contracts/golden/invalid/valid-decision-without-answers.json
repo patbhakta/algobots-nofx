@@ -1,0 +1,28 @@
+{
+  "contract": "DecisionResponse",
+  "error_contains": "VALID decision requires typed answers",
+  "data": {
+    "schema_version": "1.0",
+    "request_id": "dec-0001",
+    "status": "VALID",
+    "answers": [],
+    "confidence": null,
+    "source_refs": [
+      "note-rsi#entry"
+    ],
+    "provider": "jev",
+    "model_revision": "jev-2026-09",
+    "usage": {
+      "input_tokens": 1210,
+      "output_tokens": 64,
+      "estimated_cost": {
+        "amount": "0.0031",
+        "currency": "USD"
+      },
+      "billed_cost": null
+    },
+    "started_at": "2026-09-22T14:30:00Z",
+    "completed_at": "2026-09-22T14:30:01.250000Z",
+    "receipt_ref": "rcpt-0001"
+  }
+}
