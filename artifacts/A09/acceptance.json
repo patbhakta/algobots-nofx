@@ -1,0 +1,84 @@
+{
+  "packet": "A09",
+  "revision": 1,
+  "issue": "ALG-3105",
+  "repository": "algobots",
+  "baseline_commit": "48642df",
+  "branch": "feat/alg-3105-a09-design-system",
+  "implementation_commit": "6dd2106",
+  "make_targets_integration_commit": "178534b",
+  "integrated_commit": null,
+  "integration_note": "pending independent Tech Lead review; merge --no-ff to main only after PASS",
+  "environment": {
+    "python": "3.12.3",
+    "browser": "Chrome for Testing 153.0.8010.12 (chrome-headless-shell, Playwright cache; nothing installed)",
+    "allowed": ["development", "synthetic-paper"],
+    "fixtures": "synthetic only; no broker, feed, memory service or network contacted"
+  },
+  "verification": {
+    "command": "make verify-A09",
+    "steps": [
+      "python -m algobots.dashboard.design build artifacts/A09 (deterministic: unchanged tree stays clean)",
+      "python -m pytest tests/packets/A09 -q -p no:cacheprovider -rs --junitxml=artifacts/A09/test-results/junit.xml",
+      "sed strips timestamp/hostname/time from junit.xml"
+    ],
+    "result": "198 passed, 0 failed, 0 skipped",
+    "full_suite": "python -m pytest -> 566 passed (368 pre-existing + 198 A09)",
+    "regression": "make verify-A01 -> green (schema lock unchanged; every tracked file has an owner)",
+    "lint": "ruff check . -> All checks passed; ruff format --check on A09 paths clean",
+    "screenshots": "make screenshots-A09 -> 38 screenshots; 0 with horizontal overflow (layout-audit.json)"
+  },
+  "acceptance_cases": [
+    {
+      "id": 1,
+      "criterion": "Warm paper theme and compact hierarchy match the uploaded reference direction; no old dark-theme assumption remains.",
+      "result": "PASS (direction per roadmap text; video comparison by a human outstanding, see limitations)",
+      "evidence": [
+        "tests/packets/A09/test_a09_tokens.py::test_spec_values_recorded_verbatim, test_surfaces_are_light_paper",
+        "tests/packets/A09/test_a09_tokens.py::test_stylesheet_has_no_dark_theme, test_no_dark_theme_assumption_in_dashboard_sources (whole src/algobots/dashboard/)",
+        "tests/packets/A09/test_a09_tokens.py::test_tabular_figures_for_financial_values, test_grain_opacity_and_type_sizes_follow_spec",
+        "tests/packets/A09/test_a09_headless.py::test_no_horizontal_overflow_at_spec_sizes (4 screens x 5 states x 1920x1114/1440x900/1024x768/390x844)",
+        "artifacts/A09/screenshots/ (38 PNGs) and demo-and-limitations.md observed (per roadmap text) vs proposed table"
+      ]
+    },
+    {
+      "id": 2,
+      "criterion": "Text remains legible with grain; texture-off and reduced-motion settings work.",
+      "result": "PASS",
+      "evidence": [
+        "tests/packets/A09/test_a09_tokens.py::test_text_meets_wcag_aa_on_paper (6 text tokens x 2 surfaces x grain on/off, worst-case grain pixel)",
+        "tests/packets/A09/test_a09_tokens.py::test_each_adjustment_is_needed_and_minimal (positive, attention, focus)",
+        "tests/packets/A09/test_a09_grain_motion.py::test_tile_is_small_monochrome_and_deterministic, test_grain_layer_is_stationary_and_below_content",
+        "tests/packets/A09/test_a09_grain_motion.py::test_texture_off_removes_grain, test_reduced_motion_and_motion_off_zero_every_duration, test_all_motion_reaches_the_toggles",
+        "tests/packets/A09/test_a09_headless.py::test_grain_on_by_default_and_texture_off_hides_it, test_motion_off_toggle_and_os_reduced_motion (--force-prefers-reduced-motion)",
+        "artifacts/A09/accessibility-contrast.json (24/24 pairs >= 4.5:1; lowest 4.60:1)"
+      ]
+    },
+    {
+      "id": 3,
+      "criterion": "Every financial fixture is marked synthetic and each action displays account and environment.",
+      "result": "PASS",
+      "evidence": [
+        "tests/packets/A09/test_a09_fixtures.py::test_every_fixture_is_marked_synthetic, test_amounts_are_decimal_strings_with_currency",
+        "tests/packets/A09/test_a09_storyboard.py::test_demo_banner_and_tags (every page banner; every financial panel tagged; every data-fin value inside a DEMO DATA section)",
+        "tests/packets/A09/test_a09_storyboard.py::test_every_action_shows_account_and_environment (all 20 pages; LIVE actions disabled 'not authorized')",
+        "tests/packets/A09/test_a09_storyboard.py::test_action_component_refuses_missing_context",
+        "tests/packets/A09/test_a09_storyboard.py::test_paused_actions_say_why_and_stop_access_stays_open"
+      ]
+    }
+  ],
+  "blocked_cases": [],
+  "required_artifacts": {
+    "implementation_commit": "6dd2106 (+ 178534b make-targets integration)",
+    "independent_review_receipt": "pending: Tech Lead review card",
+    "acceptance_json": "artifacts/A09/acceptance.json",
+    "test_results": "artifacts/A09/test-results/ (junit.xml, pytest-summary.txt: 198 passed)",
+    "demo_and_limitations": "artifacts/A09/demo-and-limitations.md (+ demo-output.txt)"
+  },
+  "output_contracts": {
+    "design_tokens": "src/algobots/dashboard/design/tokens.py; artifacts/A09/tokens.json, tokens.css",
+    "component_inventory": "src/algobots/dashboard/design/components.py INVENTORY; artifacts/A09/components.json",
+    "screenshots": "artifacts/A09/screenshots/, layout-audit.json",
+    "clickable_fixture_storyboard": "artifacts/A09/storyboard/index.html (static, open from disk)"
+  }
+}
