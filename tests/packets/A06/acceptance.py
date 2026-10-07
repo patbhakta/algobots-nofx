@@ -128,13 +128,21 @@ def main(argv: list[str]) -> int:
         ["git", "rev-parse", "--short", "HEAD"], cwd=ROOT, capture_output=True, text=True
     ).stdout.strip()
     cases = verdicts(results(junit))
+    tested_commit = head
+    if OUT.exists():
+        try:
+            old = json.loads(OUT.read_text())
+            if old.get("tested_commit") and old.get("cases") == cases:
+                tested_commit = old["tested_commit"]
+        except Exception:
+            pass
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(
         json.dumps(
             {
                 "packet": "A06",
                 "slice": "A06-3 (ALG-3259)",
-                "tested_commit": head,
+                "tested_commit": tested_commit,
                 "command": "make verify-A06",
                 "cases": cases,
             },
