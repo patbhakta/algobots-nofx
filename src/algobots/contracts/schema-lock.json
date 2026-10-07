@@ -54,6 +54,12 @@
     "Reservation": {
       "1.0": "2c028f7a2bf313e3b5bf886d7e14d5688f466f142afca749f5eaeb4205dcb9a2"
     },
+    "RiskDecision": {
+      "1.0": "d61db48b56af12e84268dfbc4950d723de92b8c0c639130fc304a64f82511eb5"
+    },
+    "RiskPolicyVersion": {
+      "1.0": "d8a1900be562c32f83de5e00108fb13a3a23aa8d77dfce598584151fcbedd051"
+    },
     "Signal": {
       "1.0": "7132035007a60b30f2267622f699dc75755c5885ead45b114671b839be1924d1"
     },

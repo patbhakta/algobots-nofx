@@ -116,3 +116,22 @@ verify-A07:
 # artifacts/A07/demo-run.json (the packet's required demo).
 demo-A07:
 	PYTHONPATH=$(CURDIR)/src $(PYTHON) tests/packets/A07/demo.py
+
+A08_RESULTS := artifacts/A08/test-results
+
+.PHONY: verify-A08 demo-A08
+
+# Account risk + reservation suites + packet checks, then acceptance.json
+# (AC1-AC5 as PASS / FAIL / PENDING with evidence paths). No optional extras:
+# the concurrency races run on the real Alembic-migrated SQLite store.
+verify-A08:
+	mkdir -p $(A08_RESULTS)
+	PYTHONPATH=$(CURDIR)/src $(PYTHON) -m pytest tests/risk tests/packets/A08 -q -p no:cacheprovider -rs \
+		--junitxml=$(A08_RESULTS)/junit.xml
+	sed -i -E 's/ (timestamp|hostname|time)="[^"]*"//g' $(A08_RESULTS)/junit.xml
+	PYTHONPATH=$(CURDIR)/src $(PYTHON) tests/packets/A08/acceptance.py $(A08_RESULTS)/junit.xml
+
+# Demo evidence: race two strategies for shared funds + entry pause without
+# removing stops, into artifacts/A08/demo-run.json (the packet's required demo).
+demo-A08:
+	PYTHONPATH=$(CURDIR)/src $(PYTHON) tests/packets/A08/demo.py

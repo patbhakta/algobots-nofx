@@ -1,0 +1,85 @@
+{
+  "packet": "A08",
+  "slice": "A08 packet (ALG-3104)",
+  "tested_commit": "8d22845",
+  "command": "make verify-A08",
+  "cases": {
+    "AC1": {
+      "status": "PASS",
+      "case": "GIVEN $1,000 available and two simultaneous $700 entry plans THEN both cannot be admitted; sum of reservations never exceeds permitted funds",
+      "note": "5 tests passed",
+      "tests": {
+        "tests/packets/A08/test_ac1_race.py::test_ac1_sequential_second_700_is_rejected": "passed",
+        "tests/packets/A08/test_ac1_race.py::test_ac1_concurrent_700s_exactly_one_admitted": "passed",
+        "tests/packets/A08/test_ac1_race.py::test_release_returns_funds_and_admits_the_waiter": "passed",
+        "tests/packets/A08/test_ac1_race.py::test_reservations_never_commit_without_their_intent": "passed",
+        "tests/packets/A08/test_ac2_uncertain.py::test_db_check_released_row_requires_reason": "passed"
+      },
+      "evidence": [
+        "artifacts/A08/test-results/junit.xml",
+        "artifacts/A08/demo-run.json"
+      ]
+    },
+    "AC2": {
+      "status": "PASS",
+      "case": "GIVEN an unknown order or cancel-pending remainder THEN its reservation cannot fund a new conflicting entry",
+      "note": "4 tests passed",
+      "tests": {
+        "tests/packets/A08/test_ac2_uncertain.py::test_unknown_order_reservation_cannot_fund_new_entry": "passed",
+        "tests/packets/A08/test_ac2_uncertain.py::test_cancel_pending_remainder_retains_obligation": "passed",
+        "tests/packets/A08/test_ac2_uncertain.py::test_double_release_is_rejected": "passed",
+        "tests/packets/A08/test_ac2_uncertain.py::test_release_requires_a_known_reason": "passed"
+      },
+      "evidence": [
+        "artifacts/A08/test-results/junit.xml",
+        "artifacts/A08/demo-run.json"
+      ]
+    },
+    "AC3": {
+      "status": "PASS",
+      "case": "GIVEN a breached daily loss cap THEN new entries are denied while correctly scoped risk-reducing actions remain possible",
+      "note": "4 tests passed",
+      "tests": {
+        "tests/packets/A08/test_ac3_ac4_ac5.py::test_ac3_daily_loss_breach_denies_entries_allows_risk_reducing": "passed",
+        "tests/packets/A08/test_ac3_ac4_ac5.py::test_ac3_entry_pause_via_controls_denies_entries_not_reductions": "passed",
+        "tests/risk/test_policy.py::test_daily_loss_denies_entry_but_exit_passes_uncapped": "passed",
+        "tests/risk/test_daily_loss.py::test_loss_equal_to_cap_trips": "passed"
+      },
+      "evidence": [
+        "artifacts/A08/test-results/junit.xml",
+        "artifacts/A08/demo-run.json"
+      ]
+    },
+    "AC4": {
+      "status": "PASS",
+      "case": "GIVEN an AI proposal requesting greater leverage/size THEN deterministic policy rejects or clamps it with an explicit audit reason",
+      "note": "4 tests passed",
+      "tests": {
+        "tests/packets/A08/test_ac3_ac4_ac5.py::test_ac4_oversize_ai_proposal_rejected_then_admitted_at_clamped_size": "passed",
+        "tests/risk/test_policy.py::test_ai_oversize_request_is_clamped_with_explicit_reason": "passed",
+        "tests/risk/test_policy.py::test_same_inputs_same_decision_always": "passed",
+        "tests/risk/test_policy.py::test_first_rule_wins_permission_beats_everything": "passed"
+      },
+      "evidence": [
+        "artifacts/A08/test-results/junit.xml",
+        "artifacts/A08/demo-run.json"
+      ]
+    },
+    "AC5": {
+      "status": "PASS",
+      "case": "GIVEN a reconnect or stale mark THEN protection status is visible and new risk is blocked until required state is fresh",
+      "note": "5 tests passed",
+      "tests": {
+        "tests/packets/A08/test_ac3_ac4_ac5.py::test_ac5_stale_mark_blocks_new_risk_until_fresh": "passed",
+        "tests/packets/A08/test_ac3_ac4_ac5.py::test_ac5_protection_status_visible_during_outage": "passed",
+        "tests/risk/test_policy.py::test_stale_mark_blocks_entry_but_not_exit": "passed",
+        "tests/risk/test_policy.py::test_disconnect_blocks_entry": "passed",
+        "tests/risk/test_controls.py::test_protection_status_lists_working_and_paused_stops": "passed"
+      },
+      "evidence": [
+        "artifacts/A08/test-results/junit.xml",
+        "artifacts/A08/demo-run.json"
+      ]
+    }
+  }
+}
