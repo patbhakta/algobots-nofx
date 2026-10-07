@@ -131,3 +131,19 @@ automatic failover, as the A06 exclusions state. A hard-killed container leaves
 leases that the next container can't verify, so they need `force-release`. A
 clean `docker compose up` sends SIGTERM to the API, which stops the workers and
 releases the leases.
+
+**Live check (A06-2).** `artifacts/A06/lease-live-check.txt` was captured on the API image built
+from `origin/main` `4e340c6`, in an isolated container: network none, a copy of the live demo
+state, and the live feed mounted read-only. It shows:
+
+- All 3 workers `ready` and `reconciled`. Each reconciled to exactly the order counts on the
+  live API (203/120/159).
+- A second API process denied on every account, with no spawn.
+- `force-release` refusing a live owner.
+- After a SIGKILL of coin: coin `exited`, its lease confirmed dead, and the others still `ready`.
+- A takeover going `starting → reconciling` (0 submitted) `→ ready` (159 restored), and the
+  lease released on stop.
+
+The production container on `algobots-api-1` was rebuilt at 10:00Z from the main checkout of
+ALG-3266, which is still uncommitted and includes migration 0005. It therefore doesn't include
+A06-2 until that work rebases onto `origin/main`.
