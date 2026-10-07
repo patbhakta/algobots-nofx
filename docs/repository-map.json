@@ -289,8 +289,7 @@
     {
       "repo": "algobots",
       "path": "tests/demo/test_tickets.py"
-    }
-,
+    },
     {
       "repo": "algobots",
       "path": "src/algobots/demo/quality.py"
@@ -306,6 +305,222 @@
     {
       "repo": "algobots",
       "path": "tests/demo/test_scope.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3145/acceptance.json"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3145/dashboard-element-spec.md"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3145/research-report.md"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3145/screenshots/01-header-hdr-1440.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3145/screenshots/01-header-hdr-390.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3145/screenshots/02-controls-bar-1440.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3145/screenshots/02-controls-bar-390.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3145/screenshots/03-evolution-ring-1440.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3145/screenshots/03-evolution-ring-390.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3145/screenshots/04-fitness-history-1440.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3145/screenshots/04-fitness-history-390.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3145/screenshots/05-gene-pool-mesh-1440.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3145/screenshots/05-gene-pool-mesh-390.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3145/screenshots/06-genome-leader-1440.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3145/screenshots/06-genome-leader-390.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3145/screenshots/06b-genome-inspecting-1440.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3145/screenshots/06b-genome-inspecting-390.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3145/screenshots/07-selection-funnel-1440.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3145/screenshots/07-selection-funnel-390.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3145/screenshots/08-kelly-sizing-1440.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3145/screenshots/08-kelly-sizing-390.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3145/screenshots/09-paper-grid-chart-1440.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3145/screenshots/09-paper-grid-chart-390.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3145/screenshots/10-order-grid-log-1440.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3145/screenshots/10-order-grid-log-390.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3145/screenshots/sets-dashboard-1440-full.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3145/screenshots/sets-dashboard-1440-inspecting.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3145/screenshots/sets-dashboard-390-full.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "docs/adr/0001-nautilus-execution-spine.md"
+    },
+    {
+      "repo": "algobots",
+      "path": "docs/alg-3145-shelpid-sets-evaluation.md"
+    },
+    {
+      "repo": "algobots",
+      "path": "docs/research/sets-machine/desktop-1440-full.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "docs/research/sets-machine/desktop-1440-viewport.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "docs/research/sets-machine/mobile-390-full.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "docs/research/sets-machine/mobile-390-viewport.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "docs/research/sets-machine/mobile-panel-chart.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "docs/research/sets-machine/mobile-panel-fitness.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "docs/research/sets-machine/mobile-panel-genome.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "docs/research/sets-machine/mobile-panel-grid.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "docs/research/sets-machine/mobile-panel-header.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "docs/research/sets-machine/mobile-panel-kelly.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "docs/research/sets-machine/mobile-panel-mesh.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "docs/research/sets-machine/mobile-panel-ring.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "docs/research/sets-machine/mobile-panel-selection.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "docs/research/sets-machine/panel-01-header.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "docs/research/sets-machine/panel-02-controls.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "docs/research/sets-machine/panel-03-evolution-ring.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "docs/research/sets-machine/panel-04-fitness-history.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "docs/research/sets-machine/panel-05-gene-pool-mesh.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "docs/research/sets-machine/panel-06-inspected-node-genome.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "docs/research/sets-machine/panel-06-leader-genome.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "docs/research/sets-machine/panel-07-selection-funnel.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "docs/research/sets-machine/panel-08-kelly-sizing.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "docs/research/sets-machine/panel-09-grid-engine-chart.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "docs/research/sets-machine/panel-10-order-grid-log.png"
     }
   ],
   "scope_revisions": [
