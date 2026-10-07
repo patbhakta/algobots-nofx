@@ -766,6 +766,54 @@ def _quality(q: D.Quality, account: str) -> str:
             empty="No settled losing decisions yet.",
         )
         + f'<p class="meta">lessons ≤ {D.LESSON_MAX} chars, display only — never fed back into live decisions (S2.1 gate)</p>'
+        + _debate(q.debate)
+    )
+
+
+def _debate(d: D.Debate | None) -> str:
+    """Bull vs bear: the intervals where Laya and Jev called opposite directions."""
+    if d is None:
+        return ""
+
+    def arg(r: dict) -> str:
+        p = "" if r.get("p_up") is None else f" · P(up) {r['p_up']:.2f}"
+        return (
+            f"<strong>{c.e(L.STRATEGIES[r['strategy']])}</strong>{c.e(p)}"
+            f'<br><span class="meta" title="{c.e(r["reason"])}">{c.e(r["reason"])}</span>'
+        )
+
+    rows = []
+    for x in d.clashes[: D.REFLECT_N]:
+        won = (
+            '<span class="meta">open</span>'
+            if x.winner is None
+            else f"{'up' if x.outcome else 'down'} → <strong>{c.e(L.STRATEGIES[x.winner])}</strong>"
+        )
+        rows.append(
+            [
+                f'<span class="num">{_t(datetime.fromisoformat(x.decided_at).timestamp(), "%m-%d %H:%M")}</span>',
+                arg(x.bull),
+                arg(x.bear),
+                won,
+            ]
+        )
+    tally = " · ".join(f"{L.STRATEGIES[k]} {n}" for k, n in d.wins.items())
+    agreed = (
+        f"agreed on {d.agreed} settled intervals, hit {_pctx(d.agreed_hits / d.agreed)}"
+        if d.agreed
+        else "no settled agreements yet"
+    )
+    return (
+        f"<h3>Analyst debate · bull vs bear · last {D.REFLECT_N} disagreements</h3>"
+        + c.table(
+            ["Time", "Bull (up)", "Bear (down)", "Settled → winner"],
+            rows,
+            stack=True,
+            empty="Laya and Jev have not disagreed on an interval yet.",
+        )
+        + f'<p class="meta">{len(d.clashes)} disagreements, {d.settled} settled · debates won: {c.e(tally)} · {agreed} · '
+        "arguments are each analyst’s recorded reason, not generated text · display only — "
+        "no debate outcome changes an order (TradingAgents researcher-debate pattern)</p>"
     )
 
 

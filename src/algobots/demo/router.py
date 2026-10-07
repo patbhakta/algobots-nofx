@@ -189,6 +189,28 @@ def demo_decisions(account: str | None = None, scope: Scope = Depends(current_sc
             {**x.rec, "outcome": x.outcome, "lesson": q.lessons.get(x.rec["decision_id"])}
             for x in D.losses(q.settled, None if key == B.ALL else key)
         ],
+        "debate": None
+        if q.debate is None
+        else {
+            "agreed": q.debate.agreed,
+            "agreed_hits": q.debate.agreed_hits,
+            "disagreements": len(q.debate.clashes),
+            "settled": q.debate.settled,
+            "wins": q.debate.wins,
+            "recent": [
+                {
+                    "event": x.event,
+                    "decided_at": x.decided_at,
+                    "bull": x.bull["strategy"],
+                    "bear": x.bear["strategy"],
+                    "bull_reason": x.bull["reason"],
+                    "bear_reason": x.bear["reason"],
+                    "outcome": x.outcome,
+                    "winner": x.winner,
+                }
+                for x in q.debate.clashes[: D.REFLECT_N]
+            ],
+        },
     }
 
 

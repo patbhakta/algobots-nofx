@@ -151,3 +151,36 @@ def test_reflection_lists_recent_losses_with_bounded_lessons(tmp_path):
     html = render(lg, start="2026-10-06", now=lg.last_ts, quality=q)
     assert "Decision quality" in html and "no edge proven" in html.lower()
     assert "never fed back into live decisions" in html
+
+
+def test_debate_pairs_opposite_calls_and_settlement_names_the_winner():
+    recs = [
+        _rec("laya", 1, "up", 0.6),
+        _rec("jev", 1, "down", 0.4),  # clash, settles up -> laya (bull) wins
+        _rec("laya", 2, "down", 0.4),
+        _rec("jev", 2, "up", 0.6),  # clash, settles up -> jev (bull) wins
+        _rec("laya", 3, "up", 0.6),
+        _rec("jev", 3, "up", 0.6),  # agreement, hit
+        _rec("laya", 4, "up", 0.6),
+        _rec("jev", 4, "down", 0.4),  # clash, not settled yet
+        _rec("laya", 5, "up", 0.6),  # jev silent -> no debate
+        _rec("coin", 1, "down", 0.5),  # the control never debates
+    ]
+    d = D.debate(recs, {"E1": 1, "E2": 1, "E3": 1, "E5": 0})
+    assert [x.event for x in d.clashes] == ["E4", "E2", "E1"]  # newest first
+    assert d.clashes[2].bull["strategy"] == "laya" and d.clashes[2].bear["strategy"] == "jev"
+    assert [x.winner for x in d.clashes] == [None, "jev", "laya"]
+    assert d.wins == {"laya": 1, "jev": 1}
+    assert (d.settled, d.agreed, d.agreed_hits) == (2, 1, 1)
+
+
+def test_debate_needs_both_debaters_in_scope_and_renders():
+    rows = [_row(0, 0.40, 1, "up"), _row(1, 0.60, 1, "up")]
+    lg = L.build(rows)
+    q = D.quality(D.records(lg), lg)
+    assert q.debate is not None and len(q.debate.clashes) == 1
+    assert q.debate.wins == {"laya": 0, "jev": 1}
+    assert D.quality(D.records(lg), lg, accounts=["laya", "coin"]).debate is None
+    html = render(lg, start="2026-10-06", quality=q)
+    assert "Analyst debate · bull vs bear" in html
+    assert "no debate outcome changes an order" in html

@@ -218,11 +218,76 @@ def losses(
 
 
 @dataclass(frozen=True)
+class Clash:
+    event: str
+    decided_at: str
+    bull: dict  # the analyst calling up
+    bear: dict  # the analyst calling down
+    outcome: int | None  # None = interval not settled yet
+
+    @property
+    def winner(self) -> str | None:
+        if self.outcome is None:
+            return None
+        return (self.bull if self.outcome == 1 else self.bear)["strategy"]
+
+
+@dataclass(frozen=True)
+class Debate:
+    """Bull/bear debate between the two analysts (TradingAgents researcher pattern).
+
+    Laya and Jev each make an independent call per interval; where they disagree,
+    the up-caller is the bull and the down-caller the bear, and settlement names
+    the winner. Arguments are the reasons each analyst recorded — nothing is
+    generated, and no judge's verdict reaches an order (display only).
+    """
+
+    agreed: int
+    agreed_hits: int
+    clashes: list[Clash]
+    wins: dict[str, int]
+
+    @property
+    def settled(self) -> int:
+        return sum(1 for x in self.clashes if x.outcome is not None)
+
+
+DEBATERS = ("laya", "jev")
+
+
+def debate(recs: Iterable[dict], outcomes: dict[str, int]) -> Debate:
+    calls: dict[str, dict[str, dict]] = {}
+    for r in recs:
+        if r.get("strategy") in DEBATERS and r.get("status") == DecisionStatus.VALID:
+            calls.setdefault(r["instrument_id"], {})[r["strategy"]] = r
+    agreed = agreed_hits = 0
+    clashes, wins = [], dict.fromkeys(DEBATERS, 0)
+    for event, by in calls.items():
+        if len(by) < len(DEBATERS):
+            continue
+        a, b = (by[k] for k in DEBATERS)
+        y = outcomes.get(event)
+        if a["rating"] == b["rating"]:
+            if y is not None:
+                agreed += 1
+                agreed_hits += (a["rating"] == "up") == (y == 1)
+            continue
+        bull, bear = (a, b) if a["rating"] == "up" else (b, a)
+        x = Clash(event, max(a["decided_at"], b["decided_at"]), bull, bear, y)
+        if x.winner:
+            wins[x.winner] += 1
+        clashes.append(x)
+    clashes.sort(key=lambda x: x.decided_at, reverse=True)
+    return Debate(agreed, agreed_hits, clashes, wins)
+
+
+@dataclass(frozen=True)
 class Quality:
     logged: int
     settled: list[Settled]
     scores: dict[str, Score]
     lessons: dict[str, str]
+    debate: Debate | None = None  # None unless both debaters are in scope
 
 
 def quality(
@@ -234,10 +299,12 @@ def quality(
     """Settle and score; ``accounts`` (the caller's grants) bounds every view."""
     keep = [k for k in L.STRATEGIES if accounts is None or k in set(accounts)]
     recs = [r for r in recs if r.get("strategy") in keep]
-    st = settle(recs, {r.event: r.outcome for r in lg.rows})
+    outcomes = {r.event: r.outcome for r in lg.rows}
+    st = settle(recs, outcomes)
     ids = {r["decision_id"] for r in recs}
     mine = {k: v for k, v in (lessons or {}).items() if k in ids}
-    return Quality(len(recs), st, {k: score(st, k) for k in keep}, mine)
+    deb = debate(recs, outcomes) if set(DEBATERS) <= set(keep) else None
+    return Quality(len(recs), st, {k: score(st, k) for k in keep}, mine, deb)
 
 
 def sync(state_dir: Path, lg: L.Ledger, accounts: Iterable[str] | None = None) -> Quality:
