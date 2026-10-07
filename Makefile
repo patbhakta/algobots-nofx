@@ -68,3 +68,23 @@ verify-A06:
 		--junitxml=$(A06_RESULTS)/junit.xml
 	sed -i -E 's/ (timestamp|hostname|time)="[^"]*"//g' $(A06_RESULTS)/junit.xml
 	PYTHONPATH=$(CURDIR)/src $(PYTHON) tests/packets/A06/acceptance.py $(A06_RESULTS)/junit.xml
+
+A07_RESULTS := artifacts/A07/test-results
+
+.PHONY: verify-A07 demo-A07
+
+# Intent-ledger unit/acceptance suites + packet checks, then acceptance.json
+# (AC1-AC5 as PASS / FAIL / PENDING with evidence paths). No optional extras:
+# the broker fault emulator is a plain test double, so a case can never be
+# PASS without its tests actually running here.
+verify-A07:
+	mkdir -p $(A07_RESULTS)
+	PYTHONPATH=$(CURDIR)/src $(PYTHON) -m pytest tests/execution/ledger tests/packets/A07 -q -p no:cacheprovider -rs \
+		--junitxml=$(A07_RESULTS)/junit.xml
+	sed -i -E 's/ (timestamp|hostname|time)="[^"]*"//g' $(A07_RESULTS)/junit.xml
+	PYTHONPATH=$(CURDIR)/src $(PYTHON) tests/packets/A07/acceptance.py $(A07_RESULTS)/junit.xml
+
+# Demo evidence: duplicate-request replay + accepted-but-timeout trace into
+# artifacts/A07/demo-run.json (the packet's required demo).
+demo-A07:
+	PYTHONPATH=$(CURDIR)/src $(PYTHON) tests/packets/A07/demo.py

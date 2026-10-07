@@ -33,6 +33,9 @@
     "IntentRequest": {
       "1.0": "17a2647122d720f28481a562a6f0f95155cf008155e25c6edba8434e1ce67b8a"
     },
+    "IntentStatusResponse": {
+      "1.0": "e0d9298811b98bd370e9906ac6175112b6266905e3946e046ea6025fb41fcdfd"
+    },
     "MemoryRecord": {
       "1.0": "af294b029f2c833430ce63718927bad213070017c575e9b6c939da1058f69aff"
     },
@@ -41,6 +44,9 @@
     },
     "OrderPlan": {
       "1.0": "d2530ca0348fe1a7dfd25cb326842e1cf5973a5cc4afac90bf8054f9bf78ac48"
+    },
+    "OutboxEvent": {
+      "1.0": "b9468fd29cb15a62048367793a7b340075e9d4450bab424be5e9efce031f82a4"
     },
     "Principal": {
       "1.0": "f1ee428b839e7125942e5eed79baa56c75e9b83c02ceacf4158e1c8cab17552c"
