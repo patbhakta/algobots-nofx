@@ -31,6 +31,16 @@ EXPECTED_TABLES = {
     "approval_requests",
     "broadcasts",
     "action_ledger",
+    # A07 (ALG-3103): execution ledger — intents, plans, child orders, outbox,
+    # receipts/settlement (append-only via triggers), account freezes
+    "execution_intents",
+    "order_plans",
+    "child_orders",
+    "order_event_receipts",
+    "fill_receipts",
+    "cash_movements",
+    "intent_outbox",
+    "account_freezes",
 }
 
 

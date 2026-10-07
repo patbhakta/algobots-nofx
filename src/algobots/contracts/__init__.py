@@ -14,6 +14,7 @@ from .envelope import Envelope
 from .events import FillEvent, OrderEvent
 from .identity import Grant, IdentityKind, Principal
 from .memory import MemoryRecord, MemoryScope, MemoryStore, namespace_permits
+from .outbox import ChildOrderStatusView, IntentStatusResponse, OutboxEvent
 from .plan import ExecutionCommand, IntentRequest, OrderPlan, Reservation, canonical_hash
 from .strategy import Deployment, StrategyVersion
 
@@ -22,6 +23,7 @@ __all__ = [
     "BrokerAccount",
     "Capabilities",
     "CapabilityEntry",
+    "ChildOrderStatusView",
     "ContractModel",
     "DecisionRequest",
     "DecisionResponse",
@@ -33,12 +35,14 @@ __all__ = [
     "Grant",
     "IdentityKind",
     "IntentRequest",
+    "IntentStatusResponse",
     "MemoryRecord",
     "MemoryScope",
     "MemoryStore",
     "Money",
     "OrderEvent",
     "OrderPlan",
+    "OutboxEvent",
     "Principal",
     "Quantity",
     "Reservation",

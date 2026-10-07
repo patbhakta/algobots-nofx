@@ -1,0 +1,80 @@
+{
+  "packet": "A07",
+  "slice": "A07 packet (ALG-3103)",
+  "tested_commit": "e843999",
+  "command": "make verify-A07",
+  "cases": {
+    "AC1": {
+      "status": "PASS",
+      "case": "GIVEN one request sent 1,000 times concurrently THEN one intent exists and at most one confirmed external order is created",
+      "note": "3 tests passed",
+      "tests": {
+        "tests/execution/ledger/test_commit_dedup.py::test_ac1_one_request_sent_1000_times_concurrently_yields_one_intent": "passed",
+        "tests/execution/ledger/test_commit_dedup.py::test_active_entry_guard_blocks_same_business_signal_with_different_keys": "passed",
+        "tests/execution/ledger/test_outbox_replay.py::test_staging_is_idempotent_per_epoch_and_versioned_across_epochs": "passed"
+      },
+      "evidence": [
+        "artifacts/A07/test-results/junit.xml",
+        "artifacts/A07/demo-run.json"
+      ]
+    },
+    "AC2": {
+      "status": "PASS",
+      "case": "GIVEN identical key with changed quantity THEN request is rejected without altering the original intent",
+      "note": "1 tests passed",
+      "tests": {
+        "tests/execution/ledger/test_commit_dedup.py::test_ac2_same_key_changed_payload_is_rejected_original_untouched": "passed"
+      },
+      "evidence": [
+        "artifacts/A07/test-results/junit.xml",
+        "artifacts/A07/demo-run.json"
+      ]
+    },
+    "AC3": {
+      "status": "PASS",
+      "case": "GIVEN broker accepts then connection times out THEN status becomes UNKNOWN and no blind resubmit occurs; reconciliation finds the original order",
+      "note": "4 tests passed",
+      "tests": {
+        "tests/execution/ledger/test_accept_timeout.py::test_ac3_accept_before_timeout_becomes_unknown_without_blind_resubmit": "passed",
+        "tests/execution/ledger/test_accept_timeout.py::test_unknown_cannot_be_exited_by_a_non_reconciliation_event": "passed",
+        "tests/execution/ledger/test_accept_timeout.py::test_connection_drop_stays_pending_and_recovers_via_replay": "passed",
+        "tests/execution/ledger/test_state_machine.py::test_unknown_exit_requires_reconciliation": "passed"
+      },
+      "evidence": [
+        "artifacts/A07/test-results/junit.xml",
+        "artifacts/A07/demo-run.json"
+      ]
+    },
+    "AC4": {
+      "status": "PASS",
+      "case": "GIVEN a fill repeated or delivered out of order THEN cumulative fill, cash, and fees are correct exactly once in projections",
+      "note": "5 tests passed",
+      "tests": {
+        "tests/execution/ledger/test_fills_dedup.py::test_ac4_duplicate_fill_settles_exactly_once": "passed",
+        "tests/execution/ledger/test_fills_dedup.py::test_ac4_partial_then_full_fill_projection": "passed",
+        "tests/execution/ledger/test_fills_dedup.py::test_ac4_out_of_order_delivery_is_cumulative_correct": "passed",
+        "tests/execution/ledger/test_fills_dedup.py::test_ac4_fill_before_acknowledgment_is_deferred_not_dropped": "passed",
+        "tests/execution/ledger/test_fills_dedup.py::test_ac4_delayed_cancel_after_partial_fill": "passed"
+      },
+      "evidence": [
+        "artifacts/A07/test-results/junit.xml",
+        "artifacts/A07/demo-run.json"
+      ]
+    },
+    "AC5": {
+      "status": "PASS",
+      "case": "GIVEN no client-ID lookup and ambiguous existence THEN the account remains frozen for conflicting entries until operator resolution",
+      "note": "4 tests passed",
+      "tests": {
+        "tests/execution/ledger/test_account_freeze.py::test_ac5_ambiguous_existence_without_lookup_freezes_account": "passed",
+        "tests/execution/ledger/test_account_freeze.py::test_freeze_is_idempotent_one_active_row": "passed",
+        "tests/execution/ledger/test_account_freeze.py::test_freeze_is_tenant_scoped": "passed",
+        "tests/execution/ledger/test_commit_dedup.py::test_frozen_account_rejects_entries_but_not_cancels": "passed"
+      },
+      "evidence": [
+        "artifacts/A07/test-results/junit.xml",
+        "artifacts/A07/demo-run.json"
+      ]
+    }
+  }
+}

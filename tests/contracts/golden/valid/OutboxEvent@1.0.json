@@ -1,0 +1,19 @@
+{
+  "schema_version": "1.0",
+  "event_id": "0192dead-0000-4000-8000-0000000000e1",
+  "tenant_id": "0192dead-0000-4000-8000-0000000000t1",
+  "intent_id": "0192dead-0000-4000-8000-000000000001",
+  "plan_id": "plan-a07-golden",
+  "command": {
+    "schema_version": "1.0",
+    "command_id": "cmd-0192dead-0000-4000-8000-00000000a001",
+    "account_id": "acct-main",
+    "ownership_epoch": 0,
+    "plan_id": "plan-a07-golden",
+    "plan_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "policy_revision": "risk-rev-1",
+    "deadline": "2026-10-07T13:00:00Z",
+    "action": "PLACE_ORDER"
+  },
+  "emitted_at": "2026-10-07T12:00:00Z"
+}
