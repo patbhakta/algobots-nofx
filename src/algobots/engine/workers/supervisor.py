@@ -17,6 +17,14 @@ heartbeat says ``ready`` (reconciled from the durable ledger).
 Lifecycle: ``starting -> reconciling -> ready -> stopped / exited / denied``
 (plus ``stale`` when heartbeats stop).
 
+Isolation (ALG-3259): every worker is launched through ``sandbox`` with an
+environment scoped to its own account (``scoped_env``). The sandbox applies
+the memory rlimit and nice level, and drops to a non-root UID when one is
+configured (``Isolation.from_env``: ``ALGOBOTS_WORKER_UID``). The supervisor
+then hands that UID the worker state it must write. A worker that the sandbox
+refuses exits ``EXIT_SANDBOX`` and is reported ``exited``. Management stays
+in-process (API lifespan); ``/demo/api/workers`` only reads ``status``.
+
 Stdlib only: the API imports this without importing Nautilus.
 """
 
@@ -32,12 +40,43 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 
 from algobots.engine.workers.lease import EXIT_DENIED, Lease, LeaseDenied
+from algobots.engine.workers.sandbox import scoped_env
 
-__all__ = ["LeaseDenied", "Supervisor", "WorkerStatus"]
+__all__ = ["Isolation", "LeaseDenied", "Supervisor", "WorkerStatus"]
 
 HEARTBEAT_STALE_S = 60.0  # > 2 polls missed at the 15 s default
 _CLK_TCK = os.sysconf("SC_CLK_TCK") if hasattr(os, "sysconf") else 100
 _PAGE = os.sysconf("SC_PAGE_SIZE") if hasattr(os, "sysconf") else 4096
+
+
+@dataclass
+class Isolation:
+    """What the sandbox enforces per worker; ``uid=None`` keeps the supervisor's UID."""
+
+    uid: int | None = None
+    gid: int | None = None
+    mem_mb: int = 4096  # RLIMIT_AS: Nautilus maps ~2.4 GB virtual for ~350 MB RSS
+    nice: int = 10
+    netns: bool = True  # try a private netns; falls back to "asserted" without CAP_SYS_ADMIN
+
+    @classmethod
+    def from_env(cls, environ: dict[str, str] | None = None) -> Isolation:
+        env = os.environ if environ is None else environ
+        uid = env.get("ALGOBOTS_WORKER_UID")
+        gid = env.get("ALGOBOTS_WORKER_GID")
+        return cls(
+            uid=int(uid) if uid else None,
+            gid=int(gid) if gid else None,
+            mem_mb=int(env.get("ALGOBOTS_WORKER_MEM_MB", "4096")),
+        )
+
+    def argv(self, account: str, state_dir: Path) -> list[str]:
+        a = [sys.executable, "-m", "algobots.engine.workers.sandbox", "--account", account]
+        a += ["--state-dir", str(state_dir), "--mem-mb", str(self.mem_mb)]
+        a += ["--nice", str(self.nice)] + (["--netns"] if self.netns else [])
+        if self.uid is not None:
+            a += ["--uid", str(self.uid), "--gid", str(self.gid if self.gid is not None else self.uid)]
+        return [*a, "--"]
 
 
 @dataclass
@@ -63,6 +102,7 @@ class WorkerStatus:
     orders_rejected_frozen: int | None = None  # entries refused while entry-frozen
     denied_reason: str | None = None
     lease_pid: int | None = None  # current lease holder per the lease file
+    uid: int | None = None  # the worker process's real UID, from /proc
 
 
 def proc_stats(pid: int) -> tuple[float, float] | None:
@@ -75,6 +115,16 @@ def proc_stats(pid: int) -> tuple[float, float] | None:
         return None
     utime, stime, rss_pages = int(fields[11]), int(fields[12]), int(fields[21])
     return round(rss_pages * _PAGE / 2**20, 1), round((utime + stime) / _CLK_TCK, 2)
+
+
+def proc_uid(pid: int) -> int | None:
+    try:
+        for line in Path(f"/proc/{pid}/status").read_text().splitlines():
+            if line.startswith("Uid:"):
+                return int(line.split()[1])
+    except (FileNotFoundError, ProcessLookupError):
+        pass
+    return None
 
 
 def read_heartbeat(state_dir: Path, account: str) -> dict | None:
@@ -93,13 +143,15 @@ class Supervisor:
         poll: float = 15.0,
         command: list[str] | None = None,
         env: dict[str, str] | None = None,
+        isolation: Isolation | None = None,
     ) -> None:
         self.accounts = list(accounts)
         self.state_dir = Path(state_dir)
         self.poll = poll
         # Overridable for tests; the account key and poll are appended per worker.
         self.command = command or [sys.executable, "-m", "algobots.engine.workers.paper"]
-        self.env = env
+        self.env = env  # extras added after the per-account scoping
+        self.isolation = isolation or Isolation.from_env()
         self.procs: dict[str, subprocess.Popen] = {}
         self.spawned_at: dict[str, float] = {}
         self.stopped: set[str] = set()
@@ -142,17 +194,35 @@ class Supervisor:
             hb.unlink(missing_ok=True)  # never report a previous run's heartbeat
             log = self.state_dir / "workers" / f"{acct}.log"
             log.parent.mkdir(parents=True, exist_ok=True)
+            self._hand_over(lease)
             self.procs[acct] = proc = subprocess.Popen(
-                [*self.command, "--account", acct, "--poll", str(self.poll)],
+                [
+                    *self.isolation.argv(acct, self.state_dir),
+                    *self.command,
+                    *("--account", acct, "--poll", str(self.poll)),
+                ],
                 stdout=log.open("ab"),
                 stderr=subprocess.STDOUT,
-                env={**os.environ, **(self.env or {})},
+                env={**scoped_env(acct, dict(os.environ)), **(self.env or {})},
                 start_new_session=True,  # a signal to the API never cascades
             )
             lease.write(proc.pid)
+            self._hand_over(lease)
         self.spawned_at[acct] = time.time()
         self.stopped.discard(acct)
         self.denied.pop(acct, None)
+
+    def _hand_over(self, lease: Lease) -> None:
+        """Let the worker UID write its heartbeat and release its own lease."""
+        uid = self.isolation.uid
+        if uid is None:
+            return
+        gid = self.isolation.gid if self.isolation.gid is not None else uid
+        lock = lease.path.with_suffix(".lock")
+        lock.touch()
+        for p in (self.state_dir / "workers", lease.path.parent, lock, lease.path):
+            if p.exists():
+                os.chown(p, uid, gid)
 
     def stop(self, account: str | None = None, timeout: float = 10.0) -> None:
         with self._lock:
@@ -214,6 +284,7 @@ class Supervisor:
                 st.state = "stopped" if account in self.stopped else "exited"
             return st
         st.rss_mb, st.cpu_s = stats
+        st.uid = proc_uid(p.pid)
         if st.last_heartbeat is None:
             st.state = "starting"
         elif now - st.last_heartbeat > HEARTBEAT_STALE_S:
