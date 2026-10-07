@@ -67,6 +67,8 @@ table.data tbody tr:hover{background:var(--c-raised)}
 .full{grid-column:1/-1}
 .ctxbar strong{color:var(--c-focus)}
 table.accounts tr.acct{cursor:pointer}
+table.accounts tr.acct:focus-visible{outline:2px solid var(--c-focus);outline-offset:-2px}
+.stateline{margin:0;padding:2px 8px;border:var(--rule-strong);background:var(--c-panel);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 table.accounts tr.acct td:first-child a{color:inherit;text-decoration:none}
 table.accounts tr.sel{background:var(--c-raised);box-shadow:inset 3px 0 0 var(--c-focus)}
 table.accounts tr.sel td:first-child a{color:var(--c-focus);font-weight:700}
@@ -102,10 +104,14 @@ function t(){el.textContent=new Date().toISOString().slice(11,19)+"Z";}t();setIn
 """
 
 # Accounts pane: ↑/↓ moves between rows, Enter (or a click) sets ?account=.
+# Switching blanks every pane first (state line -> LOADING) so the prior
+# account's rows are never on screen while the next context loads.
 KEYS = """
 (function(){var rows=[].slice.call(document.querySelectorAll("tr.acct"));if(!rows.length)return;
-rows.forEach(function(r,i){r.addEventListener("click",function(ev){if(ev.target.closest("a"))return;location.href=r.dataset.href;});
-r.addEventListener("keydown",function(ev){var k=ev.key;if(k==="Enter"){location.href=r.dataset.href;}
+function go(r){var s=document.getElementById("state");if(s){s.dataset.state="loading";s.textContent="LOADING · "+r.dataset.account;}
+[].forEach.call(document.querySelectorAll(".grid,.strip"),function(n){n.hidden=true;});location.href=r.dataset.href;}
+rows.forEach(function(r,i){r.addEventListener("click",function(ev){if(ev.target.closest("a"))return;go(r);});
+r.addEventListener("keydown",function(ev){var k=ev.key;if(k==="Enter"){go(r);}
 else if(k==="ArrowDown"||k==="ArrowUp"){ev.preventDefault();var n=rows[(i+(k==="ArrowDown"?1:rows.length-1))%rows.length];n.focus();}});});
 var sel=document.querySelector("tr.acct.sel");if(sel&&location.hash!=="#nofocus")sel.focus({preventScroll:true});})();
 """

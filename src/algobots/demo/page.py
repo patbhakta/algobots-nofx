@@ -82,6 +82,39 @@ def _header(lg: L.Ledger, now: float, account: str) -> str:
     )
 
 
+def _stateline(lg: L.Ledger, now: float, account: str, supervisor_down: bool) -> str:
+    """One terminal line: disconnected > empty > live (loading is set client-side on switch)."""
+    last, books = lg.last_ts, B.books(lg, account)
+    if last is None or now - last >= STALE_AFTER_S:
+        state, kind = "disconnected", "disconnected"
+        text = "DISCONNECTED · feed " + ("no data" if last is None else f"stale {_age(now - last)}")
+    elif supervisor_down:
+        state, kind, text = "disconnected", "disconnected", "DISCONNECTED · worker supervisor down"
+    elif not any(b.decisions for b in books):
+        state, kind, text = "empty", "stale", f"EMPTY · no decisions yet · {_ctx_label(account)}"
+    else:
+        n = len(books)
+        state, kind = "connected", "connected"
+        text = f"CONNECTED · {_ctx_label(account)} · {n} account{'s' * (n > 1)} · feed {_age(now - last)}"
+    return f'<p class="stateline" id="state" data-state="{state}">{c.status(kind, text)}</p>'
+
+
+def render_denied(code: int, account: str, why: str) -> str:
+    """403/404 for ``?account=``: status bar + one line, no data, no fallback to All."""
+    word = "DENIED" if code == 403 else "NOT FOUND"
+    return (
+        '<!doctype html>\n<html lang="en">\n<head>\n'
+        '<meta charset="utf-8">\n<meta name="viewport" content="width=device-width, initial-scale=1">\n'
+        f"<title>AlgoBots — {word.lower()}</title>\n<style>{CSS}</style>\n</head>\n<body>\n"
+        '<div class="chrome"><header class="statusbar"><span class="brand">ALGOBOTS</span>'
+        f"<span>{c.env_badge('PAPER')}</span>"
+        f'<span class="ctxbar" data-account="{c.e(account)}">ctx <strong>{c.e(account)}</strong></span></header></div>\n'
+        f'<main id="main" data-screen="demo" data-state="denied">\n'
+        f'<p class="stateline" id="state" data-state="denied">{c.status("BLOCKED", f"{word} · {code} · {why}")}</p>\n'
+        '<p><a href="/demo">/demo</a></p>\n</main>\n</body>\n</html>\n'
+    )
+
+
 def _banner(start: str) -> str:
     return (
         '<div class="disclosure" role="note"><strong>PAPER TRADING</strong>'
@@ -245,7 +278,7 @@ def _orders(lg: L.Ledger, account: str, status: str | None) -> str:
         filled = o["status"] == "filled"
         rows.append(
             [
-                f'<span class="num">{_t(o["ts"], "%m-%d %H:%M")}</span>',
+                f'<span class="num" data-order="{c.e(o["id"])}">{_t(o["ts"], "%m-%d %H:%M")}</span>',
                 c.e(L.STRATEGIES[o["account"]]),
                 c.e(o["instrument"].split("-")[-1]),
                 c.e(o["side"] or "—"),
@@ -363,7 +396,7 @@ def _performance(lg: L.Ledger, account: str) -> str:
                 f'<span class="num">{blocked} / {abstain}</span>',
             ]
         )
-    brier = L.brier(lg.rows)
+    brier = L.brier(lg.rows) if "laya" in {b.key for b in B.books(lg, account)} else None
     note = (
         f'<p class="meta">Laya Brier {brier:.4f} (n={len(lg.rows)}) vs coin 0.2500 · '
         "break-even hit 51.8% · Mean/σ = per-fill net P&L, not annualized</p>"
@@ -481,12 +514,17 @@ def render(
     account: str | None = None,
     status: str | None = None,
     workers: dict[str, dict] | None = None,
+    supervisor_down: bool = False,
 ) -> str:
+    """``lg`` must already be narrowed to the caller's grants (``demo.scope``)."""
     now = time.time() if now is None else now
     account, status = B.account_key(account), B.status_key(status)
+    if account not in lg.books and account != B.ALL:
+        account = B.ALL  # routes 403 first; this only guards direct callers
     ctx = f"ctx: {_ctx_label(account)}"
     body = (
-        _strip(lg, now, account)
+        _stateline(lg, now, account, supervisor_down)
+        + _strip(lg, now, account)
         + '<div class="grid">'
         + c.panel(
             "Accounts",

@@ -67,6 +67,7 @@ def positions(lg: L.Ledger, now: float, account: str = ALL) -> list[dict]:
                 continue
             out.append(
                 {
+                    "id": f"{b.key}:{d.event}",
                     "account": b.key,
                     "instrument": d.event,
                     "side": d.side,
@@ -87,6 +88,7 @@ def orders(
     """Every decision as a blotter line, newest first."""
     out = [
         {
+            "id": f"{b.key}:{d.event}",
             "ts": d.ts,
             "account": b.key,
             "instrument": d.event,

@@ -1,0 +1,8 @@
+PASS Tab reached 15/15 pane controls
+PASS visible focus ring on every pane control (0 without)
+PASS ArrowDown+Enter -> ?account=laya
+PASS no other-account order ids after switch (0)
+PASS ArrowUp keeps focus in Accounts
+PASS 390px status bar shows active account + PAPER
+PASS unknown account -> 404 page
+keyboard check: all passed

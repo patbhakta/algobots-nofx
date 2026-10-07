@@ -45,6 +45,11 @@ class Settings(BaseSettings):
     # dev servers never fork trading processes.
     demo_workers_enabled: bool = Field(default=False)
     demo_worker_poll_s: float = Field(default=15.0)
+    # ALG-3260: /demo has no login; callers act as this synthetic principal and
+    # see only the accounts listed here (the grant check runs either way).
+    demo_principal_id: str = Field(default="demo-viewer")
+    demo_tenant_id: str = Field(default="demo")
+    demo_account_grants: str = Field(default="laya,jev,coin")
 
     def sqlalchemy_url(self) -> str:
         """Normalize the configured URL for SQLAlchemy drivers.

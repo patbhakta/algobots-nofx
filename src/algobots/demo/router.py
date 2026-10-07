@@ -8,14 +8,15 @@ from datetime import UTC, datetime
 from pathlib import Path
 from urllib.parse import parse_qs
 
-from fastapi import APIRouter, Query, Request
+from fastapi import APIRouter, Depends, Query, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 
 from algobots.api.config import get_settings
 from algobots.demo import blotter as B
 from algobots.demo import killswitch
 from algobots.demo import ledger as L
-from algobots.demo.page import render
+from algobots.demo.page import render, render_denied
+from algobots.demo.scope import Denied, Scope, current_scope, narrow, resolve
 from algobots.engine.workers.supervisor import Supervisor, WorkerStatus
 
 router = APIRouter(tags=["demo"])
@@ -56,32 +57,64 @@ def root() -> RedirectResponse:
     return RedirectResponse("/demo", status_code=307)
 
 
-@router.get("/demo", response_class=HTMLResponse)
-def demo_page(account: str | None = None, status: str | None = None) -> str:
+def _scoped(scope: Scope) -> tuple[L.Ledger, str]:
     lg, start = _ledger()
-    workers = {w["account"]: w for w in _workers()}
-    return render(lg, start=start, account=account, status=status, workers=workers)
+    return narrow(lg, scope), start
+
+
+def _supervisor_down(workers: list[dict]) -> bool:
+    """Workers were asked for but the supervisor is gone or a worker died."""
+    if not get_settings().demo_workers_enabled:
+        return False
+    return SUPERVISOR is None or any(w["state"] in ("exited", "stopped") for w in workers)
+
+
+@router.get("/demo", response_class=HTMLResponse)
+def demo_page(
+    account: str | None = None, status: str | None = None, scope: Scope = Depends(current_scope)
+) -> HTMLResponse:
+    try:
+        key = resolve(account, scope)
+    except Denied as d:
+        return HTMLResponse(render_denied(d.status_code, d.account, d.why), d.status_code)
+    lg, start = _scoped(scope)
+    workers = [w for w in _workers() if w["account"] in scope.accounts]
+    html = render(
+        lg,
+        start=start,
+        account=key,
+        status=status,
+        workers={w["account"]: w for w in workers},
+        supervisor_down=_supervisor_down(workers),
+    )
+    return HTMLResponse(html, headers={"Cache-Control": "no-store"})
 
 
 @router.get("/demo/api/positions")
-def demo_positions(account: str | None = None) -> dict:
-    lg, _ = _ledger()
-    key, now = B.account_key(account), time.time()
+def demo_positions(account: str | None = None, scope: Scope = Depends(current_scope)) -> dict:
+    key = resolve(account, scope)
+    lg, _ = _scoped(scope)
+    now = time.time()
     return {"account": key, "as_of": now, "positions": B.positions(lg, now, key)}
 
 
 @router.get("/demo/api/orders")
 def demo_orders(
-    account: str | None = None, status: str | None = None, limit: int = Query(200, ge=1, le=5000)
+    account: str | None = None,
+    status: str | None = None,
+    limit: int = Query(200, ge=1, le=5000),
+    scope: Scope = Depends(current_scope),
 ) -> dict:
-    lg, _ = _ledger()
-    key, st = B.account_key(account), B.status_key(status)
+    key = resolve(account, scope)
+    lg, _ = _scoped(scope)
+    st = B.status_key(status)
     return {"account": key, "status": st, "orders": B.orders(lg, key, st, limit)}
 
 
 @router.get("/demo/api/state")
-def demo_state() -> dict:
-    lg, start = _ledger()
+def demo_state(scope: Scope = Depends(current_scope)) -> dict:
+    resolve(None, scope)
+    lg, start = _scoped(scope)
     return {
         "paper_since": start,
         "last_decision_ts": lg.last_ts,
@@ -125,22 +158,28 @@ def _workers() -> list[dict]:
 
 
 @router.get("/demo/api/workers")
-def demo_workers() -> dict:
-    sup, workers = SUPERVISOR, _workers()
+def demo_workers(account: str | None = None, scope: Scope = Depends(current_scope)) -> dict:
+    key = resolve(account, scope)
+    show = scope.accounts if key == B.ALL else (key,)
+    workers = [w for w in _workers() if w["account"] in show]
     return {
-        "enabled": sup is not None,
+        "account": key,
+        "enabled": SUPERVISOR is not None,
         "ready": all(w["state"] == "ready" for w in workers),
+        "supervisor_down": _supervisor_down(workers),
         "workers": workers,
     }
 
 
 @router.post("/demo/kill-switch", include_in_schema=False)
-async def kill_switch(request: Request) -> RedirectResponse:
+async def kill_switch(request: Request, scope: Scope = Depends(current_scope)) -> RedirectResponse:
     form = parse_qs((await request.body()).decode())
+    key = resolve(form.get("account", [None])[0], scope)
+    if len(scope.accounts) != len(L.STRATEGIES):  # it halts every account: needs every grant
+        raise Denied(403, B.ALL, "kill switch spans all accounts")
     engaged = form.get("engaged", ["on"])[0] == "on"
     host = request.client.host if request.client else "unknown"
     name = form.get("actor", [""])[0].strip()[:40]
     actor = f"{name} via dashboard ({host})" if name else f"dashboard ({host})"
     killswitch.set_engaged(get_settings().demo_state_dir, engaged, actor=actor)
-    key = B.account_key(form.get("account", [None])[0])
     return RedirectResponse("/demo" if key == B.ALL else f"/demo?account={key}", status_code=303)
