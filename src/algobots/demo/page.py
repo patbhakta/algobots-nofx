@@ -16,6 +16,7 @@ from urllib.parse import urlencode
 from algobots.dashboard.design import components as c
 from algobots.demo import blotter as B
 from algobots.demo import ledger as L
+from algobots.demo import studio as S
 from algobots.demo.theme import CLOCK, CSS, KEYS
 
 INTERVAL_S = 15 * 60
@@ -279,7 +280,7 @@ def _orders(lg: L.Ledger, account: str, status: str | None) -> str:
         rows.append(
             [
                 f'<span class="num" data-order="{c.e(o["id"])}">{_t(o["ts"], "%m-%d %H:%M")}</span>',
-                c.e(L.STRATEGIES[o["account"]]),
+                f'<span title="{c.e(o["deployment"])} · artifact {c.e(o["artifact"])}">{c.e(L.STRATEGIES[o["account"]])}</span>',
                 c.e(o["instrument"].split("-")[-1]),
                 c.e(o["side"] or "—"),
                 f'<span class="num">{o["qty"]}</span>' if filled else NONE,
@@ -515,9 +516,13 @@ def render(
     status: str | None = None,
     workers: dict[str, dict] | None = None,
     supervisor_down: bool = False,
+    studio: S.Studio | None = None,
 ) -> str:
     """``lg`` must already be narrowed to the caller's grants (``demo.scope``)."""
+    from algobots.demo import studio_page as SP  # imports this module
+
     now = time.time() if now is None else now
+    studio = studio or S.load("/nonexistent")  # built-ins only
     account, status = B.account_key(account), B.status_key(status)
     if account not in lg.books and account != B.ALL:
         account = B.ALL  # routes 403 first; this only guards direct callers
@@ -528,7 +533,9 @@ def render(
         + '<div class="grid">'
         + c.panel(
             "Accounts",
-            _accounts(lg, now, account, workers or {}),
+            _accounts(lg, now, account, workers or {})
+            + "<h3>Deployments by account · frozen params + artifact</h3>"
+            + SP.deployments(studio, account, S.visible(tuple(lg.books))),
             financial=True,
             tag=TAG,
             cls="full",
@@ -538,6 +545,14 @@ def render(
         + c.panel("Orders", _orders(lg, account, status), financial=True, tag=ctx, cls="full")
         + c.panel("Strategy performance", _performance(lg, account), financial=True, tag=ctx)
         + c.panel("Equity", _curve(lg, account), financial=True, tag=ctx)
+        + c.panel(
+            "Strategies",
+            SP.strategies(studio, S.visible(tuple(lg.books)))
+            + '<p class="meta"><a href="/demo/studio">studio: deploy a version with allocation preview →</a></p>',
+            financial=True,
+            tag="TEMPLATES: TEST ONLY",
+            cls="full",
+        )
         + "</div>"
     )
     title = "AlgoBots — paper trading terminal"

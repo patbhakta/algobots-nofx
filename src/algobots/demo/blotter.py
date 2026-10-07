@@ -10,6 +10,9 @@ from datetime import UTC, datetime
 from decimal import Decimal
 
 from algobots.demo import ledger as L
+from algobots.demo import studio as S
+
+LIVE = {d.account: d for d in S.LIVE_DEPLOYMENTS}
 
 ALL = "all"
 STATUSES = ("filled", "blocked", "abstain")
@@ -91,6 +94,8 @@ def orders(
             "id": f"{b.key}:{d.event}",
             "ts": d.ts,
             "account": b.key,
+            "deployment": LIVE[b.key].id,
+            "artifact": LIVE[b.key].hash[:12],
             "instrument": d.event,
             "side": d.side,
             "qty": _contracts(d.stake) if d.status == "FILLED" else 0,

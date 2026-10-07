@@ -95,6 +95,18 @@ table.data.stack td::before{content:attr(data-label);color:var(--c-muted);text-a
 table.data.stack td:empty,table.data.stack td:has(>.nil:only-child){display:none} table.data.stack td .status{white-space:normal;text-align:right;min-width:0}
 table.data.stack td[data-label=Reason]{display:block;text-align:left;width:auto;max-width:none}
 table.data.stack td[data-label=Reason]::before{display:block}}
+/* strategy studio (ALG-3256) */
+.chk{white-space:nowrap}
+.kv{display:inline-block;margin-right:8px;white-space:nowrap}
+table.data td[data-label=Parameters],table.data td[data-label="Frozen params"]{white-space:normal;line-height:1.3;padding-top:2px;padding-bottom:2px}
+@media (max-width:700px){table.data.stack td[data-label=Parameters],table.data.stack td[data-label="Frozen params"]{display:block;text-align:left}table.data.stack td[data-label=Parameters]::before,table.data.stack td[data-label="Frozen params"]::before{display:block}.chk{white-space:normal}.studio-form select{max-width:100%}}
+.studio-form{display:grid;gap:4px;padding:4px 0}
+.studio-form .row{display:flex;flex-wrap:wrap;gap:4px 12px;align-items:center;border:0;margin:0;padding:0}
+.studio-form legend{float:left;margin-right:8px}
+.studio-form select,.studio-form input:not([type]),.studio-form input[name]{font:inherit;background:var(--c-bg);color:var(--c-ink);border:var(--rule-strong);padding:0 4px;height:22px}
+.studio-form input[type=checkbox],.studio-form input[type=radio]{height:auto}
+.flash{border:var(--rule-strong);padding:4px 8px} .flash.err{color:var(--c-negative)}
+code{font-family:var(--font-mono)}
 """
 
 # Ticks the status-bar UTC clock; the server-rendered value stands if JS is off.
