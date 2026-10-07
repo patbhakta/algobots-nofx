@@ -174,7 +174,29 @@ def test_ticket_route_applies_kill_switch_to_every_leg(client, db, owner, quiet_
     client.post("/demo/ticket", data={"account": [str(semi.id)], "side": "NO", "qty": "2"})
     ticket = A.last_ticket(db, owner)
     assert ticket["state"] == "blocked"
-    assert ticket["legs"][0]["reason"] == "halted — kill switch"
+    assert (
+        ticket["legs"][0]["reason"] == "blocked by risk gate — kill switch engaged — entry blocked"
+    )
+
+
+def test_broadcast_route_legs_go_through_the_one_gate(client, db, owner, monkeypatch):
+    """ALG-3262: the registry broadcast uses the same pre_trade as every other path."""
+    from algobots.demo import gate
+
+    calls, real = [], gate.pre_trade
+    monkeypatch.setattr(gate, "pre_trade", lambda req, risk: calls.append(req) or real(req, risk))
+    by = _by_label(db, owner)
+    picked = [by[L.STRATEGIES["jev"]], by["Pat · Kalshi semi-auto"], by["Pat · Kalshi live"]]
+    client.post(
+        "/demo/ticket", data={"account": [str(a.id) for a in picked], "side": "YES", "qty": "40"}
+    )
+    # LIVE is refused by the registry before the gate; the two PAPER legs are gated
+    assert sorted(r.account for r in calls) == sorted(["jev", str(picked[1].id)])
+    legs = {leg["account"]: leg for leg in A.last_ticket(db, owner)["legs"]}
+    # 40 contracts x 0.50 = 20 USD > 15 USD max order value: refused, not filled over the cap
+    assert legs[L.STRATEGIES["jev"]]["status"] == "blocked"
+    assert "over max order value" in legs[L.STRATEGIES["jev"]]["reason"]
+    assert legs["Pat · Kalshi live"]["reason"] == "live gated: G-live not passed"
 
 
 def test_partial_grant_hides_ticket_only_accounts_and_refuses_trading(client, db, owner):

@@ -284,6 +284,10 @@
     },
     {
       "repo": "algobots",
+      "path": "src/algobots/demo/gate.py"
+    },
+    {
+      "repo": "algobots",
       "path": "tests/demo/test_tickets.py"
     }
 ,

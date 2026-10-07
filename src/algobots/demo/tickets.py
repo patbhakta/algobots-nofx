@@ -1,4 +1,4 @@
-"""Order ticket: one paper order type, four paths, one risk gate (Fincept R1).
+"""Order ticket: one paper order type, five paths, one risk gate (Fincept R1).
 
 Paths (study ``alg-3070-fincept-terminal-feasibility.md`` §3 R1):
 
@@ -8,11 +8,22 @@ Paths (study ``alg-3070-fincept-terminal-feasibility.md`` §3 R1):
 - ``basket``    — several orders submitted as one unit.
 - ``split``     — one order chunked under a max clip
                   (Fincept ``place_order_auto_split``).
+- ``bracket``   — per account, an entry plus a take-profit and a stop exit
+                  child (ALG-3262). The children rest as a one-cancels-other
+                  pair once the entry fills; cancelling the parent cancels
+                  every child still working.
 
 Every path builds a parent of legs and every leg goes through :func:`gate_leg`,
-the single risk gate: demo kill switch -> sleeve floor -> ``risk.RiskGate``
-(daily-loss envelope, rate breakers, order-value clamp). Exits are privileged:
-nothing blocks or shrinks an exit. A denied leg records the stated reason.
+which calls ``gate.pre_trade`` — the same check the strategy decisions and the
+registry broadcast use: account mode (LIVE hard-disabled) -> demo kill switch
+-> sleeve floor -> ``risk.RiskGate`` (daily-loss envelope, rate breakers,
+order-value clamp) -> affordability. Exits are privileged: nothing blocks or
+shrinks an exit. A denied leg records the stated reason.
+
+Bracket children are resting orders, so they are gated on a dry-run copy of the
+gate: they pass the same checks but only consume breaker budget if they trigger.
+No order book is captured, so in this PoC they never trigger; they stay
+``working`` until cancelled or the contract settles.
 
 Fills are paper only: the assumed 50c mid plus the Kalshi taker fee, exactly
 as ``demo.ledger``. Ticket fills are journaled to ``ticket-orders.jsonl``; they
@@ -32,17 +43,19 @@ from pathlib import Path
 
 from algobots.api.approvals.service import classify_broadcast
 from algobots.demo import blotter as B
+from algobots.demo import gate as G
 from algobots.demo import ledger as L
 from algobots.risk import JsonlSink, RateBreakers, RiskGate, RiskLimits
 
-PATHS = ("single", "broadcast", "basket", "split")
+PATHS = ("single", "broadcast", "basket", "split", "bracket")
 SIDES = ("YES", "NO")
 KINDS = ("entry", "exit")
 INTERVAL_S = 15 * 60
-BRACKET_UNSUPPORTED = (
-    "bracket unsupported for KXBTC15M binary 15m contracts — the contract settles at "
-    "the interval close, so there is no stop/target to work"
+BRACKET_NOTE = (
+    "bracket: take-profit + stop rest as a one-cancels-other pair after the entry fills; "
+    "no order book is captured, so they only end by cancel or the 15m settlement"
 )
+CANCEL_CASCADE = "parent cancelled — cascade"
 PAPER_NOTE = (
     f"paper only · fills at the assumed {L.FILL_PRICE} mid + Kalshi taker fee "
     "(no order book captured)"
@@ -82,13 +95,14 @@ class Leg:
     side: str
     kind: str
     requested: str
-    status: str  # filled / blocked
+    status: str  # filled / blocked / working (bracket child) / cancelled
     reason: str
     notional: str = "0"
     qty: int = 0
     price: str | None = None
     fee: str = "0"
     clamped: bool = False
+    role: str = "order"  # order / entry / take_profit / stop
 
 
 @dataclass
@@ -101,6 +115,7 @@ class Parent:
     state: str  # classify_broadcast state, or "rejected" when no leg was sent
     legs: list[Leg] = field(default_factory=list)
     note: str = PAPER_NOTE
+    cancelled_ts: float | None = None
 
 
 def _path(state_dir: str) -> Path:
@@ -137,50 +152,44 @@ def make_gate(history: Iterable[Parent], state_dir: str | None = None) -> RiskGa
             if leg.status == "filled":
                 breakers.record(leg.kind, deployment_id=leg.account, now=parent.ts)  # type: ignore[arg-type]
     sink = JsonlSink(Path(state_dir) / "risk-audit.jsonl") if state_dir else None
+    if state_dir:
+        Path(state_dir).mkdir(parents=True, exist_ok=True)
     return RiskGate(limits=LIMITS, envelope=L.ENVELOPE, breakers=breakers, sink=sink)
 
 
 def gate_leg(
-    gate: RiskGate, lg: L.Ledger, intent: Intent, now: float
+    gate: RiskGate, lg: L.Ledger, intent: Intent, now: float, path: str = "single"
 ) -> tuple[bool, Decimal, str, bool]:
-    """THE gate for every leg on every path: (allowed, approved notional, reason, clamped)."""
-    if intent.kind == "exit":
-        gate.approve_order(
-            kind="exit", value=intent.notional, deployment_id=intent.account, now=now
-        )
-        return True, intent.notional, "exit — privileged, never blocked or clamped", False
-    if lg.kill.get("engaged"):
-        return False, Decimal(0), "kill switch engaged — entry blocked", False
+    """THE gate for every leg on every path: (allowed, approved notional, reason, clamped).
+
+    A thin adapter onto ``gate.pre_trade`` (looked up on the module, so a spy
+    patched there sees every ticket leg).
+    """
     book = lg.books[intent.account]
-    if book.exhausted:
-        return (
-            False,
-            Decimal(0),
-            f"sleeve equity {book.equity} USD below minimum stake + fee",
-            False,
-        )
-    d = gate.approve_order(
-        kind="entry",
-        value=intent.notional,
-        daily_pnl=B.day_pnl(book, B.today(now)),
-        deployment_id=intent.account,
-        ticker=B.INSTRUMENT,
-        now=now,
+    g = G.pre_trade(
+        G.GateRequest(
+            account=intent.account,
+            path=path,
+            value=intent.notional,
+            equity=book.equity,
+            floor=L.MIN_STAKE + L.fee_for(L.MIN_STAKE),  # == StrategyBook.exhausted
+            daily_pnl=B.day_pnl(book, B.today(now)),
+            kill_engaged=bool(lg.kill.get("engaged")),
+            kind=intent.kind,
+            now=now,
+            ticker=B.INSTRUMENT,
+            fee=L.fee_for if intent.kind == "entry" else None,
+        ),
+        gate,
     )
-    if not d.allowed:
-        why = {
-            "max_daily_loss": f"daily-loss envelope (−{L.ENVELOPE.max_daily_loss} USD) exhausted",
-        }.get(d.reason or "", f"rate breaker: {d.reason}")
-        return False, Decimal(0), why, False
-    approved = Decimal(d.approved_value or 0)
-    if approved != intent.notional:
-        return (
-            True,
-            approved,
-            f"size clamped {intent.notional} → {approved} USD (max order value)",
-            True,
-        )
-    return True, approved, "within limits", False
+    if not g.allowed:
+        return False, Decimal(0), g.reason, False
+    if intent.kind == "exit":
+        return True, g.approved, "exit — privileged, never blocked or clamped", False
+    if g.approved != intent.notional:
+        why = g.reason or f"size cut {intent.notional} → {g.approved} USD (sleeve can pay)"
+        return True, g.approved, why, True
+    return True, g.approved, "within limits", False
 
 
 def _legs_for(path: str, intents: list[Intent], max_clip: Decimal | None) -> list[Intent]:
@@ -192,6 +201,13 @@ def _legs_for(path: str, intents: list[Intent], max_clip: Decimal | None) -> lis
         accounts = [i.account for i in intents]
         if len(set(accounts)) != len(accounts) or not intents:
             raise TicketError("broadcast needs one or more distinct accounts")
+        return intents
+    if path == "bracket":
+        accounts = [i.account for i in intents]
+        if len(set(accounts)) != len(accounts) or not intents:
+            raise TicketError("bracket needs one or more distinct accounts")
+        if any(i.kind != "entry" for i in intents):
+            raise TicketError("a bracket opens with an entry")
         return intents
     if path == "basket":
         if not intents:
@@ -218,6 +234,64 @@ def broadcast(
     return [Intent(a, side, notional, kind) for a in account_list]
 
 
+def parse_price(raw: str | None, what: str) -> Decimal:
+    try:
+        v = Decimal((raw or "").strip())
+    except InvalidOperation:
+        raise TicketError(f"{what} must be a contract price") from None
+    if not v.is_finite() or not Decimal("0.01") <= v <= Decimal("0.99"):
+        raise TicketError(f"{what} must be 0.01–0.99")
+    return v.quantize(L.CENT)
+
+
+def _leg(pid: str, n: int, it: Intent, gated: tuple[bool, Decimal, str, bool], role: str) -> Leg:
+    ok, approved, why, clamped = gated
+    leg = Leg(
+        id=f"{pid}-{n}",
+        parent_id=pid,
+        seq=n,
+        account=it.account,
+        side=it.side,
+        kind=it.kind,
+        requested=str(it.notional),
+        status="filled" if ok else "blocked",
+        reason=why,
+        role=role,
+    )
+    if ok:
+        leg.notional = str(approved)
+        leg.qty = int(approved / L.FILL_PRICE)
+        leg.price = str(L.FILL_PRICE)
+        leg.fee = str(L.fee_for(approved))
+        leg.clamped = clamped
+    return leg
+
+
+def _children(
+    pid: str,
+    n: int,
+    gate: RiskGate,
+    lg: L.Ledger,
+    entry: Leg,
+    tp: Decimal,
+    stop: Decimal,
+    now: float,
+) -> list[Leg]:
+    """Take-profit + stop for a filled bracket entry: gated (dry run), then resting."""
+    probe = G.dry_run(gate)  # resting orders: checked now, breaker budget spent on trigger
+    out = []
+    for role, px in (("take_profit", tp), ("stop", stop)):
+        n += 1
+        it = Intent(entry.account, entry.side, Decimal(entry.notional), "exit")
+        leg = _leg(pid, n, it, gate_leg(probe, lg, it, now, "bracket"), role)
+        if leg.status == "filled":
+            leg.status, leg.price, leg.fee = "working", str(px), "0"
+            label = role.replace("_", "-")
+            leg.reason = f"{label} @ {px} · OCO with leg {entry.seq} · {leg.reason}"
+        out.append(leg)
+    return out
+
+
 def submit(
     lg: L.Ledger,
     path: str,
@@ -225,45 +299,62 @@ def submit(
     *,
     now: float,
     max_clip: Decimal | None = None,
-    bracket: bool = False,
+    take_profit: Decimal | None = None,
+    stop: Decimal | None = None,
     gate: RiskGate | None = None,
     state_dir: str | None = None,
     new_id: Callable[[], str] = lambda: uuid.uuid4().hex[:12],
 ) -> Parent:
     """Route a ticket down one path; every leg through :func:`gate_leg`; journal it."""
-    if bracket:
-        raise TicketError(BRACKET_UNSUPPORTED)
     legs_in = _legs_for(path, intents, max_clip)
+    if path == "bracket":
+        if take_profit is None or stop is None:
+            raise TicketError("bracket needs a take-profit and a stop price")
+        if not stop < L.FILL_PRICE < take_profit:
+            raise TicketError(
+                f"bracket prices must straddle the {L.FILL_PRICE} fill: stop < fill < take-profit"
+            )
     if gate is None:
         gate = make_gate(load(state_dir) if state_dir else [], state_dir)
     pid = new_id()
     expiry = (now // INTERVAL_S + 1) * INTERVAL_S
     parent = Parent(pid, path, now, B.INSTRUMENT, expiry, state="")
-    for n, it in enumerate(legs_in, 1):
-        ok, approved, why, clamped = gate_leg(gate, lg, it, now)
-        leg = Leg(
-            id=f"{pid}-{n}",
-            parent_id=pid,
-            seq=n,
-            account=it.account,
-            side=it.side,
-            kind=it.kind,
-            requested=str(it.notional),
-            status="filled" if ok else "blocked",
-            reason=why,
-        )
-        if ok:
-            leg.notional = str(approved)
-            leg.qty = int(approved / L.FILL_PRICE)
-            leg.price = str(L.FILL_PRICE)
-            leg.fee = str(L.fee_for(approved))
-            leg.clamped = clamped
+    if path == "bracket":
+        parent.note = f"{PAPER_NOTE} · {BRACKET_NOTE}"
+    for it in legs_in:
+        n = len(parent.legs) + 1
+        role = "entry" if path == "bracket" else "order"
+        leg = _leg(pid, n, it, gate_leg(gate, lg, it, now, path), role)
         parent.legs.append(leg)
-    sent = sum(1 for x in parent.legs if x.status == "filled")
-    parent.state = classify_broadcast(len(parent.legs), sent, 0) if sent else "rejected"
+        if path == "bracket" and leg.status == "filled":
+            parent.legs += _children(pid, n, gate, lg, leg, take_profit, stop, now)  # type: ignore[arg-type]
+    heads = [x for x in parent.legs if x.role in ("order", "entry")]
+    sent = sum(1 for x in heads if x.status == "filled")
+    parent.state = classify_broadcast(len(heads), sent, 0) if sent else "rejected"
     if state_dir:
         _append(state_dir, parent)
     return parent
+
+
+def cancel(state_dir: str, parent_id: str, *, now: float) -> Parent:
+    """Cancel a ticket: every child still ``working`` is cancelled with it (cascade).
+
+    Fills are final, so filled legs stay filled. Rewrites the journal in place.
+    """
+    parents = load(state_dir)
+    hit = next((p for p in parents if p.id == parent_id), None)
+    if hit is None:
+        raise TicketError(f"unknown ticket {parent_id!r}")
+    if hit.cancelled_ts is None:
+        hit.cancelled_ts = now
+        for leg in hit.legs:
+            if leg.status == "working":
+                leg.status, leg.reason = "cancelled", f"{CANCEL_CASCADE} ({leg.reason})"
+        p = _path(state_dir)
+        tmp = p.with_suffix(".tmp")
+        tmp.write_text("".join(json.dumps(asdict(x)) + "\n" for x in parents), encoding="utf-8")
+        tmp.replace(p)
+    return hit
 
 
 def parse_money(raw: str | None, what: str = "notional") -> Decimal:
@@ -331,6 +422,7 @@ def blotter_rows(
                     "leg_id": leg.id,
                     "path": p.path,
                     "kind": leg.kind,
+                    "role": leg.role,
                     "parent_state": p.state,
                 }
             )

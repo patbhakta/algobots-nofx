@@ -1,4 +1,4 @@
-"""Order ticket (ALG-3265): four paths, one risk gate on every leg, privileged exits."""
+"""Order ticket (ALG-3265, ALG-3262): five paths, one risk gate on every leg, privileged exits."""
 
 import json
 from decimal import Decimal
@@ -6,6 +6,7 @@ from decimal import Decimal
 import pytest
 
 from algobots.demo import blotter as B
+from algobots.demo import gate as G
 from algobots.demo import ledger as L
 from algobots.demo import tickets as T
 from algobots.demo.page import render
@@ -117,13 +118,89 @@ def test_rate_breaker_never_blocks_an_exit():
     assert ex.legs[0].status == "filled"
 
 
-def test_entry_is_clamped_to_max_order_value_and_bracket_is_refused_with_reason():
+def test_entry_is_clamped_to_max_order_value():
     p = T.submit(_ledger(), "single", [T.Intent("laya", "YES", Decimal("40"))], now=NOW)
     assert p.legs[0].notional == str(L.ENVELOPE.max_order_value) and p.legs[0].clamped
-    with pytest.raises(T.TicketError, match="unsupported for KXBTC15M binary 15m"):
+
+
+def _bracket(lg: L.Ledger, accounts=("laya",), **kw) -> T.Parent:
+    return T.submit(
+        lg,
+        "bracket",
+        T.broadcast(list(accounts), "YES", Decimal("10")),
+        now=NOW,
+        take_profit=Decimal("0.70"),
+        stop=Decimal("0.30"),
+        new_id=_ids(),
+        **kw,
+    )
+
+
+def test_bracket_is_entry_plus_working_take_profit_and_stop():
+    p = _bracket(_ledger())
+    assert [(x.role, x.kind, x.status) for x in p.legs] == [
+        ("entry", "entry", "filled"),
+        ("take_profit", "exit", "working"),
+        ("stop", "exit", "working"),
+    ]
+    assert [x.price for x in p.legs] == ["0.50", "0.70", "0.30"]
+    assert p.state == "sent" and "OCO with leg 1" in p.legs[1].reason
+    with pytest.raises(T.TicketError, match="straddle"):
         T.submit(
-            _ledger(), "single", [T.Intent("laya", "YES", Decimal("5"))], now=NOW, bracket=True
+            _ledger(),
+            "bracket",
+            [T.Intent("laya", "YES", Decimal("5"))],
+            now=NOW,
+            take_profit=Decimal("0.40"),
+            stop=Decimal("0.30"),
         )
+
+
+def test_bracket_cancel_cascades_to_working_children(tmp_path):
+    sd = str(tmp_path)
+    p = _bracket(_ledger(), ("laya", "jev"), state_dir=sd)
+    assert sum(x.status == "working" for x in p.legs) == 4
+    c = T.cancel(sd, p.id, now=NOW + 60)
+    assert c.cancelled_ts == NOW + 60
+    # fills are final; every resting child is cancelled with the parent
+    assert [x.status for x in c.legs if x.role == "entry"] == ["filled", "filled"]
+    kids = [x for x in c.legs if x.role != "entry"]
+    assert len(kids) == 4 and all(x.status == "cancelled" for x in kids)
+    assert all(x.reason.startswith(T.CANCEL_CASCADE) for x in kids)
+    assert T.load(sd)[0].legs == c.legs  # persisted
+    with pytest.raises(T.TicketError, match="unknown ticket"):
+        T.cancel(sd, "nope", now=NOW)
+
+
+def test_blocked_bracket_entry_places_no_children():
+    p = _bracket(_ledger({"engaged": True}))
+    assert [(x.role, x.status) for x in p.legs] == [("entry", "blocked")]
+    assert p.state == "rejected" and "kill switch" in p.legs[0].reason
+
+
+def test_split_respects_the_size_cap():
+    p = T.submit(
+        _ledger(), "split", [T.Intent("jev", "NO", Decimal("13"))], now=NOW, max_clip=Decimal("4")
+    )
+    assert [x.requested for x in p.legs] == ["4", "4", "4", "1"]
+    assert all(Decimal(x.notional) <= 4 for x in p.legs)
+
+
+def test_live_mode_is_hard_disabled_by_the_gate():
+    g = G.pre_trade(
+        G.GateRequest(
+            account="laya",
+            path="single",
+            value=Decimal(5),
+            equity=L.SLEEVE,
+            floor=Decimal(1),
+            daily_pnl=Decimal(0),
+            kill_engaged=False,
+            mode="LIVE",
+        ),
+        G.risk_gate(L.ENVELOPE),
+    )
+    assert not g.allowed and g.code == "live_disabled" and G.LIVE_DISABLED in g.reason
 
 
 @pytest.mark.parametrize(
@@ -138,13 +215,39 @@ def test_entry_is_clamped_to_max_order_value_and_bracket_is_refused_with_reason(
             2,
         ),
         ("split", [T.Intent("jev", "NO", Decimal("14"))], Decimal("5"), 3),
+        ("bracket", T.broadcast(["laya", "coin"], "YES", Decimal("5")), None, 6),
     ],
 )
-def test_no_order_path_skips_the_gate(path, intents, clip, legs):
-    gate = SpyGate()
-    p = T.submit(_ledger(), path, intents, now=NOW, max_clip=clip, gate=gate)
-    assert len(p.legs) == legs and len(gate.seen) == legs  # one gate call per leg
-    assert gate.seen == [x.account for x in p.legs]
+def test_no_order_path_skips_the_gate(path, intents, clip, legs, monkeypatch):
+    calls, real = [], G.pre_trade
+    monkeypatch.setattr(G, "pre_trade", lambda req, risk: calls.append(req) or real(req, risk))
+    lg = _ledger()
+    calls.clear()  # the strategy replay above is covered by its own test
+    px = {"take_profit": Decimal("0.70"), "stop": Decimal("0.30")} if path == "bracket" else {}
+    p = T.submit(lg, path, intents, now=NOW, max_clip=clip, gate=SpyGate(), **px)
+    assert len(p.legs) == legs and len(calls) == legs  # one pre_trade call per leg
+    assert [r.account for r in calls] == [x.account for x in p.legs]
+    assert {r.path for r in calls} == {path}
+
+
+def test_every_strategy_decision_goes_through_the_one_gate(monkeypatch):
+    calls, real = [], G.pre_trade
+    monkeypatch.setattr(G, "pre_trade", lambda req, risk: calls.append(req) or real(req, risk))
+    lg = _ledger()
+    taken = [d for b in lg.books.values() for d in b.decisions if d.side is not None]
+    assert taken and len(calls) == len(taken) and {r.path for r in calls} == {"strategy"}
+
+
+def test_broadcast_to_three_accounts_is_three_independently_gated_legs(monkeypatch):
+    calls, real = [], G.pre_trade
+    monkeypatch.setattr(G, "pre_trade", lambda req, risk: calls.append(req) or real(req, risk))
+    lg = _losing_laya()
+    calls.clear()
+    p = T.submit(lg, "broadcast", T.broadcast(["laya", "jev", "coin"], "NO", Decimal("5")), now=NOW)
+    assert [r.account for r in calls] == ["laya", "jev", "coin"]
+    # each leg is gated on its own account's P&L: laya's tripped envelope denies laya only
+    assert {r.account: r.daily_pnl for r in calls}["laya"] <= -L.ENVELOPE.max_daily_loss
+    assert [x.status for x in p.legs][0] == "blocked"
 
 
 def test_journal_rebuilds_breakers_and_blotter_carries_parent_id(tmp_path):
@@ -169,7 +272,7 @@ def test_journal_rebuilds_breakers_and_blotter_carries_parent_id(tmp_path):
     assert len(audit) == 2 and json.loads(audit[0])["source"] == "breaker"
 
 
-def test_page_shows_ticket_paper_note_bracket_reason_and_legs():
+def test_page_shows_ticket_paper_note_bracket_live_disabled_and_legs():
     lg = _ledger()
     p = T.submit(
         lg, "broadcast", T.broadcast(["laya", "jev"], "YES", Decimal("5")), now=NOW, new_id=_ids()
@@ -177,10 +280,11 @@ def test_page_shows_ticket_paper_note_bracket_reason_and_legs():
     html = render(
         lg, start="2026-10-06", now=NOW, tickets=[p], ticket_msg="broadcast p0: sent", view="trade"
     )
-    assert 'aria-label="Order ticket · single / broadcast / basket / split"' in html
+    assert 'aria-label="Order ticket · single / broadcast / basket / split / bracket"' in html
     assert "Ticket blotter" in html
     assert "paper only" in html and "0.50 mid + Kalshi taker fee" in html
-    assert 'name="bracket" disabled' in html and "unsupported for KXBTC15M binary 15m" in html
+    assert 'name="take_profit"' in html and 'name="stop"' in html and T.BRACKET_NOTE in html
+    assert 'value="LIVE" disabled' in html and "no live venue approved" in html
     assert html.count("└ leg") == 2 and "broadcast p0: sent" in html
 
 
@@ -212,10 +316,25 @@ def test_ticket_endpoints(tmp_path, monkeypatch):
                 "accounts": ["laya"],
                 "side": "YES",
                 "notional": "5",
-                "bracket": True,
+                "mode": "LIVE",
             },
         )
-        assert bad.status_code == 422 and "unsupported" in bad.json()["detail"]
+        assert bad.status_code == 422 and "no live venue approved" in bad.json()["detail"]
+        br = client.post(
+            "/demo/api/orders",
+            json={
+                "path": "bracket",
+                "accounts": ["laya"],
+                "side": "YES",
+                "notional": "5",
+                "take_profit": "0.70",
+                "stop": "0.30",
+            },
+        ).json()
+        assert [x["status"] for x in br["legs"]] == ["filled", "working", "working"]
+        cx = client.post(f"/demo/api/orders/{br['id']}/cancel").json()
+        assert [x["status"] for x in cx["legs"]] == ["filled", "cancelled", "cancelled"]
+        assert client.post("/demo/api/orders/nope/cancel").status_code == 404
         f = client.post(
             "/demo/orders",
             data={
@@ -230,8 +349,8 @@ def test_ticket_endpoints(tmp_path, monkeypatch):
         assert f.status_code == 303 and "ticket=" in f.headers["location"]
         body = client.get("/demo/api/orders").json()
         tickets = [o for o in body["orders"] if o["source"] == "ticket"]
-        assert len(tickets) == 5 and all(o["parent_id"] for o in tickets)
-        assert [p["path"] for p in body["parents"]] == ["basket", "broadcast"]
+        assert len(tickets) == 8 and all(o["parent_id"] for o in tickets)
+        assert [p["path"] for p in body["parents"]] == ["basket", "bracket", "broadcast"]
         page = client.get(f.headers["location"].split("#")[0])
         assert "basket" in page.text and "2/2 legs filled" in page.text
     finally:

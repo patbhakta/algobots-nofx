@@ -121,7 +121,9 @@ def test_page_renders_paper_only_with_all_panels():
         "<svg",
     ):
         assert needle in html
-    assert "LIVE" not in html.replace("Live", "")  # no live-environment badge anywhere
+    assert 'data-environment="LIVE"' not in html  # no live-environment badge anywhere
+    # LIVE only appears as a disabled option that states why (ALG-3262)
+    assert 'value="LIVE" disabled' in html and "no live venue approved" in html
 
 
 def test_refill_tops_sleeve_up_as_capital_not_pnl():

@@ -24,6 +24,7 @@ from algobots.dashboard.design import components as c
 from algobots.demo import accounts as A
 from algobots.demo import blotter as B
 from algobots.demo import decisions as D
+from algobots.demo import gate as G
 from algobots.demo import ledger as L
 from algobots.demo import quality as Q
 from algobots.demo import studio as S
@@ -551,7 +552,7 @@ def _risk(lg: L.Ledger, now: float, account: str) -> str:
 
 
 def _risk_ticket(lg: L.Ledger, account: str, msg: str | None) -> str:
-    """Order ticket: one paper order type, four paths, every leg behind the risk gate."""
+    """Order ticket: one paper order type, five paths, every leg behind the risk gate."""
     picked = set(lg.books) if account == B.ALL else {account}
     radios = "".join(
         f'<label><input type="radio" name="path" value="{p}"{" checked" if p == "single" else ""}> {p}</label>'
@@ -573,20 +574,25 @@ def _risk_ticket(lg: L.Ledger, account: str, msg: str | None) -> str:
         f'<form method="post" action="/demo/orders" class="rticket" id="ticket">'
         f'<input type="hidden" name="ctx" value="{account}">'
         f"<fieldset><legend>Path</legend>{radios}</fieldset>"
-        f"<fieldset><legend>Accounts (single/split use the first; broadcast fans to all ticked)</legend>{accts}</fieldset>"
+        f"<fieldset><legend>Accounts (single/split use the first; broadcast and bracket fan to all ticked)</legend>{accts}"
+        '<label>mode <select name="mode" aria-describedby="live-why">'
+        '<option value="PAPER" selected>PAPER</option>'
+        f'<option value="LIVE" disabled>LIVE — {c.e(G.LIVE_DISABLED)}</option></select></label>'
+        f'<span class="meta" id="live-why">LIVE hard-disabled: {c.e(G.LIVE_DISABLED)}</span></fieldset>'
         "<fieldset><legend>Order</legend>"
         f"<label>{B.INSTRUMENT} next 15m</label>"
         f'<label>side <select name="side">{sides}</select></label>'
         f'<label>kind <select name="kind">{kinds}</select></label>'
         '<label>notional USD <input name="notional" inputmode="decimal" value="10" size="6"></label>'
         f'<label>max clip USD <input name="max_clip" inputmode="decimal" value="{L.ENVELOPE.max_order_value}" size="6"></label>'
-        '<label><input type="checkbox" name="bracket" disabled aria-describedby="bracket-why"> bracket</label>'
-        f'<span class="meta" id="bracket-why">{c.e(T.BRACKET_UNSUPPORTED)}</span></fieldset>'
+        '<label>bracket take-profit <input name="take_profit" inputmode="decimal" value="0.70" size="4"></label>'
+        '<label>stop <input name="stop" inputmode="decimal" value="0.30" size="4"></label>'
+        f'<span class="meta" id="bracket-why">{c.e(T.BRACKET_NOTE)}</span></fieldset>'
         "<fieldset><legend>Basket (one per line: account side notional)</legend>"
         '<textarea name="basket" rows="3" placeholder="laya YES 10&#10;jev NO 5"></textarea></fieldset>'
         f'<div class="actions">{kill}<button type="submit" class="action" data-environment="PAPER">'
         f'<span>Submit paper order</span><span class="ctx">every leg → risk gate</span></button></div>'
-        f'<p class="meta">{c.e(T.PAPER_NOTE)} · gate per leg: kill switch → sleeve floor → '
+        f'<p class="meta">{c.e(T.PAPER_NOTE)} · gate per leg (same as the strategies): mode → kill switch → sleeve floor → '
         f"daily loss −{L.ENVELOPE.max_daily_loss} → rate breakers → clamp to {L.ENVELOPE.max_order_value} USD · exits privileged</p>"
         + (f'<p class="rticket-msg" role="status">{c.e(msg)}</p>' if msg else "")
         + "</form>"
@@ -600,6 +606,12 @@ def _ticket_blotter(parents: list[T.Parent], account: str) -> str:
         legs = [x for x in p.legs if account == B.ALL or x.account == account]
         if not legs:
             continue
+        cancel = (
+            f'<form method="post" action="/demo/orders/{c.e(p.id)}/cancel" class="inline">'
+            f'<button type="submit" class="action">Cancel {c.e(p.id)}</button></form>'
+            if any(x.status == "working" for x in legs)
+            else ""
+        )
         rows.append(
             [
                 f'<span class="num">{_t(p.ts, "%m-%d %H:%M:%S")}</span>',
@@ -615,24 +627,25 @@ def _ticket_blotter(parents: list[T.Parent], account: str) -> str:
                     else "BLOCKED"
                     if p.state == "rejected"
                     else "PARTIALLY_FILLED",
-                    p.state,
+                    p.state + (" · cancelled" if p.cancelled_ts else ""),
                 ),
-                "",
+                cancel,
             ]
         )
         for x in legs:
-            filled = x.status == "filled"
             rows.append(
                 [
                     "",
-                    f'<span class="meta">└ leg {x.seq}</span>',
+                    f'<span class="meta">└ leg {x.seq}{"" if x.role == "order" else " " + c.e(x.role)}</span>',
                     c.e(L.STRATEGIES[x.account]),
                     c.e(x.side),
                     c.e(x.kind),
-                    f'<span class="num">{x.qty}</span>' if filled else NONE,
-                    c.money(_usd(x.notional)) if filled else NONE,
+                    f'<span class="num">{x.qty}</span>' if x.qty else NONE,
+                    c.money(_usd(x.notional)) if x.qty else NONE,
                     c.status(
-                        "FILLED" if filled else "BLOCKED",
+                        {"filled": "FILLED", "working": "pending", "cancelled": "todo"}.get(
+                            x.status, "BLOCKED"
+                        ),
                         x.status + (" · clamped" if x.clamped else ""),
                     ),
                     f'<span class="meta" title="{c.e(x.reason)}">{c.e(x.reason)}</span>',
@@ -1333,7 +1346,7 @@ def _tab(
             tag=TAG,
         )
     trade = c.panel(
-        "Order ticket · single / broadcast / basket / split",
+        "Order ticket · single / broadcast / basket / split / bracket",
         _risk_ticket(lg, account, ticket_msg),
         financial=True,
         tag=TAG,

@@ -21,9 +21,11 @@ from sqlalchemy.orm import Session
 from algobots.api.approvals.service import ApprovalError
 from algobots.api.config import get_settings
 from algobots.api.database import get_db
+from algobots.api.models import User
 from algobots.demo import accounts as A
 from algobots.demo import blotter as B
 from algobots.demo import decisions as D
+from algobots.demo import gate as G
 from algobots.demo import killswitch
 from algobots.demo import ledger as L
 from algobots.demo import quality as Q
@@ -296,7 +298,9 @@ class TicketIn(BaseModel):
     kind: str = "entry"
     max_clip: str | None = None
     basket: list[dict] | None = None  # [{account, side, notional, kind?}]
-    bracket: bool = False
+    take_profit: str | None = None  # bracket: contract price, 0.01–0.99
+    stop: str | None = None  # bracket
+    mode: str = "PAPER"  # LIVE is refused by the gate: no live venue approved
 
 
 def _intents(t: TicketIn) -> list[T.Intent]:
@@ -310,24 +314,28 @@ def _intents(t: TicketIn) -> list[T.Intent]:
             )
             for o in t.basket or []
         ]
-    accounts = t.accounts if t.path == "broadcast" else t.accounts[:1]
+    accounts = t.accounts if t.path in ("broadcast", "bracket") else t.accounts[:1]
     return T.broadcast(accounts, t.side.upper(), T.parse_money(t.notional), t.kind)
 
 
 def _submit(t: TicketIn, scope: Scope) -> T.Parent:
     resolve(None, scope)
+    if t.mode.upper() != "PAPER":
+        raise T.TicketError(f"LIVE disabled — {G.LIVE_DISABLED}")
     intents = _intents(t)
     for it in intents:
         resolve(it.account, scope)  # every leg's account must be granted: 403 otherwise
     lg, _ = _scoped(scope)
     clip = T.parse_money(t.max_clip, "max clip") if t.path == "split" else None
+    bracket = t.path == "bracket"
     return T.submit(
         lg,
         t.path,
         intents,
         now=time.time(),
         max_clip=clip,
-        bracket=t.bracket,
+        take_profit=T.parse_price(t.take_profit, "take-profit") if bracket else None,
+        stop=T.parse_price(t.stop, "stop") if bracket else None,
         state_dir=get_settings().demo_state_dir,
     )
 
@@ -368,7 +376,9 @@ async def demo_ticket_form(
                 kind=one("kind", "entry"),
                 max_clip=one("max_clip") or None,
                 basket=basket,
-                bracket=bool(one("bracket")),
+                take_profit=one("take_profit") or None,
+                stop=one("stop") or None,
+                mode=one("mode", "PAPER"),
             ),
             scope,
         )
@@ -376,6 +386,28 @@ async def demo_ticket_form(
         why = exc.why if isinstance(exc, Denied) else str(exc)
         return RedirectResponse(f"{base}{sep}{urlencode({'ticket_err': why})}#ticket", 303)
     return RedirectResponse(f"{base}{sep}ticket={p.id}#ticket", 303)
+
+
+def _cancel(parent_id: str, scope: Scope) -> T.Parent:
+    state_dir = get_settings().demo_state_dir
+    p = next((p for p in T.load(state_dir) if p.id == parent_id), None)
+    if p is None:
+        raise HTTPException(404, f"unknown ticket {parent_id}")
+    for leg in p.legs:
+        resolve(leg.account, scope)  # cancelling needs every leg's grant: 403 otherwise
+    return T.cancel(state_dir, parent_id, now=time.time())
+
+
+@router.post("/demo/api/orders/{parent_id}/cancel")
+def demo_cancel(parent_id: str, scope: Scope = Depends(current_scope)) -> dict:
+    """Cancel a ticket; its working children (bracket take-profit/stop) cancel with it."""
+    return asdict(_cancel(parent_id, scope))
+
+
+@router.post("/demo/orders/{parent_id}/cancel", include_in_schema=False)
+def demo_cancel_form(parent_id: str, scope: Scope = Depends(current_scope)) -> RedirectResponse:
+    p = _cancel(parent_id, scope)
+    return RedirectResponse(f"/demo?ticket={p.id}#ticket", 303)
 
 
 @router.get("/demo/api/state")
@@ -462,6 +494,50 @@ def demo_accounts(scope: Scope = Depends(current_scope), db: Session = Depends(g
     }
 
 
+def _broadcast_gate(db: Session, owner: User, ids: list[UUID], qty: float) -> dict[UUID, str]:
+    """Each registry broadcast leg through the one pre-trade gate (ALG-3262); id -> denial.
+
+    Same ``gate.pre_trade`` and the same journal-replayed RiskGate as the order
+    ticket. Accounts without a strategy sleeve are gated on a fresh sleeve (kill
+    switch, breakers, order value still bind). This broadcast sends one fixed qty
+    to every leg, so a leg the gate would clamp is refused, not filled over the cap.
+    """
+    lg, _ = _ledger()
+    now = time.time()
+    state_dir = get_settings().demo_state_dir
+    day, risk = B.today(now), T.make_gate(T.load(state_dir), state_dir)
+    halts: dict[UUID, str] = {}
+    for a in A.accounts(db, owner):
+        if a.id not in ids or A.order_block_reason(a):
+            continue  # LIVE / paused legs are refused by the registry before any order exists
+        book = lg.books.get(A.strategy_key(a) or "")
+        value = (Decimal(str(qty)) * L.FILL_PRICE).quantize(L.CENT)
+        g = G.pre_trade(
+            G.GateRequest(
+                account=A.strategy_key(a) or str(a.id),
+                path="broadcast",
+                value=value,
+                equity=book.equity if book else L.SLEEVE,
+                floor=L.MIN_STAKE + L.fee_for(L.MIN_STAKE),
+                daily_pnl=B.day_pnl(book, day) if book else Decimal(0),
+                kill_engaged=bool(lg.kill.get("engaged")),
+                mode=A.environment(a),
+                now=now,
+                ticker=A.SYMBOL,
+                fee=L.fee_for,
+            ),
+            risk,
+        )
+        if not g.allowed:
+            halts[a.id] = f"blocked by risk gate — {g.reason}"
+        elif g.approved < value:
+            halts[a.id] = (
+                f"blocked by risk gate — {value} USD over max order value; "
+                f"gate allows {g.approved} USD (size it down on the order ticket)"
+            )
+    return halts
+
+
 @router.post("/demo/ticket", include_in_schema=False)
 async def demo_ticket(
     request: Request, scope: Scope = Depends(current_scope), db: Session = Depends(get_db)
@@ -477,16 +553,7 @@ async def demo_ticket(
         return RedirectResponse("/demo?view=trade", status_code=303)
     if side in ("YES", "NO") and 0 < qty <= 100 and ids:
         owner = A.ensure_seeded(db)
-        lg, _ = _ledger()
-        day = B.today(time.time())
-        halts = {}
-        for a in A.accounts(db, owner):
-            book = lg.books.get(A.strategy_key(a) or "")
-            why = B.halt(lg, book, day) if book else None
-            if why is None and lg.kill.get("engaged"):
-                why = "kill switch"
-            if why:
-                halts[a.id] = f"halted — {why}"
+        halts = _broadcast_gate(db, owner, ids, qty)
         A.broadcast(
             db, owner, ids, side=side, qty=qty, actor=_dash_actor(form, request), halts=halts
         )

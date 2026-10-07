@@ -31,6 +31,7 @@ from decimal import ROUND_CEILING, ROUND_HALF_UP, Decimal
 from pathlib import Path
 from typing import Protocol
 
+from algobots.demo import gate
 from algobots.risk import RiskEnvelope
 
 CENT = Decimal("0.01")
@@ -219,6 +220,21 @@ def _intent(key: str, row: Row) -> tuple[str | None, Decimal, str]:
     return side, Decimal(10), f"sha256(event) coin → {'heads' if heads else 'tails'} → {side}"
 
 
+def interval_ts(row: Row) -> float:
+    """When the interval's decision was due, from the ticker (``KXBTC15M-26SEP181245``).
+
+    The observer backfills missed intervals in bursts, so ``row.ts`` (write time)
+    can put dozens of decisions in one minute; the rate breakers count decisions
+    at their scheduled time instead. Falls back to ``row.ts`` for odd tickers.
+    """
+    try:
+        return (
+            datetime.strptime(row.event.split("-")[1], "%y%b%d%H%M").replace(tzinfo=UTC).timestamp()
+        )
+    except (IndexError, ValueError):
+        return row.ts
+
+
 def _day(ts: float) -> str:
     return datetime.fromtimestamp(ts, UTC).strftime("%Y-%m-%d")
 
@@ -263,10 +279,11 @@ def build(
     kill = kill or {"engaged": False}
     books = {k: StrategyBook(k, n) for k, n in STRATEGIES.items()}
     clamps: list[Decision] = []
+    risk = gate.risk_gate(ENVELOPE)  # one gate per replay: breakers see the whole fleet
     for key, book in books.items():
         sleeve = executor(key, SLEEVE) if executor else None
         try:
-            _replay(key, book, rows, kill, refill_ts, clamps, sleeve)
+            _replay(key, book, rows, kill, refill_ts, clamps, sleeve, risk)
         finally:
             if sleeve is not None:
                 sleeve.close()
@@ -282,6 +299,7 @@ def _replay(
     refill_ts: list[float],
     clamps: list[Decision],
     sleeve: Sleeve | None,
+    risk: gate.RiskGate,
 ) -> None:
     equity = SLEEVE
     daily: dict[str, Decimal] = {}
@@ -299,19 +317,26 @@ def _replay(
         d = Decision(key, row.event, row.ts, side, "ABSTAIN", why, requested=req)
         day = _day(row.ts)
         if side is not None:
-            if kill.get("engaged") and row.ts >= float(kill.get("since_ts") or 0):
-                d.status, d.reason = "BLOCKED", f"{why}; kill switch engaged — entry blocked"
-            elif ENVELOPE.check_daily_loss(daily.get(day, Decimal(0))).tripped:
-                d.status = "BLOCKED"
-                d.reason = f"{why}; daily-loss envelope (−{ENVELOPE.max_daily_loss} USD) exhausted"
-            elif equity < MIN_STAKE + fee_for(MIN_STAKE):  # == StrategyBook.exhausted
-                d.status = "BLOCKED"
-                d.reason = f"{why}; sleeve equity {equity} USD below minimum stake + fee"
+            g = gate.pre_trade(
+                gate.GateRequest(
+                    account=key,
+                    path="strategy",
+                    value=req,
+                    equity=equity,
+                    floor=MIN_STAKE + fee_for(MIN_STAKE),  # == StrategyBook.exhausted
+                    daily_pnl=daily.get(day, Decimal(0)),
+                    kill_engaged=bool(kill.get("engaged"))
+                    and row.ts >= float(kill.get("since_ts") or 0),
+                    now=interval_ts(row),
+                    ticker=row.event,
+                    fee=fee_for,
+                ),
+                risk,
+            )
+            if not g.allowed:
+                d.status, d.reason = "BLOCKED", f"{why}; {g.reason}"
             else:
-                check = ENVELOPE.clamp_order_value(req)
-                # stake + fee never exceeds what the sleeve holds
-                affordable = (equity - fee_for(equity)).quantize(CENT)
-                d.stake, d.clamped = min(check.approved, affordable), check.fired
+                d.stake, d.clamped = g.approved, g.clamped
                 d.won = (side == "YES") == (row.outcome == 1)
                 if sleeve is not None:
                     x = sleeve.execute(row.event, side, row.ts, d.won, contracts(d.stake))
@@ -324,7 +349,7 @@ def _replay(
                     d.pnl = (d.stake if d.won else -d.stake) - d.fee
                 d.status = "FILLED"
                 if d.clamped:
-                    d.reason += f"; size clamped {req} → {d.stake} USD (max order value)"
+                    d.reason += f"; {g.reason}"
                     clamps.append(d)
                 daily[day] = daily.get(day, Decimal(0)) + d.pnl
                 equity = sleeve.equity if sleeve is not None else equity + d.pnl
