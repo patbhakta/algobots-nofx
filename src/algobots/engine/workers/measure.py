@@ -55,7 +55,7 @@ def sample(sup: Supervisor, seconds: float) -> dict[str, dict[str, list[float]]]
         now = time.monotonic()
         for a, p in sup.procs.items():
             st = proc_stats(p.pid)
-            if st is None:
+            if st is None or st[0] is None:  # gone, or /proc unreadable (hidepid)
                 continue
             rss, cpu = st
             out[a]["rss_mb"].append(rss)
@@ -127,7 +127,8 @@ def main(argv: list[str] | None = None) -> None:
         pre = {x: (read_heartbeat(state, x) or {}).get("intervals", 0) for x in sup.accounts}
         os.kill(snap[KILLED]["pid"], signal.SIGKILL)
         mark("killed", account=KILLED, pid=snap[KILLED]["pid"])
-        _wait(lambda: sup.status(KILLED).state == "exited", 15)
+        if not _wait(lambda: sup.status(KILLED).state == "exited", 15):
+            raise SystemExit(f"killed worker {KILLED} never reported exited: {sup.status(KILLED)}")
         time.sleep(5 * a.poll)
         after_kill = sup.snapshot()
         post = {x: (read_heartbeat(state, x) or {}).get("intervals", 0) for x in sup.accounts}
@@ -145,7 +146,10 @@ def main(argv: list[str] | None = None) -> None:
                 phases.append(hb["phase"])
             return hb.get("reconciled") is True
 
-        _wait(seen, 120)
+        if not _wait(seen, 120):
+            raise SystemExit(
+                f"restarted worker {KILLED} never reconciled: {sup.status(KILLED)} phases={phases}"
+            )
         hb = read_heartbeat(state, KILLED) or {}
         mark(
             "restarted",

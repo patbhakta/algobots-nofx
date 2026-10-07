@@ -226,7 +226,10 @@ IB paper account via gateway port 4002 / TWS paper 7497).
 `AccountWorkerSpec` with an execution mode of `sandbox` or `adapter:<name>`.
 Anything other than `sandbox` is refused by `AdapterNotAuthorized` — no
 external broker mutation happens without a separate authorization, matching the
-A06 activation rule. Tests: `tests/engine/workers/test_execution.py`.
+A06 activation rule. The refusing worker exits `EXIT_REFUSED` (77, EX_NOPERM),
+distinct from the lease denial's 75, so `/demo/api/workers` reports it `exited`
+with that code rather than `denied`. Tests:
+`tests/engine/workers/test_execution.py`.
 
 **Fills are now Nautilus's, not the ledger's.** `paper.py` records fills
 directly from Nautilus `OrderFilled` events (`strategy.fills`) instead of

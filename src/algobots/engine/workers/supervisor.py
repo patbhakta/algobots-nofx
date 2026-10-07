@@ -109,12 +109,19 @@ class WorkerStatus:
     uid: int | None = None  # the worker process's real UID, from /proc
 
 
-def proc_stats(pid: int) -> tuple[float, float] | None:
-    """(RSS MB, CPU seconds) from /proc, or None if the process is gone."""
+def proc_stats(pid: int) -> tuple[float | None, float | None] | None:
+    """(RSS MB, CPU seconds) from /proc; None if the process is gone.
+
+    An unreadable stat file (e.g. hidepid) returns ``(None, None)``: the worker
+    is alive but this process may not measure it, so ``status()`` keeps
+    reporting from the heartbeat instead of raising or waiting for exit.
+    """
     try:
         fields = Path(f"/proc/{pid}/stat").read_text().rsplit(")", 1)[1].split()
     except (FileNotFoundError, ProcessLookupError, IndexError):
         return None
+    except PermissionError:
+        return (None, None)
     if fields[0] == "Z":  # zombie: exited, not yet reaped
         return None
     utime, stime, rss_pages = int(fields[11]), int(fields[12]), int(fields[21])
@@ -126,7 +133,7 @@ def proc_uid(pid: int) -> int | None:
         for line in Path(f"/proc/{pid}/status").read_text().splitlines():
             if line.startswith("Uid:"):
                 return int(line.split()[1])
-    except (FileNotFoundError, ProcessLookupError):
+    except (FileNotFoundError, ProcessLookupError, PermissionError):
         pass
     return None
 

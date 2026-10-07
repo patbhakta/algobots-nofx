@@ -14,7 +14,9 @@ cannot reach a broker.
 Execution seam (ALG-3270): the execution client comes from the account's
 ``AccountWorkerSpec``. ``sandbox`` is the simulated venue above and the
 default. ``adapter:<name>`` selects a shipped Nautilus adapter, and this worker
-refuses it until a broker connection is authorized (see ``execution``). Fills
+refuses it until a broker connection is authorized (see ``execution``). The
+refusal exits ``EXIT_REFUSED`` (77), distinct from the lease denial's
+``EXIT_DENIED`` (75), so the supervisor reports it ``exited``, not ``denied``. Fills
 are recorded from Nautilus ``OrderFilled`` events (``strategy.fills``), not
 read back from the ledger. ``reconcile_fills`` diffs them against the ledger.
 
@@ -55,6 +57,7 @@ from nautilus_trader.trading.strategy import Strategy
 from algobots.demo import killswitch
 from algobots.demo import ledger as L
 from algobots.engine.workers.execution import (
+    EXIT_REFUSED,
     AccountWorkerSpec,
     AdapterNotAuthorized,
     adapter_node_config,
@@ -368,7 +371,7 @@ def main(argv: list[str] | None = None) -> None:
     except AdapterNotAuthorized as e:
         lease.release(os.getpid())
         print(f"refused: {e}", flush=True)
-        raise SystemExit(EXIT_DENIED) from None
+        raise SystemExit(EXIT_REFUSED) from None
     stop = False
 
     def _stop(*_: object) -> None:

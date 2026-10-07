@@ -113,6 +113,35 @@ def test_proc_stats_for_self_and_missing_pid():
     assert proc_stats(2**22 + 12345) is None
 
 
+def test_unreadable_proc_reports_unknown_not_dead(tmp_path, monkeypatch):
+    """A hidepid-style /proc must not raise out of status() nor wait for exit."""
+    from pathlib import Path
+
+    real_read = Path.read_text
+
+    def no_proc(self):
+        s = str(self)
+        if s.startswith("/proc/") and s.endswith(("/stat", "/status")):
+            raise PermissionError(13, "Permission denied", s)
+        return real_read(self)
+
+    monkeypatch.setattr(Path, "read_text", no_proc)
+    assert proc_stats(os.getpid()) == (None, None)
+    monkeypatch.undo()
+
+    sup = _supervisor(tmp_path)
+    sup.start("laya")
+    try:
+        assert _wait(lambda: sup.status("laya").state == "ready")
+        monkeypatch.setattr(Path, "read_text", no_proc)
+        st = sup.status("laya")
+        assert st.state == "ready" and st.rss_mb is None and st.cpu_s is None
+        assert st.uid is None  # /proc/<pid>/status is unreadable too
+    finally:
+        monkeypatch.undo()
+        sup.stop()
+
+
 def test_workers_endpoint_reports_not_started_when_disabled(client: TestClient):
     body = client.get("/demo/api/workers").json()
     assert body["enabled"] is False and body["ready"] is False

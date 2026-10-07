@@ -25,6 +25,7 @@ from decimal import Decimal
 
 SANDBOX = "sandbox"
 ENV_VAR = "ALGOBOTS_WORKER_EXECUTION"
+EXIT_REFUSED = 77  # EX_NOPERM: an adapter spec is a deliberate config refusal, not a lease denial
 
 
 @dataclass(frozen=True)

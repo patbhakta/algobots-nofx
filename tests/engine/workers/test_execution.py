@@ -1,6 +1,9 @@
 """ALG-3270 execution seam: spec-selected client, fills from Nautilus OrderFilled events."""
 
 import json
+import os
+import subprocess
+import sys
 from decimal import Decimal
 
 import pytest
@@ -11,12 +14,15 @@ from algobots.demo import ledger as L  # noqa: E402
 from algobots.engine.workers import paper  # noqa: E402
 from algobots.engine.workers.execution import (  # noqa: E402
     ENV_VAR,
+    EXIT_REFUSED,
     AccountWorkerSpec,
     AdapterNotAuthorized,
     reconcile_fills,
     specs,
 )
+from algobots.engine.workers.lease import EXIT_DENIED, Lease  # noqa: E402
 from algobots.engine.workers.paper import PaperWorker  # noqa: E402
+from algobots.engine.workers.supervisor import Supervisor  # noqa: E402
 
 from .test_paper import _rows, _worker  # noqa: E402
 
@@ -61,6 +67,40 @@ def test_adapter_spec_is_refused_before_any_engine_exists(tmp_path):
         PaperWorker("laya", tmp_path / "feed.jsonl", tmp_path, "2026-10-06", [], spec)
     with pytest.raises(ValueError):
         PaperWorker("jev", tmp_path / "f", tmp_path, "2026-10-06", [], AccountWorkerSpec("laya"))
+
+
+def test_adapter_refusal_exits_its_own_code_and_reports_exited(tmp_path):
+    """A deliberate config refusal is not a lease denial: exit 77, supervisor says exited."""
+    assert EXIT_REFUSED != EXIT_DENIED
+    child = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "algobots.engine.workers.paper",
+            "--account",
+            "laya",
+            "--execution",
+            "adapter:kraken",
+        ],
+        env={
+            **os.environ,
+            "PYTHONPATH": os.pathsep.join(sys.path),
+            "ALGOBOTS_DEMO_STATE_DIR": str(tmp_path),
+        },
+        capture_output=True,
+        text=True,
+        timeout=120,
+    )
+    assert child.returncode == EXIT_REFUSED
+    assert "refused:" in child.stdout and "KRAKEN" in child.stdout
+    assert not Lease(tmp_path, "laya").path.exists()  # the lease was released again
+    sup = Supervisor(["laya"], tmp_path)
+    sup.procs["laya"] = subprocess.Popen(
+        [sys.executable, "-c", f"import sys; sys.exit({EXIT_REFUSED})"]
+    )
+    sup.procs["laya"].wait()
+    st = sup.status("laya")
+    assert st.state == "exited" and st.exit_code == EXIT_REFUSED and st.denied_reason is None
 
 
 def test_adapter_node_runs_the_same_strategy_without_connecting():
