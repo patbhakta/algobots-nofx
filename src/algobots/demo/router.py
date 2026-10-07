@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+import threading
 import time
 from dataclasses import asdict
 from datetime import UTC, datetime
@@ -56,16 +58,41 @@ def stop_workers() -> None:
         SUPERVISOR = None
 
 
+try:  # the API image installs the workers extra; dev/CI may not
+    from algobots.engine.sleeve import EXECUTOR, NautilusSleeve
+except ImportError:  # pragma: no cover - exercised only without nautilus_trader
+    EXECUTOR, NautilusSleeve = L.REFERENCE, None
+
+# A Nautilus replay of the feed takes seconds, and the feed only moves once
+# per settled interval: rebuild when an input changes, not on every request.
+_LEDGER_LOCK = threading.Lock()
+_LEDGER_CACHE: tuple[tuple, L.Ledger] | None = None
+
+
 def _ledger() -> tuple[L.Ledger, str]:
+    global _LEDGER_CACHE
     s = get_settings()
     start = datetime.strptime(s.demo_start, "%Y-%m-%d").replace(tzinfo=UTC)
-    rows = L.load_rows(Path(s.demo_feed_path), since_ts=start.timestamp())
-    refills = [
-        datetime.strptime(t.strip(), "%Y-%m-%dT%H:%M").replace(tzinfo=UTC).timestamp()
-        for t in s.demo_sleeve_refills.split(",")
-        if t.strip()
-    ]
-    return L.build(rows, killswitch.read(s.demo_state_dir), refills), s.demo_start
+    feed = Path(s.demo_feed_path)
+    kill = killswitch.read(s.demo_state_dir)
+    try:
+        st = feed.stat()
+        stamp = (st.st_mtime_ns, st.st_size)
+    except OSError:
+        stamp = None
+    key = (str(feed), stamp, s.demo_start, s.demo_sleeve_refills, json.dumps(kill, sort_keys=True))
+    with _LEDGER_LOCK:
+        if _LEDGER_CACHE is not None and _LEDGER_CACHE[0] == key:
+            return _LEDGER_CACHE[1], s.demo_start
+        rows = L.load_rows(feed, since_ts=start.timestamp())
+        refills = [
+            datetime.strptime(t.strip(), "%Y-%m-%dT%H:%M").replace(tzinfo=UTC).timestamp()
+            for t in s.demo_sleeve_refills.split(",")
+            if t.strip()
+        ]
+        lg = L.build(rows, kill, refills, executor=NautilusSleeve, executor_name=EXECUTOR)
+        _LEDGER_CACHE = (key, lg)
+        return lg, s.demo_start
 
 
 @router.get("/", include_in_schema=False)

@@ -149,11 +149,23 @@ def render_denied(code: int, account: str, why: str) -> str:
     )
 
 
-def _banner(start: str) -> str:
+def _executor(lg: L.Ledger) -> str:
+    """Who filled the headline sleeves, and what is still assumed (ALG-3289)."""
+    if lg.executor == L.REFERENCE:
+        what = "fills computed by the reference model (Nautilus not installed here)"
+    else:
+        what = "fills, fees, settlement and sleeve cash read back from the engine"
+    return (
+        f'<span data-executor="{c.e(lg.executor)}">executor <strong>{c.e(lg.executor)}</strong> · '
+        f"{what} · quotes at the assumed 50¢ mid (feed has no order book) · no broker orders</span>"
+    )
+
+
+def _banner(lg: L.Ledger, start: str) -> str:
     return (
         '<div class="disclosure" role="note"><strong>PAPER TRADING</strong>'
-        f"<span>since {c.e(start)} · $5–15/trade</span>"
-        "<span>simulated fills at assumed 50¢ mid + Kalshi taker fee · no broker orders</span>"
+        f"<span>since {c.e(start)} · $5–15/trade · whole contracts + Kalshi taker fee</span>"
+        f"{_executor(lg)}"
         '<span class="wide">decides from prior settled intervals only · refresh 60s · ↑/↓ + Enter selects account</span></div>'
     )
 
@@ -464,7 +476,9 @@ def _orders(lg: L.Ledger, account: str, status: str | None) -> str:
                 f'<span title="{c.e(o["deployment"])} · artifact {c.e(o["artifact"])}">{c.e(L.STRATEGIES[o["account"]])}</span>',
                 c.e(o["instrument"].split("-")[-1]),
                 c.e(o["side"] or "—"),
-                f'<span class="num">{o["qty"]}</span>' if filled else NONE,
+                f'<span class="num" title="client order {c.e(o.get("order_id") or "—")}" data-order-id="{c.e(o.get("order_id") or "")}">{o["qty"]}</span>'
+                if filled
+                else NONE,
                 f'<span class="num">{o["price"]}</span>' if filled else NONE,
                 c.money(_usd(o["notional"])) if filled else NONE,
                 c.money(_usd(o["fee"])) if filled else NONE,
@@ -921,7 +935,7 @@ def _harness_pane(q: dict) -> str:
                 f' / <span data-q="pending">{s["pending"]}</span></span>',
                 c.status(kind, s["verdict"].lower())
                 + f'<br><span class="meta">n={s["sample_size"]} · {rc["seeds"]} random seeds, '
-                f'{rc["certified"]} certified</span>',
+                f"{rc['certified']} certified</span>",
             ]
         )
         cal.append(
@@ -948,7 +962,13 @@ def _harness_pane(q: dict) -> str:
         "Brier = harness 3-band score, lower is better, coin 0.5000 · "
         "verdict = harness Wilson-95 lower bound vs majority-label baseline</p>"
         + c.table(
-            ["Strategy", "Brier vs coin", "Hit rate [Wilson 95%]", "Settled / pending", "Harness verdict"],
+            [
+                "Strategy",
+                "Brier vs coin",
+                "Hit rate [Wilson 95%]",
+                "Settled / pending",
+                "Harness verdict",
+            ],
             rows,
             numeric={1, 2, 3},
             stack=True,
@@ -1050,7 +1070,7 @@ def render(
         '<meta charset="utf-8">\n<meta name="viewport" content="width=device-width, initial-scale=1">\n'
         '<meta http-equiv="refresh" content="60">\n'
         f"<title>{title}</title>\n<style>{CSS}</style>\n</head>\n<body>\n"
-        f'<div class="chrome">{_header(lg, now, account)}{_banner(start)}</div>\n'
+        f'<div class="chrome">{_header(lg, now, account)}{_banner(lg, start)}</div>\n'
         f'<main id="main" data-screen="demo" data-account="{account}">\n<h1 class="sr-only">{title}</h1>\n{body}\n</main>\n'
         f"<script>{CLOCK}{KEYS}</script>\n</body>\n</html>\n"
     )

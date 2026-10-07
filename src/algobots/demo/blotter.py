@@ -54,10 +54,6 @@ def halt(lg: L.Ledger, b: L.StrategyBook, day: str) -> str | None:
     return None
 
 
-def _contracts(stake: Decimal) -> int:
-    return int(stake / L.FILL_PRICE)
-
-
 def positions(lg: L.Ledger, now: float, account: str = ALL) -> list[dict]:
     """Fills whose interval has not settled yet at ``now`` (expiry = row ts).
 
@@ -75,8 +71,8 @@ def positions(lg: L.Ledger, now: float, account: str = ALL) -> list[dict]:
                     "account": b.key,
                     "instrument": d.event,
                     "side": d.side,
-                    "qty": _contracts(d.stake),
-                    "avg_price": str(L.FILL_PRICE),
+                    "qty": d.qty,
+                    "avg_price": str(d.price),
                     "mark": str(L.FILL_PRICE),  # no quotes captured: mark at the assumed mid
                     "unrealized_pnl": str(-d.fee),
                     "expiry_ts": d.ts,
@@ -103,10 +99,11 @@ def orders(
             "artifact": LIVE[b.key].hash[:12],
             "instrument": d.event,
             "side": d.side,
-            "qty": _contracts(d.stake) if d.status == "FILLED" else 0,
+            "qty": d.qty,
             "requested": str(d.requested),
             "notional": str(d.stake),
-            "price": str(L.FILL_PRICE) if d.status == "FILLED" else None,
+            "price": str(d.price) if d.status == "FILLED" else None,
+            "order_id": d.order_id,
             "fee": str(d.fee),
             "pnl": str(d.pnl) if d.status == "FILLED" else None,
             "status": d.status.lower(),

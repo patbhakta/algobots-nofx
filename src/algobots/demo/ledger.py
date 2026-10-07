@@ -6,8 +6,17 @@ arm's choice, both computed from PRIOR intervals only, then scored at
 settlement. The PoC captures no order book, so every fill is at the assumed
 50c mid and pays the Kalshi taker fee; the page says so.
 
+Execution (ALG-3289): ``build`` decides and risk-gates every entry, then
+hands each approved entry to an executor. The dashboard passes
+``algobots.engine.sleeve.NautilusSleeve``: the order fills on a Nautilus
+simulated venue, which charges the fee, settles the contract and holds the
+sleeve's cash, and the qty, stake, fee, P&L and equity recorded here are
+read back from that engine. Without an executor (unit tests; Nautilus not
+installed) the in-process reference model below computes them instead, and
+``Ledger.executor`` names which one produced the numbers.
+
 Everything here is a pure function of (rows, kill-switch state), so the
-ledger is deterministic and recomputed on every request.
+ledger is deterministic and recomputed whenever its inputs change.
 """
 
 from __future__ import annotations
@@ -15,11 +24,12 @@ from __future__ import annotations
 import hashlib
 import json
 import math
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from decimal import ROUND_CEILING, ROUND_HALF_UP, Decimal
 from pathlib import Path
+from typing import Protocol
 
 from algobots.risk import RiskEnvelope
 
@@ -30,6 +40,7 @@ MIN_STAKE = Decimal("5")
 SLEEVE = Decimal("100")  # starting paper capital per strategy
 ENVELOPE = RiskEnvelope(max_order_value=Decimal("15"), max_daily_loss=Decimal("40"))
 LAYA_MIN_EDGE = 0.02  # |P(up) - 0.5| below this -> abstain
+REFERENCE = "reference model (assumed-mid arithmetic, no engine)"
 
 STRATEGIES = {
     "laya": "Laya System One",
@@ -65,6 +76,9 @@ class Decision:
     pnl: Decimal = Decimal(0)
     won: bool | None = None
     clamped: bool = False
+    qty: int = 0  # contracts filled
+    price: Decimal = Decimal(0)  # average fill price
+    order_id: str | None = None  # executor's client order ID
 
 
 @dataclass
@@ -130,6 +144,7 @@ class Ledger:
     kill: dict
     clamp_events: list[Decision]
     refill_ts: list[float] = field(default_factory=list)
+    executor: str = REFERENCE
 
     @property
     def last_ts(self) -> float | None:
@@ -208,12 +223,40 @@ def _day(ts: float) -> str:
     return datetime.fromtimestamp(ts, UTC).strftime("%Y-%m-%d")
 
 
-def build(rows: Iterable[Row], kill: dict | None = None, refills: Iterable[float] = ()) -> Ledger:
+class Sleeve(Protocol):
+    """Executes one sleeve's entries; ``algobots.engine.sleeve.NautilusSleeve`` in production."""
+
+    @property
+    def equity(self) -> Decimal: ...
+
+    def top_up(self, amount: Decimal) -> None: ...
+
+    def execute(self, event: str, side: str, ts: float, won: bool, qty: int): ...  # noqa: ANN201
+
+    def close(self) -> None: ...
+
+
+def contracts(stake: Decimal, price: Decimal = FILL_PRICE) -> int:
+    """Whole contracts a stake buys at ``price`` (Kalshi trades whole contracts)."""
+    return math.floor(stake / price)
+
+
+def build(
+    rows: Iterable[Row],
+    kill: dict | None = None,
+    refills: Iterable[float] = (),
+    executor: Callable[[str, Decimal], Sleeve] | None = None,
+    executor_name: str = REFERENCE,
+) -> Ledger:
     """Replay rows through every strategy behind the risk envelope + kill switch.
 
     ``refills`` are timestamps at which every sleeve is topped back up to
     SLEEVE. The top-up is recorded as added capital, never as P&L, so net
     P&L stays cumulative and honest across refills.
+
+    ``executor(account, capital)`` opens one sleeve per account. Every
+    approved entry executes on it, and the decision's qty, price, stake, fee
+    and P&L, and the equity the risk gate sees next, are read back from it.
     """
     rows = list(rows)
     refill_ts = sorted(refills)
@@ -221,48 +264,72 @@ def build(rows: Iterable[Row], kill: dict | None = None, refills: Iterable[float
     books = {k: StrategyBook(k, n) for k, n in STRATEGIES.items()}
     clamps: list[Decision] = []
     for key, book in books.items():
-        equity = SLEEVE
-        daily: dict[str, Decimal] = {}
-        pending = list(refill_ts)
-        for row in rows:
-            while pending and pending[0] <= row.ts:
-                top_up = SLEEVE - equity
-                if top_up > 0:
-                    book.refills.append((pending[0], top_up))
-                    equity = SLEEVE
-                pending.pop(0)
-            side, req, why = _intent(key, row)
-            d = Decision(key, row.event, row.ts, side, "ABSTAIN", why, requested=req)
-            day = _day(row.ts)
-            if side is not None:
-                if kill.get("engaged") and row.ts >= float(kill.get("since_ts") or 0):
-                    d.status, d.reason = "BLOCKED", f"{why}; kill switch engaged — entry blocked"
-                elif ENVELOPE.check_daily_loss(daily.get(day, Decimal(0))).tripped:
-                    d.status = "BLOCKED"
-                    d.reason = (
-                        f"{why}; daily-loss envelope (−{ENVELOPE.max_daily_loss} USD) exhausted"
-                    )
-                elif equity < MIN_STAKE + fee_for(MIN_STAKE):  # == StrategyBook.exhausted
-                    d.status = "BLOCKED"
-                    d.reason = f"{why}; sleeve equity {equity} USD below minimum stake + fee"
+        sleeve = executor(key, SLEEVE) if executor else None
+        try:
+            _replay(key, book, rows, kill, refill_ts, clamps, sleeve)
+        finally:
+            if sleeve is not None:
+                sleeve.close()
+    name = executor_name if executor else REFERENCE
+    return Ledger(rows, books, kill, clamps, refill_ts, executor=name)
+
+
+def _replay(
+    key: str,
+    book: StrategyBook,
+    rows: list[Row],
+    kill: dict,
+    refill_ts: list[float],
+    clamps: list[Decision],
+    sleeve: Sleeve | None,
+) -> None:
+    equity = SLEEVE
+    daily: dict[str, Decimal] = {}
+    pending = list(refill_ts)
+    for row in rows:
+        while pending and pending[0] <= row.ts:
+            top_up = SLEEVE - equity
+            if top_up > 0:
+                book.refills.append((pending[0], top_up))
+                if sleeve is not None:
+                    sleeve.top_up(top_up)
+                equity = SLEEVE
+            pending.pop(0)
+        side, req, why = _intent(key, row)
+        d = Decision(key, row.event, row.ts, side, "ABSTAIN", why, requested=req)
+        day = _day(row.ts)
+        if side is not None:
+            if kill.get("engaged") and row.ts >= float(kill.get("since_ts") or 0):
+                d.status, d.reason = "BLOCKED", f"{why}; kill switch engaged — entry blocked"
+            elif ENVELOPE.check_daily_loss(daily.get(day, Decimal(0))).tripped:
+                d.status = "BLOCKED"
+                d.reason = f"{why}; daily-loss envelope (−{ENVELOPE.max_daily_loss} USD) exhausted"
+            elif equity < MIN_STAKE + fee_for(MIN_STAKE):  # == StrategyBook.exhausted
+                d.status = "BLOCKED"
+                d.reason = f"{why}; sleeve equity {equity} USD below minimum stake + fee"
+            else:
+                check = ENVELOPE.clamp_order_value(req)
+                # stake + fee never exceeds what the sleeve holds
+                affordable = (equity - fee_for(equity)).quantize(CENT)
+                d.stake, d.clamped = min(check.approved, affordable), check.fired
+                d.won = (side == "YES") == (row.outcome == 1)
+                if sleeve is not None:
+                    x = sleeve.execute(row.event, side, row.ts, d.won, contracts(d.stake))
+                    d.qty, d.price, d.order_id = x.qty, x.price, x.client_order_id
+                    d.stake, d.fee, d.pnl = x.cost, x.fee, x.pnl
                 else:
-                    check = ENVELOPE.clamp_order_value(req)
-                    # stake + fee never exceeds what the sleeve holds
-                    affordable = (equity - fee_for(equity)).quantize(CENT)
-                    d.stake, d.clamped = min(check.approved, affordable), check.fired
+                    d.qty, d.price = contracts(d.stake), FILL_PRICE
                     d.fee = fee_for(d.stake)
-                    d.won = (side == "YES") == (row.outcome == 1)
                     # binary at 50c: win pays stake (contracts * $1 - cost), loss forfeits it
                     d.pnl = (d.stake if d.won else -d.stake) - d.fee
-                    d.status = "FILLED"
-                    if d.clamped:
-                        d.reason += f"; size clamped {req} → {d.stake} USD (max order value)"
-                        clamps.append(d)
-                    daily[day] = daily.get(day, Decimal(0)) + d.pnl
-                    equity += d.pnl
-            book.decisions.append(d)
-            book.curve.append((row.ts, equity))
-    return Ledger(rows=rows, books=books, kill=kill, clamp_events=clamps, refill_ts=refill_ts)
+                d.status = "FILLED"
+                if d.clamped:
+                    d.reason += f"; size clamped {req} → {d.stake} USD (max order value)"
+                    clamps.append(d)
+                daily[day] = daily.get(day, Decimal(0)) + d.pnl
+                equity = sleeve.equity if sleeve is not None else equity + d.pnl
+        book.decisions.append(d)
+        book.curve.append((row.ts, equity))
 
 
 def brier(rows: list[Row]) -> float | None:
