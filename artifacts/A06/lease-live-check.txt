@@ -1,0 +1,41 @@
+# ALG-3258 A06-2 live check — image built from origin/main 4e340c6, isolated container
+# (network none, copy of live demo state, live feed read-only). 2026-10-07T11:53:20Z
+
+$ GET /demo/api/workers
+enabled True ready True
+{"account": "laya", "state": "ready", "reconciled": true, "pid": 7, "lease_pid": 7, "orders_restored": 203, "orders_rejected_frozen": 0, "orders_submitted": 203, "startup_s": 3.41, "denied_reason": null}
+{"account": "jev", "state": "ready", "reconciled": true, "pid": 8, "lease_pid": 8, "orders_restored": 120, "orders_rejected_frozen": 0, "orders_submitted": 120, "startup_s": 3.24, "denied_reason": null}
+{"account": "coin", "state": "ready", "reconciled": true, "pid": 9, "lease_pid": 9, "orders_restored": 159, "orders_rejected_frozen": 0, "orders_submitted": 159, "startup_s": 3.34, "denied_reason": null}
+
+$ python -m algobots.engine.workers.lease show --account <a>
+{"path": "/var/lib/algobots-demo/workers/leases/demo.laya.paper.lease", "status": "live", "reason": "lease held by live pid 7", "lease": {"pid": 7, "start_time": 167881502, "host": "e263542fd65f", "pidns": "pid:[4026533111]", "key": "demo.laya.paper", "acquired_at": 1791373978.9124863}}
+{"path": "/var/lib/algobots-demo/workers/leases/demo.jev.paper.lease", "status": "live", "reason": "lease held by live pid 8", "lease": {"pid": 8, "start_time": 167881503, "host": "e263542fd65f", "pidns": "pid:[4026533111]", "key": "demo.jev.paper", "acquired_at": 1791373978.9141111}}
+{"path": "/var/lib/algobots-demo/workers/leases/demo.coin.paper.lease", "status": "live", "reason": "lease held by live pid 9", "lease": {"pid": 9, "start_time": 167881503, "host": "e263542fd65f", "pidns": "pid:[4026533111]", "key": "demo.coin.paper", "acquired_at": 1791373978.91505}}
+
+# AC2/AC4: a second API process (same host + pidns) tries to start all accounts
+LeaseDenied: ['laya: lease held by live pid 7', 'jev: lease held by live pid 8', 'coin: lease held by live pid 9']
+second supervisor spawned: []
+laya denied | lease held by live pid 7
+jev denied | lease held by live pid 8
+coin denied | lease held by live pid 9
+
+$ force-release on a live owner (must refuse)
+refused: laya: lease held by live pid 7; stop it first
+
+$ ps (worker processes)
+7 /usr/local/bin/python3.12 -m algobots.engine.workers.paper --account laya --poll 15.0 
+8 /usr/local/bin/python3.12 -m algobots.engine.workers.paper --account jev --poll 15.0 
+9 /usr/local/bin/python3.12 -m algobots.engine.workers.paper --account coin --poll 15.0 
+
+# AC3: SIGKILL coin (pid 9); the API keeps the others ready, coin exited, lease left behind
+laya ready exit None lease_pid 7
+jev ready exit None lease_pid 8
+coin exited exit -9 lease_pid 9
+{"path": "/var/lib/algobots-demo/workers/leases/demo.coin.paper.lease", "status": "dead", "reason": "previous owner pid 9 has terminated", "lease": {"pid": 9, "start_time": 167881503, "host": "e263542fd65f", "pidns": "pid:[4026533111]", "key": "demo.coin.paper", "acquired_at": 1791373978.91505}}
+
+# restart coin from another supervisor: takeover of a confirmed-dead owner, frozen until reconciled
+state=starting t=0.0s reconciled=False submitted=None rejected_frozen=None
+state=reconciling t=2.35s reconciled=False submitted=0 rejected_frozen=0
+state=ready t=2.6s reconciled=True submitted=159 rejected_frozen=0
+lease -> 197 == worker pid 197
+after stop: stopped | lease file exists: False
