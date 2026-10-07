@@ -1,0 +1,121 @@
+{
+  "packet": "A08",
+  "generated_at": "2026-10-07T23:46:41.813107+00:00",
+  "scenario_1_race_for_shared_funds": {
+    "pool": "1000",
+    "entries": [
+      "700 (KXA8.DEMO)",
+      "700 (KXB8.DEMO)"
+    ],
+    "outcomes": [
+      {
+        "strategy": 0,
+        "outcome": "ADMITTED",
+        "reserved": "700.00"
+      },
+      {
+        "strategy": 1,
+        "outcome": "REJECTED",
+        "rule": "insufficient_funds",
+        "reason": "required reservation 700.00 (with buffers) exceeds unreserved cash 300.00; active reservations retain their obligations"
+      }
+    ],
+    "after_race": {
+      "available": "1000",
+      "reserved": "700.00",
+      "active_claims": "700.00",
+      "invariant_holds": true,
+      "active_reservations": [
+        {
+          "plan": "plan-demo-0",
+          "state": "HELD",
+          "claim": "700.00"
+        }
+      ]
+    },
+    "after_reconciled_release": {
+      "available": "1000",
+      "reserved": "0.00",
+      "active_claims": "0",
+      "invariant_holds": true,
+      "active_reservations": []
+    },
+    "exactly_one_admitted": true
+  },
+  "scenario_2_entry_pause_keeps_stops": {
+    "entry_while_paused": {
+      "strategy": 2,
+      "outcome": "REJECTED",
+      "rule": "account_control",
+      "reason": "entries paused by operator"
+    },
+    "protection_status_while_paused": {
+      "entries_paused": true,
+      "reduce_only": false,
+      "protections": [
+        {
+          "instrument_id": "KXA8.DEMO",
+          "order_type": "stop",
+          "protection": "stop",
+          "side": "SELL",
+          "quantity": "7",
+          "working": true
+        }
+      ],
+      "working_protections": 1,
+      "paused_protections": 0
+    },
+    "entry_after_resume": {
+      "strategy": 3,
+      "outcome": "ADMITTED",
+      "reserved": "700.00"
+    }
+  },
+  "scenario_3_stale_state_blocks_new_risk": {
+    "stale_entry": {
+      "outcome": "REJECTED",
+      "rule": "stale_state",
+      "reason": "mark quality STALE_CACHE not in ['REALTIME', 'DELAYED']"
+    },
+    "protection_status_while_stale": {
+      "entries_paused": false,
+      "reduce_only": false,
+      "protections": [
+        {
+          "instrument_id": "KXA8.DEMO",
+          "order_type": "stop",
+          "protection": "stop",
+          "side": "SELL",
+          "quantity": "7",
+          "working": true
+        }
+      ],
+      "working_protections": 1,
+      "paused_protections": 0
+    },
+    "fresh_entry": {
+      "outcome": "ADMITTED",
+      "reserved": "700.00"
+    }
+  },
+  "final_pool": {
+    "available": "1000",
+    "reserved": "700.00",
+    "active_claims": "700.00",
+    "invariant_holds": true,
+    "active_reservations": [
+      {
+        "plan": "plan-demo-fresh",
+        "state": "HELD",
+        "claim": "700.00"
+      }
+    ]
+  },
+  "after_reconciled_release": {
+    "available": "1000",
+    "reserved": "0.00",
+    "active_claims": "0",
+    "invariant_holds": true,
+    "active_reservations": []
+  }
+}

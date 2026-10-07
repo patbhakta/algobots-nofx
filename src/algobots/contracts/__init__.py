@@ -16,6 +16,7 @@ from .identity import Grant, IdentityKind, Principal
 from .memory import MemoryRecord, MemoryScope, MemoryStore, namespace_permits
 from .outbox import ChildOrderStatusView, IntentStatusResponse, OutboxEvent
 from .plan import ExecutionCommand, IntentRequest, OrderPlan, Reservation, canonical_hash
+from .risk import RiskDecision, RiskPolicyVersion
 from .strategy import Deployment, StrategyVersion
 
 __all__ = [
@@ -46,6 +47,8 @@ __all__ = [
     "Principal",
     "Quantity",
     "Reservation",
+    "RiskDecision",
+    "RiskPolicyVersion",
     "Signal",
     "StrategyVersion",
     "TargetPortfolio",

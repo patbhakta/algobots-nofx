@@ -41,6 +41,13 @@ EXPECTED_TABLES = {
     "cash_movements",
     "intent_outbox",
     "account_freezes",
+    # A08 (ALG-3104): account risk admission — funds/inventory pools with the
+    # CAS epoch, reservation store, operator controls, instrument marks
+    "account_admissions",
+    "account_inventories",
+    "reservations",
+    "account_controls",
+    "instrument_marks",
 }
 
 

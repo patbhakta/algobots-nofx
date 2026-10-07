@@ -14,6 +14,7 @@ from algobots.api.accounts.router import router as accounts_router
 from algobots.api.approvals.router import router as approvals_router
 from algobots.api.deployments.router import router as deployments_router
 from algobots.api.middleware import AccessLogMiddleware, AuditMiddleware
+from algobots.api.risk.router import router as risk_router
 from algobots.api.routers.auth import router as auth_router
 from algobots.api.routers.auth import users_router
 from algobots.api.routers.resources import router as resources_router
@@ -48,6 +49,7 @@ app.include_router(resources_router)
 app.include_router(accounts_router)
 app.include_router(deployments_router)
 app.include_router(approvals_router)
+app.include_router(risk_router)
 app.include_router(demo_router)
 
 
