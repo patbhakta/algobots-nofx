@@ -22,6 +22,7 @@ from algobots.api.approvals.service import aware_utc
 from algobots.api.models import Account
 from algobots.dashboard.design import components as c
 from algobots.demo import accounts as A
+from algobots.demo import bars as BARS
 from algobots.demo import blotter as B
 from algobots.demo import decisions as D
 from algobots.demo import gate as G
@@ -30,6 +31,7 @@ from algobots.demo import quality as Q
 from algobots.demo import studio as S
 from algobots.demo import tickets as T
 from algobots.demo.theme import CLOCK, CSS, HOVER, KEYS
+from algobots.engine.workers import template as TPL
 
 INTERVAL_S = 15 * 60
 STALE_AFTER_S = 25 * 60  # one missed observer run plus slack
@@ -106,7 +108,11 @@ def _query(account: str, status: str | None = None, view: str | None = None) -> 
 
 
 def _ctx_label(account: str) -> str:
-    return "All accounts" if account == B.ALL else L.STRATEGIES[account]
+    return "All accounts" if account == B.ALL else _name(account)
+
+
+def _name(account: str) -> str:
+    return L.STRATEGIES.get(account) or S.ACCOUNTS[account].label
 
 
 def _header(lg: L.Ledger, now: float, account: str) -> str:
@@ -213,7 +219,12 @@ def _worker(w: dict | None, now: float) -> str:
 
 
 def _accounts(
-    lg: L.Ledger, now: float, account: str, workers: dict[str, dict], reg: Registry | None
+    lg: L.Ledger,
+    now: float,
+    account: str,
+    workers: dict[str, dict],
+    reg: Registry | None,
+    eq_rows: str = "",
 ) -> str:
     """Selectable rows (click, or ↑/↓ + Enter); ``All`` is the aggregate."""
     day = B.today(now)
@@ -279,6 +290,7 @@ def _accounts(
         f'<th scope="col"{" class=n" if i in numeric else ""}>{h}</th>' for i, h in enumerate(heads)
     )
     body = row(B.ALL, list(lg.books.values())) + "".join(row(k, [b]) for k, b in lg.books.items())
+    body += eq_rows
     for a, health in reg.ticket_only() if reg and account == B.ALL else []:
         env = A.environment(a)
         block = A.order_block_reason(a)
@@ -412,6 +424,75 @@ def _action_center(reg: Registry | None) -> str:
     return f"{queue}<h3>Audit ledger · append-only</h3>{audit}"
 
 
+def _eq_rows(tpl: dict[str, dict], account: str, tw: dict[str, dict]) -> str:
+    """Accounts-pane rows for the equities paper accounts run by template workers."""
+    heads = ["Account", "Broker", "Mode", "Active", "Approval", "Session"]
+    heads += ["Allocated", "Equity", "Net P&L", "Today", "State", "Worker"]
+    out = []
+    for key in B.EQUITY:
+        a = tpl.get(key)
+        deps = a["deployments"] if a else []
+        ready = sum(1 for d in deps if (tw.get(d.id) or {}).get("state") == "ready")
+        running = sum(1 for d in deps if d.state == "running")
+        state = (
+            c.status("connected", f"{running} RUNNING")
+            + (
+                f' <span class="meta">{len(deps) - running} pending</span>'
+                if running < len(deps)
+                else ""
+            )
+            if deps
+            else c.status("disconnected", "NO DEPLOYMENT")
+        )
+        cells = [
+            f'<a href="/demo{_query(key)}">{c.e(_name(key))}</a>',
+            '<span class="meta">studio paper</span>',
+            c.env_badge("PAPER"),
+            NONE,
+            c.e(APPROVAL["auto"]),
+            NONE,
+            c.money(_usd(a["allocated"])) if a else NONE,
+            c.money(_usd(a["equity"])) if a else NONE,
+            c.money(_usd(a["pnl"]), signed=True) if a else NONE,
+            NONE,
+            state,
+            f'<span class="meta">{ready}/{len(deps)} template workers ready · {a["orders"] if a else 0} orders</span>',
+        ]
+        sel = key == account
+        tds = "".join(
+            f'<td{" class=n" if i in (6, 7, 8, 9) else ""} data-label="{heads[i]}">{v}</td>'
+            for i, v in enumerate(cells)
+        )
+        out.append(
+            f'<tr class="acct{" sel" if sel else ""}" data-account="{key}" '
+            f'data-href="/demo{_query(key)}" tabindex="0" aria-selected="{str(sel).lower()}">{tds}</tr>'
+        )
+    return "".join(out)
+
+
+def _tpl_positions(rows: list[dict]) -> str:
+    body = [
+        [
+            c.e(_name(p["account"])),
+            f'<span class="meta">{c.e(p["deployment"])}@{c.e(p["artifact"])}</span>',
+            c.e(p["instrument"]),
+            c.e(p["side"]),
+            f'<span class="num">{p["qty"]}</span>',
+            f'<span class="num">{p["avg_price"]}</span>',
+            f'<span class="num">{p["mark"]}</span>',
+            c.money(_usd(p["unrealized_pnl"]), signed=True),
+        ]
+        for p in rows
+    ]
+    return f"<h3>Template positions · {BARS.SOURCE}</h3>" + c.table(
+        ["Account", "Deployment", "Symbol", "Side", "Qty", "Avg px", "Mark", "Unreal. P&L"],
+        body,
+        numeric={4, 5, 6, 7},
+        stack=True,
+        empty="No open template positions: flat.",
+    )
+
+
 def _positions(lg: L.Ledger, now: float, account: str) -> str:
     rows = [
         [
@@ -435,8 +516,8 @@ def _positions(lg: L.Ledger, now: float, account: str) -> str:
     )
 
 
-def _orders(lg: L.Ledger, account: str, status: str | None) -> str:
-    counts = {s: len(B.orders(lg, account, s, limit=None)) for s in B.STATUSES}
+def _orders(lg: L.Ledger, account: str, status: str | None, templates: list[dict]) -> str:
+    counts = {s: len(B.orders(lg, account, s, None, templates=templates)) for s in B.STATUSES}
     links = "".join(
         f'<a href="/demo{_query(account, s, "orders")}" class="filt{" on" if s == status else ""}"'
         f"{' aria-current=true' if s == status else ''}>"
@@ -446,12 +527,13 @@ def _orders(lg: L.Ledger, account: str, status: str | None) -> str:
     json_link = f"/demo/api/orders{_query(account, status)}"
     kind = {"filled": "FILLED", "blocked": "BLOCKED", "abstain": "ABSTAIN"}
     rows = []
-    for o in B.orders(lg, account, status, limit=ORDER_ROWS):
+    for o in B.orders(lg, account, status, ORDER_ROWS, templates=templates):
         filled = o["status"] == "filled"
         rows.append(
             [
                 f'<span class="num" id="o-{c.e(o["id"])}" data-order="{c.e(o["id"])}">{_t(o["ts"], "%m-%d %H:%M")}</span>',
-                f'<span title="{c.e(o["deployment"])} · artifact {c.e(o["artifact"])}">{c.e(L.STRATEGIES[o["account"]])}</span>',
+                f'<span title="{c.e(o["deployment"])} · artifact {c.e(o["artifact"])}">{c.e(_name(o["account"]))}</span>'
+                f'<span class="meta dep" data-deployment="{c.e(o["deployment"])}"> {c.e(o["deployment"])}@{c.e(o["artifact"])}</span>',
                 c.e(o["instrument"].split("-")[-1]),
                 c.e(o["side"] or "—"),
                 f'<span class="num" title="client order {c.e(o.get("order_id") or "—")}" data-order-id="{c.e(o.get("order_id") or "")}">{o["qty"]}</span>'
@@ -460,7 +542,7 @@ def _orders(lg: L.Ledger, account: str, status: str | None) -> str:
                 f'<span class="num">{o["price"]}</span>' if filled else NONE,
                 c.money(_usd(o["notional"])) if filled else NONE,
                 c.money(_usd(o["fee"])) if filled else NONE,
-                c.money(_usd(o["pnl"]), signed=True) if filled else NONE,
+                c.money(_usd(o["pnl"]), signed=True) if filled and o["pnl"] is not None else NONE,
                 c.status(kind[o["status"]], o["status"] + (" · clamped" if o["clamped"] else "")),
                 f'<span class="meta" title="{c.e(o["reason"])}">{c.e(o["reason"])}</span>',
             ]
@@ -1044,8 +1126,8 @@ def _switcher(lg: L.Ledger, account: str, view: str) -> str:
         f'<a class="acct{" sel" if k == account else ""}" data-account="{k}" '
         f'href="/demo{_query(k, view=view)}" data-href="/demo{_query(k, view=view)}"'
         f"{' aria-current=true' if k == account else ''}>"
-        f"{c.e('All strategies' if k == B.ALL else L.STRATEGIES[k])}</a>"
-        for k in (B.ALL, *lg.books)
+        f"{c.e('All strategies' if k == B.ALL else _name(k) if k in B.EQUITY else L.STRATEGIES[k])}</a>"
+        for k in (B.ALL, *lg.books, *B.EQUITY)
     )
     return f'<nav class="switcher" aria-label="Strategy context">{pills}</nav>'
 
@@ -1307,14 +1389,25 @@ def _tab(
     harness: dict,
     tickets: list[T.Parent],
     ticket_msg: str | None,
+    templates: list[dict] | None = None,
+    template_workers: dict[str, dict] | None = None,
 ) -> str:
     from algobots.demo import studio_page as SP  # imports this module
+    from algobots.engine.workers import template as TPL
 
     ctx = f"ctx: {_ctx_label(account)}"
+    templates = templates or []
+    tw = template_workers or {}
+    vis = S.visible(tuple(lg.books))
+    tpl = TPL.summary(studio, templates, now)
+    tpos = TPL.positions(studio, templates, now, account)
     if view == "orders":
         return c.panel(
-            "Positions", _positions(lg, now, account), financial=True, tag=ctx
-        ) + c.panel("Orders", _orders(lg, account, status), financial=True, tag=ctx)
+            "Positions",
+            _positions(lg, now, account) + (_tpl_positions(tpos) if tpos else ""),
+            financial=True,
+            tag=ctx,
+        ) + c.panel("Orders", _orders(lg, account, status, templates), financial=True, tag=ctx)
     if view == "risk":
         return c.panel("Risk", _risk(lg, now, account), financial=True, tag=ctx)
     if view == "quality":
@@ -1331,7 +1424,7 @@ def _tab(
     if view == "strategies":
         return c.panel(
             "Strategies",
-            SP.strategies(studio, S.visible(tuple(lg.books)))
+            SP.strategies(studio, vis)
             + '<p class="meta"><a href="/demo/studio">studio: deploy a version with allocation preview →</a></p>',
             financial=True,
             tag="TEMPLATES: TEST ONLY",
@@ -1339,9 +1432,9 @@ def _tab(
     if view == "accounts":
         return c.panel(
             "Accounts",
-            _accounts(lg, now, account, workers, reg)
+            _accounts(lg, now, account, workers, reg, _eq_rows(tpl, account, tw))
             + "<h3>Deployments by account · frozen params + artifact</h3>"
-            + SP.deployments(studio, account, S.visible(tuple(lg.books))),
+            + SP.deployments(studio, account, vis, orders=templates, workers=tw),
             financial=True,
             tag=TAG,
         )
@@ -1363,6 +1456,38 @@ def _tab(
     )
 
 
+def _eq_stateline(a: dict | None, account: str, tw: dict[str, dict]) -> str:
+    """Equities template account: empty until deployed; otherwise worker readiness."""
+    if not a:
+        state, kind = "empty", "stale"
+        text = f"EMPTY · no template deployment on {_name(account)} · deploy one from /demo/studio"
+    else:
+        deps = a["deployments"]
+        ready = sum(1 for d in deps if (tw.get(d.id) or {}).get("state") == "ready")
+        state, kind = ("connected", "connected") if ready else ("empty", "stale")
+        text = (
+            f"{'CONNECTED' if ready else 'STARTING'} · {_name(account)} · "
+            f"{ready}/{len(deps)} template workers ready · {BARS.SOURCE}"
+        )
+    return f'<p class="stateline" id="state" data-state="{state}">{c.status(kind, text)}</p>'
+
+
+def _eq_strip(a: dict | None) -> str:
+    if not a:
+        return ""
+    cells = [
+        c.metric("Equity", c.money(_usd(a["equity"])), "marked at last closed bar"),
+        c.metric("Net P&L", c.money(_usd(a["pnl"]), signed=True), "since deploy · no fees"),
+        c.metric(
+            "Allocated", c.money(_usd(a["allocated"])), f"{len(a['deployments'])} deployments"
+        ),
+        c.metric(
+            "Orders", f'<span class="num">{a["orders"]}</span>', "simulated fills at bar close"
+        ),
+    ]
+    return f'<section class="strip" aria-label="Account metrics" data-financial="true">{"".join(cells)}</section>'
+
+
 def render(
     lg: L.Ledger,
     *,
@@ -1379,39 +1504,85 @@ def render(
     harness: dict | None = None,
     tickets: list[T.Parent] | None = None,
     ticket_msg: str | None = None,
+    templates: list[dict] | None = None,
+    template_workers: dict[str, dict] | None = None,
 ) -> str:
     """``lg`` must already be narrowed to the caller's grants (``demo.scope``)."""
+    from algobots.demo import studio_page as SP  # imports this module
+    from algobots.engine.workers import template as TPL
+
     now = time.time() if now is None else now
     studio = studio or S.load("/nonexistent")  # built-ins only
     quality = quality or D.quality(D.records(lg), lg, accounts=lg.books)
     account, status, view = B.account_key(account), B.status_key(status), view_key(view)
-    if account not in lg.books and account != B.ALL:
+    if account not in lg.books and account not in (B.ALL, *B.EQUITY):
         account = B.ALL  # routes 403 first; this only guards direct callers
     workers = workers or {}
-    content = (
-        _overview(lg, now, account, start, quality, workers, registry, supervisor_down)
-        if view == "overview"
-        else _tab(
-            view,
-            lg,
-            now,
-            account,
-            status,
-            studio,
-            quality,
-            workers,
-            registry,
-            Q.quality(lg, account=account) if harness is None else harness,
-            tickets or [],
-            ticket_msg,
+    templates, tw = templates or [], template_workers or {}
+    vis = S.visible(tuple(lg.books))
+    tpl = TPL.summary(studio, templates, now)
+    tpos = TPL.positions(studio, templates, now, account)
+
+    if account in B.EQUITY:
+        ctx = f"ctx: {_ctx_label(account)}"
+        accounts = c.panel(
+            "Accounts",
+            _accounts(lg, now, account, workers, registry, _eq_rows(tpl, account, tw))
+            + "<h3>Deployments by account · frozen params + artifact</h3>"
+            + SP.deployments(studio, account, vis, orders=templates, workers=tw),
+            financial=True,
+            tag=TAG,
+            cls="full",
         )
-    )
-    body = (
-        _stateline(lg, now, account, supervisor_down)
-        + _switcher(lg, account, view)
-        + _tabs(account, view, registry)
-        + f'<div class="view" data-view="{view}">{content}</div>'
-    )
+        orders = c.panel(
+            "Orders", _orders(lg, account, status, templates), financial=True, tag=ctx, cls="full"
+        )
+        strategies = c.panel(
+            "Strategies",
+            SP.strategies(studio, vis)
+            + '<p class="meta"><a href="/demo/studio">studio: deploy a version with allocation preview →</a></p>',
+            financial=True,
+            tag="TEMPLATES: TEST ONLY",
+            cls="full",
+        )
+        body = (
+            _eq_stateline(tpl.get(account), account, tw)
+            + _eq_strip(tpl.get(account))
+            + _switcher(lg, account, view)
+            + '<div class="grid">'
+            + accounts
+            + c.panel("Positions", _tpl_positions(tpos), financial=True, tag=ctx, cls="full")
+            + orders
+            + strategies
+            + "</div>"
+        )
+    else:
+        content = (
+            _overview(lg, now, account, start, quality, workers, registry, supervisor_down)
+            if view == "overview"
+            else _tab(
+                view,
+                lg,
+                now,
+                account,
+                status,
+                studio,
+                quality,
+                workers,
+                registry,
+                Q.quality(lg, account=account) if harness is None else harness,
+                tickets or [],
+                ticket_msg,
+                templates,
+                tw,
+            )
+        )
+        body = (
+            _stateline(lg, now, account, supervisor_down)
+            + _switcher(lg, account, view)
+            + _tabs(account, view, registry)
+            + f'<div class="view" data-view="{view}">{content}</div>'
+        )
     title = "AlgoBots — paper trading dashboard"
     return (
         '<!doctype html>\n<html lang="en">\n<head>\n'

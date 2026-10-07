@@ -182,6 +182,13 @@ class Supervisor:
             denials[0].denials = denials
             raise denials[0]
 
+    def add(self, account: str) -> None:
+        """Supervise one more key (a template deployment id, ALG-3281); idempotent."""
+        with self._lock:
+            if account not in self.leases:
+                self.accounts.append(account)
+                self.leases[account] = Lease(self.state_dir, account)
+
     def _start_one(self, acct: str) -> None:
         p = self.procs.get(acct)
         if p is not None and p.poll() is None:

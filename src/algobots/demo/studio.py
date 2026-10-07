@@ -17,10 +17,12 @@ State lives in one JSON file next to the kill switch, written atomically.
 
 from __future__ import annotations
 
+import functools
 import hashlib
 import json
+import threading
 import time
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass, field, replace
 from decimal import ROUND_DOWN, Decimal
 from pathlib import Path
 from typing import Literal
@@ -31,6 +33,7 @@ from algobots.demo import ledger as L
 from algobots.strategies import dsl
 
 CENT = L.CENT
+_LOCK = threading.RLock()  # load-modify-save of studio.json within this process
 MIN_DEPLOY = Decimal("100")  # smallest paper allocation worth running a template on
 TEST_LABEL = "TEST STRATEGY · NO VALIDATED RETURNS"
 LIVE_LABEL = "DEPLOYED · PAPER"
@@ -243,7 +246,7 @@ class Deployment:
     allocation: str
     created_ts: float
     actor: str
-    state: str  # running (live engine) | pending (awaiting template runner)
+    state: str  # running (worker heartbeating) | pending (awaiting its template worker)
 
 
 LIVE_DEPLOYMENTS: list[Deployment] = [
@@ -309,6 +312,16 @@ def _save(state_dir: str, st: Studio) -> None:
     tmp.replace(p)
 
 
+def _locked(fn):
+    @functools.wraps(fn)
+    def run(*a, **kw):
+        with _LOCK:
+            return fn(*a, **kw)
+
+    return run
+
+
+@_locked
 def edit(
     state_dir: str, definition: str, params: dict, *, actor: str, now: float | None = None
 ) -> Version:
@@ -437,6 +450,7 @@ def preview(
     return Preview(version, mode, amount if mode == "equal" else requested, lines)
 
 
+@_locked
 def deploy(
     state_dir: str,
     h: str,
@@ -485,6 +499,18 @@ def deploy(
         st.deployments.extend(made)
         _save(state_dir, st)
     return pv, made
+
+
+def set_state(state_dir: str, dep_id: str, state: str) -> bool:
+    """Flip one recorded deployment's run state (pending -> running); True if it changed."""
+    with _LOCK:
+        st = load(state_dir)
+        i = next((i for i, d in enumerate(st.deployments) if d.id == dep_id), None)
+        if i is None or st.deployments[i].actor == "built-in" or st.deployments[i].state == state:
+            return False
+        st.deployments[i] = replace(st.deployments[i], state=state)
+        _save(state_dir, st)
+        return True
 
 
 def visible(granted: tuple[str, ...] | set[str]) -> set[str]:

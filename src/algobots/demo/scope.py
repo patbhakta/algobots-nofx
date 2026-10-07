@@ -61,6 +61,10 @@ def resolve(raw: str | None, scope: Scope) -> str:
         if not scope.accounts:
             raise Denied(403, key, f"{who} holds no account grant")
         return key
+    if key in B.EQUITY:  # studio paper accounts: any ACCOUNT_READ holder (studio.visible)
+        if not scope.principal.has(Grant.ACCOUNT_READ):
+            raise Denied(403, key, f"{who} holds no account grant")
+        return key
     if key not in L.STRATEGIES:
         raise Denied(404, key, "unknown account")
     if key not in scope.accounts:

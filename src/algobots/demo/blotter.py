@@ -14,6 +14,8 @@ from algobots.demo import ledger as L
 from algobots.demo import studio as S
 
 LIVE = {d.account: d for d in S.LIVE_DEPLOYMENTS}
+EQUITY = tuple(k for k, a in S.ACCOUNTS.items() if a.venue == "equities")  # template accounts
+ORDER = {k: i for i, k in enumerate(S.ACCOUNTS)}
 
 ALL = "all"
 STATUSES = ("filled", "blocked", "abstain")
@@ -23,7 +25,7 @@ INSTRUMENT = "KXBTC15M"
 def account_key(raw: str | None) -> str:
     """Normalise ``?account=``; anything unknown falls back to the aggregate."""
     key = (raw or ALL).strip().lower()
-    return key if key in L.STRATEGIES else ALL
+    return key if key in L.STRATEGIES or key in EQUITY else ALL
 
 
 def status_key(raw: str | None) -> str | None:
@@ -32,6 +34,9 @@ def status_key(raw: str | None) -> str | None:
 
 
 def books(lg: L.Ledger, account: str) -> list[L.StrategyBook]:
+    """Kalshi ledger books in context; an equities template account has none."""
+    if account in EQUITY:
+        return []
     return list(lg.books.values()) if account == ALL else [lg.books[account]]
 
 
@@ -88,8 +93,13 @@ def orders(
     status: str | None = None,
     limit: int | None = 200,
     tickets: Sequence[dict] = (),
+    templates: Sequence[dict] = (),
 ) -> list[dict]:
-    """Every decision (plus any ticket legs) as a blotter line, newest first."""
+    """Every decision (plus any ticket legs) as a blotter line, newest first.
+
+    ``templates`` are the studio template workers' orders (``engine.workers.template``),
+    already in blotter shape with their own ``deployment`` + ``artifact``.
+    """
     out = [
         {
             "id": f"{b.key}:{d.event}",
@@ -118,10 +128,13 @@ def orders(
     ]
     out += [
         t
-        for t in tickets
-        if (account == ALL or t["account"] == account) and (status is None or t["status"] == status)
+        for t in (*tickets, *templates)
+        if account in (ALL, t["account"]) and (status is None or t["status"] == status)
     ]
-    out.sort(key=lambda o: (o["ts"], list(L.STRATEGIES).index(o["account"])), reverse=True)
+    out.sort(
+        key=lambda o: (o["ts"], ORDER.get(o["account"], 99), o.get("id", o.get("leg_id", ""))),
+        reverse=True,
+    )
     return out[:limit] if limit else out
 
 

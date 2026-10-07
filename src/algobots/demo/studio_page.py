@@ -87,8 +87,22 @@ def strategies(st: S.Studio, visible: set[str] | None = None) -> str:
 NONE = P.NONE
 
 
-def deployments(st: S.Studio, account: str | None = None, visible: set[str] | None = None) -> str:
-    """Deployments grouped by account — each row is one frozen (version, account) instance."""
+def deployments(
+    st: S.Studio,
+    account: str | None = None,
+    visible: set[str] | None = None,
+    *,
+    orders: list[dict] | None = None,
+    workers: dict[str, dict] | None = None,
+) -> str:
+    """Deployments grouped by account — each row is one frozen (version, account) instance.
+
+    ``orders``/``workers``: template orders and template-worker states (ALG-3281), so each
+    row shows how many orders carry its id and whether its worker is up."""
+    orders, workers = orders or [], workers or {}
+    count: dict[str, int] = {}
+    for o in orders:
+        count[o["deployment"]] = count.get(o["deployment"], 0) + 1
     deps = sorted(
         (
             d
@@ -105,19 +119,41 @@ def deployments(st: S.Studio, account: str | None = None, visible: set[str] | No
             _hash(d.hash),
             params_html(d.definition, d.params),
             c.money(P._usd(d.allocation)),
-            c.status("connected", "RUNNING")
-            if d.state == "running"
-            else c.status("stale", "PENDING · NO RUNNER"),
+            f'<span class="num">{count.get(d.id, 0)}</span>' if d.actor != "built-in" else NONE,
+            _run(d, workers.get(d.id)),
         ]
         for d in deps
     ]
     return c.table(
-        ["Account", "Deployment", "Strategy", "Artifact", "Frozen params", "Alloc.", "Run"],
+        [
+            "Account",
+            "Deployment",
+            "Strategy",
+            "Artifact",
+            "Frozen params",
+            "Alloc.",
+            "Orders",
+            "Run",
+        ],
         rows,
-        numeric={5},
+        numeric={5, 6},
         stack=True,
         empty="No deployments.",
     )
+
+
+def _run(d: S.Deployment, w: dict | None) -> str:
+    """Recorded state (flipped by the supervisor on first ready heartbeat) + live worker."""
+    if d.actor == "built-in":
+        return c.status("connected", "RUNNING")
+    ws = (w or {}).get("state")
+    if d.state == "running":
+        if ws in (None, "ready"):
+            return c.status("connected", "RUNNING")
+        return c.status("BLOCKED" if ws == "exited" else "stale", f"RUNNING · WORKER {ws.upper()}")
+    if ws:
+        return c.status("stale", f"PENDING · WORKER {ws.upper()}")
+    return c.status("stale", "PENDING · NO WORKER")
 
 
 def _form(st: S.Studio, q: dict, visible: set[str] | None) -> str:

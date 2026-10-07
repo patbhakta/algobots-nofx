@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import sys
 import threading
 import time
 from dataclasses import asdict
@@ -34,15 +35,18 @@ from algobots.demo import tickets as T
 from algobots.demo.page import Registry, render, render_denied
 from algobots.demo.scope import Denied, Scope, current_scope, narrow, resolve
 from algobots.demo.studio_page import render_studio
+from algobots.engine.workers import template as TPL
 from algobots.engine.workers.supervisor import LeaseDenied, Supervisor, WorkerStatus
 
 router = APIRouter(tags=["demo"])
 SUPERVISOR: Supervisor | None = None
+TEMPLATES: Supervisor | None = None  # one template worker per studio deployment (ALG-3281)
+_STOP = threading.Event()
 
 
 def start_workers() -> None:
     """Spawn one paper worker per demo account when enabled (API lifespan)."""
-    global SUPERVISOR
+    global SUPERVISOR, TEMPLATES
     s = get_settings()
     if not s.demo_workers_enabled or SUPERVISOR is not None:
         return
@@ -51,13 +55,59 @@ def start_workers() -> None:
         SUPERVISOR.start()
     except LeaseDenied:
         pass  # the API still boots; denied accounts show state "denied" with the reason
+    TEMPLATES = Supervisor(
+        [],
+        Path(s.demo_state_dir),
+        poll=s.demo_worker_poll_s,
+        command=[sys.executable, "-m", "algobots.engine.workers.template"],
+    )
+    _STOP.clear()
+    threading.Thread(target=_sync_loop, args=(s.demo_worker_poll_s,), daemon=True).start()
 
 
 def stop_workers() -> None:
-    global SUPERVISOR
+    global SUPERVISOR, TEMPLATES
+    _STOP.set()
     if SUPERVISOR is not None:
         SUPERVISOR.stop()
         SUPERVISOR = None
+    if TEMPLATES is not None:
+        TEMPLATES.stop()
+        TEMPLATES = None
+
+
+def _sync_loop(every: float) -> None:
+    while not _STOP.is_set():
+        try:
+            sync_templates()
+        except Exception as exc:  # noqa: BLE001 — keep supervising; the page shows states
+            print(f"template sync failed: {exc!r}", file=sys.stderr, flush=True)
+        _STOP.wait(min(every, 5.0))
+
+
+def sync_templates() -> list[dict]:
+    """Start a worker for every template deployment; flip ``pending -> running`` only
+    once that worker heartbeats ``ready`` (reconciled). Returns the template workers."""
+    sup = TEMPLATES
+    if sup is None:
+        return []
+    sd = get_settings().demo_state_dir
+    for d in S.load(sd).deployments:
+        if TPL.is_template(d) and d.id not in sup.leases:
+            sup.add(d.id)
+            try:
+                sup.start(d.id)
+            except LeaseDenied:
+                pass  # shown as "denied" with its reason
+    out = sup.snapshot()
+    for w in out:
+        if w["state"] == "ready":
+            S.set_state(sd, w["account"], "running")
+    return out
+
+
+def _templates(accounts: set[str] | None = None) -> list[dict]:
+    return TPL.load_orders(get_settings().demo_state_dir, accounts)
 
 
 try:  # the API image installs the workers extra; dev/CI may not
@@ -181,6 +231,7 @@ def demo_page(
         if p:
             sent = sum(1 for x in p.legs if x.status == "filled")
             msg = f"{p.path} {p.id}: {p.state} — {sent}/{len(p.legs)} legs filled (paper)"
+    vis = S.visible(scope.accounts)
     html = render(
         lg,
         start=start,
@@ -195,6 +246,8 @@ def demo_page(
         harness=_harness(lg, key),
         tickets=parents,
         ticket_msg=msg,
+        templates=_templates(vis),
+        template_workers={w["account"]: w for w in _template_workers()},
     )
     return HTMLResponse(html, headers={"Cache-Control": "no-store"})
 
@@ -246,6 +299,8 @@ def demo_decisions(account: str | None = None, scope: Scope = Depends(current_sc
 
 
 def _harness(lg: L.Ledger, key: str) -> dict:
+    if key in B.EQUITY or (key not in lg.books and key != B.ALL):
+        return {"account": key, "break_even": Q.BREAK_EVEN, "random_seeds": Q.RANDOM_SEEDS, "strategies": {}}
     s = get_settings()
     since = datetime.strptime(s.demo_start, "%Y-%m-%d").replace(tzinfo=UTC).timestamp()
     return Q.quality(lg, Q.load_pending(Path(s.demo_feed_path), since_ts=since), account=key)
@@ -264,7 +319,10 @@ def demo_positions(account: str | None = None, scope: Scope = Depends(current_sc
     key = resolve(account, scope)
     lg, _ = _scoped(scope)
     now = time.time()
-    return {"account": key, "as_of": now, "positions": B.positions(lg, now, key)}
+    tpl = TPL.positions(
+        S.load(get_settings().demo_state_dir), _templates(S.visible(scope.accounts)), now, key
+    )
+    return {"account": key, "as_of": now, "positions": B.positions(lg, now, key) + tpl}
 
 
 @router.get("/demo/api/orders")
@@ -281,7 +339,14 @@ def demo_orders(
     return {
         "account": key,
         "status": st,
-        "orders": B.orders(lg, key, st, limit, tickets=T.blotter_rows(parents)),
+        "orders": B.orders(
+            lg,
+            key,
+            st,
+            limit,
+            tickets=T.blotter_rows(parents),
+            templates=_templates(S.visible(scope.accounts)),
+        ),
         "parents": [
             {"id": p.id, "path": p.path, "ts": p.ts, "state": p.state, "legs": len(p.legs)}
             for p in reversed(parents)
@@ -456,17 +521,29 @@ def _workers() -> list[dict]:
     return sup.snapshot()
 
 
+def _template_workers() -> list[dict]:
+    """Template worker states; synced on read so a page view never shows a stale flip."""
+    return sync_templates() if TEMPLATES is not None else []
+
+
 @router.get("/demo/api/workers")
 def demo_workers(account: str | None = None, scope: Scope = Depends(current_scope)) -> dict:
     key = resolve(account, scope)
     show = scope.accounts if key == B.ALL else (key,)
     workers = [w for w in _workers() if w["account"] in show]
+    deps = {d.id: d.account for d in S.load(get_settings().demo_state_dir).deployments}
+    templates = [
+        {**w, "paper_account": deps.get(w["account"])}
+        for w in _template_workers()
+        if key in (B.ALL, deps.get(w["account"]))
+    ]
     return {
         "account": key,
         "enabled": SUPERVISOR is not None,
         "ready": all(w["state"] == "ready" for w in workers),
         "supervisor_down": _supervisor_down(workers),
         "workers": workers,
+        "templates": templates,
     }
 
 
