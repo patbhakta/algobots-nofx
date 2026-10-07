@@ -1,4 +1,12 @@
-# A06-1 — Nautilus paper workers, one isolated process per demo account (ALG-3255)
+# A06 — Isolated Nautilus paper workers: demo, evidence, and limitations
+
+Parent packet: ALG-3102 · Slices: A06-1 (ALG-3255), A06-2 (ALG-3258),
+A06-3 (ALG-3259), A06-4 (ALG-3270) · Integrated at `origin/main` `057a3e2`,
+where `make verify-A06` reports AC1–AC5 PASS
+(`artifacts/A06/acceptance.json`). Sections below are per-slice records in
+delivery order.
+
+## A06-1 — Nautilus paper workers, one isolated process per demo account (ALG-3255)
 
 Parent: ALG-3248 (demo sprint) · Packet: A06 (ALG-3102) · nautilus_trader 1.231.0
 
@@ -205,3 +213,50 @@ replayed its durable fill log (156 fills restored), and only then traded.
   live client and no broker credentials.
 - The fixture is synthetic: no Laya feed and no ledger. The three real demo
   accounts still run `paper.py`.
+
+## A06-4 — Nautilus as the execution spine: adapter seam, fills from Nautilus events (ALG-3270)
+
+**Decision (ADR).** `docs/adr/0001-nautilus-execution-spine.md` (accepted
+2026-10-07, decision owner Pat) makes NautilusTrader the broker bridge and
+execution engine; OpenAlgo is demoted to feature-reference only. The first US
+paper adapter is recommended as Interactive Brokers (`adapter:interactive_brokers`,
+IB paper account via gateway port 4002 / TWS paper 7497).
+
+**Adapter seam.** `src/algobots/engine/workers/execution.py` introduces
+`AccountWorkerSpec` with an execution mode of `sandbox` or `adapter:<name>`.
+Anything other than `sandbox` is refused by `AdapterNotAuthorized` — no
+external broker mutation happens without a separate authorization, matching the
+A06 activation rule. Tests: `tests/engine/workers/test_execution.py`.
+
+**Fills are now Nautilus's, not the ledger's.** `paper.py` records fills
+directly from Nautilus `OrderFilled` events (`strategy.fills`) instead of
+inferring them from ledger feedback. Reconciled against `demo/ledger.py` in
+`artifacts/A06/fills-reconciliation.json` (per account, whole history,
+kill switch off):
+
+| account | ledger fills | Nautilus fill events | matched | total $ diff |
+|---|---|---|---|---|
+| coin | 159 | 159 | 159 | 0.00 |
+| jev | 83 | 83 | 83 | 17.10 |
+| laya | 164 | 164 | 164 | 28.08 |
+
+Every fill matches one-for-one; the residual dollars are the whole-contract
+flooring at the assumed 50c mid (ledger stake vs qty×0.50), not missing or
+extra fills. Post-move smoke (`smoke-after-move.txt`,
+`after-next-interval.json`, `heartbeats-after-next-interval.txt`) shows all
+three live workers filling from their own kernels after the switch.
+
+**US adapter inventory.** `artifacts/A06/adapters.md` records the shipped
+`nautilus_trader==1.231.0` adapters read from source: IB (paper-capable),
+Kraken futures demo, `architect_ax` sandbox, `binance.us` (no testnet), and the
+US-excluded list (binance.com, bybit, okx, bitmex, deribit, hyperliquid, dydx,
+polymarket, betfair) so they are not re-evaluated. **No Kalshi adapter
+exists**; the demo keeps Kalshi-shaped binaries on the in-process `sandbox`
+venue, and a real Kalshi path would need a custom `LiveExecutionClient`
+(out of scope).
+
+**Limitations added by this slice.**
+- The adapter seam is authorization gating only; no live adapter is wired,
+  and connecting one (IB Gateway/TWS infra, credentials) is future work.
+- `interactive_brokers_pyo3` is config-only in 1.231 — not wireable yet.
+- Fill parity is proven only for the 50c-mid synthetic fills of the demo feed.

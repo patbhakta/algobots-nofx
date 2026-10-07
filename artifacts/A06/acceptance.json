@@ -1,7 +1,7 @@
 {
   "packet": "A06",
-  "slice": "A06-3 (ALG-3259)",
-  "tested_commit": "cab6a5c",
+  "slice": "A06 packet (ALG-3102)",
+  "tested_commit": "057a3e2",
   "command": "make verify-A06",
   "cases": {
     "AC1": {

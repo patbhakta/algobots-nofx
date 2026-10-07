@@ -141,7 +141,7 @@ def main(argv: list[str]) -> int:
         json.dumps(
             {
                 "packet": "A06",
-                "slice": "A06-3 (ALG-3259)",
+                "slice": "A06 packet (ALG-3102)",
                 "tested_commit": tested_commit,
                 "command": "make verify-A06",
                 "cases": cases,
