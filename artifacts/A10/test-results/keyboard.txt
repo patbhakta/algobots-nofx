@@ -1,4 +1,4 @@
-PASS Tab reached 15/15 pane controls
+PASS Tab reached 19/19 pane controls
 PASS visible focus ring on every pane control (0 without)
 PASS ArrowDown+Enter -> ?account=laya
 PASS no other-account order ids after switch (0)
