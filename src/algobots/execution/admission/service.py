@@ -28,7 +28,7 @@ from datetime import UTC, datetime
 from decimal import Decimal
 
 from sqlalchemy import select, update
-from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.exc import OperationalError, SQLAlchemyError
 
 from algobots.contracts.plan import IntentRequest, OrderPlan, Reservation
 from algobots.contracts.risk import RiskDecision, RiskPolicyVersion
@@ -75,6 +75,10 @@ __all__ = [
 ]
 
 
+#: Bounded attempts for every compare-and-swap on an account pool row.
+_CAS_ATTEMPTS = 8
+
+
 def _utcnow() -> datetime:
     return datetime.now(UTC)
 
@@ -109,16 +113,59 @@ def get_or_create_admission(
 def deposit(
     db, tenant_id: uuid.UUID, account_id: str, amount: Decimal, *, now: datetime | None = None
 ) -> AccountAdmission:
-    """Record a deposit/withdrawal on the pool (sign carries direction)."""
+    """Record a deposit/withdrawal on the pool (sign carries direction).
+
+    Review finding F1 (ALG-3306): the pool row's ``version`` epoch is the
+    admission CAS's serialization token, so deposits take the SAME CAS
+    discipline — a plain ORM write-back could regress the epoch when
+    interleaved with concurrent admissions on Postgres. A deposit never
+    touches the reserved counter, so this is epoch hygiene, not a funds
+    invariant; the withdrawal side additionally refuses to strand active
+    reservations below their claims.
+    """
     now = now or _utcnow()
-    row = db.get(AccountAdmission, (tenant_id, account_id))
-    if row is None:
-        raise ReservationNotFound(f"account {account_id} has no admission row")
-    row.cash_available_text = _d(row.cash_available + amount)
-    row.version += 1
-    row.updated_at = now
-    db.flush()
-    return row
+    for _ in range(_CAS_ATTEMPTS):
+        row = db.get(AccountAdmission, (tenant_id, account_id))
+        if row is None:
+            raise ReservationNotFound(f"account {account_id} has no admission row")
+        new_available = row.cash_available + amount
+        if new_available < row.cash_reserved:
+            raise AdmissionError(
+                f"withdrawal {amount} would strand active reservations "
+                f"({row.cash_reserved} claimed > {new_available} available)"
+            )
+        seen_version = row.version
+        try:
+            result = db.execute(
+                update(AccountAdmission)
+                .where(
+                    AccountAdmission.tenant_id == tenant_id,
+                    AccountAdmission.account_id == account_id,
+                    AccountAdmission.version == seen_version,
+                )
+                .values(
+                    cash_available_text=_d(new_available),
+                    version=seen_version + 1,
+                    updated_at=now,
+                )
+            )
+        except OperationalError:
+            try:
+                db.rollback()
+            except OperationalError:
+                pass
+            continue
+        if result.rowcount == 1:
+            db.flush()
+            return db.get(AccountAdmission, (tenant_id, account_id))
+        try:
+            db.rollback()
+        except OperationalError:
+            pass
+    db.rollback()
+    raise AdmissionError(
+        f"deposit for account {account_id} did not converge in {_CAS_ATTEMPTS} attempts"
+    )
 
 
 def set_inventory(
@@ -352,6 +399,12 @@ def admit_entry(
     #    sum(active reservations) == pool reserved holds by construction.
     #    A clamped plan is stale: admission fails closed with an explicit
     #    error; the strategy re-plans at the clamped size.
+    #    Review finding F2 (ALG-3306): each row claim quantizes principal and
+    #    buffer separately (<= one cent of drift per row) while the policy's
+    #    required_reservation quantizes the whole notional once — a multi-
+    #    child plan at the exact boundary could be spuriously rejected by
+    #    sub-cent drift. The comparison therefore tolerates one cent per
+    #    reservation row; anything beyond that is still a stale plan.
     reservations = _plan_reservations(policy, plan, now=now)
     required = sum(
         _reservation_amount(r) + _reservation_buffer(r) for r in reservations
@@ -361,7 +414,8 @@ def admit_entry(
         if decision.required_reservation
         else buffered_reservation(policy, notional)
     )
-    if required > policy_required:
+    tolerance = Decimal("0.01") * len(reservations)
+    if required > policy_required + tolerance:
         db.rollback()
         raise AdmissionError(
             f"plan reservation claim {required} exceeds the policy-approved "
@@ -413,9 +467,6 @@ def admit_entry(
         reservations=tuple(reservations),
         reserved=required,
     )
-
-
-_CAS_ATTEMPTS = 8
 
 
 def _controls_and_reserve(
