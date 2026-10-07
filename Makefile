@@ -40,3 +40,17 @@ demo-A09: build-A09
 
 screenshots-A09: build-A09
 	$(PYTHON) tests/packets/A09/capture.py
+
+A10_RESULTS := artifacts/A10/test-results
+
+.PHONY: verify-A10
+
+# Functional-terminal /demo (ALG-3261). PYTHONPATH pins this checkout's src so a
+# worktree sharing another checkout's editable venv tests its own code. The
+# browser journey (tests/packets/A10) skips, and says so, without node,
+# playwright-core (A10_NODE_PATH) or a Playwright Chromium.
+verify-A10:
+	mkdir -p $(A10_RESULTS)
+	PYTHONPATH=$(CURDIR)/src $(PYTHON) -m pytest tests/demo tests/packets/A10 -q -p no:cacheprovider -rs \
+		--junitxml=$(A10_RESULTS)/junit.xml
+	sed -i -E 's/ (timestamp|hostname|time)="[^"]*"//g' $(A10_RESULTS)/junit.xml
