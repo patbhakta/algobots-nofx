@@ -15,6 +15,7 @@ ENDPOINTS = (
     "/demo/api/orders",
     "/demo/api/workers",
     "/demo/api/decisions",
+    "/demo/api/quality",
 )
 
 

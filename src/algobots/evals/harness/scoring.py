@@ -89,18 +89,22 @@ class BandScore:
         }
 
 
-def _case_brier(record: DecisionRecord) -> float:
+def _case_brier(record: DecisionRecord, flat_threshold: float = 0.003) -> float:
+    """Sum over bands of (p - o)^2, o = 1 for the REALIZED band (not the predicted one)."""
+    realized = realized_band(record, flat_threshold)
     total = 0.0
     for band in record.bands:
         p = record.probabilities.get(band, 0.0)
-        observed = 1.0 if record.band == band else 0.0
+        observed = 1.0 if realized == band else 0.0
         total += (p - observed) ** 2
     return total
 
 
-def multiclass_brier(records: Iterable[DecisionRecord]) -> float | None:
-    """Mean multiclass Brier score; each case contributes sum over bands of (p - o)^2."""
-    scored = [(r, _case_brier(r)) for r in records]
+def multiclass_brier(
+    records: Iterable[DecisionRecord], flat_threshold: float = 0.003
+) -> float | None:
+    """Mean multiclass Brier score over settled records against their realized band."""
+    scored = [(r, _case_brier(r, flat_threshold)) for r in records if r.settled]
     if not scored:
         return None
     return sum(b for _, b in scored) / len(scored)
@@ -117,7 +121,7 @@ def _score_subset(
         if outcome is None:
             continue
         score.count += 1
-        score.brier_sum += _case_brier(record)
+        score.brier_sum += _case_brier(record, flat_threshold)
         if outcome == record.band:
             score.correct += 1
         alpha = record.alpha
@@ -192,11 +196,9 @@ def summarize(
     active_bands = tuple(bands) if bands else DIRECTION_BANDS
     settled = [r for r in records if r.settled and realized_band(r, flat_threshold) is not None]
     unsettled = len(records) - len(settled)
-    per_band = {
-        band: _score_subset(settled, band, flat_threshold, band) for band in active_bands
-    }
+    per_band = {band: _score_subset(settled, band, flat_threshold, band) for band in active_bands}
     overall = _score_subset(settled, None, flat_threshold, "overall")
-    brier = multiclass_brier(settled)
+    brier = multiclass_brier(settled, flat_threshold)
     base_rates, baseline_hit_rate = _majority_label_baseline(settled, flat_threshold)
     edge_demonstrated: bool | None = None
     if baseline_hit_rate is not None:

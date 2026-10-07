@@ -54,6 +54,7 @@ table.data tbody tr:hover{background:var(--c-raised)}
 .status{display:inline-flex;gap:4px;align-items:baseline;font-weight:600;white-space:nowrap}
 .status.ok{color:var(--c-positive)} .status.bad{color:var(--c-negative)}
 .status.warn,.status.info,.status.neutral{color:var(--c-muted)}
+.reflections{list-style:none;margin:0;padding:0} .reflections li{padding:4px 0;border-bottom:var(--rule)} .reflections a{color:inherit}
 .risk-head{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:4px 0}
 .actions{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
 .actions .field input{font:inherit;background:var(--c-bg);color:var(--c-ink);border:var(--rule-strong);padding:0 6px;height:24px;width:180px;max-width:100%}

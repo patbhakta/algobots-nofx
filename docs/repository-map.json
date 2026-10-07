@@ -278,6 +278,23 @@
       "repo": "algobots",
       "path": "tests/demo/test_studio.py"
     }
+,
+    {
+      "repo": "algobots",
+      "path": "src/algobots/demo/quality.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "src/algobots/demo/scope.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "tests/demo/test_quality.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "tests/demo/test_scope.py"
+    }
   ],
   "scope_revisions": [
     {

@@ -23,6 +23,7 @@ from algobots.demo import blotter as B
 from algobots.demo import decisions as D
 from algobots.demo import killswitch
 from algobots.demo import ledger as L
+from algobots.demo import quality as Q
 from algobots.demo import studio as S
 from algobots.demo.page import Registry, render, render_denied
 from algobots.demo.scope import Denied, Scope, current_scope, narrow, resolve
@@ -144,6 +145,7 @@ def demo_page(
         studio=S.load(get_settings().demo_state_dir),
         quality=_quality(scope),
         registry=_registry(db, scope),
+        harness=_harness(lg, key),
     )
     return HTMLResponse(html, headers={"Cache-Control": "no-store"})
 
@@ -170,6 +172,20 @@ def demo_decisions(account: str | None = None, scope: Scope = Depends(current_sc
             for x in D.losses(q.settled, None if key == B.ALL else key)
         ],
     }
+
+
+def _harness(lg: L.Ledger, key: str) -> dict:
+    s = get_settings()
+    since = datetime.strptime(s.demo_start, "%Y-%m-%d").replace(tzinfo=UTC).timestamp()
+    return Q.quality(lg, Q.load_pending(Path(s.demo_feed_path), since_ts=since), account=key)
+
+
+@router.get("/demo/api/quality")
+def demo_quality(account: str | None = None, scope: Scope = Depends(current_scope)) -> dict:
+    """Decision quality per strategy (S2.2 harness) + reflections (S2.1) in account context."""
+    key = resolve(account, scope)
+    lg, _ = _scoped(scope)
+    return _harness(lg, key)
 
 
 @router.get("/demo/api/positions")

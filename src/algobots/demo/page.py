@@ -22,6 +22,7 @@ from algobots.demo import accounts as A
 from algobots.demo import blotter as B
 from algobots.demo import decisions as D
 from algobots.demo import ledger as L
+from algobots.demo import quality as Q
 from algobots.demo import studio as S
 from algobots.demo.theme import CLOCK, CSS, KEYS
 
@@ -458,7 +459,7 @@ def _orders(lg: L.Ledger, account: str, status: str | None) -> str:
         filled = o["status"] == "filled"
         rows.append(
             [
-                f'<span class="num" data-order="{c.e(o["id"])}">{_t(o["ts"], "%m-%d %H:%M")}</span>',
+                f'<span class="num" id="o-{c.e(o["id"])}" data-order="{c.e(o["id"])}">{_t(o["ts"], "%m-%d %H:%M")}</span>',
                 f'<span title="{c.e(o["deployment"])} · artifact {c.e(o["artifact"])}">{c.e(L.STRATEGIES[o["account"]])}</span>',
                 c.e(o["instrument"].split("-")[-1]),
                 c.e(o["side"] or "—"),
@@ -739,6 +740,71 @@ def _curve(lg: L.Ledger, account: str) -> str:
     )
 
 
+def _f(x: float | None, fmt: str = ".4f") -> str:
+    return "—" if x is None else format(x, fmt)
+
+
+def _harness_pane(q: dict) -> str:
+    """Decision quality (S2.2 harness) + latest reflections (S2.1), per strategy."""
+    rows, cal, refl = [], [], []
+    for s in q["strategies"].values():
+        ci = s["hit_rate_wilson_95"]
+        rc = s["random_control"]
+        kind = "APPROVED" if s["edge_demonstrated"] else "not_granted"
+        rows.append(
+            [
+                f"<strong>{c.e(s['name'])}</strong>",
+                f'<span class="num" data-q="brier">{_f(s["brier"])}</span>'
+                f' <span class="meta">coin {_f(s["coin_brier"])}</span>',
+                f'<span class="num" data-q="hit">{_pctx(s["hit_rate"])}</span>'
+                + (f' <span class="meta">[{ci[0]:.1%}, {ci[1]:.1%}]</span>' if ci else ""),
+                f'<span class="num" style="white-space:nowrap"><span data-q="settled">{s["settled"]}</span>'
+                f' / <span data-q="pending">{s["pending"]}</span></span>',
+                c.status(kind, s["verdict"].lower())
+                + f'<br><span class="meta">n={s["sample_size"]} · {rc["seeds"]} random seeds, '
+                f'{rc["certified"]} certified</span>',
+            ]
+        )
+        cal.append(
+            [c.e(s["name"])]
+            + [
+                f'<span class="num">{_pctx(b["hit_rate"])}</span> <span class="meta">n={b["count"]}</span>'
+                for b in s["calibration"]
+            ]
+        )
+        for r in s["reflections"]:
+            hit = c.status("FILLED" if r["hit"] else "REJECTED", "hit" if r["hit"] else "miss")
+            refl.append(
+                f'<li data-decision="{c.e(r["decision_id"])}"><a href="#o-{c.e(r["decision_id"])}">'
+                f"{c.e(s['name'])} · {c.e(r['event'].split('-')[-1])}</a> {hit} "
+                f'<span class="meta">{c.e(r["text"])}</span></li>'
+            )
+    if not rows:
+        return '<p class="empty">No accounts in this context.</p>'
+    buckets = [b["bucket"] for b in next(iter(q["strategies"].values()))["calibration"]]
+    return (
+        '<p class="halt-note"><strong>No validated edge</strong> unless the harness verdict says '
+        "otherwise — paper results, not a performance claim.</p>"
+        f'<p class="meta">Break-even hit {q["break_even"]:.2%} at 50c + 7% taker fee · '
+        "Brier = harness 3-band score, lower is better, coin 0.5000 · "
+        "verdict = harness Wilson-95 lower bound vs majority-label baseline</p>"
+        + c.table(
+            ["Strategy", "Brier vs coin", "Hit rate [Wilson 95%]", "Settled / pending", "Harness verdict"],
+            rows,
+            numeric={1, 2, 3},
+            stack=True,
+        )
+        + "<h3>Calibration · hit rate by P(called side)</h3>"
+        + c.table(["Strategy", *buckets], cal, numeric=set(range(1, len(buckets) + 1)), stack=True)
+        + "<h3>Latest reflections · written at settlement</h3>"
+        + (
+            f'<ul class="reflections">{"".join(refl)}</ul>'
+            if refl
+            else '<p class="empty">No settled decisions yet — reflections are written only at settlement.</p>'
+        )
+    )
+
+
 def render(
     lg: L.Ledger,
     *,
@@ -751,6 +817,7 @@ def render(
     studio: S.Studio | None = None,
     quality: D.Quality | None = None,
     registry: Registry | None = None,
+    harness: dict | None = None,
 ) -> str:
     """``lg`` must already be narrowed to the caller's grants (``demo.scope``)."""
     from algobots.demo import studio_page as SP  # imports this module
@@ -762,6 +829,7 @@ def render(
     if account not in lg.books and account != B.ALL:
         account = B.ALL  # routes 403 first; this only guards direct callers
     ctx = f"ctx: {_ctx_label(account)}"
+    harness = Q.quality(lg, account=account) if harness is None else harness
     body = (
         _stateline(lg, now, account, supervisor_down)
         + _strip(lg, now, account)
@@ -796,6 +864,13 @@ def render(
         )
         + c.panel(
             "Decision quality", _quality(quality, account), financial=True, tag=ctx, cls="full"
+        )
+        + c.panel(
+            "Harness verdict · calibration · reflections",
+            _harness_pane(harness),
+            financial=True,
+            tag=ctx,
+            cls="full",
         )
         + "</div>"
     )
