@@ -133,6 +133,7 @@ def _tickets(scope: Scope) -> list[T.Parent]:
 def demo_page(
     account: str | None = None,
     status: str | None = None,
+    view: str | None = None,
     ticket: str | None = None,
     ticket_err: str | None = None,
     scope: Scope = Depends(current_scope),
@@ -156,6 +157,7 @@ def demo_page(
         start=start,
         account=key,
         status=status,
+        view=view or ("trade" if ticket or ticket_err else None),
         workers={w["account"]: w for w in workers},
         supervisor_down=_supervisor_down(workers),
         studio=S.load(get_settings().demo_state_dir),
@@ -321,8 +323,8 @@ async def demo_ticket_form(
     one = lambda k, d="": form.get(k, [d])[0]  # noqa: E731
     path = one("path", "single")
     key = B.account_key(one("ctx"))
-    base = "/demo" + ("" if key == B.ALL else f"?account={key}")
-    sep = "&" if "?" in base else "?"
+    base = "/demo?" + ("" if key == B.ALL else f"account={key}&") + "view=trade"
+    sep = "&"
     try:
         basket = [
             {"account": i.account, "side": i.side, "notional": str(i.notional), "kind": i.kind}
@@ -445,7 +447,7 @@ async def demo_ticket(
         qty = float(form.get("qty", ["10"])[0])
         ids = [UUID(v) for v in form.get("account", [])]
     except ValueError:
-        return RedirectResponse("/demo", status_code=303)
+        return RedirectResponse("/demo?view=trade", status_code=303)
     if side in ("YES", "NO") and 0 < qty <= 100 and ids:
         owner = A.ensure_seeded(db)
         lg, _ = _ledger()
@@ -461,7 +463,7 @@ async def demo_ticket(
         A.broadcast(
             db, owner, ids, side=side, qty=qty, actor=_dash_actor(form, request), halts=halts
         )
-    return RedirectResponse("/demo", status_code=303)
+    return RedirectResponse("/demo?view=trade", status_code=303)
 
 
 @router.post("/demo/approvals/{request_id}", include_in_schema=False)
@@ -481,7 +483,7 @@ async def demo_decide(
             A.decide(db, owner, request_id, verdict, actor=_dash_actor(form, request))
         except (LookupError, ApprovalError):
             db.rollback()
-    return RedirectResponse("/demo", status_code=303)
+    return RedirectResponse("/demo?view=trade", status_code=303)
 
 
 @router.post("/demo/kill-switch", include_in_schema=False)
@@ -495,7 +497,8 @@ async def kill_switch(request: Request, scope: Scope = Depends(current_scope)) -
     name = form.get("actor", [""])[0].strip()[:40]
     actor = f"{name} via dashboard ({host})" if name else f"dashboard ({host})"
     killswitch.set_engaged(get_settings().demo_state_dir, engaged, actor=actor)
-    return RedirectResponse("/demo" if key == B.ALL else f"/demo?account={key}", status_code=303)
+    q = urlencode({"account": key, "view": "risk"} if key != B.ALL else {"view": "risk"})
+    return RedirectResponse(f"/demo?{q}", status_code=303)
 
 
 # --- strategy studio (ALG-3256) ----------------------------------------------------

@@ -1,13 +1,16 @@
 # ruff: noqa: E501  (HTML templates: markup fragments stay on one line)
-"""Live paper-trading terminal: Accounts / Positions / Orders / Risk / Decision quality.
+"""Live paper-trading dashboard, NoFX pattern (ALG-3288).
 
-Selecting an account (``?account=``) sets the context every pane filters to;
-``all`` is the aggregate. Data comes from ``demo.blotter`` so the page and
-the JSON endpoints share one source.
+One overview screen (headline, equity chart, a card per strategy, positions,
+latest activity); every dense pane is a tab (``?view=``). Selecting an account
+(``?account=``) sets the context every view filters to; ``all`` is the
+aggregate. Data comes from ``demo.blotter`` so the page and the JSON
+endpoints share one source.
 """
 
 from __future__ import annotations
 
+import json
 import time
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
@@ -25,14 +28,23 @@ from algobots.demo import ledger as L
 from algobots.demo import quality as Q
 from algobots.demo import studio as S
 from algobots.demo import tickets as T
-from algobots.demo.theme import CLOCK, CSS, KEYS
+from algobots.demo.theme import CLOCK, CSS, HOVER, KEYS
 
 INTERVAL_S = 15 * 60
 STALE_AFTER_S = 25 * 60  # one missed observer run plus slack
 SERIES = {  # strategy -> (stroke var, dash) — dash + direct label, never colour alone
-    "laya": ("var(--c-ink)", ""),
-    "jev": ("var(--c-attention)", "6 4"),
-    "coin": ("var(--c-muted)", "2 3"),
+    "laya": ("var(--s-laya)", ""),  # categorical blue/orange/violet: validated on --c-panel
+    "jev": ("var(--s-jev)", "6 4"),
+    "coin": ("var(--s-coin)", "2 3"),
+}
+VIEWS = {  # ?view= -> tab label; overview is the default and the only non-tab screen
+    "overview": "Overview",
+    "orders": "Orders",
+    "risk": "Risk & kill switch",
+    "quality": "Decision quality",
+    "strategies": "Strategies",
+    "accounts": "Accounts",
+    "trade": "Trade",
 }
 ACCOUNT = {"id": "pat-kalshi-paper", "label": "Pat · Kalshi paper", "environment": "PAPER"}
 TAG = "PAPER · SIMULATED FILLS"
@@ -82,8 +94,13 @@ def _pctx(x: float | None) -> str:
     return "—" if x is None else f"{x * 100:.1f}%"
 
 
-def _query(account: str, status: str | None = None) -> str:
-    q = {k: v for k, v in (("account", account), ("status", status)) if v and v != B.ALL}
+def view_key(raw: str | None) -> str:
+    return raw if raw in VIEWS else "overview"
+
+
+def _query(account: str, status: str | None = None, view: str | None = None) -> str:
+    pairs = (("account", account), ("view", view), ("status", status))
+    q = {k: v for k, v in pairs if v and v not in (B.ALL, "overview")}
     return c.e(f"?{urlencode(q)}") if q else ""  # HTML-escaped: only ever lands in attributes
 
 
@@ -158,43 +175,6 @@ def _banner(start: str) -> str:
     )
 
 
-def _strip(lg: L.Ledger, now: float, account: str) -> str:
-    books = B.books(lg, account)
-    equity = sum((b.equity for b in books), Decimal(0))
-    start = sum((b.allocated for b in books), Decimal(0))
-    pnl = equity - start
-    day = B.today(now)
-    today_fills = [d for b in books for d in b.fills if L._day(d.ts) == day]
-    blocked = sum(1 for b in books for d in b.decisions if d.status == "BLOCKED")
-    opening = L.SLEEVE * len(books)
-    ret = f"{pnl / opening * 100:.2f}"
-    cells = [
-        c.metric(
-            "Equity",
-            c.money(_usd(equity)),
-            f"{len(books)} × {L.SLEEVE} USD sleeve"
-            + (f" + {start - opening} refilled" if start > opening else ""),
-        ),
-        c.metric("Net P&L", c.money(_usd(pnl), signed=True), "since open · net of fees"),
-        c.metric(
-            "Return",
-            c.pct(ret, signed=True),
-            "on starting capital" + (" · refills excluded" if lg.refill_ts else ""),
-        ),
-        c.metric(
-            "Fees paid", c.money(_usd(sum((b.fees for b in books), Decimal(0)))), "Kalshi taker"
-        ),
-        c.metric("Fills today", f'<span class="num">{len(today_fills)}</span>', f"{day} UTC"),
-        c.metric("Risk blocks", f'<span class="num">{blocked}</span>', "entries stopped by rails"),
-        c.metric(
-            "Open positions",
-            f'<span class="num">{len(B.positions(lg, now, account))}</span>',
-            "15m contracts",
-        ),
-    ]
-    return f'<section class="strip" aria-label="Account metrics" data-financial="true">{"".join(cells)}</section>'
-
-
 WORKER_KIND = {  # supervisor state -> status style; exited is an alert (no auto-restart)
     "ready": "connected",
     "starting": "stale",
@@ -257,7 +237,7 @@ def _accounts(
             )
         a, health = regs.get(key, (None, None))
         cells = [
-            f'<a href="/demo{_query(key)}">{c.e(_ctx_label(key))}</a>',
+            f'<a href="/demo{_query(key, view="accounts")}">{c.e(_ctx_label(key))}</a>',
             *(
                 [dash, c.env_badge("PAPER"), dash, dash, dash]
                 if key == B.ALL
@@ -280,10 +260,7 @@ def _accounts(
             f'<td{" class=n" if i in numeric else ""} data-label="{heads[i]}">{v}</td>'
             for i, v in enumerate(cells)
         )
-        return (
-            f'<tr class="acct{" sel" if sel else ""}" data-account="{key}" '
-            f'data-href="/demo{_query(key)}" tabindex="0" aria-selected="{str(sel).lower()}">{tds}</tr>'
-        )
+        return f'<tr class="arow{" sel" if sel else ""}" data-row="{key}">{tds}</tr>'
 
     th = "".join(
         f'<th scope="col"{" class=n" if i in numeric else ""}>{h}</th>' for i, h in enumerate(heads)
@@ -311,7 +288,7 @@ def _accounts(
         else '<p class="meta">Account registry unavailable — broker/approval/session not shown.</p>'
     )
     return note + (
-        '<table class="data stack accounts" role="grid" aria-label="Accounts — select to set context">'
+        '<table class="data stack accounts">'
         f"<thead><tr>{th}</tr></thead><tbody>{body}</tbody></table>"
     )
 
@@ -448,7 +425,7 @@ def _positions(lg: L.Ledger, now: float, account: str) -> str:
 def _orders(lg: L.Ledger, account: str, status: str | None) -> str:
     counts = {s: len(B.orders(lg, account, s, limit=None)) for s in B.STATUSES}
     links = "".join(
-        f'<a href="/demo{_query(account, s)}" class="filt{" on" if s == status else ""}"'
+        f'<a href="/demo{_query(account, s, "orders")}" class="filt{" on" if s == status else ""}"'
         f"{' aria-current=true' if s == status else ''}>"
         f"{s or 'all'} {sum(counts.values()) if s is None else counts[s]}</a>"
         for s in (None, *B.STATUSES)
@@ -848,14 +825,14 @@ def _svg(
 
     base = y(float(L.SLEEVE))
     parts = [
-        f'<line x1="{PAD}" x2="{W - LBL}" y1="{base:.1f}" y2="{base:.1f}" stroke="var(--c-rule-faint)" stroke-width="1"/>'
+        f'<line x1="{PAD}" x2="{W - LBL}" y1="{base:.1f}" y2="{base:.1f}" stroke="var(--c-rule-strong)" stroke-width="1"/>'
     ]
     for ts in lg.refill_ts:
         if t0 <= ts <= t1:
             parts.append(
                 f'<line x1="{x(ts):.1f}" x2="{x(ts):.1f}" y1="{PAD}" y2="{H - PAD}" stroke="var(--c-attention)" stroke-dasharray="3 3"/>'
                 f'<text x="{x(ts) + (-3 if x(ts) > (W - LBL) / 2 else 3):.1f}" y="{PAD + fs}" font-size="{fs - 1}" '
-                f'text-anchor="{"end" if x(ts) > (W - LBL) / 2 else "start"}" fill="var(--c-attention)">refill {_t(ts)}</text>'
+                f'text-anchor="{"end" if x(ts) > (W - LBL) / 2 else "start"}" fill="var(--c-muted)">refill {_t(ts)}</text>'
             )
     # end labels and the baseline label share the right gutter; spread them so none overlap
     targets = {k: y(float(b.curve[-1][1])) + fs / 3 for k, b in books.items()}
@@ -869,16 +846,42 @@ def _svg(
         stroke, dash = SERIES[key]
         path = " ".join(f"{x(ts):.1f},{y(float(eq)):.1f}" for ts, eq in [(t0, L.SLEEVE), *b.curve])
         parts.append(
-            f'<polyline points="{path}" fill="none" stroke="{stroke}" stroke-width="1.75" '
-            f'stroke-dasharray="{dash}" vector-effect="non-scaling-stroke"/>'
-            f'<text x="{x_lbl:.1f}" y="{label_y[key]:.1f}" font-size="{fs}" fill="{stroke}">'
+            f'<polyline points="{path}" fill="none" stroke="{stroke}" stroke-width="2" '
+            f'stroke-dasharray="{dash}" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>'
+            # labels wear text ink; the coloured swatch in the legend carries identity
+            f'<text x="{x_lbl:.1f}" y="{label_y[key]:.1f}" font-size="{fs}" fill="var(--c-ink)">'
             f"{c.e(b.name.split()[0])} {float(b.curve[-1][1]):.0f}</text>"
         )
+    parts.append(
+        f'<line class="xhair" x1="0" x2="0" y1="{PAD}" y2="{H - PAD}" stroke="var(--c-muted)" visibility="hidden"/>'
+    )
+    # hover data: one entry per interval (downsampled), every series at that interval
+    by_ts = {k: dict(b.curve) for k, b in books.items()}
+    stamps = sorted({ts for b in books.values() for ts, _ in b.curve})
+    step = max(1, len(stamps) // 240)
+    hover = [
+        [
+            round(x(ts), 1),
+            _t(ts, "%b %d %H:%M"),
+            *[[b.name, f"{by_ts[k][ts]:.2f}"] for k, b in books.items() if ts in by_ts[k]],
+        ]
+        for ts in [*stamps[::step], *([stamps[-1]] if (len(stamps) - 1) % step else [])]
+    ]
     label = "; ".join(f"{b.name} ends at {b.equity} USD" for b in books.values())
     return (
         f'<svg class="{cls}" viewBox="0 0 {W} {H + 24}" width="100%" role="img" '
-        f'aria-label="{c.e(label)}">{"".join(parts)}</svg>'
+        f"aria-label=\"{c.e(label)}\" data-pts='{c.e(json.dumps(hover, ensure_ascii=False))}'>{''.join(parts)}</svg>"
     )
+
+
+def _legend(books: list[L.StrategyBook]) -> str:
+    if len(books) < 2:  # one series: the panel title names it
+        return ""
+    items = "".join(
+        f'<span><i style="border-top-color:{SERIES[b.key][0]};border-top-style:{"dashed" if SERIES[b.key][1] else "solid"}"></i>{c.e(b.name)}</span>'
+        for b in books
+    )
+    return f'<div class="legend" aria-hidden="true">{items}</div>'
 
 
 def _curve(lg: L.Ledger, account: str) -> str:
@@ -893,9 +896,13 @@ def _curve(lg: L.Ledger, account: str) -> str:
         else ""
     )
     return (
-        f'<p class="meta">Sleeve equity, USD · {_t(t0, "%b %d %H:%M")} → {_t(t1, "%b %d %H:%M")} · one point per 15m interval{refills}</p>'
-        + _svg(lg, books, 900, 220, 130, 12, "chart-d")
+        f'<p class="meta">Sleeve equity, USD · {_t(t0, "%b %d %H:%M")} → {_t(t1, "%b %d %H:%M")} · one point per 15m interval · '
+        f'hover for values · <a href="/demo{_query(account, view="orders")}">every order as a table →</a>{refills}</p>'
+        + _legend(list(books.values()))
+        + '<div class="chartbox">'
+        + _svg(lg, books, 900, 260, 130, 12, "chart-d")
         + _svg(lg, books, 420, 300, 110, 15, "chart-m")
+        + '<div class="tip" role="presentation"></div></div>'
     )
 
 
@@ -903,8 +910,11 @@ def _f(x: float | None, fmt: str = ".4f") -> str:
     return "—" if x is None else format(x, fmt)
 
 
-def _harness_pane(q: dict) -> str:
-    """Decision quality (S2.2 harness) + latest reflections (S2.1), per strategy."""
+def _harness_pane(q: dict, orders: str = "") -> str:
+    """Decision quality (S2.2 harness) + latest reflections (S2.1), per strategy.
+
+    ``orders`` is the Orders-tab URL the reflection links jump into (ALG-3288).
+    """
     rows, cal, refl = [], [], []
     for s in q["strategies"].values():
         ci = s["hit_rate_wilson_95"]
@@ -921,7 +931,7 @@ def _harness_pane(q: dict) -> str:
                 f' / <span data-q="pending">{s["pending"]}</span></span>',
                 c.status(kind, s["verdict"].lower())
                 + f'<br><span class="meta">n={s["sample_size"]} · {rc["seeds"]} random seeds, '
-                f'{rc["certified"]} certified</span>',
+                f"{rc['certified']} certified</span>",
             ]
         )
         cal.append(
@@ -934,7 +944,7 @@ def _harness_pane(q: dict) -> str:
         for r in s["reflections"]:
             hit = c.status("FILLED" if r["hit"] else "REJECTED", "hit" if r["hit"] else "miss")
             refl.append(
-                f'<li data-decision="{c.e(r["decision_id"])}"><a href="#o-{c.e(r["decision_id"])}">'
+                f'<li data-decision="{c.e(r["decision_id"])}"><a href="{orders}#o-{c.e(r["decision_id"])}">'
                 f"{c.e(s['name'])} · {c.e(r['event'].split('-')[-1])}</a> {hit} "
                 f'<span class="meta">{c.e(r["text"])}</span></li>'
             )
@@ -948,7 +958,13 @@ def _harness_pane(q: dict) -> str:
         "Brier = harness 3-band score, lower is better, coin 0.5000 · "
         "verdict = harness Wilson-95 lower bound vs majority-label baseline</p>"
         + c.table(
-            ["Strategy", "Brier vs coin", "Hit rate [Wilson 95%]", "Settled / pending", "Harness verdict"],
+            [
+                "Strategy",
+                "Brier vs coin",
+                "Hit rate [Wilson 95%]",
+                "Settled / pending",
+                "Harness verdict",
+            ],
             rows,
             numeric={1, 2, 3},
             stack=True,
@@ -964,6 +980,361 @@ def _harness_pane(q: dict) -> str:
     )
 
 
+def _spark(b: L.StrategyBook) -> str:
+    """Card sparkline: one series, start-capital rule, no axes; the card text carries values."""
+    pts = [(b.curve[0][0], L.SLEEVE), *b.curve] if b.curve else []
+    if len(pts) < 2:
+        return '<p class="meta">No decisions yet.</p>'
+    W, H, PAD = 240, 48, 3
+    t0, t1 = pts[0][0], pts[-1][0]
+    vs = [float(v) for _, v in pts] + [float(L.SLEEVE)]
+    lo, hi = min(vs), max(vs)
+    span_t, span_v = (t1 - t0) or 1, (hi - lo) or 1
+
+    def xy(ts: float, v: float) -> str:
+        return f"{(ts - t0) / span_t * W:.1f},{PAD + (hi - v) / span_v * (H - 2 * PAD):.1f}"
+
+    base = PAD + (hi - float(L.SLEEVE)) / span_v * (H - 2 * PAD)
+    line = " ".join(xy(ts, float(v)) for ts, v in pts)
+    stroke, dash = SERIES[b.key]
+    return (
+        f'<svg class="spark" viewBox="0 0 {W} {H}" preserveAspectRatio="none" role="img" '
+        f'aria-label="{c.e(b.name)} equity from {L.SLEEVE} to {b.equity} USD">'
+        f"<title>{c.e(b.name)}: {L.SLEEVE} → {b.equity.quantize(L.CENT)} USD over {len(b.curve)} intervals</title>"
+        f'<line x1="0" x2="{W}" y1="{base:.1f}" y2="{base:.1f}" stroke="var(--c-rule-strong)" stroke-dasharray="2 3" vector-effect="non-scaling-stroke"/>'
+        f'<polyline points="{line}" fill="none" stroke="{stroke}" stroke-width="2" stroke-dasharray="{dash}" '
+        'stroke-linejoin="round" vector-effect="non-scaling-stroke"/></svg>'
+    )
+
+
+def _signed_usd(x: Decimal) -> str:
+    return f"{'+' if x > 0 else '−' if x < 0 else ''}${abs(x).quantize(L.CENT):,}"
+
+
+def _switcher(lg: L.Ledger, account: str, view: str) -> str:
+    """Account context: pills (click, or ←/→ + Enter); ``All strategies`` is the aggregate."""
+    pills = "".join(
+        f'<a class="acct{" sel" if k == account else ""}" data-account="{k}" '
+        f'href="/demo{_query(k, view=view)}" data-href="/demo{_query(k, view=view)}"'
+        f"{' aria-current=true' if k == account else ''}>"
+        f"{c.e('All strategies' if k == B.ALL else L.STRATEGIES[k])}</a>"
+        for k in (B.ALL, *lg.books)
+    )
+    return f'<nav class="switcher" aria-label="Strategy context">{pills}</nav>'
+
+
+def _tabs(account: str, view: str, reg: Registry | None) -> str:
+    pending = len(reg.pending) if reg and reg.can_trade else 0
+    out = []
+    for k, label in VIEWS.items():
+        count = (
+            f'<span class="count" title="pending approvals">{pending}</span>'
+            if k == "trade" and pending
+            else ""
+        )
+        on = k == view
+        out.append(
+            f'<a href="/demo{_query(account, view=k)}" class="{"on" if on else ""}"'
+            f'{" aria-current=page" if on else ""} data-view="{k}">{c.e(label)}{count}</a>'
+        )
+    return f'<nav class="tabs" aria-label="Dashboard views">{"".join(out)}</nav>'
+
+
+def _attention(
+    lg: L.Ledger,
+    now: float,
+    account: str,
+    workers: dict[str, dict],
+    reg: Registry | None,
+    supervisor_down: bool,
+) -> list[str]:
+    """Plain-English list of what needs a human, most severe first; [] = nothing."""
+    out, day = [], B.today(now)
+    q = lambda v: f"/demo{_query(account, view=v)}"  # noqa: E731
+    if lg.kill.get("engaged"):
+        out.append(
+            c.status("BLOCKED", "Kill switch engaged")
+            + f' <span>all new entries are blocked. <a href="{q("risk")}">Review →</a></span>'
+        )
+    for b in B.books(lg, account):
+        h = B.halt(lg, b, day)
+        if h:
+            out.append(
+                c.status("BLOCKED", "Halted")
+                + f' <span>{c.e(b.name)} stopped trading: {c.e(h)}. <a href="{q("risk")}">Why →</a></span>'
+            )
+    if lg.last_ts is None or now - lg.last_ts >= STALE_AFTER_S:
+        out.append(
+            c.status("disconnected", "No fresh data")
+            + " <span>the market feed is not updating.</span>"
+        )
+    elif supervisor_down:
+        out.append(
+            c.status("disconnected", "Workers down")
+            + " <span>the strategy worker supervisor is not running.</span>"
+        )
+    for k in B.books(lg, account):
+        w = workers.get(k.key) or {}
+        if w.get("state") == "exited":
+            out.append(
+                c.status("BLOCKED", "Worker stopped")
+                + f' <span>{c.e(k.name)} worker exited (code {c.e(w.get("exit_code"))}). <a href="{q("accounts")}">Details →</a></span>'
+            )
+    if account == B.ALL and reg and reg.can_trade and reg.pending:
+        n = len(reg.pending)
+        out.append(
+            c.status("AWAITING_APPROVAL", "Approval needed")
+            + f' <span>{n} order{"s" * (n > 1)} waiting for you. <a href="{q("trade")}">Approve or reject →</a></span>'
+        )
+    return out
+
+
+def _hero(
+    lg: L.Ledger,
+    now: float,
+    account: str,
+    start: str,
+    quality: D.Quality,
+    workers: dict[str, dict],
+    reg: Registry | None,
+    supervisor_down: bool,
+) -> str:
+    books = B.books(lg, account)
+    equity = sum((b.equity for b in books), Decimal(0))
+    allocated = sum((b.allocated for b in books), Decimal(0))
+    pnl = equity - allocated
+    opening = L.SLEEVE * len(books)
+    ret = f"{pnl / opening * 100:.2f}"
+    day = B.today(now)
+    today = sum((B.day_pnl(b, day) for b in books), Decimal(0))
+    fills_today = sum(1 for b in books for d in b.fills if L._day(d.ts) == day)
+    fees = sum((b.fees for b in books), Decimal(0))
+    open_pos = len(B.positions(lg, now, account))
+    direction = "up" if pnl > 0 else "down" if pnl < 0 else "flat at"
+    amount = f"${abs(pnl).quantize(L.CENT):,}" if pnl else f"${allocated.quantize(L.CENT):,}"
+    if account == B.ALL:
+        who = (
+            f"<strong>{len(books)} strategies</strong> are paper-trading Kalshi's 15-minute "
+            f"Bitcoin up/down contracts, each with a ${L.SLEEVE} simulated budget."
+        )
+    else:
+        s = quality.scores.get(account)
+        verdict = f" Verdict so far: <strong>{c.e(s.verdict)}</strong>." if s else ""
+        who = (
+            f"<strong>{c.e(L.STRATEGIES[account])}</strong> is paper-trading Kalshi's 15-minute "
+            f"Bitcoin up/down contracts with a ${L.SLEEVE} simulated budget.{verdict}"
+        )
+    lede = (
+        f"<p>{who} Since {c.e(start)} {'they are' if account == B.ALL else 'it is'} "
+        f'<strong class="{"pos" if pnl > 0 else "neg" if pnl < 0 else ""}">{direction} {amount}</strong>'
+        f" ({'+' if pnl > 0 else ''}{ret}%) after fees. No real money is at risk.</p>"
+    )
+    items = _attention(lg, now, account, workers, reg, supervisor_down)
+    needs = (
+        "<h2>Needs your attention</h2><ul>" + "".join(f"<li>{i}</li>" for i in items) + "</ul>"
+        if items
+        else '<h2>Needs your attention</h2><p class="meta">Nothing — everything is running normally.</p>'
+    )
+    tiles = [
+        (
+            "Equity",
+            c.money(_usd(equity)),
+            f"started at {opening} USD"
+            + (f" + {allocated - opening} refilled" if allocated > opening else ""),
+        ),
+        (
+            "Net P&L",
+            c.money(_usd(pnl), signed=True),
+            f"{'+' if pnl > 0 else ''}{ret}% on starting capital"
+            + (" · refills excluded" if lg.refill_ts else "")
+            + f" · {_signed_usd(-fees)} fees",
+        ),
+        ("Today", c.money(_usd(today), signed=True), f"{fills_today} trades · {day} UTC"),
+        (
+            "Open positions",
+            f'<span class="num">{open_pos}</span>',
+            "each contract settles within 15 minutes"
+            if open_pos
+            else "flat — every contract has settled",
+        ),
+    ]
+    tile_html = "".join(
+        f'<div class="tile"><div class="label">{c.e(lbl)}</div><div class="value">{val}</div>'
+        f'<div class="meta">{c.e(meta)}</div></div>'
+        for lbl, val, meta in tiles
+    )
+    return (
+        f'<section class="hero" aria-label="Summary" data-financial="true">'
+        f'<div class="lede"><h2>{c.e(_ctx_label(account))} · paper trading</h2>{lede}{needs}</div>'
+        f'<div class="tiles">{tile_html}</div></section>'
+    )
+
+
+def _cards(
+    lg: L.Ledger, now: float, account: str, quality: D.Quality, workers: dict[str, dict]
+) -> str:
+    day = B.today(now)
+    out = []
+    for k, b in lg.books.items():
+        h = B.halt(lg, b, day)
+        state = c.status("BLOCKED", "HALTED") if h else c.status("connected", "RUNNING")
+        w = (workers.get(k) or {}).get("state")
+        s = quality.scores.get(k)
+        hit = _pctx(L.hit_rate(b))
+        ret = b.pnl / L.SLEEVE * 100
+        facts = [
+            f"<span><strong>{len(b.fills)}</strong> trades</span>",
+            f"<span>won <strong>{hit}</strong></span>",
+            f"<span>max drop <strong>{_signed_usd(b.max_drawdown)}</strong></span>",
+        ]
+        if w and w != "ready":
+            facts.append(f"<span>worker <strong>{c.e(w.replace('_', ' '))}</strong></span>")
+        verdict = f'<span class="meta">{c.e(s.verdict)}</span>' if s else ""
+        out.append(
+            f'<a class="card{" sel" if k == account else ""}" href="/demo{_query(k)}" data-card="{k}" '
+            f'style="--series:{SERIES[k][0]}">'
+            f'<div class="top"><span class="name">{c.e(b.name)}</span>{state}</div>'
+            f'<div class="top"><span class="eq">{c.money(_usd(b.equity))}</span>'
+            f'<span>{c.money(_usd(b.pnl), signed=True)} <span class="meta">({ret:+.1f}%)</span></span></div>'
+            f"{_spark(b)}"
+            f'<div class="facts">{"".join(facts)}</div>'
+            + (f'<div class="facts">{c.e(h).capitalize()}</div>' if h else "")
+            + f"{verdict}"
+            f'<span class="open">{"Showing this strategy" if k == account else "Open strategy →"}</span></a>'
+        )
+    return f'<section class="cards" aria-label="Strategies">{"".join(out)}</section>'
+
+
+def _positions_brief(lg: L.Ledger, now: float, account: str) -> str:
+    ps = B.positions(lg, now, account)
+    if not ps:
+        return '<p class="empty">Flat — no open positions. Every contract has settled (15-minute expiry).</p>'
+    items = "".join(
+        f'<li><span class="num meta">{p["expires_in_s"] // 60}m left</span>'
+        f'<span class="what">{c.e(L.STRATEGIES[p["account"]])} holds {p["qty"]} × {c.e(p["side"])} at {p["avg_price"]}</span>'
+        f"{c.money(_usd(p['unrealized_pnl']), signed=True)}</li>"
+        for p in ps
+    )
+    return f'<ul class="feed">{items}</ul>'
+
+
+def _activity(lg: L.Ledger, account: str, n: int = 8) -> str:
+    """Latest decisions in words; the Orders tab has the full table."""
+    items = []
+    for o in B.orders(lg, account, None, limit=n):
+        who = c.e(L.STRATEGIES[o["account"]])
+        if o["status"] == "filled":
+            what = f"{who} bought {c.e(o['side'])} for ${Decimal(o['notional']).quantize(L.CENT)}"
+            amt = c.money(_usd(o["pnl"]), signed=True)
+        elif o["status"] == "blocked":
+            what = f"{who} was blocked by a risk limit — {c.e(o['reason'])}"
+            amt = c.status("BLOCKED", "blocked")
+        else:
+            what = f"{who} sat out — {c.e(o['reason'])}"
+            amt = '<span class="meta">no trade</span>'
+        items.append(
+            f'<li><span class="num meta" data-order="{c.e(o["id"])}">{_t(o["ts"], "%H:%M")}</span>'
+            f'<span class="what" title="{c.e(o["reason"])}">{what}</span>{amt}</li>'
+        )
+    if not items:
+        return '<p class="empty">No decisions yet.</p>'
+    return (
+        f'<ul class="feed">{"".join(items)}</ul>'
+        f'<p class="more"><a href="/demo{_query(account, view="orders")}">All orders →</a></p>'
+    )
+
+
+def _overview(
+    lg: L.Ledger,
+    now: float,
+    account: str,
+    start: str,
+    quality: D.Quality,
+    workers: dict[str, dict],
+    reg: Registry | None,
+    supervisor_down: bool,
+) -> str:
+    ctx = f"ctx: {_ctx_label(account)}"
+    return (
+        _hero(lg, now, account, start, quality, workers, reg, supervisor_down)
+        + c.panel("Equity", _curve(lg, account), financial=True, tag=TAG)
+        + _cards(lg, now, account, quality, workers)
+        + '<div class="pair">'
+        + c.panel("Open positions", _positions_brief(lg, now, account), financial=True, tag=ctx)
+        + c.panel("Latest activity", _activity(lg, account), financial=True, tag=ctx)
+        + "</div>"
+    )
+
+
+def _tab(
+    view: str,
+    lg: L.Ledger,
+    now: float,
+    account: str,
+    status: str | None,
+    studio: S.Studio,
+    quality: D.Quality,
+    workers: dict[str, dict],
+    reg: Registry | None,
+    harness: dict,
+    tickets: list[T.Parent],
+    ticket_msg: str | None,
+) -> str:
+    from algobots.demo import studio_page as SP  # imports this module
+
+    ctx = f"ctx: {_ctx_label(account)}"
+    if view == "orders":
+        return c.panel(
+            "Positions", _positions(lg, now, account), financial=True, tag=ctx
+        ) + c.panel("Orders", _orders(lg, account, status), financial=True, tag=ctx)
+    if view == "risk":
+        return c.panel("Risk", _risk(lg, now, account), financial=True, tag=ctx)
+    if view == "quality":
+        return (
+            c.panel("Strategy performance", _performance(lg, account), financial=True, tag=ctx)
+            + c.panel("Decision quality", _quality(quality, account), financial=True, tag=ctx)
+            + c.panel(
+                "Harness verdict · calibration · reflections",
+                _harness_pane(harness, f"/demo{_query(account, view='orders')}"),
+                financial=True,
+                tag=ctx,
+            )
+        )
+    if view == "strategies":
+        return c.panel(
+            "Strategies",
+            SP.strategies(studio, S.visible(tuple(lg.books)))
+            + '<p class="meta"><a href="/demo/studio">studio: deploy a version with allocation preview →</a></p>',
+            financial=True,
+            tag="TEMPLATES: TEST ONLY",
+        )
+    if view == "accounts":
+        return c.panel(
+            "Accounts",
+            _accounts(lg, now, account, workers, reg)
+            + "<h3>Deployments by account · frozen params + artifact</h3>"
+            + SP.deployments(studio, account, S.visible(tuple(lg.books))),
+            financial=True,
+            tag=TAG,
+        )
+    trade = c.panel(
+        "Order ticket · single / broadcast / basket / split",
+        _risk_ticket(lg, account, ticket_msg),
+        financial=True,
+        tag=TAG,
+    ) + c.panel("Ticket blotter", _ticket_blotter(tickets, account), financial=True, tag=ctx)
+    if account != B.ALL:  # registry broadcast + approvals span every account
+        return trade + (
+            '<p class="empty">Registry broadcast and the approval queue span every account — '
+            f'<a href="/demo{_query(B.ALL, view="trade")}">switch to All strategies</a>.</p>'
+        )
+    return (
+        trade
+        + c.panel("Order ticket · broadcast", _ticket(reg), cls="ticket-panel")
+        + c.panel("Action Center · pending approvals", _action_center(reg))
+    )
+
+
 def render(
     lg: L.Ledger,
     *,
@@ -971,6 +1342,7 @@ def render(
     now: float | None = None,
     account: str | None = None,
     status: str | None = None,
+    view: str | None = None,
     workers: dict[str, dict] | None = None,
     supervisor_down: bool = False,
     studio: S.Studio | None = None,
@@ -981,76 +1353,44 @@ def render(
     ticket_msg: str | None = None,
 ) -> str:
     """``lg`` must already be narrowed to the caller's grants (``demo.scope``)."""
-    from algobots.demo import studio_page as SP  # imports this module
-
     now = time.time() if now is None else now
     studio = studio or S.load("/nonexistent")  # built-ins only
     quality = quality or D.quality(D.records(lg), lg, accounts=lg.books)
-    account, status = B.account_key(account), B.status_key(status)
+    account, status, view = B.account_key(account), B.status_key(status), view_key(view)
     if account not in lg.books and account != B.ALL:
         account = B.ALL  # routes 403 first; this only guards direct callers
-    ctx = f"ctx: {_ctx_label(account)}"
-    harness = Q.quality(lg, account=account) if harness is None else harness
+    workers = workers or {}
+    content = (
+        _overview(lg, now, account, start, quality, workers, registry, supervisor_down)
+        if view == "overview"
+        else _tab(
+            view,
+            lg,
+            now,
+            account,
+            status,
+            studio,
+            quality,
+            workers,
+            registry,
+            Q.quality(lg, account=account) if harness is None else harness,
+            tickets or [],
+            ticket_msg,
+        )
+    )
     body = (
         _stateline(lg, now, account, supervisor_down)
-        + _strip(lg, now, account)
-        + '<div class="grid">'
-        + c.panel(
-            "Accounts",
-            _accounts(lg, now, account, workers or {}, registry)
-            + "<h3>Deployments by account · frozen params + artifact</h3>"
-            + SP.deployments(studio, account, S.visible(tuple(lg.books))),
-            financial=True,
-            tag=TAG,
-            cls="full",
-        )
-        + (
-            c.panel("Order ticket · broadcast", _ticket(registry), cls="ticket-panel")
-            + c.panel("Action Center · pending approvals", _action_center(registry))
-            if account == B.ALL
-            else ""
-        )
-        + c.panel("Positions", _positions(lg, now, account), financial=True, tag=ctx)
-        + c.panel("Risk", _risk(lg, now, account), financial=True, tag=ctx)
-        + c.panel(
-            "Order ticket · single / broadcast / basket / split",
-            _risk_ticket(lg, account, ticket_msg),
-            financial=True,
-            tag=TAG,
-        )
-        + c.panel(
-            "Ticket blotter", _ticket_blotter(tickets or [], account), financial=True, tag=ctx
-        )
-        + c.panel("Orders", _orders(lg, account, status), financial=True, tag=ctx, cls="full")
-        + c.panel("Strategy performance", _performance(lg, account), financial=True, tag=ctx)
-        + c.panel("Equity", _curve(lg, account), financial=True, tag=ctx)
-        + c.panel(
-            "Strategies",
-            SP.strategies(studio, S.visible(tuple(lg.books)))
-            + '<p class="meta"><a href="/demo/studio">studio: deploy a version with allocation preview →</a></p>',
-            financial=True,
-            tag="TEMPLATES: TEST ONLY",
-            cls="full",
-        )
-        + c.panel(
-            "Decision quality", _quality(quality, account), financial=True, tag=ctx, cls="full"
-        )
-        + c.panel(
-            "Harness verdict · calibration · reflections",
-            _harness_pane(harness),
-            financial=True,
-            tag=ctx,
-            cls="full",
-        )
-        + "</div>"
+        + _switcher(lg, account, view)
+        + _tabs(account, view, registry)
+        + f'<div class="view" data-view="{view}">{content}</div>'
     )
-    title = "AlgoBots — paper trading terminal"
+    title = "AlgoBots — paper trading dashboard"
     return (
         '<!doctype html>\n<html lang="en">\n<head>\n'
         '<meta charset="utf-8">\n<meta name="viewport" content="width=device-width, initial-scale=1">\n'
         '<meta http-equiv="refresh" content="60">\n'
-        f"<title>{title}</title>\n<style>{CSS}</style>\n</head>\n<body>\n"
+        f'<title>{title}</title>\n<style>{CSS}</style>\n</head>\n<body class="dash">\n'
         f'<div class="chrome">{_header(lg, now, account)}{_banner(start)}</div>\n'
-        f'<main id="main" data-screen="demo" data-account="{account}">\n<h1 class="sr-only">{title}</h1>\n{body}\n</main>\n'
-        f"<script>{CLOCK}{KEYS}</script>\n</body>\n</html>\n"
+        f'<main id="main" data-screen="demo" data-account="{account}" data-view="{view}">\n<h1 class="sr-only">{title}</h1>\n{body}\n</main>\n'
+        f"<script>{CLOCK}{KEYS}{HOVER}</script>\n</body>\n</html>\n"
     )

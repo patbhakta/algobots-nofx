@@ -51,7 +51,7 @@ def test_seed_is_idempotent_paper_by_default_and_never_bootstraps(db, owner):
 
 
 def test_accounts_pane_reads_registry_rows(client, db, owner):
-    html = client.get("/demo").text
+    html = client.get("/demo?view=accounts").text
     for label in A.SEED:
         assert label in html
     assert "Semi-auto" in html and "Auto" in html
@@ -62,7 +62,7 @@ def test_accounts_pane_reads_registry_rows(client, db, owner):
     rows = client.get("/demo/api/accounts").json()["accounts"]
     probe = next(r for r in rows if r["label"] == "Registry-only probe")
     assert probe["environment"] == "PAPER" and probe["approval_mode"] == "auto"
-    assert "Registry-only probe" in client.get("/demo").text
+    assert "Registry-only probe" in client.get("/demo?view=accounts").text
 
 
 def test_live_account_actions_disabled_with_reason_and_never_fill(client, db, owner):
@@ -72,7 +72,7 @@ def test_live_account_actions_disabled_with_reason_and_never_fill(client, db, ow
     )
     assert row["environment"] == "LIVE"
     assert row["order_actions_disabled"] == "live gated: G-live not passed"
-    html = client.get("/demo").text
+    html = client.get("/demo?view=accounts").text + client.get("/demo?view=trade").text
     assert f'data-account="{live.id}" data-environment="LIVE" aria-disabled="true"' in html
     assert f'data-leg-blocked="{live.id}"' in html  # ticket: no input for the LIVE leg
     assert f'value="{live.id}"' not in html
@@ -111,7 +111,7 @@ def test_semi_auto_broadcast_part_queued_then_approve_fills_with_audit(client, d
     assert filled.status == "filled"
 
     req_id = ticket["legs"][1]["request_id"]
-    html = client.get("/demo").text
+    html = client.get("/demo?view=trade").text
     assert f'action="/demo/approvals/{req_id}"' in html and "part_queued" in html
 
     r = client.post(
@@ -155,7 +155,7 @@ def test_kill_switch_halts_every_leg(db, owner):
 
 
 def test_page_renders_without_registry():
-    html = render(L.build([]), start="2026-10-03")
+    html = render(L.build([]), start="2026-10-03", view="accounts")
     assert "Account registry unavailable" in html
 
 
@@ -163,8 +163,9 @@ def test_registry_render_marks_live_badge(db, owner):
     reg = Registry(
         accounts=[(a, A.session_health(db, a)) for a in A.accounts(db, owner)], can_trade=True
     )
-    html = render(L.build([]), start="2026-10-03", registry=reg)
-    assert html.count('class="badge env-live"') >= 2  # Accounts row + ticket leg
+    for view in ("accounts", "trade"):  # Accounts row, ticket leg
+        html = render(L.build([]), start="2026-10-03", registry=reg, view=view)
+        assert html.count('class="badge env-live"') >= 1, view
 
 
 def test_ticket_route_applies_kill_switch_to_every_leg(client, db, owner, quiet_feed):
@@ -192,7 +193,7 @@ def test_partial_grant_hides_ticket_only_accounts_and_refuses_trading(client, db
     try:
         labels = [a["label"] for a in client.get("/demo/api/accounts").json()["accounts"]]
         assert labels == [L.STRATEGIES["laya"]]
-        html = client.get("/demo").text
+        html = client.get("/demo?view=trade").text
         assert "Pat · Kalshi live" not in html and "needs a grant on every account" in html
         semi = _by_label(db, owner)["Pat · Kalshi semi-auto"]
         r = client.post("/demo/ticket", data={"account": [str(semi.id)], "side": "YES"})

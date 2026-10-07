@@ -199,7 +199,7 @@ def test_studio_routes_preview_deploy_edit_and_attribute(demo):
     api = client.get("/demo/api/strategies").json()
     (dep,) = [d for d in api["deployments"] if d["state"] == "pending"]
     assert dep["hash"] == v.hash and dep["params"]["fast"] == 20  # v2 edit did not reach it
-    home = client.get("/demo").text
+    home = client.get("/demo?view=accounts").text
     assert dep["id"] in home and "Strategies" in home
 
 

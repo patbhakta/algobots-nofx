@@ -70,10 +70,8 @@ form.inline{display:inline-block;margin:0 4px 2px 0} form.inline .action .ctx{po
 @media (min-width:701px){table.data td .ccy{display:none}}  /* every amount is USD; the status bar says so */
 .full{grid-column:1/-1}
 .ctxbar strong{color:var(--c-focus)}
-table.accounts tr.acct{cursor:pointer}
-table.accounts tr.acct:focus-visible{outline:2px solid var(--c-focus);outline-offset:-2px}
 .stateline{margin:0;padding:2px 8px;border:var(--rule-strong);background:var(--c-panel);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-table.accounts tr.acct td:first-child a{color:inherit;text-decoration:none}
+table.accounts tr.arow td:first-child a{color:inherit}
 table.accounts tr.sel{background:var(--c-raised);box-shadow:inset 3px 0 0 var(--c-focus)}
 table.accounts tr.sel td:first-child a{color:var(--c-focus);font-weight:700}
 @media (min-width:701px){table.data td.n+td:not(.n),table.data th.n+th:not(.n){padding-left:14px}}
@@ -117,6 +115,56 @@ table.data td[data-label=Parameters],table.data td[data-label="Frozen params"]{w
 .studio-form input[type=checkbox],.studio-form input[type=radio]{height:auto}
 .flash{border:var(--rule-strong);padding:4px 8px} .flash.err{color:var(--c-negative)}
 code{font-family:var(--font-mono)}
+/* NoFX-pattern dashboard (ALG-3288): one overview screen, cards, tabs for drill-ins */
+.dash{--font-sans:Inter,"Segoe UI",system-ui,-apple-system,Roboto,sans-serif;--s-laya:#3987e5;--s-jev:#d95926;--s-coin:#9085e9}
+body.dash{font:14px/1.5 var(--font-sans)}
+.dash .num,.dash .statusbar,.dash table.data,.dash .stateline{font-family:var(--font-mono)}
+.dash main{padding:16px;gap:16px;max-width:1280px;margin:0 auto;width:100%}
+.dash .panel{border-radius:10px;overflow:hidden}
+.dash .panel>header{height:36px;padding:0 14px}
+.dash .panel .body{padding:4px 14px 12px}
+.dash .stateline{border-radius:8px}
+.switcher{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.switcher .acct{color:var(--c-muted);text-decoration:none;border:var(--rule-strong);border-radius:999px;padding:2px 12px;font-size:13px}
+.switcher .acct.sel{color:var(--c-ink);border-color:var(--c-focus);background:var(--c-raised);font-weight:600}
+.switcher .acct:focus-visible{outline:2px solid var(--c-focus);outline-offset:2px}
+.tabs{display:flex;flex-wrap:wrap;gap:2px;border-bottom:var(--rule-strong)}
+.tabs a{color:var(--c-muted);text-decoration:none;padding:8px 14px;border-bottom:2px solid transparent;margin-bottom:-1px;font-size:13.5px}
+.tabs a.on{color:var(--c-ink);border-bottom-color:var(--c-focus);font-weight:600}
+.tabs a .count{display:inline-block;margin-left:6px;padding:0 6px;border-radius:999px;background:var(--c-attention);color:#111;font-size:11px;font-weight:700}
+.hero{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,2fr);gap:16px;align-items:stretch}
+.hero .lede{background:var(--c-panel);border:var(--rule-strong);border-radius:10px;padding:16px 18px}
+.hero .lede h2{margin:0 0 6px;font-size:13px;font-weight:600;color:var(--c-muted);text-transform:uppercase;letter-spacing:.06em}
+.hero .lede p{margin:0 0 10px;font-size:15px;line-height:1.55}
+.hero .lede ul{margin:0;padding:0;list-style:none;display:grid;gap:6px}
+.hero .lede li{display:flex;gap:8px;align-items:baseline}
+.tiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.tile{background:var(--c-panel);border:var(--rule-strong);border-radius:10px;padding:14px 16px;min-width:0}
+.tile .label{font-size:12px;color:var(--c-muted);text-transform:uppercase;letter-spacing:.05em}
+.tile .value{font-size:28px;line-height:1.25;font-family:var(--font-mono);white-space:nowrap}
+.tile .meta{font-size:12.5px}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+.card{display:grid;gap:8px;color:var(--c-ink);text-decoration:none;background:var(--c-panel);border:var(--rule-strong);border-radius:10px;padding:14px 16px;box-shadow:inset 4px 0 0 var(--series,var(--c-muted))}
+.card:hover{background:var(--c-raised)} .card.sel{border-color:var(--c-focus)}
+.card .top{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.card .name{font-weight:600;font-size:15px}
+.card .eq{font-family:var(--font-mono);font-size:24px}
+.card .facts{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:12.5px;color:var(--c-muted)}
+.card .facts strong{color:var(--c-ink);font-weight:600}
+.card .open{font-size:12.5px;color:var(--c-focus)}
+.spark{width:100%;height:48px;display:block}
+.pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:start}
+.feed{list-style:none;margin:0;padding:0}
+.feed li{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;padding:7px 0;border-bottom:var(--rule);align-items:baseline}
+.feed li:last-child{border-bottom:0}
+.feed .what{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.legend{display:flex;flex-wrap:wrap;gap:4px 16px;font-size:12.5px;color:var(--c-muted);margin:4px 0}
+.legend i{display:inline-block;width:18px;height:0;border-top:2px solid;vertical-align:middle;margin-right:6px}
+.chartbox{position:relative}
+.tip{position:absolute;pointer-events:none;background:var(--c-raised);border:var(--rule-strong);border-radius:6px;padding:6px 8px;font:12px/1.4 var(--font-mono);white-space:nowrap;display:none;z-index:1}
+.more{font-size:13px}
+@media (max-width:1100px){.hero{grid-template-columns:minmax(0,1fr)}.pair{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:700px){.dash main{padding:10px;gap:12px}.tile .value{font-size:22px}.tabs{flex-wrap:nowrap;overflow-x:auto}.tabs a{white-space:nowrap;padding:8px 10px}}
 """
 
 # Ticks the status-bar UTC clock; the server-rendered value stands if JS is off.
@@ -125,15 +173,30 @@ CLOCK = """
 function t(){el.textContent=new Date().toISOString().slice(11,19)+"Z";}t();setInterval(t,1000);})();
 """
 
-# Accounts pane: ↑/↓ moves between rows, Enter (or a click) sets ?account=.
-# Switching blanks every pane first (state line -> LOADING) so the prior
-# account's rows are never on screen while the next context loads.
+# Account switcher: ←/→ (or ↑/↓) moves between pills, Enter (or a click) sets
+# ?account=. Switching blanks the view first (state line -> LOADING) so the
+# prior account's rows are never on screen while the next context loads.
 KEYS = """
-(function(){var rows=[].slice.call(document.querySelectorAll("tr.acct"));if(!rows.length)return;
+(function(){var rows=[].slice.call(document.querySelectorAll(".acct[data-href]"));if(!rows.length)return;
 function go(r){var s=document.getElementById("state");if(s){s.dataset.state="loading";s.textContent="LOADING · "+r.dataset.account;}
-[].forEach.call(document.querySelectorAll(".grid,.strip"),function(n){n.hidden=true;});location.href=r.dataset.href;}
-rows.forEach(function(r,i){r.addEventListener("click",function(ev){if(ev.target.closest("a"))return;go(r);});
-r.addEventListener("keydown",function(ev){var k=ev.key;if(k==="Enter"){go(r);}
-else if(k==="ArrowDown"||k==="ArrowUp"){ev.preventDefault();var n=rows[(i+(k==="ArrowDown"?1:rows.length-1))%rows.length];n.focus();}});});
-var sel=document.querySelector("tr.acct.sel");if(sel&&location.hash!=="#nofocus")sel.focus({preventScroll:true});})();
+[].forEach.call(document.querySelectorAll(".view"),function(n){n.hidden=true;});location.href=r.dataset.href;}
+rows.forEach(function(r,i){r.addEventListener("click",function(ev){ev.preventDefault();go(r);});
+r.addEventListener("keydown",function(ev){var k=ev.key;if(k==="Enter"){ev.preventDefault();go(r);}
+else if(/^Arrow(Down|Up|Left|Right)$/.test(k)){ev.preventDefault();var f=k==="ArrowDown"||k==="ArrowRight";rows[(i+(f?1:rows.length-1))%rows.length].focus();}});});
+var sel=document.querySelector(".acct.sel");if(sel&&location.hash!=="#nofocus")sel.focus({preventScroll:true});})();
+"""
+
+# Equity chart hover: vertical crosshair + tooltip with every series at the
+# nearest interval. Points live in data-pts as [x, label, [name, value]...].
+HOVER = """
+(function(){[].forEach.call(document.querySelectorAll(".chartbox"),function(box){
+var svg=box.querySelector("svg[data-pts]");if(!svg)return;var pts=JSON.parse(svg.dataset.pts),tip=box.querySelector(".tip"),ln=svg.querySelector(".xhair");
+function hide(){tip.style.display="none";ln.setAttribute("visibility","hidden");}
+svg.addEventListener("mouseleave",hide);svg.addEventListener("mousemove",function(ev){var p=svg.createSVGPoint();p.x=ev.clientX;p.y=ev.clientY;
+var x=p.matrixTransform(svg.getScreenCTM().inverse()).x,best=pts[0];pts.forEach(function(q){if(Math.abs(q[0]-x)<Math.abs(best[0]-x))best=q;});
+ln.setAttribute("x1",best[0]);ln.setAttribute("x2",best[0]);ln.setAttribute("visibility","visible");
+tip.textContent="";var h=document.createElement("div");h.textContent=best[1];h.className="meta";tip.appendChild(h);
+best.slice(2).forEach(function(s){var d=document.createElement("div");d.textContent=s[0]+"  "+s[1]+" USD";tip.appendChild(d);});
+var r=box.getBoundingClientRect();tip.style.display="block";var left=ev.clientX-r.left+12;if(left+tip.offsetWidth>r.width)left=ev.clientX-r.left-tip.offsetWidth-12;
+tip.style.left=left+"px";tip.style.top="8px";});});})();
 """

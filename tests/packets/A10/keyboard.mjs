@@ -18,7 +18,7 @@ await page.goto(`${base}/demo#nofocus`); // no autofocus: Tab starts from the to
 
 // Tab reaches every pane control, each with a visible focus ring. A radio group is
 // one Tab stop (its checked radio; arrows move within it); disabled controls are skipped.
-const controls = await page.$$eval(".grid a, .grid button, .grid input, .grid select, .grid textarea, .grid [tabindex]",
+const controls = await page.$$eval("main a, main button, main input, main select, main textarea, main [tabindex]",
   (els) => els.filter((e) => e.offsetParent && e.tabIndex >= 0 && !e.disabled
       && !(e.type === "radio" && !e.checked))
     .map((e, i) => { e.dataset.kb = String(i); return i; }).length);
@@ -41,7 +41,7 @@ check(unringed === 0, `visible focus ring on every pane control (${unringed} wit
 
 // ↑/↓ + Enter switches account; the next render carries only that account.
 await page.goto(`${base}/demo`);
-await page.focus("tr.acct.sel");
+await page.focus(".acct.sel");
 await page.keyboard.press("ArrowDown");
 const target = await page.evaluate(() => document.activeElement.dataset.account);
 await Promise.all([page.waitForURL(/account=/), page.keyboard.press("Enter")]);
@@ -50,7 +50,7 @@ const foreign = await page.$$eval("[data-order]", (els, t) =>
   els.map((e) => e.dataset.order).filter((id) => !id.startsWith(`${t}:`)), target);
 check(foreign.length === 0, `no other-account order ids after switch (${foreign.length})`);
 await page.keyboard.press("ArrowUp");
-check(await page.evaluate(() => document.activeElement.matches("tr.acct")), "ArrowUp keeps focus in Accounts");
+check(await page.evaluate(() => document.activeElement.matches(".acct")), "ArrowUp keeps focus in Accounts");
 await page.screenshot({ path: `${out}/demo-1440.png`, fullPage: false });
 
 // 390px: active account and PAPER stay visible in the status bar.

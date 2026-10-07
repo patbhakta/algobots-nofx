@@ -43,7 +43,7 @@ def _pending_row() -> L.Row:
 def test_pane_numbers_equal_harness_output_for_fixture_feed():
     lg = L.build(_feed())
     q = Q.quality(lg)
-    html = render(lg, start="2026-10-06", now=NOW, harness=q)
+    html = render(lg, start="2026-10-06", now=NOW, harness=q, view="quality")
     for key, cs in Q.calls(lg).items():
         expected = summarize([Q._record(c) for c in cs])
         s = q["strategies"][key]
@@ -80,18 +80,20 @@ def test_reflection_exists_only_for_settled_decisions():
             assert r["decision_id"] != Q.decision_id(s["strategy"], _pending_row().event)
             assert r["namespace"] == f"investment/pat/accounts/{s['strategy']}"
     assert {r["decision_id"] for r in laya["reflections"]} <= settled_ids
-    # reflections link to the decision row they reflect on
-    html = render(lg, start="2026-10-06", now=NOW, harness=q)
+    # reflections link to the decision row they reflect on, on the Orders tab
+    html = render(lg, start="2026-10-06", now=NOW, harness=q, view="quality")
+    orders = render(lg, start="2026-10-06", now=NOW, harness=q, view="orders")
     for r in laya["reflections"]:
-        assert f'data-decision="{r["decision_id"]}"><a href="#o-{r["decision_id"]}"' in html
-        assert f'id="o-{r["decision_id"]}"' in html
+        link = f'<a href="/demo?view=orders#o-{r["decision_id"]}"'
+        assert f'data-decision="{r["decision_id"]}">{link}' in html
+        assert f'id="o-{r["decision_id"]}"' in orders
 
 
 def test_account_context_filters_the_pane():
     lg = L.build(_feed())
     q = Q.quality(lg, account="jev")
     assert list(q["strategies"]) == ["jev"] and q["account"] == "jev"
-    html = render(lg, start="2026-10-06", now=NOW, account="jev", harness=q)
+    html = render(lg, start="2026-10-06", now=NOW, account="jev", harness=q, view="quality")
     pane = html.split('aria-label="Harness verdict · calibration · reflections"')[1].split(
         "</section>"
     )[0]
@@ -138,7 +140,7 @@ def test_quality_endpoint_follows_account_context_and_grants(grant):
     assert c.get("/demo/api/quality?account=nobody").status_code == 404
     assert (
         'aria-label="Harness verdict · calibration · reflections"'
-        in c.get("/demo?account=laya").text
+        in c.get("/demo?account=laya&view=quality").text
     )
     partial = grant("laya").get("/demo/api/quality").json()
     assert list(partial["strategies"]) == ["laya"]  # ungranted accounts never leave the server

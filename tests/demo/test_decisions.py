@@ -148,7 +148,7 @@ def test_reflection_lists_recent_losses_with_bounded_lessons(tmp_path):
     assert [x.rec["instrument_id"][-4:] for x in lost] == ["0002", "0001", "0000"]
     assert all(x.rec["reason"] for x in lost)
     assert len(q.lessons["laya:KXBTC15M-26OCT060002"]) == D.LESSON_MAX
-    html = render(lg, start="2026-10-06", now=lg.last_ts, quality=q)
+    html = render(lg, start="2026-10-06", now=lg.last_ts, quality=q, view="quality")
     assert "Decision quality" in html and "no edge proven" in html.lower()
     assert "never fed back into live decisions" in html
 
@@ -181,6 +181,6 @@ def test_debate_needs_both_debaters_in_scope_and_renders():
     assert q.debate is not None and len(q.debate.clashes) == 1
     assert q.debate.wins == {"laya": 0, "jev": 1}
     assert D.quality(D.records(lg), lg, accounts=["laya", "coin"]).debate is None
-    html = render(lg, start="2026-10-06", quality=q)
+    html = render(lg, start="2026-10-06", quality=q, view="quality")
     assert "Analyst debate · bull vs bear" in html
     assert "no debate outcome changes an order" in html

@@ -174,7 +174,9 @@ def test_page_shows_ticket_paper_note_bracket_reason_and_legs():
     p = T.submit(
         lg, "broadcast", T.broadcast(["laya", "jev"], "YES", Decimal("5")), now=NOW, new_id=_ids()
     )
-    html = render(lg, start="2026-10-06", now=NOW, tickets=[p], ticket_msg="broadcast p0: sent")
+    html = render(
+        lg, start="2026-10-06", now=NOW, tickets=[p], ticket_msg="broadcast p0: sent", view="trade"
+    )
     assert 'aria-label="Order ticket · single / broadcast / basket / split"' in html
     assert "Ticket blotter" in html
     assert "paper only" in html and "0.50 mid + Kalshi taker fee" in html
