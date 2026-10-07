@@ -1,4 +1,4 @@
-"""One Nautilus paper worker per demo account (ALG-3255, A06 slice 1).
+"""One Nautilus paper worker per demo account (ALG-3255/ALG-3258, A06 slices 1-2).
 
 Run as its own OS process: ``python -m algobots.engine.workers.paper --account laya``.
 
@@ -14,6 +14,14 @@ cannot reach a broker.
 The ledger stays the P&L source of truth: settlement is not modelled in the
 paper venue yet, so the venue account is frozen and positions stay open.
 Liveness goes to ``<state_dir>/workers/<account>.json`` every poll.
+
+Ownership and restart (ALG-3258): ``main`` takes the account's lease first
+and exits ``EXIT_DENIED`` if another process holds it. A fresh worker is
+**entry-frozen**. It reports ``reconciling`` and refuses (and counts) every
+entry until ``reconcile()`` has rebuilt the account from durable state: the
+ledger replay restores past fills into the paper venue and marks their
+intervals done. Only then does it report ``reconciled`` and trade new
+intervals. A crashed worker is therefore never resumed straight into trading.
 """
 
 from __future__ import annotations
@@ -39,6 +47,7 @@ from nautilus_trader.trading.strategy import Strategy
 
 from algobots.demo import killswitch
 from algobots.demo import ledger as L
+from algobots.engine.workers.lease import EXIT_DENIED, Lease, LeaseDenied
 
 # Nautilus 1.231 calls the deprecated pd.Timestamp.utcnow() on every run().
 warnings.filterwarnings("ignore", message="Timestamp.utcnow")
@@ -101,11 +110,20 @@ class DemoPaperStrategy(Strategy):
         self.pending: dict[InstrumentId, L.Decision] = {}
         self.submitted = 0
         self.filled = 0
+        self.restored = 0  # submitted while reconciling, to rebuild venue state
+        self.rejected_frozen = 0  # entries refused before reconcile
+        self.frozen = True  # no entries until the worker has reconciled
+        self.restoring = False
         self.last_order: dict | None = None
 
-    def queue(self, inst_id: InstrumentId, decision: L.Decision) -> None:
+    def queue(self, inst_id: InstrumentId, decision: L.Decision) -> bool:
+        """Queue an entry for the next quote; refused (and counted) while entry-frozen."""
+        if self.frozen and not self.restoring:
+            self.rejected_frozen += 1
+            return False
         self.pending[inst_id] = decision
         self.subscribe_quote_ticks(inst_id)
+        return True
 
     def on_quote_tick(self, tick: QuoteTick) -> None:
         d = self.pending.pop(tick.instrument_id, None)
@@ -120,6 +138,7 @@ class DemoPaperStrategy(Strategy):
         )
         self.submit_order(order)
         self.submitted += 1
+        self.restored += self.restoring
         self.last_order = {
             "client_order_id": str(order.client_order_id),
             "instrument": str(tick.instrument_id),
@@ -141,7 +160,8 @@ class PaperWorker:
         self.ids = ids(account)
         self.venue = Venue(self.ids["venue"])
         self.started_at = time.time()
-        self.ready_at: float | None = None  # first completed feed pass
+        self.ready_at: float | None = None  # reconcile completed
+        self.reconciled = False
         self.done_events: set[str] = set()
         self.rows_seen = 0
         self.ran = False  # Nautilus refuses end() on an engine that never ran
@@ -170,19 +190,40 @@ class PaperWorker:
         self.engine.add_strategy(self.strategy)
         self.status_path = state_dir / "workers" / f"{account}.json"
 
+    def reconcile(self) -> int:
+        """Rebuild the account from the durable ledger, then lift the entry freeze.
+
+        Returns the number of past fills restored into the paper venue.
+        """
+        self.strategy.restoring = True
+        try:
+            self.step()
+        finally:
+            self.strategy.restoring = False
+        self.strategy.frozen = False
+        self.reconciled = True
+        self.ready_at = time.time()
+        return self.strategy.restored
+
     def step(self) -> int:
-        """Process feed intervals not yet seen; return how many were new."""
+        """Process feed intervals not yet seen; return how many were new.
+
+        While entry-frozen, a FILLED interval is refused and left unprocessed,
+        so ``reconcile()`` restores it from the ledger later.
+        """
         rows = L.load_rows(self.feed, since_ts=self.since)
         lg = L.build(rows, killswitch.read(str(self.state_dir)), self.refills)
         new = [d for d in lg.books[self.account].decisions if d.event not in self.done_events]
         ticks = []
         for d in new:
-            self.done_events.add(d.event)
             if d.status != "FILLED":
+                self.done_events.add(d.event)
                 continue
             inst = instrument(self.venue, d.event, d.side, d.ts)
+            if not self.strategy.queue(inst.id, d):
+                continue
+            self.done_events.add(d.event)
             self.engine.add_instrument(inst)
-            self.strategy.queue(inst.id, d)
             ticks.append(quote(inst, d.ts))
         if ticks:
             self.engine.add_data(ticks)
@@ -194,7 +235,6 @@ class PaperWorker:
 
     def heartbeat(self) -> dict:
         s = self.strategy
-        self.ready_at = self.ready_at or time.time()
         status = {
             "account": self.account,
             **self.ids,
@@ -205,9 +245,13 @@ class PaperWorker:
             "started_at": self.started_at,
             "last_heartbeat": time.time(),
             "ready_at": self.ready_at,
+            "phase": "ready" if self.reconciled else "reconciling",
+            "reconciled": self.reconciled,
             "intervals": self.rows_seen,
             "orders_submitted": s.submitted,
             "orders_filled": s.filled,
+            "orders_restored": s.restored,
+            "orders_rejected_frozen": s.rejected_frozen,
             "open_positions": len(self.engine.cache.positions_open()),
             "last_order": s.last_order,
             "mode": "paper",
@@ -238,6 +282,12 @@ def main(argv: list[str] | None = None) -> None:
         for t in s.demo_sleeve_refills.split(",")
         if t.strip()
     ]
+    lease = Lease(Path(s.demo_state_dir), a.account)
+    try:
+        lease.acquire()  # a no-op when the supervisor already recorded this PID
+    except LeaseDenied as e:
+        print(f"denied: {e}", flush=True)
+        raise SystemExit(EXIT_DENIED) from None
     w = PaperWorker(
         a.account, Path(s.demo_feed_path), Path(s.demo_state_dir), s.demo_start, refills
     )
@@ -250,6 +300,8 @@ def main(argv: list[str] | None = None) -> None:
     signal.signal(signal.SIGTERM, _stop)
     signal.signal(signal.SIGINT, _stop)
     try:
+        w.heartbeat()  # reconciling: entry-frozen
+        w.reconcile()
         while True:
             w.step()
             w.heartbeat()
@@ -260,6 +312,7 @@ def main(argv: list[str] | None = None) -> None:
                 time.sleep(0.2)
     finally:
         w.close()
+        lease.release(os.getpid())
 
 
 if __name__ == "__main__":
