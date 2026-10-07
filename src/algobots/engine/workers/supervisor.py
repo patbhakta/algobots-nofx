@@ -78,7 +78,8 @@ class Isolation:
         for p in self.forbid or ():
             a += ["--forbid", p]
         if self.uid is not None:
-            a += ["--uid", str(self.uid), "--gid", str(self.gid if self.gid is not None else self.uid)]
+            gid = self.gid if self.gid is not None else self.uid
+            a += ["--uid", str(self.uid), "--gid", str(gid)]
         return [*a, "--"]
 
 

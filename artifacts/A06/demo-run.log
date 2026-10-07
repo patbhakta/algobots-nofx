@@ -1,0 +1,6 @@
+started {'accounts': ['syn1', 'syn2', 'syn3', 'syn4']}
+all_ready {'startup_s': {'syn1': 3.14, 'syn2': 3.49, 'syn3': 3.48, 'syn4': 3.34}}
+killed {'account': 'syn2', 'pid': 16}
+after_kill {'states': {'syn1': 'ready', 'syn2': 'exited', 'syn3': 'ready', 'syn4': 'ready'}, 'ticks_delta': {'syn1': 40, 'syn2': 0, 'syn3': 40, 'syn4': 40}}
+restarted {'account': 'syn2', 'pid': 132, 'phases_seen': ['reconciling', 'ready'], 'orders_restored': 156, 'orders_rejected_frozen': 0}
+stopped {}

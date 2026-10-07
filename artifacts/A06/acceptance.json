@@ -1,21 +1,24 @@
 {
   "packet": "A06",
-  "slice": "A06-2 (ALG-3258)",
-  "tested_commit": "df5f9fc",
+  "slice": "A06-3 (ALG-3259)",
+  "tested_commit": "c4d9662",
   "command": "make verify-A06",
   "cases": {
     "AC1": {
-      "status": "PENDING",
+      "status": "PASS",
       "case": "GIVEN four paper accounts WHEN started THEN four separate Nautilus processes have unique IDs and account namespaces",
-      "note": "the demo runs 3 accounts (laya/jev/coin); N->N processes and unique IDs are tested and live, but a 4-account Nautilus run is not exercised yet",
+      "note": "4 tests passed",
       "tests": {
         "tests/engine/workers/test_supervisor.py::test_n_accounts_n_processes_kill_one_others_keep_running": "passed",
-        "tests/engine/workers/test_paper.py::test_ids_are_unique_per_account": "passed"
+        "tests/engine/workers/test_paper.py::test_ids_are_unique_per_account": "passed",
+        "tests/engine/workers/test_fixture.py::test_fixture_declares_four_accounts_eight_unique_deployments": "passed",
+        "tests/engine/workers/test_fixture.py::test_four_nautilus_accounts_kill_one_others_continue": "passed"
       },
       "evidence": [
         "artifacts/A06/test-results/junit.xml",
         "artifacts/A06/processes.txt",
-        "artifacts/A06/workers-before-kill.json"
+        "artifacts/A06/workers-before-kill.json",
+        "artifacts/A06/demo-run.json"
       ]
     },
     "AC2": {
@@ -59,11 +62,18 @@
       ]
     },
     "AC5": {
-      "status": "PENDING",
+      "status": "PASS",
       "case": "GIVEN the target workload THEN record measured p95 RSS/CPU; do not infer a fleet capacity without measurements",
-      "note": "A06-3: p95 RSS/CPU under the declared fixture is not measured yet",
-      "tests": {},
-      "evidence": []
+      "note": "2 tests passed",
+      "tests": {
+        "tests/engine/workers/test_fixture.py::test_fixture_is_entry_frozen_until_reconciled_and_reports_metrics": "passed",
+        "tests/packets/A06/test_a06_packet.py::test_measurements_are_committed_and_complete": "passed"
+      },
+      "evidence": [
+        "artifacts/A06/test-results/junit.xml",
+        "artifacts/A06/measurements.json",
+        "deploy/workers/README.md"
+      ]
     }
   }
 }
