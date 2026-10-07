@@ -11,6 +11,13 @@ submits a market order for every FILLED decision on that interval's YES/NO
 binary at the 50c paper quote. No live client exists in this process: it
 cannot reach a broker.
 
+Execution seam (ALG-3270): the execution client comes from the account's
+``AccountWorkerSpec``. ``sandbox`` is the simulated venue above and the
+default. ``adapter:<name>`` selects a shipped Nautilus adapter, and this worker
+refuses it until a broker connection is authorized (see ``execution``). Fills
+are recorded from Nautilus ``OrderFilled`` events (``strategy.fills``), not
+read back from the ledger. ``reconcile_fills`` diffs them against the ledger.
+
 The ledger stays the P&L source of truth: settlement is not modelled in the
 paper venue yet, so the venue account is frozen and positions stay open.
 Liveness goes to ``<state_dir>/workers/<account>.json`` every poll.
@@ -47,6 +54,12 @@ from nautilus_trader.trading.strategy import Strategy
 
 from algobots.demo import killswitch
 from algobots.demo import ledger as L
+from algobots.engine.workers.execution import (
+    AccountWorkerSpec,
+    AdapterNotAuthorized,
+    adapter_node_config,
+    specs,
+)
 from algobots.engine.workers.lease import EXIT_DENIED, Lease, LeaseDenied
 
 # Nautilus 1.231 calls the deprecated pd.Timestamp.utcnow() on every run().
@@ -115,10 +128,16 @@ class DemoPaperStrategy(Strategy):
         self.frozen = True  # no entries until the worker has reconciled
         self.restoring = False
         self.last_order: dict | None = None
+        self.decision_for: dict[str, L.Decision] = {}  # client_order_id -> decision
+        self.fills: list[dict] = []  # one per Nautilus OrderFilled event
+
+    @property
+    def accepting(self) -> bool:
+        return self.restoring or not self.frozen
 
     def queue(self, inst_id: InstrumentId, decision: L.Decision) -> bool:
         """Queue an entry for the next quote; refused (and counted) while entry-frozen."""
-        if self.frozen and not self.restoring:
+        if not self.accepting:
             self.rejected_frozen += 1
             return False
         self.pending[inst_id] = decision
@@ -136,6 +155,7 @@ class DemoPaperStrategy(Strategy):
             Quantity.from_int(qty),
             tags=[f"acct:{self.account}", f"event:{d.event}"],
         )
+        self.decision_for[str(order.client_order_id)] = d
         self.submit_order(order)
         self.submitted += 1
         self.restored += self.restoring
@@ -147,14 +167,61 @@ class DemoPaperStrategy(Strategy):
             "ts": d.ts,
         }
 
-    def on_order_filled(self, event) -> None:  # noqa: ANN001 — Nautilus event type
+    def on_order_filled(self, event) -> None:  # noqa: ANN001 — Nautilus OrderFilled
+        d = self.decision_for.get(str(event.client_order_id))
+        self.fills.append(
+            {
+                "client_order_id": str(event.client_order_id),
+                "trade_id": str(event.trade_id),
+                "account_id": str(event.account_id),
+                "instrument": str(event.instrument_id),
+                "event": d.event if d else None,
+                "qty": str(event.last_qty),
+                "px": str(event.last_px),
+                "commission": str(event.commission),
+                "ts_event": event.ts_event,
+            }
+        )
         self.filled += 1
 
 
+def strategy_kwargs(account: str) -> dict[str, str]:
+    """``DemoPaperConfig`` kwargs. Both execution paths use these unchanged."""
+    i = ids(account)
+    return {
+        "strategy_id": i["strategy_id"],
+        "order_id_tag": i["order_id_tag"],
+        "account": account,
+    }
+
+
+def node_config(spec: AccountWorkerSpec):
+    """The ``TradingNodeConfig`` an adapter spec would run. Builds config only, connects nothing."""
+    return adapter_node_config(spec, ids(spec.account)["trader_id"], strategy_kwargs(spec.account))
+
+
 class PaperWorker:
-    def __init__(self, account: str, feed: Path, state_dir: Path, start: str, refills: list[float]):
+    def __init__(
+        self,
+        account: str,
+        feed: Path,
+        state_dir: Path,
+        start: str,
+        refills: list[float],
+        spec: AccountWorkerSpec | None = None,
+    ):
         if account not in L.STRATEGIES:
             raise ValueError(f"unknown demo account {account!r}")
+        self.spec = spec or AccountWorkerSpec(account)
+        if self.spec.account != account:
+            raise ValueError(f"spec is for {self.spec.account!r}, not {account!r}")
+        if self.spec.adapter is not None:
+            a = self.spec.adapter
+            raise AdapterNotAuthorized(
+                f"{account}: {self.spec.execution} would connect a {a.venue} account, an "
+                f"external mutation that A06 has not authorized. Needs {', '.join(a.credentials)}; "
+                f"{a.infra}"
+            )
         self.account, self.feed, self.state_dir, self.refills = account, feed, state_dir, refills
         self.since = datetime.strptime(start, "%Y-%m-%d").replace(tzinfo=UTC).timestamp()
         self.ids = ids(account)
@@ -180,13 +247,7 @@ class PaperWorker:
             base_currency=USD,
             frozen_account=True,
         )
-        self.strategy = DemoPaperStrategy(
-            DemoPaperConfig(
-                strategy_id=self.ids["strategy_id"],
-                order_id_tag=self.ids["order_id_tag"],
-                account=account,
-            )
-        )
+        self.strategy = DemoPaperStrategy(DemoPaperConfig(**strategy_kwargs(account)))
         self.engine.add_strategy(self.strategy)
         self.status_path = state_dir / "workers" / f"{account}.json"
 
@@ -220,10 +281,11 @@ class PaperWorker:
                 self.done_events.add(d.event)
                 continue
             inst = instrument(self.venue, d.event, d.side, d.ts)
+            if self.strategy.accepting:  # the instrument must exist before the subscribe
+                self.engine.add_instrument(inst)
             if not self.strategy.queue(inst.id, d):
                 continue
             self.done_events.add(d.event)
-            self.engine.add_instrument(inst)
             ticks.append(quote(inst, d.ts))
         if ticks:
             self.engine.add_data(ticks)
@@ -250,11 +312,14 @@ class PaperWorker:
             "intervals": self.rows_seen,
             "orders_submitted": s.submitted,
             "orders_filled": s.filled,
+            "fill_events": len(s.fills),
+            "last_fill": s.fills[-1] if s.fills else None,
             "orders_restored": s.restored,
             "orders_rejected_frozen": s.rejected_frozen,
             "open_positions": len(self.engine.cache.positions_open()),
             "last_order": s.last_order,
             "mode": "paper",
+            "execution": self.spec.execution,
         }
         self.status_path.parent.mkdir(parents=True, exist_ok=True)
         tmp = self.status_path.with_suffix(".tmp")
@@ -276,7 +341,15 @@ def main(argv: list[str] | None = None) -> None:
     ap.add_argument("--account", required=True, choices=sorted(L.STRATEGIES))
     ap.add_argument("--poll", type=float, default=15.0, help="feed poll interval, seconds")
     ap.add_argument("--once", action="store_true", help="process the feed once and exit")
+    ap.add_argument(
+        "--execution", help="'sandbox' or 'adapter:<name>' (default: $ALGOBOTS_WORKER_EXECUTION)"
+    )
     a = ap.parse_args(argv)
+    spec = (
+        AccountWorkerSpec(a.account, a.execution)
+        if a.execution
+        else specs(sorted(L.STRATEGIES))[a.account]
+    )
     refills = [
         datetime.strptime(t.strip(), "%Y-%m-%dT%H:%M").replace(tzinfo=UTC).timestamp()
         for t in s.demo_sleeve_refills.split(",")
@@ -288,9 +361,14 @@ def main(argv: list[str] | None = None) -> None:
     except LeaseDenied as e:
         print(f"denied: {e}", flush=True)
         raise SystemExit(EXIT_DENIED) from None
-    w = PaperWorker(
-        a.account, Path(s.demo_feed_path), Path(s.demo_state_dir), s.demo_start, refills
-    )
+    try:
+        w = PaperWorker(
+            a.account, Path(s.demo_feed_path), Path(s.demo_state_dir), s.demo_start, refills, spec
+        )
+    except AdapterNotAuthorized as e:
+        lease.release(os.getpid())
+        print(f"refused: {e}", flush=True)
+        raise SystemExit(EXIT_DENIED) from None
     stop = False
 
     def _stop(*_: object) -> None:
