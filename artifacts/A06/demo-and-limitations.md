@@ -144,6 +144,8 @@ state, and the live feed mounted read-only. It shows:
 - A takeover going `starting → reconciling` (0 submitted) `→ ready` (159 restored), and the
   lease released on stop.
 
-The production container on `algobots-api-1` was rebuilt at 10:00Z from the main checkout of
-ALG-3266, which is still uncommitted and includes migration 0005. It therefore doesn't include
-A06-2 until that work rebases onto `origin/main`.
+**Production.** `algobots-api-1` was rebuilt at 2026-10-07T11:52Z from `0f0c469`, which
+includes A06-2. `GET /demo/api/workers` reports `enabled/ready: true`, with all three
+accounts `ready`. Each worker is `reconciled: true` with `lease_pid == pid` (19/20/21), and
+`orders_restored` is 203/120/159 with 0 frozen rejections. Leases are at
+`/var/lib/algobots-demo/workers/leases/demo.<acct>.paper.lease`.
