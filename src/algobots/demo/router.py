@@ -12,6 +12,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
+from pydantic import BaseModel
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
@@ -25,6 +26,7 @@ from algobots.demo import killswitch
 from algobots.demo import ledger as L
 from algobots.demo import quality as Q
 from algobots.demo import studio as S
+from algobots.demo import tickets as T
 from algobots.demo.page import Registry, render, render_denied
 from algobots.demo.scope import Denied, Scope, current_scope, narrow, resolve
 from algobots.demo.studio_page import render_studio
@@ -122,10 +124,17 @@ def _dash_actor(form: dict, request: Request) -> str:
     return f"{name} via dashboard ({host})" if name else f"dashboard ({host})"
 
 
+def _tickets(scope: Scope) -> list[T.Parent]:
+    """Journaled tickets with ungranted legs dropped (parents left empty are dropped)."""
+    return T.narrow(T.load(get_settings().demo_state_dir), scope.accounts)
+
+
 @router.get("/demo", response_class=HTMLResponse)
 def demo_page(
     account: str | None = None,
     status: str | None = None,
+    ticket: str | None = None,
+    ticket_err: str | None = None,
     scope: Scope = Depends(current_scope),
     db: Session = Depends(get_db),
 ) -> HTMLResponse:
@@ -135,6 +144,13 @@ def demo_page(
         return HTMLResponse(render_denied(d.status_code, d.account, d.why), d.status_code)
     lg, start = _scoped(scope)
     workers = [w for w in _workers() if w["account"] in scope.accounts]
+    parents = _tickets(scope)
+    msg = f"rejected: {ticket_err[:200]}" if ticket_err else None
+    if ticket and not msg:
+        p = next((p for p in parents if p.id == ticket), None)
+        if p:
+            sent = sum(1 for x in p.legs if x.status == "filled")
+            msg = f"{p.path} {p.id}: {p.state} — {sent}/{len(p.legs)} legs filled (paper)"
     html = render(
         lg,
         start=start,
@@ -146,6 +162,8 @@ def demo_page(
         quality=_quality(scope),
         registry=_registry(db, scope),
         harness=_harness(lg, key),
+        tickets=parents,
+        ticket_msg=msg,
     )
     return HTMLResponse(html, headers={"Cache-Control": "no-store"})
 
@@ -206,7 +224,107 @@ def demo_orders(
     key = resolve(account, scope)
     lg, _ = _scoped(scope)
     st = B.status_key(status)
-    return {"account": key, "status": st, "orders": B.orders(lg, key, st, limit)}
+    parents = _tickets(scope)
+    return {
+        "account": key,
+        "status": st,
+        "orders": B.orders(lg, key, st, limit, tickets=T.blotter_rows(parents)),
+        "parents": [
+            {"id": p.id, "path": p.path, "ts": p.ts, "state": p.state, "legs": len(p.legs)}
+            for p in reversed(parents)
+            if key == B.ALL or any(x.account == key for x in p.legs)
+        ],
+    }
+
+
+class TicketIn(BaseModel):
+    path: str
+    accounts: list[str]
+    side: str
+    notional: str
+    kind: str = "entry"
+    max_clip: str | None = None
+    basket: list[dict] | None = None  # [{account, side, notional, kind?}]
+    bracket: bool = False
+
+
+def _intents(t: TicketIn) -> list[T.Intent]:
+    if t.path == "basket":
+        return [
+            T.Intent(
+                str(o.get("account", "")).lower(),
+                str(o.get("side", "")).upper(),
+                T.parse_money(str(o.get("notional", ""))),
+                str(o.get("kind", t.kind)),
+            )
+            for o in t.basket or []
+        ]
+    accounts = t.accounts if t.path == "broadcast" else t.accounts[:1]
+    return T.broadcast(accounts, t.side.upper(), T.parse_money(t.notional), t.kind)
+
+
+def _submit(t: TicketIn, scope: Scope) -> T.Parent:
+    resolve(None, scope)
+    intents = _intents(t)
+    for it in intents:
+        resolve(it.account, scope)  # every leg's account must be granted: 403 otherwise
+    lg, _ = _scoped(scope)
+    clip = T.parse_money(t.max_clip, "max clip") if t.path == "split" else None
+    return T.submit(
+        lg,
+        t.path,
+        intents,
+        now=time.time(),
+        max_clip=clip,
+        bracket=t.bracket,
+        state_dir=get_settings().demo_state_dir,
+    )
+
+
+@router.post("/demo/api/orders")
+def demo_submit(t: TicketIn, scope: Scope = Depends(current_scope)) -> dict:
+    """Submit one ticket down one path; every leg through the risk gate (paper fills)."""
+    try:
+        p = _submit(t, scope)
+    except T.TicketError as exc:
+        raise HTTPException(422, str(exc)) from None
+    return asdict(p)
+
+
+@router.post("/demo/orders", include_in_schema=False)
+async def demo_ticket_form(
+    request: Request, scope: Scope = Depends(current_scope)
+) -> RedirectResponse:
+    form = parse_qs((await request.body()).decode())
+    one = lambda k, d="": form.get(k, [d])[0]  # noqa: E731
+    path = one("path", "single")
+    key = B.account_key(one("ctx"))
+    base = "/demo" + ("" if key == B.ALL else f"?account={key}")
+    sep = "&" if "?" in base else "?"
+    try:
+        basket = [
+            {"account": i.account, "side": i.side, "notional": str(i.notional), "kind": i.kind}
+            for i in (
+                T.parse_basket(one("basket"), one("kind", "entry")) if path == "basket" else []
+            )
+        ]
+        p = _submit(
+            TicketIn(
+                path=path,
+                accounts=form.get("accounts", []),
+                side=one("side", "YES"),
+                notional=one("notional"),
+                kind=one("kind", "entry"),
+                max_clip=one("max_clip") or None,
+                basket=basket,
+                bracket=bool(one("bracket")),
+            ),
+            scope,
+        )
+    except (T.TicketError, Denied) as exc:
+        why = exc.why if isinstance(exc, Denied) else str(exc)
+        return RedirectResponse(f"{base}{sep}{urlencode({'ticket_err': why})}#ticket", 303)
+    return RedirectResponse(f"{base}{sep}ticket={p.id}#ticket", 303)
 
 
 @router.get("/demo/api/state")

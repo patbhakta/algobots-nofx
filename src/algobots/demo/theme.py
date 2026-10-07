@@ -83,6 +83,12 @@ table.accounts tr.sel td:first-child a{color:var(--c-focus);font-weight:700}
 .filters .filt{color:var(--c-muted);text-decoration:none;border:var(--rule-strong);padding:0 6px;line-height:20px;text-transform:uppercase;font-size:10.5px;letter-spacing:.04em}
 .filters .filt.on{color:var(--c-ink);border-color:var(--c-focus)}
 .filters .meta{margin-left:auto;font-size:10.5px}
+.rticket fieldset{border:0;border-bottom:var(--rule);margin:0;padding:4px 0;display:flex;flex-wrap:wrap;gap:4px 12px;align-items:center}
+.rticket legend{float:left;width:100%;font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--c-muted)}
+.rticket input,.rticket select,.rticket textarea{font:inherit;background:var(--c-bg);color:var(--c-ink);border:var(--rule-strong);padding:0 4px}
+.rticket textarea{width:100%;max-width:100%;box-sizing:border-box}
+.rticket .actions{padding:6px 0;display:flex;flex-wrap:wrap;gap:6px;align-items:center} .rticket .actions .status{white-space:normal}
+.rticket-msg{color:var(--c-ink);border-left:3px solid var(--c-focus);padding-left:6px}
 @media (max-width:1100px){.strip{grid-template-columns:repeat(4,minmax(0,1fr))}.grid{grid-template-columns:minmax(0,1fr)}}
 @media (max-width:700px){
 .wide{display:none}

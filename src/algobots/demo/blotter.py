@@ -6,6 +6,7 @@ JSON endpoints, so the page and the API can never disagree.
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from datetime import UTC, datetime
 from decimal import Decimal
 
@@ -86,9 +87,13 @@ def positions(lg: L.Ledger, now: float, account: str = ALL) -> list[dict]:
 
 
 def orders(
-    lg: L.Ledger, account: str = ALL, status: str | None = None, limit: int | None = 200
+    lg: L.Ledger,
+    account: str = ALL,
+    status: str | None = None,
+    limit: int | None = 200,
+    tickets: Sequence[dict] = (),
 ) -> list[dict]:
-    """Every decision as a blotter line, newest first."""
+    """Every decision (plus any ticket legs) as a blotter line, newest first."""
     out = [
         {
             "id": f"{b.key}:{d.event}",
@@ -107,10 +112,17 @@ def orders(
             "status": d.status.lower(),
             "clamped": d.clamped,
             "reason": d.reason,
+            "source": "strategy",
+            "parent_id": None,
         }
         for b in books(lg, account)
         for d in b.decisions
         if status is None or d.status.lower() == status
+    ]
+    out += [
+        t
+        for t in tickets
+        if (account == ALL or t["account"] == account) and (status is None or t["status"] == status)
     ]
     out.sort(key=lambda o: (o["ts"], list(L.STRATEGIES).index(o["account"])), reverse=True)
     return out[:limit] if limit else out

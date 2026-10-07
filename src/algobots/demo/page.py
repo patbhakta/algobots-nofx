@@ -24,6 +24,7 @@ from algobots.demo import decisions as D
 from algobots.demo import ledger as L
 from algobots.demo import quality as Q
 from algobots.demo import studio as S
+from algobots.demo import tickets as T
 from algobots.demo.theme import CLOCK, CSS, KEYS
 
 INTERVAL_S = 15 * 60
@@ -558,6 +559,116 @@ def _risk(lg: L.Ledger, now: float, account: str) -> str:
     )
 
 
+def _risk_ticket(lg: L.Ledger, account: str, msg: str | None) -> str:
+    """Order ticket: one paper order type, four paths, every leg behind the risk gate."""
+    picked = set(lg.books) if account == B.ALL else {account}
+    radios = "".join(
+        f'<label><input type="radio" name="path" value="{p}"{" checked" if p == "single" else ""}> {p}</label>'
+        for p in T.PATHS
+    )
+    accts = "".join(
+        f'<label><input type="checkbox" name="accounts" value="{k}"{" checked" if k in picked else ""}> {c.e(n)}</label>'
+        for k, n in L.STRATEGIES.items()
+        if k in lg.books  # only granted accounts are offered
+    )
+    sides = "".join(f'<option value="{s}">{s}</option>' for s in T.SIDES)
+    kinds = "".join(f'<option value="{k}">{k}</option>' for k in T.KINDS)
+    kill = (
+        c.status("BLOCKED", "kill switch engaged — entry legs will be denied; exits still allowed")
+        if lg.kill.get("engaged")
+        else ""
+    )
+    return (
+        f'<form method="post" action="/demo/orders" class="rticket" id="ticket">'
+        f'<input type="hidden" name="ctx" value="{account}">'
+        f"<fieldset><legend>Path</legend>{radios}</fieldset>"
+        f"<fieldset><legend>Accounts (single/split use the first; broadcast fans to all ticked)</legend>{accts}</fieldset>"
+        "<fieldset><legend>Order</legend>"
+        f"<label>{B.INSTRUMENT} next 15m</label>"
+        f'<label>side <select name="side">{sides}</select></label>'
+        f'<label>kind <select name="kind">{kinds}</select></label>'
+        '<label>notional USD <input name="notional" inputmode="decimal" value="10" size="6"></label>'
+        f'<label>max clip USD <input name="max_clip" inputmode="decimal" value="{L.ENVELOPE.max_order_value}" size="6"></label>'
+        '<label><input type="checkbox" name="bracket" disabled aria-describedby="bracket-why"> bracket</label>'
+        f'<span class="meta" id="bracket-why">{c.e(T.BRACKET_UNSUPPORTED)}</span></fieldset>'
+        "<fieldset><legend>Basket (one per line: account side notional)</legend>"
+        '<textarea name="basket" rows="3" placeholder="laya YES 10&#10;jev NO 5"></textarea></fieldset>'
+        f'<div class="actions">{kill}<button type="submit" class="action" data-environment="PAPER">'
+        f'<span>Submit paper order</span><span class="ctx">every leg → risk gate</span></button></div>'
+        f'<p class="meta">{c.e(T.PAPER_NOTE)} · gate per leg: kill switch → sleeve floor → '
+        f"daily loss −{L.ENVELOPE.max_daily_loss} → rate breakers → clamp to {L.ENVELOPE.max_order_value} USD · exits privileged</p>"
+        + (f'<p class="rticket-msg" role="status">{c.e(msg)}</p>' if msg else "")
+        + "</form>"
+    )
+
+
+def _ticket_blotter(parents: list[T.Parent], account: str) -> str:
+    """Parent → child legs, newest parent first, with per-leg status and reason."""
+    rows = []
+    for p in sorted(parents, key=lambda p: p.ts, reverse=True)[:20]:
+        legs = [x for x in p.legs if account == B.ALL or x.account == account]
+        if not legs:
+            continue
+        rows.append(
+            [
+                f'<span class="num">{_t(p.ts, "%m-%d %H:%M:%S")}</span>',
+                f"<strong>{c.e(p.path)}</strong> {c.e(p.id)}",
+                "",
+                "",
+                "",
+                f'<span class="num">{len(legs)} legs</span>',
+                "",
+                c.status(
+                    "ready"
+                    if p.state == "sent"
+                    else "BLOCKED"
+                    if p.state == "rejected"
+                    else "PARTIALLY_FILLED",
+                    p.state,
+                ),
+                "",
+            ]
+        )
+        for x in legs:
+            filled = x.status == "filled"
+            rows.append(
+                [
+                    "",
+                    f'<span class="meta">└ leg {x.seq}</span>',
+                    c.e(L.STRATEGIES[x.account]),
+                    c.e(x.side),
+                    c.e(x.kind),
+                    f'<span class="num">{x.qty}</span>' if filled else NONE,
+                    c.money(_usd(x.notional)) if filled else NONE,
+                    c.status(
+                        "FILLED" if filled else "BLOCKED",
+                        x.status + (" · clamped" if x.clamped else ""),
+                    ),
+                    f'<span class="meta" title="{c.e(x.reason)}">{c.e(x.reason)}</span>',
+                ]
+            )
+    return (
+        c.table(
+            [
+                "Time",
+                "Parent / leg",
+                "Account",
+                "Side",
+                "Kind",
+                "Qty",
+                "Notional",
+                "Status",
+                "Reason",
+            ],
+            rows,
+            numeric={5, 6},
+            stack=True,
+            empty="No ticket orders yet — submit one from the Order ticket.",
+        )
+        + '<p class="meta"><a href="/demo/api/orders">JSON</a> · legs carry parent_id</p>'
+    )
+
+
 def _performance(lg: L.Ledger, account: str) -> str:
     rows = []
     for b in B.books(lg, account):
@@ -818,6 +929,8 @@ def render(
     quality: D.Quality | None = None,
     registry: Registry | None = None,
     harness: dict | None = None,
+    tickets: list[T.Parent] | None = None,
+    ticket_msg: str | None = None,
 ) -> str:
     """``lg`` must already be narrowed to the caller's grants (``demo.scope``)."""
     from algobots.demo import studio_page as SP  # imports this module
@@ -851,6 +964,15 @@ def render(
         )
         + c.panel("Positions", _positions(lg, now, account), financial=True, tag=ctx)
         + c.panel("Risk", _risk(lg, now, account), financial=True, tag=ctx)
+        + c.panel(
+            "Order ticket · single / broadcast / basket / split",
+            _risk_ticket(lg, account, ticket_msg),
+            financial=True,
+            tag=TAG,
+        )
+        + c.panel(
+            "Ticket blotter", _ticket_blotter(tickets or [], account), financial=True, tag=ctx
+        )
         + c.panel("Orders", _orders(lg, account, status), financial=True, tag=ctx, cls="full")
         + c.panel("Strategy performance", _performance(lg, account), financial=True, tag=ctx)
         + c.panel("Equity", _curve(lg, account), financial=True, tag=ctx)

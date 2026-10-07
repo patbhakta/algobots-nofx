@@ -16,9 +16,11 @@ const check = (ok, msg) => { console.log(`${ok ? "PASS" : "FAIL"} ${msg}`); if (
 const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
 await page.goto(`${base}/demo#nofocus`); // no autofocus: Tab starts from the top
 
-// Tab reaches every pane control, each with a visible focus ring.
-const controls = await page.$$eval(".grid a, .grid button, .grid input, .grid [tabindex]",
-  (els) => els.filter((e) => e.offsetParent && e.tabIndex >= 0)
+// Tab reaches every pane control, each with a visible focus ring. A radio group is
+// one Tab stop (its checked radio; arrows move within it); disabled controls are skipped.
+const controls = await page.$$eval(".grid a, .grid button, .grid input, .grid select, .grid textarea, .grid [tabindex]",
+  (els) => els.filter((e) => e.offsetParent && e.tabIndex >= 0 && !e.disabled
+      && !(e.type === "radio" && !e.checked))
     .map((e, i) => { e.dataset.kb = String(i); return i; }).length);
 const seen = new Set();
 let unringed = 0;

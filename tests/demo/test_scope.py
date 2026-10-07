@@ -162,3 +162,17 @@ def test_one_line_states_disconnected_empty_connected():
     assert 'data-state="connected"' in ok
     down = render(lg, start="x", now=1e9 + 30, supervisor_down=True)
     assert "DISCONNECTED · worker supervisor down" in down
+
+
+def test_order_ticket_is_scoped_to_grants(client):
+    c = client("laya", "coin")
+    order = {"path": "broadcast", "side": "YES", "notional": "5"}
+    denied = c.post("/demo/api/orders", json={**order, "accounts": ["laya", "jev"]})
+    assert denied.status_code == 403  # an ungranted leg fails the whole ticket, nothing journaled
+    ok = c.post("/demo/api/orders", json={**order, "accounts": ["laya", "coin"]})
+    assert ok.status_code == 200 and ok.json()["state"] == "sent"
+    client("laya", "jev", "coin").post("/demo/api/orders", json={**order, "accounts": ["jev"]})
+    body = client("laya", "coin").get("/demo/api/orders").json()
+    assert {o["account"] for o in body["orders"] if o["source"] == "ticket"} == {"laya", "coin"}
+    assert len(body["parents"]) == 1  # the jev-only parent never reaches this caller
+    assert 'value="jev"' not in client("laya", "coin").get("/demo").text

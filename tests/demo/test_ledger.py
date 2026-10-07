@@ -181,7 +181,8 @@ def test_account_context_filters_every_pane_and_round_trips_in_url():
     now = lg.last_ts + 60
     html = render(lg, start="2026-10-06", now=now, account="jev", status="filled")
     assert 'data-account="jev"' in html and 'class="acct sel" data-account="jev"' in html
-    assert html.count("ctx: Jev zero-shot") == 7  # Positions, Risk, Orders, 2 secondary, 2 quality
+    # Positions, Risk, Ticket blotter, Orders, 2 secondary, 2 quality
+    assert html.count("ctx: Jev zero-shot") == 8
     orders = html.split('aria-label="Orders"')[1].split("</section>")[0]
     assert "Jev zero-shot" in orders and "Laya System One" not in orders
     assert 'href="/demo?account=jev&amp;status=blocked"' in orders  # filters keep the context

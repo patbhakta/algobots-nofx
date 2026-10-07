@@ -277,6 +277,14 @@
     {
       "repo": "algobots",
       "path": "tests/demo/test_studio.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "src/algobots/demo/tickets.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "tests/demo/test_tickets.py"
     }
 ,
     {
