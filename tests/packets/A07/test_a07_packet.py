@@ -57,7 +57,9 @@ def test_a07_contracts_are_registered_and_locked():
 
     assert registry.get("OutboxEvent", "1.0").contract_name == "OutboxEvent"
     assert registry.get("IntentStatusResponse", "1.0").contract_name == "IntentStatusResponse"
-    assert registry.verify_lock(registry.load_lock()) == [], "live registry must match schema-lock.json"
+    assert (
+        registry.verify_lock(registry.load_lock()) == []
+    ), "live registry must match schema-lock.json"
 
 
 def test_demo_run_artifact_is_committed_and_complete():

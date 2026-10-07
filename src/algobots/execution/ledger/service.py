@@ -620,6 +620,13 @@ def apply_fill_event(
     if child is None:
         return EventApplyResult(False, "unmapped")
     qty, px, fee = event.quantity.value, event.price.amount, event.fee.amount
+    new_filled = child.filled_qty + qty
+    if new_filled > child.quantity:
+        # Guard BEFORE settlement is queued: an overfill settles nothing.
+        raise LedgerError(
+            f"fill {event.fill_id} overfills client order {child.client_order_id}: "
+            f"{new_filled} > {child.quantity}"
+        )
     signed = qty * px if event.side.value == "SELL" else -(qty * px)
     for kind, amount in (("FILL_NOTIONAL", signed), ("FEE", -fee)):
         db.add(
@@ -636,12 +643,6 @@ def apply_fill_event(
             )
         )
     old_qty, old_avg = child.filled_qty, child.avg_px_text
-    new_filled = old_qty + qty
-    if new_filled > child.quantity:
-        raise LedgerError(
-            f"fill {event.fill_id} overfills client order {child.client_order_id}: "
-            f"{new_filled} > {child.quantity}"
-        )
     child.filled_qty_text = _d(new_filled)
     prior_notional = (Decimal(old_avg) * old_qty) if old_avg else Decimal(0)
     child.avg_px_text = _d((prior_notional + qty * px) / new_filled) if new_filled else None

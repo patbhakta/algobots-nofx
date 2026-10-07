@@ -87,10 +87,15 @@ against SQLite; append-only triggers fire on UPDATE and DELETE.
 - **No network exactly-once claim.** Every guarantee is a durable-commit +
   deduplication property on our side (unique keys, stable identities,
   idempotent settlement). A duplicate external order can still be *observed*
-  at a broker that ignores `command_id`/client-order-ID dedup; we never
-  mint a second command for the same child, and the emulator honors that
-  contract. A07 claims at-most-one *confirmed* external order per intent,
-  not network-level exactly-once delivery.
+  at a broker that ignores `command_id`/client-order-ID dedup; within one
+  ownership epoch we never mint a second command for the same child, and the
+  emulator honors that contract. Across an ownership handoff a new epoch
+  deliberately mints a NEW command identity for the same
+  `client_order_id` (see
+  `test_staging_is_idempotent_per_epoch_and_versioned_across_epochs`) —
+  broker-side client-order-ID dedup is the backstop there, which A08's seam
+  contract should pin explicitly. A07 claims at-most-one *confirmed*
+  external order per intent, not network-level exactly-once delivery.
 - **No Redis, no lock service.** Correctness rests on database constraints
   alone, per the packet's exclusion.
 - **HTTP mount is A22 scope.** `POST /intents` (202 + intent id) and
