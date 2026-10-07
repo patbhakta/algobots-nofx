@@ -115,7 +115,7 @@ def test_invalid_sizing_rejected(tmp_path):
 def test_edit_never_changes_running_deployment(tmp_path):
     sd = str(tmp_path)
     v1 = S.load(sd).latest("trend")
-    _, (dep,) = S.deploy(sd, v1.hash, ["eq-a"], mode="equal", amount=D("400"), actor="pat")
+    _, (dep,), _ = S.deploy(sd, v1.hash, ["eq-a"], mode="equal", amount=D("400"), actor="pat")
     v2 = S.edit(sd, "trend", {"fast": 5, "slow": 15}, actor="pat")
     assert v2.version == 2 and v2.hash != v1.hash
     st = S.load(sd)

@@ -19,7 +19,7 @@ D = Decimal
 
 
 def _deploy(sd, h, account, amount="300", now=T0):
-    _, (dep,) = S.deploy(sd, h, [account], mode="equal", amount=D(amount), actor="t", now=now)
+    _, (dep,), _ = S.deploy(sd, h, [account], mode="equal", amount=D(amount), actor="t", now=now)
     return dep
 
 
@@ -216,7 +216,7 @@ def test_demo_page_and_api_show_template_orders_per_account(three, monkeypatch):
         assert deps[1].id not in page.text  # eq-b context never leaks into eq-a
         assert "Pat · Equities paper A" in page.text and BARS.SOURCE in page.text
         assert client.get("/demo?account=eq-z").status_code == 404
-        home = client.get("/demo?view=orders").text  # aggregate: Accounts rows + every deployment's orders
+        home = client.get("/demo?view=orders").text  # aggregate view: every deployment's orders
         assert all(f'data-deployment="{d.id}"' in home for d in deps)
         assert 'data-account="eq-b"' in home
     finally:

@@ -31,7 +31,6 @@ from algobots.demo import quality as Q
 from algobots.demo import studio as S
 from algobots.demo import tickets as T
 from algobots.demo.theme import CLOCK, CSS, HOVER, KEYS
-from algobots.engine.workers import template as TPL
 
 INTERVAL_S = 15 * 60
 STALE_AFTER_S = 25 * 60  # one missed observer run plus slack

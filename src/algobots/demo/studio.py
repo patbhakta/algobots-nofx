@@ -10,7 +10,18 @@ deployment.
 The allocation preview is a pure function: (version, accounts, existing
 deployments, sizing) -> per-account lines with the allocation, the headroom
 left after it, or an explicit skip reason. Deploy re-runs the same preview
-server-side and records only the lines that allocated.
+server-side, gates each eligible line through the one pre-trade risk gate,
+and records only the lines that allocated.
+
+A deploy is a *fan-out campaign* (A11-3): one parent, one independent child
+per account — skipped and risk-rejected children included, each with its own
+status and reason. The parent state is always derived from the children and
+never says "succeeded" unless every child did; one child's failure never
+touches another child's fills. Only one active deployment may own entries for
+a given (account, instrument): a conflicting version is skipped at preview
+with the owning deployment named. A version can be disabled for new
+deployments and a campaign paused (new entries held, protective orders left
+in place) without deleting any history.
 
 State lives in one JSON file next to the kill switch, written atomically.
 """
@@ -29,15 +40,20 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 
+from algobots.demo import gate as GATE
 from algobots.demo import ledger as L
+from algobots.risk import RiskEnvelope
 from algobots.strategies import dsl
 
 CENT = L.CENT
 _LOCK = threading.RLock()  # load-modify-save of studio.json within this process
 MIN_DEPLOY = Decimal("100")  # smallest paper allocation worth running a template on
+MAX_ORDER = Decimal("1000")  # per-deployment entry cap: one template never bets more (AC: risk)
+STUDIO_ENVELOPE = RiskEnvelope(max_order_value=MAX_ORDER, max_daily_loss=Decimal("1000000"))
 TEST_LABEL = "TEST STRATEGY · NO VALIDATED RETURNS"
 LIVE_LABEL = "DEPLOYED · PAPER"
 Mode = Literal["equal", "pct"]
+ACTIVE = ("pending", "running")  # deployment states that own their instruments
 
 
 class StudioError(ValueError):
@@ -168,6 +184,7 @@ class Version:
     spec_hash: str | None = None  # dsl.artifact_hash of the condition spec, when there is one
     created_ts: float = 0.0
     actor: str = "built-in"
+    disabled: bool = False  # no new deployments; existing ones and history stay (A11-3 recovery)
 
     @property
     def short(self) -> str:
@@ -268,10 +285,70 @@ LIVE_DEPLOYMENTS: list[Deployment] = [
 ]
 
 
+# --- fan-out campaigns (A11-3) ------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class Child:
+    """One account's slice of a campaign. ``status`` is the deploy-time outcome
+    (skipped / rejected-by-risk / pending); the live state is derived from the
+    deployment and its order log by :func:`child_view`."""
+
+    account: str
+    deployment: str | None = None
+    allocation: str = "0"
+    status: str = "pending"
+    reason: str = ""
+
+
+@dataclass(frozen=True)
+class Campaign:
+    id: str
+    version: str  # artifact hash the campaign froze
+    definition: str
+    mode: Mode
+    requested: str
+    created_ts: float
+    actor: str
+    paused: bool = False
+    paused_ts: float | None = None
+    paused_by: str = ""
+    children: list[Child] = field(default_factory=list)
+
+
+def instruments(params: dict, definition: str) -> list[str]:
+    """The instruments a deployment trades: its entry targets, frozen at deploy."""
+    if definition == "etf_alloc":
+        return sorted(params.get("weights", {}))
+    if "symbol" in params:
+        return [params["symbol"]]
+    if "instrument" in params:  # the live demo strategies trade one contract
+        return [params["instrument"]]
+    return []
+
+
+def owners(st: Studio) -> dict[tuple[str, str], Deployment]:
+    """(account, instrument) -> the active deployment that owns entries for it (AC4).
+
+    The oldest active deployment wins a duplicate recording; a deployment that
+    is no longer active owns nothing.
+    """
+    own: dict[tuple[str, str], Deployment] = {}
+    for d in st.deployments:
+        if d.state not in ACTIVE:
+            continue
+        for sym in instruments(d.params, d.definition):
+            own.setdefault((d.account, sym), d)
+    return own
+
+
 @dataclass
 class Studio:
     versions: list[Version]
     deployments: list[Deployment]
+    campaigns: list[Campaign] = field(default_factory=list)
+    # version hash -> {"by": str, "ts": float}
+    disabled: dict[str, dict] = field(default_factory=dict)
 
     def latest(self, definition: str) -> Version:
         return max(
@@ -286,17 +363,31 @@ class Studio:
             (Decimal(d.allocation) for d in self.deployments if d.account == account), Decimal(0)
         )
 
+    def campaign_of(self, dep_id: str) -> Campaign | None:
+        return next(
+            (c for c in self.campaigns if any(ch.deployment == dep_id for ch in c.children)), None
+        )
+
 
 def _path(state_dir: str) -> Path:
     return Path(state_dir) / "studio.json"
 
 
+def _campaign(d: dict) -> Campaign:
+    return Campaign(**{**d, "children": [Child(**ch) for ch in d.get("children", [])]})
+
+
 def load(state_dir: str) -> Studio:
     p = _path(state_dir)
     raw = json.loads(p.read_text()) if p.exists() else {"versions": [], "deployments": []}
+    disabled = raw.get("disabled") or {}
+    recorded = [Version(**v) for v in raw["versions"]]
+    versions = [replace(v, disabled=v.hash in disabled) for v in BUILTIN + recorded]
     return Studio(
-        BUILTIN + [Version(**v) for v in raw["versions"]],
+        versions,
         LIVE_DEPLOYMENTS + [Deployment(**d) for d in raw["deployments"]],
+        [_campaign(c) for c in raw.get("campaigns", [])],
+        {h: dict(m) for h, m in disabled.items() if h in {v.hash for v in versions}},
     )
 
 
@@ -306,6 +397,8 @@ def _save(state_dir: str, st: Studio) -> None:
     doc = {
         "versions": [asdict(v) for v in st.versions if v.actor != "built-in"],
         "deployments": [asdict(d) for d in st.deployments if d.actor != "built-in"],
+        "campaigns": [asdict(c) for c in st.campaigns],
+        "disabled": st.disabled,
     }
     tmp = p.with_suffix(".tmp")
     tmp.write_text(json.dumps(doc, indent=1))
@@ -406,11 +499,17 @@ def preview(
     if not accounts:
         raise StudioError("select at least one account")
     d = DEFINITIONS[version.definition]
+    own = owners(st)
+    mine = instruments(version.params, version.definition)
+    meta = st.disabled.get(version.hash, {})
 
     def gate(key: str) -> str | None:
         a = ACCOUNTS.get(key)
         if a is None or (visible is not None and key not in visible):
             return "unknown account"  # ungranted reads exactly like unknown: nothing leaks
+        if version.disabled:
+            by = f" (by {meta['by']})" if meta.get("by") else ""
+            return f"version {version.short} is disabled for new deployments{by}"
         if a.environment != "PAPER":
             return "not a paper account — the studio deploys to paper only"
         if kill_engaged:
@@ -422,6 +521,13 @@ def preview(
         dup = next((x for x in st.deployments if x.account == key and x.hash == version.hash), None)
         if dup:
             return f"version {version.short} already deployed here ({dup.id})"
+        conflict = next((own.get((key, sym)) for sym in mine if (key, sym) in own), None)
+        if conflict is not None:  # AC4: one active deployment owns an account/instrument
+            sym = next(sym for sym in mine if (key, sym) in own)
+            o = DEFINITIONS[conflict.definition]
+            return (
+                f"{sym} on {key} is owned by {o.name} v{conflict.version} ({conflict.id})"
+            )
         if a.approved - st.committed(key) <= 0:
             return f"no headroom: {st.committed(key)} of {a.approved} USD already committed"
         return None
@@ -450,6 +556,37 @@ def preview(
     return Preview(version, mode, amount if mode == "equal" else requested, lines)
 
 
+def _risk_check(
+    account: str, allocation: Decimal, *, kill_engaged: bool, now: float
+) -> str | None:
+    """The one pre-trade gate (``demo.gate``) for one child at deploy time; None
+    = allowed through. A clamp is a refusal, not a fill over the cap — same
+    doctrine as the order-ticket broadcast."""
+    g = GATE.pre_trade(
+        GATE.GateRequest(
+            account=account,
+            path="deploy",
+            value=allocation,
+            equity=ACCOUNTS[account].approved,
+            floor=MIN_DEPLOY,
+            daily_pnl=Decimal(0),
+            kill_engaged=kill_engaged,
+            kind="entry",
+            mode="PAPER",
+            now=now,
+        ),
+        GATE.risk_gate(STUDIO_ENVELOPE),
+    )
+    if not g.allowed:
+        return f"blocked by risk gate — {g.reason}"
+    if g.approved < allocation:
+        return (
+            f"blocked by risk gate — {allocation} USD over max order value; "
+            f"gate allows {g.approved} USD per deployment"
+        )
+    return None
+
+
 @_locked
 def deploy(
     state_dir: str,
@@ -463,8 +600,11 @@ def deploy(
     visible: set[str] | None = None,
     actor: str,
     now: float | None = None,
-) -> tuple[Preview, list[Deployment]]:
-    """Recompute the preview server-side and record one frozen deployment per allocated line."""
+) -> tuple[Preview, list[Deployment], Campaign]:
+    """Recompute the preview server-side, gate each eligible line through the
+    risk gate, and record one campaign parent with one independent child per
+    account — skipped and rejected children included. There is no cross-account
+    atomicity: one child's outcome never reverses another's."""
     st = load(state_dir)
     v = st.by_hash(h)
     if v is None:
@@ -480,8 +620,17 @@ def deploy(
         visible=visible,
     )
     ts = time.time() if now is None else now
-    made = [
-        Deployment(
+    made: list[Deployment] = []
+    children: list[Child] = []
+    for ln in pv.lines:
+        if ln.skip:
+            children.append(Child(ln.account, None, "0", "skipped", ln.skip))
+            continue
+        why = _risk_check(ln.account, ln.allocation, kill_engaged=kill_engaged, now=ts)
+        if why is not None:
+            children.append(Child(ln.account, None, "0", "rejected-by-risk", why))
+            continue
+        dep = Deployment(
             f"dep-{v.hash[:8]}-{ln.account}",
             ln.account,
             v.definition,
@@ -493,12 +642,104 @@ def deploy(
             actor,
             "pending",
         )
-        for ln in pv.deployable
-    ]
-    if made:
-        st.deployments.extend(made)
-        _save(state_dir, st)
-    return pv, made
+        made.append(dep)
+        children.append(Child(ln.account, dep.id, dep.allocation, "pending"))
+    campaign = Campaign(
+        f"cmp-{v.hash[:8]}-{len(st.campaigns) + 1}",
+        v.hash,
+        v.definition,
+        pv.mode,
+        str(pv.requested),
+        ts,
+        actor,
+        children=children,
+    )
+    st.deployments.extend(made)
+    st.campaigns.append(campaign)
+    _save(state_dir, st)  # the campaign is history even when every child was skipped
+    return pv, made, campaign
+
+
+# --- live campaign state ------------------------------------------------------------
+
+
+def child_view(c: Child, st: Studio, orders: list[dict]) -> tuple[str, str]:
+    """(status, reason) for one child now: deploy-time skips/rejections stand;
+    otherwise derived from the deployment state and its order log."""
+    if c.status != "pending":
+        return c.status, c.reason
+    dep = next((d for d in st.deployments if d.id == c.deployment), None)
+    if dep is None:
+        return "skipped", "deployment not found"
+    fills = [o for o in orders if o.get("deployment") == dep.id and o["status"] == "filled"]
+    blocks = [o for o in orders if o.get("deployment") == dep.id and o["status"] == "blocked"]
+    if not fills and not blocks:
+        return dep.state, ""  # pending (worker not ready yet) | running (no signal yet)
+    if fills and not blocks:
+        return "filled", f"{len(fills)} orders filled"
+    if fills and blocks:
+        return "partially-filled", f"{len(blocks)} of {len(fills) + len(blocks)} orders blocked"
+    return "rejected-by-risk", blocks[-1]["reason"]
+
+
+def campaign_state(cmp: Campaign, states: list[str]) -> tuple[str, int, int]:
+    """Derived parent state — never stored, and never 'succeeded' unless every
+    child succeeded (AC5). Returns (state, succeeded, total)."""
+    n, ok = len(states), states.count("filled")
+    if n == 0:
+        return "pending", 0, 0
+    if all(s == "skipped" for s in states):
+        return "rejected", ok, n
+    if ok == n:
+        return "succeeded", ok, n
+    if any(s in ("pending", "running", "partially-filled") for s in states):
+        return "running", ok, n
+    return "partial", ok, n
+
+
+def campaign_display(cmp: Campaign, states: list[str]) -> str:
+    state, ok, n = campaign_state(cmp, states)
+    label = "paused" if cmp.paused else state
+    return label.upper() + (f" · {ok}/{n}" if n else "")
+
+
+@_locked
+def set_disabled(
+    state_dir: str, h: str, *, disabled: bool, actor: str, now: float | None = None
+) -> Version:
+    """Flag a version so no new deployments may use it. Existing deployments and
+    the version's history stay untouched (A11-3 recovery)."""
+    st = load(state_dir)
+    v = st.by_hash(h)
+    if v is None:
+        raise StudioError(f"unknown strategy version '{h}'")
+    if disabled:
+        st.disabled[v.hash] = {"by": actor, "ts": time.time() if now is None else now}
+    else:
+        st.disabled.pop(v.hash, None)
+    _save(state_dir, st)
+    return replace(v, disabled=disabled)
+
+
+@_locked
+def pause_campaign(
+    state_dir: str, cmp_id: str, *, paused: bool, actor: str, now: float | None = None
+) -> Campaign:
+    """Pause/resume a campaign: paused stops *new* entries on every child; exits
+    and other already-placed protective orders are left in place."""
+    st = load(state_dir)
+    i = next((i for i, c in enumerate(st.campaigns) if c.id == cmp_id), None)
+    if i is None:
+        raise StudioError(f"unknown campaign '{cmp_id}'")
+    ts = time.time() if now is None else now
+    st.campaigns[i] = replace(
+        st.campaigns[i],
+        paused=paused,
+        paused_ts=ts if paused else None,
+        paused_by=actor if paused else "",
+    )
+    _save(state_dir, st)
+    return st.campaigns[i]
 
 
 def set_state(state_dir: str, dep_id: str, state: str) -> bool:

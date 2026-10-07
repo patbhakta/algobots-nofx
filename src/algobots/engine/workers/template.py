@@ -68,6 +68,19 @@ def is_template(d: S.Deployment) -> bool:
     return S.DEFINITIONS[d.definition].kind != "live"
 
 
+def campaign_hold(state_dir: Path | str, dep_id: str) -> str | None:
+    """Entries-hold reason for this deployment's campaign, if it is paused (A11-3).
+
+    Pausing a campaign stops *new* entries; exits and other already-placed
+    protective orders keep running. Read fresh every step so a pause lands
+    without restarting the worker.
+    """
+    cmp = S.load(state_dir).campaign_of(dep_id)
+    if cmp is not None and cmp.paused:
+        return f"campaign paused by {cmp.paused_by or 'operator'}"
+    return None
+
+
 def orders_path(state_dir: Path | str, dep_id: str) -> Path:
     return Path(state_dir) / "templates" / f"{dep_id}.jsonl"
 
@@ -248,6 +261,9 @@ class TemplateRunner:
         """Process bars closed since the last step; append and return the new orders."""
         if not self.reconciled:
             raise RuntimeError("reconcile() before trading")
+        kill = "kill switch" if killed else None
+        pause = campaign_hold(self.state_dir, self.dep.id)
+        hold = kill or pause  # entries held; exits stay privileged under both
         last = BARS.last_closed(self.cadence, now)
         start = max(self.first_n, last - MAX_CATCHUP + 1)
         if self.book.last_n is not None:
@@ -255,7 +271,7 @@ class TemplateRunner:
         made: list[dict] = []
         self.log.parent.mkdir(parents=True, exist_ok=True)
         for n in range(start, last + 1):
-            new = self._signal(n, killed) if self.spec else self._rebalance(n, killed)
+            new = self._signal(n, hold) if self.spec else self._rebalance(n, hold)
             for o in new:
                 if o["id"] in self.seen:
                     continue
@@ -276,10 +292,10 @@ class TemplateRunner:
         return made
 
     def _order(
-        self, n: int, sym: str, side: str, qty: Decimal, px: Decimal, why: str, blocked: bool
+        self, n: int, sym: str, side: str, qty: Decimal, px: Decimal, why: str, hold: str | None
     ) -> dict:
         d = self.dep
-        filled = not blocked and qty > 0
+        filled = hold is None and qty > 0
         pnl = (px - self.book.cost[sym]) * qty if side == "SELL" and filled else None
         return {
             "id": f"{d.id}:{n}:{sym}:{side}",
@@ -300,11 +316,11 @@ class TemplateRunner:
             "pnl": str(pnl.quantize(CENT)) if pnl is not None else None,
             "status": "filled" if filled else "blocked",
             "clamped": False,
-            "reason": why + (" · kill switch" if blocked else ""),
+            "reason": why + (f" · {hold}" if hold else ""),
             "source": BARS.SOURCE,
         }
 
-    def _signal(self, n: int, killed: bool) -> list[dict]:
+    def _signal(self, n: int, hold: str | None) -> list[dict]:
         sym = self.dep.params["symbol"]
         ev = evaluate(self.spec, BARS.bars(sym, self.cadence, n, self.window))
         px = Decimal(str(BARS.close(sym, self.cadence, n)))
@@ -313,12 +329,12 @@ class TemplateRunner:
         if not held and ev.entry:
             qty = (self.book.cash / px).quantize(LOT, rounding=ROUND_DOWN)
             if qty > 0:
-                return [self._order(n, sym, "BUY", qty, px, f"{name} entry", killed)]
+                return [self._order(n, sym, "BUY", qty, px, f"{name} entry", hold)]
         elif held and ev.exit:
-            return [self._order(n, sym, "SELL", held, px, f"{name} exit", False)]  # exits allowed
+            return [self._order(n, sym, "SELL", held, px, f"{name} exit", None)]  # exits allowed
         return []
 
-    def _rebalance(self, n: int, killed: bool) -> list[dict]:
+    def _rebalance(self, n: int, hold: str | None) -> list[dict]:
         p = self.dep.params
         weights = {s: Decimal(str(w)) for s, w in p["weights"].items()}
         px = {s: Decimal(str(BARS.close(s, self.cadence, n))) for s in weights}
@@ -342,8 +358,8 @@ class TemplateRunner:
             s: (eq * w / px[s]).quantize(LOT, rounding=ROUND_DOWN) for s, w in weights.items()
         }
         sells = [(s, self.book.qty.get(s, ZERO) - t) for s, t in target.items()]
-        out = [self._order(n, s, "SELL", q, px[s], why, False) for s, q in sells if q > 0] + [
-            self._order(n, s, "BUY", -q, px[s], why, killed) for s, q in sells if q < 0
+        out = [self._order(n, s, "SELL", q, px[s], why, None) for s, q in sells if q > 0] + [
+            self._order(n, s, "BUY", -q, px[s], why, hold) for s, q in sells if q < 0
         ]
         return out
 

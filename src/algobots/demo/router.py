@@ -938,6 +938,7 @@ def _studio_query(request: Request) -> dict:
         "mode": qp.get("mode"),
         "amount": qp.get("amount"),
         "pct": qp.get("pct"),
+        "campaign": qp.get("campaign"),
     }
 
 
@@ -946,7 +947,8 @@ def studio_page(request: Request, scope: Scope = Depends(current_scope)) -> HTML
     resolve(None, scope)  # no grants -> 403
     lg, start = _scoped(scope)
     vis = S.visible(scope.accounts)
-    st = S.load(get_settings().demo_state_dir)
+    sd = get_settings().demo_state_dir
+    st = S.load(sd)
     q, pv, error = _studio_query(request), None, None
     v = st.by_hash(q["version"] or "")
     if v and q["accounts"]:
@@ -962,7 +964,18 @@ def studio_page(request: Request, scope: Scope = Depends(current_scope)) -> HTML
         except S.StudioError as exc:
             error = str(exc)
     flash = request.query_params.get("flash")
-    html = render_studio(st, lg, start=start, q=q, pv=pv, error=error, flash=flash, visible=vis)
+    html = render_studio(
+        st,
+        lg,
+        start=start,
+        q=q,
+        pv=pv,
+        error=error,
+        flash=flash,
+        visible=vis,
+        orders=_templates(vis),
+        workers={w["account"]: w for w in _template_workers()},
+    )
     return HTMLResponse(html, headers={"Cache-Control": "no-store"})
 
 
@@ -978,6 +991,82 @@ def demo_strategies(scope: Scope = Depends(current_scope)) -> dict:
             if S.DEFINITIONS[v.definition].kind != "live" or v.definition in vis
         ],
         "deployments": [asdict(d) for d in st.deployments if d.account in vis],
+    }
+
+
+TIMELINE_KEYS = (
+    "id",
+    "ts",
+    "account",
+    "deployment",
+    "artifact",
+    "instrument",
+    "side",
+    "qty",
+    "price",
+    "notional",
+    "status",
+    "reason",
+)
+
+
+def _campaign_json(st: S.Studio, cmp: S.Campaign, orders: list[dict], vis: set[str]) -> dict | None:
+    kids = [ch for ch in cmp.children if ch.account in vis]
+    if not kids:
+        return None  # an ungranted caller never learns this campaign exists
+    states = [S.child_view(ch, st, orders) for ch in kids]
+    state, ok, n = S.campaign_state(cmp, [s for s, _ in states])
+    deps = {ch.deployment for ch in kids if ch.deployment}
+    return {
+        "id": cmp.id,
+        "version": cmp.version,
+        "definition": cmp.definition,
+        "strategy": S.DEFINITIONS[cmp.definition].name,
+        "mode": cmp.mode,
+        "requested": cmp.requested,
+        "created_ts": cmp.created_ts,
+        "actor": cmp.actor,
+        "paused": cmp.paused,
+        "paused_ts": cmp.paused_ts,
+        "paused_by": cmp.paused_by,
+        "status": state,
+        "succeeded": ok,
+        "total": n,
+        "display": S.campaign_display(cmp, [s for s, _ in states]),
+        "children": [
+            {
+                "account": ch.account,
+                "label": (S.ACCOUNTS.get(ch.account) or ch.account).label,
+                "deployment": ch.deployment,
+                "allocation": ch.allocation,
+                "status": s,
+                "reason": r or ch.reason,
+            }
+            for ch, (s, r) in zip(kids, states, strict=True)
+        ],
+        "timeline": [
+            {k: o.get(k) for k in TIMELINE_KEYS}
+            for o in orders
+            if o.get("deployment") in deps
+        ],
+    }
+
+
+@router.get("/demo/api/campaigns")
+def demo_campaigns(scope: Scope = Depends(current_scope)) -> dict:
+    """Fan-out campaigns: one parent per deploy, one independent child per account,
+    with each child's live status and its order timeline (risk denials included)."""
+    resolve(None, scope)
+    sd = get_settings().demo_state_dir
+    vis = S.visible(scope.accounts)
+    st = S.load(sd)
+    orders = TPL.load_orders(sd, vis)
+    return {
+        "campaigns": [
+            c_json
+            for cmp in reversed(st.campaigns)
+            if (c_json := _campaign_json(st, cmp, orders, vis)) is not None
+        ]
     }
 
 
@@ -1040,7 +1129,7 @@ async def studio_deploy(
     }
     s = get_settings()
     try:
-        _, made = S.deploy(
+        _, made, cmp = S.deploy(
             s.demo_state_dir,
             q["version"],
             q["accounts"],
@@ -1049,9 +1138,74 @@ async def studio_deploy(
             actor=_actor(request, form),
             **_sizing(q),
         )
-        flash = f"Created {len(made)} paper deployment(s): " + ", ".join(d.id for d in made)
+        flash = (
+            f"Campaign {cmp.id}: {len(made)} deployment(s) created, "
+            f"{len(cmp.children) - len(made)} child(ren) skipped or rejected by risk"
+        )
+        if made:
+            flash += " — " + ", ".join(d.id for d in made)
     except S.StudioError as exc:
         flash = f"Deploy refused: {exc}"
+        return RedirectResponse(f"/demo/studio?{urlencode({'flash': flash})}", status_code=303)
+    return RedirectResponse(
+        f"/demo/studio?{urlencode({'flash': flash, 'campaign': cmp.id})}", status_code=303
+    )
+
+
+@router.post("/demo/studio/campaign/{cmp_id}/pause", include_in_schema=False)
+async def studio_campaign_pause(
+    cmp_id: str, request: Request, scope: Scope = Depends(current_scope)
+) -> RedirectResponse:
+    """Pause holds new entries on every child; exits and other already-placed
+    protective orders are left in place (A11-3 recovery)."""
+    resolve(None, scope)
+    form = parse_qs((await request.body()).decode())
+    paused = form.get("paused", ["on"])[0] == "on"
+    try:
+        cmp = S.pause_campaign(
+            get_settings().demo_state_dir,
+            cmp_id,
+            paused=paused,
+            actor=_actor(request, form),
+        )
+        flash = (
+            f"Campaign {cmp.id} paused — new entries held, protective orders left in place"
+            if paused
+            else f"Campaign {cmp.id} resumed — entries allowed again"
+        )
+    except S.StudioError as exc:
+        flash = f"Pause refused: {exc}"
+    return RedirectResponse(
+        f"/demo/studio?{urlencode({'flash': flash, 'campaign': cmp_id})}", status_code=303
+    )
+
+
+@router.post("/demo/studio/disable", include_in_schema=False)
+async def studio_disable(
+    request: Request, scope: Scope = Depends(current_scope)
+) -> RedirectResponse:
+    """Disable a version for new deployments; its deployments and history stay."""
+    resolve(None, scope)
+    form = parse_qs((await request.body()).decode())
+    h = form.get("version", [""])[0]
+    disable = form.get("disable", ["on"])[0] == "on"
+    try:
+        v = S.set_disabled(
+            get_settings().demo_state_dir,
+            h,
+            disabled=disable,
+            actor=_actor(request, form),
+        )
+        name = S.DEFINITIONS[v.definition].name
+        flash = (
+            f"{name} v{v.version} disabled for new deployments — "
+            "existing deployments and history stay"
+            if disable
+            else f"{name} v{v.version} re-enabled for new deployments"
+        )
+    except S.StudioError as exc:
+        flash = f"Disable refused: {exc}"
+        return RedirectResponse(f"/demo/studio?{urlencode({'flash': flash})}", status_code=303)
     return RedirectResponse(f"/demo/studio?{urlencode({'flash': flash})}", status_code=303)
 
 
