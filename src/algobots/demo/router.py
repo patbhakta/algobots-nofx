@@ -14,6 +14,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 
 from algobots.api.config import get_settings
 from algobots.demo import blotter as B
+from algobots.demo import decisions as D
 from algobots.demo import killswitch
 from algobots.demo import ledger as L
 from algobots.demo import studio as S
@@ -90,8 +91,33 @@ def demo_page(
         workers={w["account"]: w for w in workers},
         supervisor_down=_supervisor_down(workers),
         studio=S.load(get_settings().demo_state_dir),
+        quality=_quality(scope),
     )
     return HTMLResponse(html, headers={"Cache-Control": "no-store"})
+
+
+def _quality(scope: Scope) -> D.Quality:
+    """Log every decision (unscoped, server-side); score only the granted accounts."""
+    lg, _ = _ledger()
+    return D.sync(Path(get_settings().demo_state_dir), lg, accounts=scope.accounts)
+
+
+@router.get("/demo/api/decisions")
+def demo_decisions(account: str | None = None, scope: Scope = Depends(current_scope)) -> dict:
+    """Decision-quality scorecard + reflection; the log itself stays append-only on disk."""
+    key = resolve(account, scope)
+    q = _quality(scope)
+    return {
+        "account": key,
+        "logged": q.logged,
+        "settled": len(q.settled),
+        "min_n": D.MIN_N,
+        "scores": {k: asdict(s) for k, s in q.scores.items() if key in (B.ALL, k)},
+        "losses": [
+            {**x.rec, "outcome": x.outcome, "lesson": q.lessons.get(x.rec["decision_id"])}
+            for x in D.losses(q.settled, None if key == B.ALL else key)
+        ],
+    }
 
 
 @router.get("/demo/api/positions")

@@ -1,5 +1,5 @@
 # ruff: noqa: E501  (HTML templates: markup fragments stay on one line)
-"""Live paper-trading terminal: Accounts / Positions / Orders / Risk panes.
+"""Live paper-trading terminal: Accounts / Positions / Orders / Risk / Decision quality.
 
 Selecting an account (``?account=``) sets the context every pane filters to;
 ``all`` is the aggregate. Data comes from ``demo.blotter`` so the page and
@@ -15,6 +15,7 @@ from urllib.parse import urlencode
 
 from algobots.dashboard.design import components as c
 from algobots.demo import blotter as B
+from algobots.demo import decisions as D
 from algobots.demo import ledger as L
 from algobots.demo import studio as S
 from algobots.demo.theme import CLOCK, CSS, KEYS
@@ -425,6 +426,59 @@ def _performance(lg: L.Ledger, account: str) -> str:
     )
 
 
+def _quality(q: D.Quality, account: str) -> str:
+    """Settled decision quality per strategy, then recent losses for reflection."""
+    keys = list(q.scores) if account == B.ALL else [account]
+    rows = []
+    for k in keys:
+        s = q.scores[k]
+        rows.append(
+            [
+                f"<strong>{c.e(L.STRATEGIES[k])}</strong>",
+                f'<span class="num">{s.n}</span>',
+                f'<span class="num">{_pctx(s.hit_rate)}</span>',
+                f'<span class="num">{"—" if s.brier is None else f"{s.brier:.4f}"}</span>',
+                f'<span class="num">{"—" if s.mean_edge is None else f"{s.mean_edge * 100:+.1f}¢ ±{s.se * 100:.1f}"}</span>',
+                c.status("connected" if s.proven else "stale", s.verdict.upper()),
+            ]
+        )
+    lost = D.losses(q.settled, None if account == B.ALL else account)
+    refl = []
+    for x in lost:
+        r = x.rec
+        lesson = q.lessons.get(r["decision_id"])
+        call = f"{r['rating']} · P(up) {r['p_up']:.2f}" if r["p_up"] is not None else r["rating"]
+        refl.append(
+            [
+                f'<span class="num">{_t(datetime.fromisoformat(r["decided_at"]).timestamp(), "%m-%d %H:%M")}</span>',
+                c.e(L.STRATEGIES[r["strategy"]]),
+                c.e(call),
+                c.e("up" if x.outcome else "down"),
+                f'<span class="meta" title="{c.e(r["reason"])}">{c.e(r["reason"])}</span>',
+                c.e(lesson) if lesson else '<span class="meta">— not recorded</span>',
+            ]
+        )
+    return (
+        c.table(
+            ["Strategy", "n", "Hit rate", "Brier", "Edge vs 50¢", "Verdict"],
+            rows,
+            numeric={1, 2, 3, 4},
+            stack=True,
+        )
+        + f'<p class="meta">{q.logged} decisions in the append-only log · {len(q.settled)} settled against Kalshi outcomes · '
+        "edge = hit rate − 50¢ per contract, pre-fee (fee ≈ 1.8¢) ± 1σ · Brier vs coin 0.2500 · "
+        f"“no edge proven” until n ≥ {D.MIN_N} and edge &gt; 2σ</p>"
+        + f"<h3>Reflection · last {D.REFLECT_N} losing decisions</h3>"
+        + c.table(
+            ["Time", "Strategy", "Call", "Settled", "Reason recorded", "Lesson"],
+            refl,
+            stack=True,
+            empty="No settled losing decisions yet.",
+        )
+        + f'<p class="meta">lessons ≤ {D.LESSON_MAX} chars, display only — never fed back into live decisions (S2.1 gate)</p>'
+    )
+
+
 def _spread(targets: dict[str, float], gap: float, top: float, bottom: float) -> dict[str, float]:
     """Move label baselines apart so none sit closer than ``gap``, keeping all in [top, bottom]."""
     keys = sorted(targets, key=targets.get)
@@ -517,12 +571,14 @@ def render(
     workers: dict[str, dict] | None = None,
     supervisor_down: bool = False,
     studio: S.Studio | None = None,
+    quality: D.Quality | None = None,
 ) -> str:
     """``lg`` must already be narrowed to the caller's grants (``demo.scope``)."""
     from algobots.demo import studio_page as SP  # imports this module
 
     now = time.time() if now is None else now
     studio = studio or S.load("/nonexistent")  # built-ins only
+    quality = quality or D.quality(D.records(lg), lg, accounts=lg.books)
     account, status = B.account_key(account), B.status_key(status)
     if account not in lg.books and account != B.ALL:
         account = B.ALL  # routes 403 first; this only guards direct callers
@@ -552,6 +608,9 @@ def render(
             financial=True,
             tag="TEMPLATES: TEST ONLY",
             cls="full",
+        )
+        + c.panel(
+            "Decision quality", _quality(quality, account), financial=True, tag=ctx, cls="full"
         )
         + "</div>"
     )

@@ -224,6 +224,10 @@
     },
     {
       "repo": "algobots",
+      "path": "src/algobots/demo/decisions.py"
+    },
+    {
+      "repo": "algobots",
       "path": "src/algobots/demo/ledger.py"
     },
     {
@@ -237,6 +241,10 @@
     {
       "repo": "algobots",
       "path": "src/algobots/demo/theme.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "tests/demo/test_decisions.py"
     },
     {
       "repo": "algobots",

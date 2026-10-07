@@ -10,7 +10,12 @@ from algobots.demo import ledger as L
 from algobots.demo.page import render
 from algobots.demo.scope import Scope, current_scope, narrow
 
-ENDPOINTS = ("/demo/api/positions", "/demo/api/orders", "/demo/api/workers")
+ENDPOINTS = (
+    "/demo/api/positions",
+    "/demo/api/orders",
+    "/demo/api/workers",
+    "/demo/api/decisions",
+)
 
 
 def _scope(*accounts: str) -> Scope:
@@ -110,6 +115,9 @@ def test_partial_grant_aggregate_shows_only_granted_accounts(client):
     orders = c.get("/demo/api/orders?limit=5000").json()["orders"]
     assert orders and {o["account"] for o in orders} == {"laya", "coin"}
     assert {w["account"] for w in c.get("/demo/api/workers").json()["workers"]} <= {"laya", "coin"}
+    dq = c.get("/demo/api/decisions").json()
+    assert set(dq["scores"]) == {"laya", "coin"} and dq["logged"] == 10
+    assert dq["losses"] and {x["strategy"] for x in dq["losses"]} <= {"laya", "coin"}
     # the kill switch halts every account, so a partial grant cannot flip it
     assert c.post("/demo/kill-switch", data={"engaged": "on"}).status_code == 403
 
