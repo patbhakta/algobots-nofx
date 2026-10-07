@@ -193,6 +193,47 @@ def _banner(lg: L.Ledger, start: str) -> str:
     )
 
 
+def _democard() -> str:
+    """Collapsible 5-step walkthrough card pinned at the top of the terminal (A12-1)."""
+    steps = [
+        (
+            "Open /demo",
+            "three paper accounts — Laya · Jev · Coin — one worker each; the status bar "
+            "carries PAPER, feed age and the kill-switch state",
+        ),
+        (
+            "Check isolation",
+            "Risk view → Workers: one process per account. <code>make demo-g1</code> SIGKILLs "
+            "one; the others keep trading and the dead account refuses new entries with a "
+            "stated reason",
+        ),
+        (
+            "Trip the risk gate",
+            "LIVE mode is refused outright; with the kill switch engaged the next order is "
+            "denied <code>kill_switch</code> — “kill switch engaged — entry blocked” — and audited",
+        ),
+        (
+            "Kill / restart / reconcile",
+            "the scripted run restarts the killed worker: it is entry-frozen "
+            "<code>reconciling</code> until its durable ledger replays, then reports "
+            "<code>ready</code>",
+        ),
+        (
+            "Read the evidence",
+            "trace IDs and the resource report land in <code>artifacts/A12/</code>; the gate "
+            "decision — proven / simulated / blocked / failed, no claimed edge — is "
+            "<code>docs/gates/G1/decision.md</code>",
+        ),
+    ]
+    items = "".join(
+        f"<li><strong>{c.e(n)}</strong><span>{t}</span></li>" for n, t in steps
+    )
+    return (
+        '<details class="democard"><summary>HOW TO DEMO G1 — 5 steps</summary>'
+        f'<ol class="steps">{items}</ol></details>'
+    )
+
+
 WORKER_KIND = {  # supervisor state -> status style; exited is an alert (no auto-restart)
     "ready": "connected",
     "starting": "stale",
@@ -1591,7 +1632,7 @@ def render(
         '<meta charset="utf-8">\n<meta name="viewport" content="width=device-width, initial-scale=1">\n'
         '<meta http-equiv="refresh" content="60">\n'
         f'<title>{title}</title>\n<style>{CSS}</style>\n</head>\n<body class="dash">\n'
-        f'<div class="chrome">{_header(lg, now, account)}{_banner(lg, start)}</div>\n'
+        f'<div class="chrome">{_header(lg, now, account)}{_banner(lg, start)}{_democard()}</div>\n'
         f'<main id="main" data-screen="demo" data-account="{account}" data-view="{view}">\n<h1 class="sr-only">{title}</h1>\n{body}\n</main>\n'
         f"<script>{CLOCK}{KEYS}{HOVER}</script>\n</body>\n</html>\n"
     )

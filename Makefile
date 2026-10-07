@@ -55,6 +55,18 @@ verify-A10:
 		--junitxml=$(A10_RESULTS)/junit.xml
 	sed -i -E 's/ (timestamp|hostname|time)="[^"]*"//g' $(A10_RESULTS)/junit.xml
 
+.PHONY: demo-g1
+
+# G1 five-capability walkthrough (ALG-3257, A12-1): boots the app with one
+# paper worker per demo account (needs the `workers` extra — run it as
+# `uv run --extra workers make demo-g1`), drives multi-account / multi-strategy
+# / isolation / risk denial / kill+freeze over HTTP, then replays the A06
+# engine fixture for kill->restart->reconcile with measurements. Screenshots
+# need node + playwright-core (A10_NODE_PATH) + a Playwright Chromium.
+# Evidence lands in artifacts/A12/; the gate call is docs/gates/G1/decision.md.
+demo-g1:
+	$(PYTHON) tests/packets/A12/demo.py
+
 A06_RESULTS := artifacts/A06/test-results
 
 .PHONY: verify-A06
