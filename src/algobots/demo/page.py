@@ -1245,9 +1245,10 @@ def _activity(lg: L.Ledger, account: str, n: int = 8) -> str:
             amt = c.status("BLOCKED", "blocked")
         else:
             what = f"{who} sat out — {c.e(o['reason'])}"
-            amt = '<span class="meta">no trade</span>'
+        oid = o.get("order_id")
+        oid_attr = f' data-order-id="{c.e(oid)}"' if oid else ""
         items.append(
-            f'<li><span class="num meta" data-order="{c.e(o["id"])}">{_t(o["ts"], "%H:%M")}</span>'
+            f'<li><span class="num meta" data-order="{c.e(o["id"])}"{oid_attr}>{_t(o["ts"], "%H:%M")}</span>'
             f'<span class="what" title="{c.e(o["reason"])}">{what}</span>{amt}</li>'
         )
     if not items:
