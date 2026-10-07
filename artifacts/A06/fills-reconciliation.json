@@ -1,0 +1,3291 @@
+{
+ "generated_by": "ALG-3270 sandbox worker per account, isolated state dir (kill switch off, no refills)",
+ "feed": "/opt/laya/kalshi/observations.jsonl",
+ "feed_rows": 577,
+ "start": "2026-10-03",
+ "base_commit": "ea9fcf1",
+ "diff_usd_meaning": "ledger stake minus Nautilus fill notional (last_qty * last_px); whole-contract flooring at 50c",
+ "accounts": {
+  "coin": {
+   "ledger_fills": 159,
+   "nautilus_fill_events": 159,
+   "ledger_stake_usd": "1590",
+   "matched": 159,
+   "missing_in_nautilus": [],
+   "extra_in_nautilus": [],
+   "total_diff_usd": "0.00",
+   "rows": [
+    {
+     "event": "KXBTC15M-26OCT021530",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT021545",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT021600",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT021615",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT021630",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT021645",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT021700",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT021715",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT021730",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT021745",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT021800",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT021815",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT021830",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT021845",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT031945",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT032000",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT032015",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT032030",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT032045",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT032100",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT032115",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT032130",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT032145",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT032200",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT032215",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT032230",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT032245",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT032300",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT032315",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT032330",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT032345",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT040000",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT040015",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT040030",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT040045",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT040100",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT040115",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT040130",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT040145",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT040200",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT040215",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT040230",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT040245",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT040300",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT040315",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT040330",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT040345",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT040400",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT040415",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT040430",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT040445",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT040500",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT040515",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT040530",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT040545",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT040600",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT040615",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT040630",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT040645",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT040700",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT040715",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT040730",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT040745",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT040800",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT040815",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT040830",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT040845",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT040900",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT040915",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT040930",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT040945",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT041000",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT041015",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT041030",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT041045",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT041100",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT041115",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT041130",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT041145",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT041200",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT041215",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT041230",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT041245",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT041300",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT041315",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT041330",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT041345",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT041400",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT041415",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT041430",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT041445",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT041500",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT041515",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT041530",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT041545",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT041600",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT041615",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT041630",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT041645",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT041700",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT041715",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT041730",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT041745",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT041800",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT041815",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT041830",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT041845",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT041900",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT041915",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT041930",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT041945",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT042000",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT042015",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT042030",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT042045",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT042100",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT042115",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT042130",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT042145",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT042200",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT042215",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT042230",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT042245",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT042300",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT042315",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT042330",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT051945",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT052000",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT052015",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT052030",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT061945",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT062000",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT062015",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT062030",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT062045",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT062100",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT062115",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT062130",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT062145",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT062200",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT062215",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT062230",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT062245",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT062300",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT062315",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT062330",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT062345",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT070000",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT070015",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT070030",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT070045",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT070100",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT070115",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT070130",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT070145",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT070200",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT070215",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT070230",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT070245",
+     "ledger_stake": "10",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.00"
+    }
+   ]
+  },
+  "jev": {
+   "ledger_fills": 83,
+   "nautilus_fill_events": 83,
+   "ledger_stake_usd": "566.60",
+   "matched": 83,
+   "missing_in_nautilus": [],
+   "extra_in_nautilus": [],
+   "total_diff_usd": "17.10",
+   "rows": [
+    {
+     "event": "KXBTC15M-26OCT021530",
+     "ledger_stake": "7.20",
+     "nautilus_qty": "14",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "7.00",
+     "diff_usd": "0.20"
+    },
+    {
+     "event": "KXBTC15M-26OCT021545",
+     "ledger_stake": "6.40",
+     "nautilus_qty": "12",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "6.00",
+     "diff_usd": "0.40"
+    },
+    {
+     "event": "KXBTC15M-26OCT021600",
+     "ledger_stake": "5.80",
+     "nautilus_qty": "11",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "5.50",
+     "diff_usd": "0.30"
+    },
+    {
+     "event": "KXBTC15M-26OCT021615",
+     "ledger_stake": "5.30",
+     "nautilus_qty": "10",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "5.00",
+     "diff_usd": "0.30"
+    },
+    {
+     "event": "KXBTC15M-26OCT021630",
+     "ledger_stake": "5.70",
+     "nautilus_qty": "11",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "5.50",
+     "diff_usd": "0.20"
+    },
+    {
+     "event": "KXBTC15M-26OCT021645",
+     "ledger_stake": "6.40",
+     "nautilus_qty": "12",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "6.00",
+     "diff_usd": "0.40"
+    },
+    {
+     "event": "KXBTC15M-26OCT021700",
+     "ledger_stake": "5.20",
+     "nautilus_qty": "10",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "5.00",
+     "diff_usd": "0.20"
+    },
+    {
+     "event": "KXBTC15M-26OCT021715",
+     "ledger_stake": "7.20",
+     "nautilus_qty": "14",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "7.00",
+     "diff_usd": "0.20"
+    },
+    {
+     "event": "KXBTC15M-26OCT021730",
+     "ledger_stake": "5.70",
+     "nautilus_qty": "11",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "5.50",
+     "diff_usd": "0.20"
+    },
+    {
+     "event": "KXBTC15M-26OCT021745",
+     "ledger_stake": "5.40",
+     "nautilus_qty": "10",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "5.00",
+     "diff_usd": "0.40"
+    },
+    {
+     "event": "KXBTC15M-26OCT021800",
+     "ledger_stake": "5.70",
+     "nautilus_qty": "11",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "5.50",
+     "diff_usd": "0.20"
+    },
+    {
+     "event": "KXBTC15M-26OCT021815",
+     "ledger_stake": "5.30",
+     "nautilus_qty": "10",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "5.00",
+     "diff_usd": "0.30"
+    },
+    {
+     "event": "KXBTC15M-26OCT021830",
+     "ledger_stake": "5.70",
+     "nautilus_qty": "11",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "5.50",
+     "diff_usd": "0.20"
+    },
+    {
+     "event": "KXBTC15M-26OCT021845",
+     "ledger_stake": "6.00",
+     "nautilus_qty": "12",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "6.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT021900",
+     "ledger_stake": "6.80",
+     "nautilus_qty": "13",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "6.50",
+     "diff_usd": "0.30"
+    },
+    {
+     "event": "KXBTC15M-26OCT021915",
+     "ledger_stake": "6.90",
+     "nautilus_qty": "13",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "6.50",
+     "diff_usd": "0.40"
+    },
+    {
+     "event": "KXBTC15M-26OCT021930",
+     "ledger_stake": "6.50",
+     "nautilus_qty": "13",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "6.50",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT021945",
+     "ledger_stake": "5.20",
+     "nautilus_qty": "10",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "5.00",
+     "diff_usd": "0.20"
+    },
+    {
+     "event": "KXBTC15M-26OCT022000",
+     "ledger_stake": "6.20",
+     "nautilus_qty": "12",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "6.00",
+     "diff_usd": "0.20"
+    },
+    {
+     "event": "KXBTC15M-26OCT022015",
+     "ledger_stake": "6.00",
+     "nautilus_qty": "12",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "6.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT022030",
+     "ledger_stake": "6.20",
+     "nautilus_qty": "12",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "6.00",
+     "diff_usd": "0.20"
+    },
+    {
+     "event": "KXBTC15M-26OCT022045",
+     "ledger_stake": "7.10",
+     "nautilus_qty": "14",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "7.00",
+     "diff_usd": "0.10"
+    },
+    {
+     "event": "KXBTC15M-26OCT022100",
+     "ledger_stake": "5.60",
+     "nautilus_qty": "11",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "5.50",
+     "diff_usd": "0.10"
+    },
+    {
+     "event": "KXBTC15M-26OCT022115",
+     "ledger_stake": "6.60",
+     "nautilus_qty": "13",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "6.50",
+     "diff_usd": "0.10"
+    },
+    {
+     "event": "KXBTC15M-26OCT022130",
+     "ledger_stake": "6.00",
+     "nautilus_qty": "12",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "6.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT022145",
+     "ledger_stake": "5.80",
+     "nautilus_qty": "11",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "5.50",
+     "diff_usd": "0.30"
+    },
+    {
+     "event": "KXBTC15M-26OCT022200",
+     "ledger_stake": "7.30",
+     "nautilus_qty": "14",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "7.00",
+     "diff_usd": "0.30"
+    },
+    {
+     "event": "KXBTC15M-26OCT022215",
+     "ledger_stake": "7.10",
+     "nautilus_qty": "14",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "7.00",
+     "diff_usd": "0.10"
+    },
+    {
+     "event": "KXBTC15M-26OCT022230",
+     "ledger_stake": "6.70",
+     "nautilus_qty": "13",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "6.50",
+     "diff_usd": "0.20"
+    },
+    {
+     "event": "KXBTC15M-26OCT022245",
+     "ledger_stake": "6.70",
+     "nautilus_qty": "13",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "6.50",
+     "diff_usd": "0.20"
+    },
+    {
+     "event": "KXBTC15M-26OCT022300",
+     "ledger_stake": "6.80",
+     "nautilus_qty": "13",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "6.50",
+     "diff_usd": "0.30"
+    },
+    {
+     "event": "KXBTC15M-26OCT022315",
+     "ledger_stake": "7.80",
+     "nautilus_qty": "15",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "7.50",
+     "diff_usd": "0.30"
+    },
+    {
+     "event": "KXBTC15M-26OCT022330",
+     "ledger_stake": "7.80",
+     "nautilus_qty": "15",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "7.50",
+     "diff_usd": "0.30"
+    },
+    {
+     "event": "KXBTC15M-26OCT022345",
+     "ledger_stake": "9.50",
+     "nautilus_qty": "19",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "9.50",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT030000",
+     "ledger_stake": "10.20",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.20"
+    },
+    {
+     "event": "KXBTC15M-26OCT030015",
+     "ledger_stake": "6.30",
+     "nautilus_qty": "12",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "6.00",
+     "diff_usd": "0.30"
+    },
+    {
+     "event": "KXBTC15M-26OCT030030",
+     "ledger_stake": "6.20",
+     "nautilus_qty": "12",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "6.00",
+     "diff_usd": "0.20"
+    },
+    {
+     "event": "KXBTC15M-26OCT030045",
+     "ledger_stake": "7.30",
+     "nautilus_qty": "14",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "7.00",
+     "diff_usd": "0.30"
+    },
+    {
+     "event": "KXBTC15M-26OCT030100",
+     "ledger_stake": "9.80",
+     "nautilus_qty": "19",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "9.50",
+     "diff_usd": "0.30"
+    },
+    {
+     "event": "KXBTC15M-26OCT031945",
+     "ledger_stake": "8.70",
+     "nautilus_qty": "17",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "8.50",
+     "diff_usd": "0.20"
+    },
+    {
+     "event": "KXBTC15M-26OCT032000",
+     "ledger_stake": "7.80",
+     "nautilus_qty": "15",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "7.50",
+     "diff_usd": "0.30"
+    },
+    {
+     "event": "KXBTC15M-26OCT032015",
+     "ledger_stake": "8.30",
+     "nautilus_qty": "16",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "8.00",
+     "diff_usd": "0.30"
+    },
+    {
+     "event": "KXBTC15M-26OCT032030",
+     "ledger_stake": "8.50",
+     "nautilus_qty": "17",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "8.50",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT032045",
+     "ledger_stake": "8.00",
+     "nautilus_qty": "16",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "8.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT032100",
+     "ledger_stake": "7.20",
+     "nautilus_qty": "14",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "7.00",
+     "diff_usd": "0.20"
+    },
+    {
+     "event": "KXBTC15M-26OCT032115",
+     "ledger_stake": "8.30",
+     "nautilus_qty": "16",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "8.00",
+     "diff_usd": "0.30"
+    },
+    {
+     "event": "KXBTC15M-26OCT032130",
+     "ledger_stake": "8.70",
+     "nautilus_qty": "17",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "8.50",
+     "diff_usd": "0.20"
+    },
+    {
+     "event": "KXBTC15M-26OCT032145",
+     "ledger_stake": "8.90",
+     "nautilus_qty": "17",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "8.50",
+     "diff_usd": "0.40"
+    },
+    {
+     "event": "KXBTC15M-26OCT032200",
+     "ledger_stake": "9.10",
+     "nautilus_qty": "18",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "9.00",
+     "diff_usd": "0.10"
+    },
+    {
+     "event": "KXBTC15M-26OCT032215",
+     "ledger_stake": "8.40",
+     "nautilus_qty": "16",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "8.00",
+     "diff_usd": "0.40"
+    },
+    {
+     "event": "KXBTC15M-26OCT032230",
+     "ledger_stake": "6.40",
+     "nautilus_qty": "12",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "6.00",
+     "diff_usd": "0.40"
+    },
+    {
+     "event": "KXBTC15M-26OCT032245",
+     "ledger_stake": "7.60",
+     "nautilus_qty": "15",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "7.50",
+     "diff_usd": "0.10"
+    },
+    {
+     "event": "KXBTC15M-26OCT032300",
+     "ledger_stake": "8.00",
+     "nautilus_qty": "16",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "8.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT032315",
+     "ledger_stake": "7.90",
+     "nautilus_qty": "15",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "7.50",
+     "diff_usd": "0.40"
+    },
+    {
+     "event": "KXBTC15M-26OCT032330",
+     "ledger_stake": "8.00",
+     "nautilus_qty": "16",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "8.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT032345",
+     "ledger_stake": "8.10",
+     "nautilus_qty": "16",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "8.00",
+     "diff_usd": "0.10"
+    },
+    {
+     "event": "KXBTC15M-26OCT040000",
+     "ledger_stake": "7.60",
+     "nautilus_qty": "15",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "7.50",
+     "diff_usd": "0.10"
+    },
+    {
+     "event": "KXBTC15M-26OCT040015",
+     "ledger_stake": "7.60",
+     "nautilus_qty": "15",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "7.50",
+     "diff_usd": "0.10"
+    },
+    {
+     "event": "KXBTC15M-26OCT040030",
+     "ledger_stake": "8.20",
+     "nautilus_qty": "16",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "8.00",
+     "diff_usd": "0.20"
+    },
+    {
+     "event": "KXBTC15M-26OCT040045",
+     "ledger_stake": "7.00",
+     "nautilus_qty": "14",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "7.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT040100",
+     "ledger_stake": "8.20",
+     "nautilus_qty": "16",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "8.00",
+     "diff_usd": "0.20"
+    },
+    {
+     "event": "KXBTC15M-26OCT040115",
+     "ledger_stake": "8.20",
+     "nautilus_qty": "16",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "8.00",
+     "diff_usd": "0.20"
+    },
+    {
+     "event": "KXBTC15M-26OCT040130",
+     "ledger_stake": "8.00",
+     "nautilus_qty": "16",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "8.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT040145",
+     "ledger_stake": "6.70",
+     "nautilus_qty": "13",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "6.50",
+     "diff_usd": "0.20"
+    },
+    {
+     "event": "KXBTC15M-26OCT040200",
+     "ledger_stake": "5.40",
+     "nautilus_qty": "10",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "5.00",
+     "diff_usd": "0.40"
+    },
+    {
+     "event": "KXBTC15M-26OCT040215",
+     "ledger_stake": "5.60",
+     "nautilus_qty": "11",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "5.50",
+     "diff_usd": "0.10"
+    },
+    {
+     "event": "KXBTC15M-26OCT040230",
+     "ledger_stake": "5.30",
+     "nautilus_qty": "10",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "5.00",
+     "diff_usd": "0.30"
+    },
+    {
+     "event": "KXBTC15M-26OCT040245",
+     "ledger_stake": "5.20",
+     "nautilus_qty": "10",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "5.00",
+     "diff_usd": "0.20"
+    },
+    {
+     "event": "KXBTC15M-26OCT040300",
+     "ledger_stake": "5.10",
+     "nautilus_qty": "10",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "5.00",
+     "diff_usd": "0.10"
+    },
+    {
+     "event": "KXBTC15M-26OCT040315",
+     "ledger_stake": "6.40",
+     "nautilus_qty": "12",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "6.00",
+     "diff_usd": "0.40"
+    },
+    {
+     "event": "KXBTC15M-26OCT040330",
+     "ledger_stake": "5.70",
+     "nautilus_qty": "11",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "5.50",
+     "diff_usd": "0.20"
+    },
+    {
+     "event": "KXBTC15M-26OCT040345",
+     "ledger_stake": "5.70",
+     "nautilus_qty": "11",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "5.50",
+     "diff_usd": "0.20"
+    },
+    {
+     "event": "KXBTC15M-26OCT040400",
+     "ledger_stake": "6.30",
+     "nautilus_qty": "12",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "6.00",
+     "diff_usd": "0.30"
+    },
+    {
+     "event": "KXBTC15M-26OCT040415",
+     "ledger_stake": "7.50",
+     "nautilus_qty": "15",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "7.50",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT040430",
+     "ledger_stake": "5.40",
+     "nautilus_qty": "10",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "5.00",
+     "diff_usd": "0.40"
+    },
+    {
+     "event": "KXBTC15M-26OCT040445",
+     "ledger_stake": "5.40",
+     "nautilus_qty": "10",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "5.00",
+     "diff_usd": "0.40"
+    },
+    {
+     "event": "KXBTC15M-26OCT040500",
+     "ledger_stake": "5.50",
+     "nautilus_qty": "11",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "5.50",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT040515",
+     "ledger_stake": "7.20",
+     "nautilus_qty": "14",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "7.00",
+     "diff_usd": "0.20"
+    },
+    {
+     "event": "KXBTC15M-26OCT040530",
+     "ledger_stake": "5.40",
+     "nautilus_qty": "10",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "5.00",
+     "diff_usd": "0.40"
+    },
+    {
+     "event": "KXBTC15M-26OCT040545",
+     "ledger_stake": "6.20",
+     "nautilus_qty": "12",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "6.00",
+     "diff_usd": "0.20"
+    },
+    {
+     "event": "KXBTC15M-26OCT040600",
+     "ledger_stake": "5.10",
+     "nautilus_qty": "10",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "5.00",
+     "diff_usd": "0.10"
+    },
+    {
+     "event": "KXBTC15M-26OCT041945",
+     "ledger_stake": "6.00",
+     "nautilus_qty": "12",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "6.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT042000",
+     "ledger_stake": "5.40",
+     "nautilus_qty": "10",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "5.00",
+     "diff_usd": "0.40"
+    }
+   ]
+  },
+  "laya": {
+   "ledger_fills": 164,
+   "nautilus_fill_events": 164,
+   "ledger_stake_usd": "1997.08",
+   "matched": 164,
+   "missing_in_nautilus": [],
+   "extra_in_nautilus": [],
+   "total_diff_usd": "28.08",
+   "rows": [
+    {
+     "event": "KXBTC15M-26OCT021530",
+     "ledger_stake": "9.44",
+     "nautilus_qty": "18",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "9.00",
+     "diff_usd": "0.44"
+    },
+    {
+     "event": "KXBTC15M-26OCT021545",
+     "ledger_stake": "15",
+     "nautilus_qty": "30",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "15.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT021600",
+     "ledger_stake": "15",
+     "nautilus_qty": "30",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "15.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT021615",
+     "ledger_stake": "14.70",
+     "nautilus_qty": "29",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "14.50",
+     "diff_usd": "0.20"
+    },
+    {
+     "event": "KXBTC15M-26OCT021630",
+     "ledger_stake": "15",
+     "nautilus_qty": "30",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "15.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT021645",
+     "ledger_stake": "15",
+     "nautilus_qty": "30",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "15.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT021700",
+     "ledger_stake": "15",
+     "nautilus_qty": "30",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "15.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT021715",
+     "ledger_stake": "15",
+     "nautilus_qty": "30",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "15.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT021730",
+     "ledger_stake": "13.98",
+     "nautilus_qty": "27",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "13.50",
+     "diff_usd": "0.48"
+    },
+    {
+     "event": "KXBTC15M-26OCT021745",
+     "ledger_stake": "15",
+     "nautilus_qty": "30",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "15.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT021800",
+     "ledger_stake": "15",
+     "nautilus_qty": "30",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "15.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT021815",
+     "ledger_stake": "13.70",
+     "nautilus_qty": "27",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "13.50",
+     "diff_usd": "0.20"
+    },
+    {
+     "event": "KXBTC15M-26OCT021830",
+     "ledger_stake": "14.42",
+     "nautilus_qty": "28",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "14.00",
+     "diff_usd": "0.42"
+    },
+    {
+     "event": "KXBTC15M-26OCT021845",
+     "ledger_stake": "15",
+     "nautilus_qty": "30",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "15.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT021900",
+     "ledger_stake": "13.38",
+     "nautilus_qty": "26",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "13.00",
+     "diff_usd": "0.38"
+    },
+    {
+     "event": "KXBTC15M-26OCT021915",
+     "ledger_stake": "15",
+     "nautilus_qty": "30",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "15.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT021930",
+     "ledger_stake": "15",
+     "nautilus_qty": "30",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "15.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT021945",
+     "ledger_stake": "9.90",
+     "nautilus_qty": "19",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "9.50",
+     "diff_usd": "0.40"
+    },
+    {
+     "event": "KXBTC15M-26OCT022000",
+     "ledger_stake": "10.20",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.20"
+    },
+    {
+     "event": "KXBTC15M-26OCT022015",
+     "ledger_stake": "15",
+     "nautilus_qty": "30",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "15.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT022030",
+     "ledger_stake": "10.94",
+     "nautilus_qty": "21",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.50",
+     "diff_usd": "0.44"
+    },
+    {
+     "event": "KXBTC15M-26OCT022045",
+     "ledger_stake": "11.46",
+     "nautilus_qty": "22",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "11.00",
+     "diff_usd": "0.46"
+    },
+    {
+     "event": "KXBTC15M-26OCT022100",
+     "ledger_stake": "9.30",
+     "nautilus_qty": "18",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "9.00",
+     "diff_usd": "0.30"
+    },
+    {
+     "event": "KXBTC15M-26OCT022115",
+     "ledger_stake": "15",
+     "nautilus_qty": "30",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "15.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT022130",
+     "ledger_stake": "15",
+     "nautilus_qty": "30",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "15.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT022145",
+     "ledger_stake": "15",
+     "nautilus_qty": "30",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "15.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT022200",
+     "ledger_stake": "10.84",
+     "nautilus_qty": "21",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.50",
+     "diff_usd": "0.34"
+    },
+    {
+     "event": "KXBTC15M-26OCT022215",
+     "ledger_stake": "11.22",
+     "nautilus_qty": "22",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "11.00",
+     "diff_usd": "0.22"
+    },
+    {
+     "event": "KXBTC15M-26OCT022245",
+     "ledger_stake": "11.60",
+     "nautilus_qty": "23",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "11.50",
+     "diff_usd": "0.10"
+    },
+    {
+     "event": "KXBTC15M-26OCT022300",
+     "ledger_stake": "11.52",
+     "nautilus_qty": "23",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "11.50",
+     "diff_usd": "0.02"
+    },
+    {
+     "event": "KXBTC15M-26OCT022330",
+     "ledger_stake": "9.04",
+     "nautilus_qty": "18",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "9.00",
+     "diff_usd": "0.04"
+    },
+    {
+     "event": "KXBTC15M-26OCT022345",
+     "ledger_stake": "15",
+     "nautilus_qty": "30",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "15.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT030000",
+     "ledger_stake": "15",
+     "nautilus_qty": "30",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "15.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT030015",
+     "ledger_stake": "11.30",
+     "nautilus_qty": "22",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "11.00",
+     "diff_usd": "0.30"
+    },
+    {
+     "event": "KXBTC15M-26OCT030030",
+     "ledger_stake": "15",
+     "nautilus_qty": "30",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "15.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT030100",
+     "ledger_stake": "15",
+     "nautilus_qty": "30",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "15.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT030115",
+     "ledger_stake": "15",
+     "nautilus_qty": "30",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "15.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT030130",
+     "ledger_stake": "9.40",
+     "nautilus_qty": "18",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "9.00",
+     "diff_usd": "0.40"
+    },
+    {
+     "event": "KXBTC15M-26OCT030145",
+     "ledger_stake": "9.42",
+     "nautilus_qty": "18",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "9.00",
+     "diff_usd": "0.42"
+    },
+    {
+     "event": "KXBTC15M-26OCT030200",
+     "ledger_stake": "10.32",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.32"
+    },
+    {
+     "event": "KXBTC15M-26OCT030215",
+     "ledger_stake": "10.84",
+     "nautilus_qty": "21",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.50",
+     "diff_usd": "0.34"
+    },
+    {
+     "event": "KXBTC15M-26OCT030230",
+     "ledger_stake": "10.90",
+     "nautilus_qty": "21",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.50",
+     "diff_usd": "0.40"
+    },
+    {
+     "event": "KXBTC15M-26OCT030245",
+     "ledger_stake": "9.44",
+     "nautilus_qty": "18",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "9.00",
+     "diff_usd": "0.44"
+    },
+    {
+     "event": "KXBTC15M-26OCT030300",
+     "ledger_stake": "10.98",
+     "nautilus_qty": "21",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.50",
+     "diff_usd": "0.48"
+    },
+    {
+     "event": "KXBTC15M-26OCT030315",
+     "ledger_stake": "9.84",
+     "nautilus_qty": "19",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "9.50",
+     "diff_usd": "0.34"
+    },
+    {
+     "event": "KXBTC15M-26OCT030330",
+     "ledger_stake": "9.98",
+     "nautilus_qty": "19",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "9.50",
+     "diff_usd": "0.48"
+    },
+    {
+     "event": "KXBTC15M-26OCT030345",
+     "ledger_stake": "9.04",
+     "nautilus_qty": "18",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "9.00",
+     "diff_usd": "0.04"
+    },
+    {
+     "event": "KXBTC15M-26OCT030400",
+     "ledger_stake": "11.18",
+     "nautilus_qty": "22",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "11.00",
+     "diff_usd": "0.18"
+    },
+    {
+     "event": "KXBTC15M-26OCT030415",
+     "ledger_stake": "10.38",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.38"
+    },
+    {
+     "event": "KXBTC15M-26OCT030430",
+     "ledger_stake": "11.38",
+     "nautilus_qty": "22",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "11.00",
+     "diff_usd": "0.38"
+    },
+    {
+     "event": "KXBTC15M-26OCT030445",
+     "ledger_stake": "9.62",
+     "nautilus_qty": "19",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "9.50",
+     "diff_usd": "0.12"
+    },
+    {
+     "event": "KXBTC15M-26OCT030500",
+     "ledger_stake": "9.70",
+     "nautilus_qty": "19",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "9.50",
+     "diff_usd": "0.20"
+    },
+    {
+     "event": "KXBTC15M-26OCT030515",
+     "ledger_stake": "9.68",
+     "nautilus_qty": "19",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "9.50",
+     "diff_usd": "0.18"
+    },
+    {
+     "event": "KXBTC15M-26OCT030530",
+     "ledger_stake": "11.88",
+     "nautilus_qty": "23",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "11.50",
+     "diff_usd": "0.38"
+    },
+    {
+     "event": "KXBTC15M-26OCT030600",
+     "ledger_stake": "10.82",
+     "nautilus_qty": "21",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.50",
+     "diff_usd": "0.32"
+    },
+    {
+     "event": "KXBTC15M-26OCT030630",
+     "ledger_stake": "11.86",
+     "nautilus_qty": "23",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "11.50",
+     "diff_usd": "0.36"
+    },
+    {
+     "event": "KXBTC15M-26OCT030645",
+     "ledger_stake": "11.50",
+     "nautilus_qty": "23",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "11.50",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT030715",
+     "ledger_stake": "11.08",
+     "nautilus_qty": "22",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "11.00",
+     "diff_usd": "0.08"
+    },
+    {
+     "event": "KXBTC15M-26OCT030730",
+     "ledger_stake": "10.84",
+     "nautilus_qty": "21",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.50",
+     "diff_usd": "0.34"
+    },
+    {
+     "event": "KXBTC15M-26OCT030745",
+     "ledger_stake": "11.68",
+     "nautilus_qty": "23",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "11.50",
+     "diff_usd": "0.18"
+    },
+    {
+     "event": "KXBTC15M-26OCT030800",
+     "ledger_stake": "11.76",
+     "nautilus_qty": "23",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "11.50",
+     "diff_usd": "0.26"
+    },
+    {
+     "event": "KXBTC15M-26OCT030815",
+     "ledger_stake": "11.82",
+     "nautilus_qty": "23",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "11.50",
+     "diff_usd": "0.32"
+    },
+    {
+     "event": "KXBTC15M-26OCT030830",
+     "ledger_stake": "9.50",
+     "nautilus_qty": "19",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "9.50",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT030845",
+     "ledger_stake": "9.76",
+     "nautilus_qty": "19",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "9.50",
+     "diff_usd": "0.26"
+    },
+    {
+     "event": "KXBTC15M-26OCT030900",
+     "ledger_stake": "15",
+     "nautilus_qty": "30",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "15.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT030915",
+     "ledger_stake": "14.84",
+     "nautilus_qty": "29",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "14.50",
+     "diff_usd": "0.34"
+    },
+    {
+     "event": "KXBTC15M-26OCT030930",
+     "ledger_stake": "15",
+     "nautilus_qty": "30",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "15.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT030945",
+     "ledger_stake": "15",
+     "nautilus_qty": "30",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "15.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT031000",
+     "ledger_stake": "9.24",
+     "nautilus_qty": "18",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "9.00",
+     "diff_usd": "0.24"
+    },
+    {
+     "event": "KXBTC15M-26OCT031015",
+     "ledger_stake": "9.16",
+     "nautilus_qty": "18",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "9.00",
+     "diff_usd": "0.16"
+    },
+    {
+     "event": "KXBTC15M-26OCT031030",
+     "ledger_stake": "11.12",
+     "nautilus_qty": "22",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "11.00",
+     "diff_usd": "0.12"
+    },
+    {
+     "event": "KXBTC15M-26OCT031045",
+     "ledger_stake": "10.92",
+     "nautilus_qty": "21",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.50",
+     "diff_usd": "0.42"
+    },
+    {
+     "event": "KXBTC15M-26OCT031100",
+     "ledger_stake": "10.16",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.16"
+    },
+    {
+     "event": "KXBTC15M-26OCT031115",
+     "ledger_stake": "15",
+     "nautilus_qty": "30",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "15.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT031130",
+     "ledger_stake": "11.60",
+     "nautilus_qty": "23",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "11.50",
+     "diff_usd": "0.10"
+    },
+    {
+     "event": "KXBTC15M-26OCT031145",
+     "ledger_stake": "10.32",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.32"
+    },
+    {
+     "event": "KXBTC15M-26OCT031200",
+     "ledger_stake": "11.62",
+     "nautilus_qty": "23",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "11.50",
+     "diff_usd": "0.12"
+    },
+    {
+     "event": "KXBTC15M-26OCT031230",
+     "ledger_stake": "11.26",
+     "nautilus_qty": "22",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "11.00",
+     "diff_usd": "0.26"
+    },
+    {
+     "event": "KXBTC15M-26OCT031300",
+     "ledger_stake": "9.80",
+     "nautilus_qty": "19",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "9.50",
+     "diff_usd": "0.30"
+    },
+    {
+     "event": "KXBTC15M-26OCT031315",
+     "ledger_stake": "11.36",
+     "nautilus_qty": "22",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "11.00",
+     "diff_usd": "0.36"
+    },
+    {
+     "event": "KXBTC15M-26OCT031330",
+     "ledger_stake": "10.20",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.20"
+    },
+    {
+     "event": "KXBTC15M-26OCT031345",
+     "ledger_stake": "9.58",
+     "nautilus_qty": "19",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "9.50",
+     "diff_usd": "0.08"
+    },
+    {
+     "event": "KXBTC15M-26OCT031400",
+     "ledger_stake": "9.18",
+     "nautilus_qty": "18",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "9.00",
+     "diff_usd": "0.18"
+    },
+    {
+     "event": "KXBTC15M-26OCT031415",
+     "ledger_stake": "14.82",
+     "nautilus_qty": "29",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "14.50",
+     "diff_usd": "0.32"
+    },
+    {
+     "event": "KXBTC15M-26OCT031430",
+     "ledger_stake": "12.12",
+     "nautilus_qty": "24",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "12.00",
+     "diff_usd": "0.12"
+    },
+    {
+     "event": "KXBTC15M-26OCT031445",
+     "ledger_stake": "13.46",
+     "nautilus_qty": "26",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "13.00",
+     "diff_usd": "0.46"
+    },
+    {
+     "event": "KXBTC15M-26OCT031500",
+     "ledger_stake": "11.32",
+     "nautilus_qty": "22",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "11.00",
+     "diff_usd": "0.32"
+    },
+    {
+     "event": "KXBTC15M-26OCT031515",
+     "ledger_stake": "11.32",
+     "nautilus_qty": "22",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "11.00",
+     "diff_usd": "0.32"
+    },
+    {
+     "event": "KXBTC15M-26OCT031530",
+     "ledger_stake": "9.16",
+     "nautilus_qty": "18",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "9.00",
+     "diff_usd": "0.16"
+    },
+    {
+     "event": "KXBTC15M-26OCT031545",
+     "ledger_stake": "15",
+     "nautilus_qty": "30",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "15.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT031600",
+     "ledger_stake": "15",
+     "nautilus_qty": "30",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "15.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT031615",
+     "ledger_stake": "15",
+     "nautilus_qty": "30",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "15.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT031630",
+     "ledger_stake": "10.20",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.20"
+    },
+    {
+     "event": "KXBTC15M-26OCT031645",
+     "ledger_stake": "9.60",
+     "nautilus_qty": "19",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "9.50",
+     "diff_usd": "0.10"
+    },
+    {
+     "event": "KXBTC15M-26OCT031700",
+     "ledger_stake": "14.00",
+     "nautilus_qty": "28",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "14.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT031730",
+     "ledger_stake": "15",
+     "nautilus_qty": "30",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "15.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT031745",
+     "ledger_stake": "15",
+     "nautilus_qty": "30",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "15.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT031800",
+     "ledger_stake": "15",
+     "nautilus_qty": "30",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "15.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT031845",
+     "ledger_stake": "9.64",
+     "nautilus_qty": "19",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "9.50",
+     "diff_usd": "0.14"
+    },
+    {
+     "event": "KXBTC15M-26OCT031900",
+     "ledger_stake": "10.64",
+     "nautilus_qty": "21",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.50",
+     "diff_usd": "0.14"
+    },
+    {
+     "event": "KXBTC15M-26OCT031915",
+     "ledger_stake": "9.20",
+     "nautilus_qty": "18",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "9.00",
+     "diff_usd": "0.20"
+    },
+    {
+     "event": "KXBTC15M-26OCT031945",
+     "ledger_stake": "11.26",
+     "nautilus_qty": "22",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "11.00",
+     "diff_usd": "0.26"
+    },
+    {
+     "event": "KXBTC15M-26OCT032000",
+     "ledger_stake": "9.94",
+     "nautilus_qty": "19",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "9.50",
+     "diff_usd": "0.44"
+    },
+    {
+     "event": "KXBTC15M-26OCT032015",
+     "ledger_stake": "10.58",
+     "nautilus_qty": "21",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.50",
+     "diff_usd": "0.08"
+    },
+    {
+     "event": "KXBTC15M-26OCT032045",
+     "ledger_stake": "9.32",
+     "nautilus_qty": "18",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "9.00",
+     "diff_usd": "0.32"
+    },
+    {
+     "event": "KXBTC15M-26OCT032115",
+     "ledger_stake": "9.96",
+     "nautilus_qty": "19",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "9.50",
+     "diff_usd": "0.46"
+    },
+    {
+     "event": "KXBTC15M-26OCT032130",
+     "ledger_stake": "9.94",
+     "nautilus_qty": "19",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "9.50",
+     "diff_usd": "0.44"
+    },
+    {
+     "event": "KXBTC15M-26OCT032145",
+     "ledger_stake": "9.98",
+     "nautilus_qty": "19",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "9.50",
+     "diff_usd": "0.48"
+    },
+    {
+     "event": "KXBTC15M-26OCT032200",
+     "ledger_stake": "9.04",
+     "nautilus_qty": "18",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "9.00",
+     "diff_usd": "0.04"
+    },
+    {
+     "event": "KXBTC15M-26OCT032215",
+     "ledger_stake": "9.42",
+     "nautilus_qty": "18",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "9.00",
+     "diff_usd": "0.42"
+    },
+    {
+     "event": "KXBTC15M-26OCT032245",
+     "ledger_stake": "11.14",
+     "nautilus_qty": "22",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "11.00",
+     "diff_usd": "0.14"
+    },
+    {
+     "event": "KXBTC15M-26OCT032300",
+     "ledger_stake": "9.72",
+     "nautilus_qty": "19",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "9.50",
+     "diff_usd": "0.22"
+    },
+    {
+     "event": "KXBTC15M-26OCT032315",
+     "ledger_stake": "9.30",
+     "nautilus_qty": "18",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "9.00",
+     "diff_usd": "0.30"
+    },
+    {
+     "event": "KXBTC15M-26OCT032330",
+     "ledger_stake": "9.32",
+     "nautilus_qty": "18",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "9.00",
+     "diff_usd": "0.32"
+    },
+    {
+     "event": "KXBTC15M-26OCT032345",
+     "ledger_stake": "10.28",
+     "nautilus_qty": "20",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.00",
+     "diff_usd": "0.28"
+    },
+    {
+     "event": "KXBTC15M-26OCT040000",
+     "ledger_stake": "9.12",
+     "nautilus_qty": "18",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "9.00",
+     "diff_usd": "0.12"
+    },
+    {
+     "event": "KXBTC15M-26OCT040015",
+     "ledger_stake": "10.94",
+     "nautilus_qty": "21",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.50",
+     "diff_usd": "0.44"
+    },
+    {
+     "event": "KXBTC15M-26OCT040130",
+     "ledger_stake": "11.14",
+     "nautilus_qty": "22",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "11.00",
+     "diff_usd": "0.14"
+    },
+    {
+     "event": "KXBTC15M-26OCT040200",
+     "ledger_stake": "11.60",
+     "nautilus_qty": "23",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "11.50",
+     "diff_usd": "0.10"
+    },
+    {
+     "event": "KXBTC15M-26OCT040215",
+     "ledger_stake": "15",
+     "nautilus_qty": "30",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "15.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT040230",
+     "ledger_stake": "10.76",
+     "nautilus_qty": "21",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.50",
+     "diff_usd": "0.26"
+    },
+    {
+     "event": "KXBTC15M-26OCT040245",
+     "ledger_stake": "9.72",
+     "nautilus_qty": "19",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "9.50",
+     "diff_usd": "0.22"
+    },
+    {
+     "event": "KXBTC15M-26OCT040300",
+     "ledger_stake": "9.64",
+     "nautilus_qty": "19",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "9.50",
+     "diff_usd": "0.14"
+    },
+    {
+     "event": "KXBTC15M-26OCT040330",
+     "ledger_stake": "13.62",
+     "nautilus_qty": "27",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "13.50",
+     "diff_usd": "0.12"
+    },
+    {
+     "event": "KXBTC15M-26OCT040430",
+     "ledger_stake": "15",
+     "nautilus_qty": "30",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "15.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT040445",
+     "ledger_stake": "15",
+     "nautilus_qty": "30",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "15.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT040500",
+     "ledger_stake": "15",
+     "nautilus_qty": "30",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "15.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT040515",
+     "ledger_stake": "11.18",
+     "nautilus_qty": "22",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "11.00",
+     "diff_usd": "0.18"
+    },
+    {
+     "event": "KXBTC15M-26OCT040530",
+     "ledger_stake": "9.02",
+     "nautilus_qty": "18",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "9.00",
+     "diff_usd": "0.02"
+    },
+    {
+     "event": "KXBTC15M-26OCT040600",
+     "ledger_stake": "15",
+     "nautilus_qty": "30",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "15.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT040615",
+     "ledger_stake": "14.72",
+     "nautilus_qty": "29",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "14.50",
+     "diff_usd": "0.22"
+    },
+    {
+     "event": "KXBTC15M-26OCT040630",
+     "ledger_stake": "14.84",
+     "nautilus_qty": "29",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "14.50",
+     "diff_usd": "0.34"
+    },
+    {
+     "event": "KXBTC15M-26OCT040700",
+     "ledger_stake": "15",
+     "nautilus_qty": "30",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "15.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT040715",
+     "ledger_stake": "15",
+     "nautilus_qty": "30",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "15.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT040730",
+     "ledger_stake": "9.94",
+     "nautilus_qty": "19",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "9.50",
+     "diff_usd": "0.44"
+    },
+    {
+     "event": "KXBTC15M-26OCT040745",
+     "ledger_stake": "15",
+     "nautilus_qty": "30",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "15.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT040815",
+     "ledger_stake": "9.10",
+     "nautilus_qty": "18",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "9.00",
+     "diff_usd": "0.10"
+    },
+    {
+     "event": "KXBTC15M-26OCT040830",
+     "ledger_stake": "10.52",
+     "nautilus_qty": "21",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "10.50",
+     "diff_usd": "0.02"
+    },
+    {
+     "event": "KXBTC15M-26OCT040845",
+     "ledger_stake": "9.82",
+     "nautilus_qty": "19",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "9.50",
+     "diff_usd": "0.32"
+    },
+    {
+     "event": "KXBTC15M-26OCT040915",
+     "ledger_stake": "15",
+     "nautilus_qty": "30",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "15.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT040930",
+     "ledger_stake": "15",
+     "nautilus_qty": "30",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "15.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT040945",
+     "ledger_stake": "15",
+     "nautilus_qty": "30",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "15.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT041000",
+     "ledger_stake": "9.50",
+     "nautilus_qty": "19",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "9.50",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT041015",
+     "ledger_stake": "14.34",
+     "nautilus_qty": "28",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "14.00",
+     "diff_usd": "0.34"
+    },
+    {
+     "event": "KXBTC15M-26OCT041115",
+     "ledger_stake": "15",
+     "nautilus_qty": "30",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "15.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT041145",
+     "ledger_stake": "14.88",
+     "nautilus_qty": "29",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "14.50",
+     "diff_usd": "0.38"
+    },
+    {
+     "event": "KXBTC15M-26OCT041200",
+     "ledger_stake": "15",
+     "nautilus_qty": "30",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "15.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT041300",
+     "ledger_stake": "15",
+     "nautilus_qty": "30",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "15.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT041945",
+     "ledger_stake": "15",
+     "nautilus_qty": "30",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "15.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT042000",
+     "ledger_stake": "15",
+     "nautilus_qty": "30",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "15.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT042015",
+     "ledger_stake": "15",
+     "nautilus_qty": "30",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "15.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT042030",
+     "ledger_stake": "13.02",
+     "nautilus_qty": "26",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "13.00",
+     "diff_usd": "0.02"
+    },
+    {
+     "event": "KXBTC15M-26OCT042045",
+     "ledger_stake": "15",
+     "nautilus_qty": "30",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "15.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT051945",
+     "ledger_stake": "15",
+     "nautilus_qty": "30",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "15.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT052015",
+     "ledger_stake": "15",
+     "nautilus_qty": "30",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "15.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT052030",
+     "ledger_stake": "15",
+     "nautilus_qty": "30",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "15.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT052045",
+     "ledger_stake": "11.58",
+     "nautilus_qty": "23",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "11.50",
+     "diff_usd": "0.08"
+    },
+    {
+     "event": "KXBTC15M-26OCT052100",
+     "ledger_stake": "11.32",
+     "nautilus_qty": "22",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "11.00",
+     "diff_usd": "0.32"
+    },
+    {
+     "event": "KXBTC15M-26OCT052115",
+     "ledger_stake": "9.22",
+     "nautilus_qty": "18",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "9.00",
+     "diff_usd": "0.22"
+    },
+    {
+     "event": "KXBTC15M-26OCT052130",
+     "ledger_stake": "9.92",
+     "nautilus_qty": "19",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "9.50",
+     "diff_usd": "0.42"
+    },
+    {
+     "event": "KXBTC15M-26OCT052145",
+     "ledger_stake": "15",
+     "nautilus_qty": "30",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "15.00",
+     "diff_usd": "0.00"
+    },
+    {
+     "event": "KXBTC15M-26OCT052200",
+     "ledger_stake": "14.04",
+     "nautilus_qty": "28",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "14.00",
+     "diff_usd": "0.04"
+    },
+    {
+     "event": "KXBTC15M-26OCT052215",
+     "ledger_stake": "5.80",
+     "nautilus_qty": "11",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "5.50",
+     "diff_usd": "0.30"
+    },
+    {
+     "event": "KXBTC15M-26OCT052230",
+     "ledger_stake": "11.20",
+     "nautilus_qty": "22",
+     "nautilus_px": "0.50",
+     "nautilus_notional": "11.00",
+     "diff_usd": "0.20"
+    }
+   ]
+  }
+ }
+}
