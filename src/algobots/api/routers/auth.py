@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 from algobots.api.config import get_settings
 from algobots.api.database import get_db
 from algobots.api.dependencies import get_current_user
-from algobots.api.models import InviteCode, User, UserRole
+from algobots.api.models import DEMO_OWNER_EMAIL, InviteCode, User, UserRole
 from algobots.api.schemas import (
     InviteOut,
     LoginRequest,
@@ -32,7 +32,10 @@ def register(payload: RegisterRequest, db: Session = Depends(get_db)) -> Respons
         raise HTTPException(status.HTTP_409_CONFLICT, "Email already registered")
 
     settings = get_settings()
-    user_count = db.scalar(select(func.count()).select_from(User))
+    # the seeded /demo registry owner (inactive, cannot log in) never consumes the bootstrap
+    user_count = db.scalar(
+        select(func.count()).select_from(User).where(User.email != DEMO_OWNER_EMAIL)
+    )
     bootstrap = user_count == 0 and payload.invite_code == settings.bootstrap_invite_code
 
     invite: InviteCode | None = None

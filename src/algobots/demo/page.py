@@ -9,11 +9,16 @@ the JSON endpoints share one source.
 from __future__ import annotations
 
 import time
+from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from decimal import Decimal
 from urllib.parse import urlencode
 
+from algobots.api.approvals.models import ActionLedger, ApprovalRequest
+from algobots.api.approvals.service import aware_utc
+from algobots.api.models import Account
 from algobots.dashboard.design import components as c
+from algobots.demo import accounts as A
 from algobots.demo import blotter as B
 from algobots.demo import decisions as D
 from algobots.demo import ledger as L
@@ -29,6 +34,31 @@ SERIES = {  # strategy -> (stroke var, dash) — dash + direct label, never colo
 }
 ACCOUNT = {"id": "pat-kalshi-paper", "label": "Pat · Kalshi paper", "environment": "PAPER"}
 TAG = "PAPER · SIMULATED FILLS"
+APPROVAL = {"auto": "Auto", "semi_auto": "Semi-auto"}
+
+
+@dataclass
+class Registry:
+    """S4.1 registry rows + S4.3 approval queue, already narrowed to the caller (ALG-3266).
+
+    ``accounts`` holds granted strategy accounts plus, for full-grant callers only,
+    the ticket-only accounts (Semi-auto, LIVE). ``can_trade`` gates the ticket and
+    the Action Center the same way the kill switch is gated: every grant.
+    """
+
+    accounts: list[tuple[Account, tuple[str, str]]]  # (account, (health kind, text))
+    pending: list[ApprovalRequest] = field(default_factory=list)
+    ledger: list[ActionLedger] = field(default_factory=list)
+    ticket: dict | None = None
+    can_trade: bool = False
+
+    def by_key(self) -> dict[str, tuple[Account, tuple[str, str]]]:
+        return {k: r for r in self.accounts for k in [A.strategy_key(r[0])] if k}
+
+    def ticket_only(self) -> list[tuple[Account, tuple[str, str]]]:
+        return [r for r in self.accounts if A.strategy_key(r[0]) is None]
+
+
 ORDER_ROWS = 60
 NONE = '<span class="meta nil">—</span>'  # hidden in mobile cards'
 
@@ -187,11 +217,27 @@ def _worker(w: dict | None, now: float) -> str:
     )
 
 
-def _accounts(lg: L.Ledger, now: float, account: str, workers: dict[str, dict]) -> str:
+def _accounts(
+    lg: L.Ledger, now: float, account: str, workers: dict[str, dict], reg: Registry | None
+) -> str:
     """Selectable rows (click, or ↑/↓ + Enter); ``All`` is the aggregate."""
     day = B.today(now)
-    heads = ["Account", "Mode", "Allocated", "Equity", "Net P&L", "Today", "State", "Worker"]
-    numeric = {2, 3, 4, 5}
+    heads = ["Account", "Broker", "Mode", "Active", "Approval", "Session"]
+    heads += ["Allocated", "Equity", "Net P&L", "Today", "State", "Worker"]
+    numeric = {6, 7, 8, 9}
+    regs = reg.by_key() if reg else {}
+    dash = '<span class="meta">—</span>'
+
+    def registry_cells(a: Account | None, health: tuple[str, str] | None) -> list[str]:
+        if a is None:
+            return [dash, c.env_badge("PAPER"), dash, dash, dash]
+        return [
+            c.e(a.broker),
+            c.env_badge(A.environment(a)),
+            c.status("ready", "active") if a.status == "active" else c.status("todo", a.status),
+            c.e(APPROVAL.get(a.approval_mode, a.approval_mode)),
+            c.status(*health),
+        ]
 
     def row(key: str, books: list[L.StrategyBook]) -> str:
         halts = [h for b in books for h in [B.halt(lg, b, day)] if h]
@@ -207,9 +253,14 @@ def _accounts(lg: L.Ledger, now: float, account: str, workers: dict[str, dict]) 
                 if halts
                 else c.status("connected", "RUNNING")
             )
+        a, health = regs.get(key, (None, None))
         cells = [
             f'<a href="/demo{_query(key)}">{c.e(_ctx_label(key))}</a>',
-            c.env_badge("PAPER"),
+            *(
+                [dash, c.env_badge("PAPER"), dash, dash, dash]
+                if key == B.ALL
+                else registry_cells(a, health)
+            ),
             c.money(_usd(sum((b.allocated for b in books), Decimal(0)))),
             c.money(_usd(sum((b.equity for b in books), Decimal(0)))),
             c.money(_usd(sum((b.pnl for b in books), Decimal(0))), signed=True),
@@ -236,10 +287,137 @@ def _accounts(lg: L.Ledger, now: float, account: str, workers: dict[str, dict]) 
         f'<th scope="col"{" class=n" if i in numeric else ""}>{h}</th>' for i, h in enumerate(heads)
     )
     body = row(B.ALL, list(lg.books.values())) + "".join(row(k, [b]) for k, b in lg.books.items())
-    return (
+    for a, health in reg.ticket_only() if reg and account == B.ALL else []:
+        env = A.environment(a)
+        block = A.order_block_reason(a)
+        ctx = {"id": str(a.id), "label": a.label, "environment": env}
+        cells = [c.e(a.label), *registry_cells(a, health), dash, dash, dash, dash]
+        cells += [
+            c.action("Order", account=ctx, environment=env, disabled_reason=block)
+            if block
+            else c.status("connected", "TICKET ONLY"),
+            dash,
+        ]
+        tds = "".join(
+            f'<td{" class=n" if i in numeric else ""} data-label="{heads[i]}">{v}</td>'
+            for i, v in enumerate(cells)
+        )
+        body += f'<tr class="registry-only" data-registry-account="{a.id}">{tds}</tr>'
+    note = (
+        ""
+        if reg
+        else '<p class="meta">Account registry unavailable — broker/approval/session not shown.</p>'
+    )
+    return note + (
         '<table class="data stack accounts" role="grid" aria-label="Accounts — select to set context">'
         f"<thead><tr>{th}</tr></thead><tbody>{body}</tbody></table>"
     )
+
+
+def _ticket(reg: Registry | None) -> str:
+    if reg is None:
+        return '<p class="empty">Order ticket unavailable — account registry not reachable.</p>'
+    if not reg.can_trade:
+        return '<p class="empty">Order ticket needs a grant on every account (same as the kill switch).</p>'
+    boxes = []
+    for a, _ in reg.accounts:
+        block = A.order_block_reason(a)
+        env = A.environment(a)
+        mode = APPROVAL.get(a.approval_mode, a.approval_mode)
+        desc = f'{c.e(a.label)} {c.env_badge(env)} <span class="meta">{c.e(mode)}</span>'
+        # a blocked leg gets no input at all: nothing to tick, nothing to submit
+        boxes.append(
+            f'<div class="leg" data-leg-blocked="{a.id}">{c.status("BLOCKED", "")} {desc} '
+            f'<span class="why">({c.e(block)})</span></div>'
+            if block
+            else f'<label class="leg"><input type="checkbox" name="account" value="{a.id}" checked> {desc}</label>'
+        )
+    form = (
+        '<form method="post" action="/demo/ticket" class="ticket">'
+        f"<fieldset><legend>Broadcast to accounts</legend>{''.join(boxes)}</fieldset>"
+        '<div class="actions"><label class="field">Side <select name="side"><option>YES</option><option>NO</option></select></label>'
+        '<label class="field">Contracts <input name="qty" type="number" min="1" max="100" value="10" inputmode="numeric"></label>'
+        '<label class="field"><span class="sr-only">Your name for the audit log</span>'
+        '<input name="actor" maxlength="40" placeholder="your name (audit log)" autocomplete="name"></label>'
+        f'<button type="submit" class="action"><span>Send ticket</span><span class="sr-only">, </span><span class="ctx">{A.SYMBOL} · PAPER legs only</span></button></div>'
+        "</form>"
+    )
+    last = ""
+    t = reg.ticket
+    if t:
+        legs = [
+            [
+                c.e(leg["account"]),
+                c.status(
+                    {"filled": "FILLED", "parked": "AWAITING_APPROVAL", "blocked": "BLOCKED"}[
+                        leg["status"]
+                    ],
+                    leg["status"],
+                ),
+                f'<span class="meta">{c.e(leg["reason"])}</span>',
+            ]
+            for leg in t["legs"]
+        ]
+        last = (
+            f"<h3>Last ticket · {c.e(t['side'])} {t['qty']:g} {A.SYMBOL} · "
+            f'<span data-broadcast-state="{c.e(t["state"])}">{c.e(t["state"])}</span></h3>'
+            + c.table(["Account", "Leg", "Detail"], legs, stack=True)
+        )
+    note = (
+        '<p class="meta">Auto legs fill on paper at the 50¢ mid · Semi-auto legs park in the '
+        "Action Center · LIVE legs are refused before any order exists (live gated: G-live not passed)</p>"
+    )
+    return form + note + last
+
+
+def _action_center(reg: Registry | None) -> str:
+    if reg is None:
+        return '<p class="empty">Approval queue unavailable — database not reachable.</p>'
+    if not reg.can_trade:
+        return '<p class="empty">Action Center needs a grant on every account (same as the kill switch).</p>'
+    labels = {str(a.id): a.label for a, _ in reg.accounts}
+    rows = []
+    for r in reg.pending:
+        verdicts = "".join(
+            f'<form method="post" action="/demo/approvals/{r.id}" class="inline">'
+            f'<input type="hidden" name="verdict" value="{v}">'
+            f'<button type="submit" class="action" data-verdict="{v}"><span>{label}</span>'
+            f'<span class="sr-only">, </span><span class="ctx">{c.e(labels.get(str(r.account_id), ""))} · PAPER</span></button></form>'
+            for v, label in (("approved", "Approve"), ("rejected", "Reject"))
+        )
+        rows.append(
+            [
+                _t(aware_utc(r.parked_at).timestamp(), "%H:%M:%S"),
+                c.e(labels.get(str(r.account_id), str(r.account_id))),
+                c.e(r.symbol),
+                f'<span class="num">{r.qty:g}</span>',
+                _t(aware_utc(r.expires_at).timestamp()),
+                verdicts,
+            ]
+        )
+    queue = c.table(
+        ["Parked", "Account", "Contract", "Qty", "Expires", "Decision"],
+        rows,
+        numeric={3},
+        stack=True,
+        empty="No pending approvals — Semi-auto ticket legs park here.",
+    )
+    audit = c.table(
+        ["Time", "Action", "Reason", "Latency"],
+        [
+            [
+                _t(aware_utc(x.created_at).timestamp(), "%H:%M:%S"),
+                c.e(x.action),
+                f'<span class="meta">{c.e(x.reason)}</span>',
+                f'<span class="num">{"—" if x.latency_ms is None else f"{x.latency_ms / 1000:.1f}s"}</span>',
+            ]
+            for x in reg.ledger
+        ],
+        numeric={3},
+        stack=True,
+        empty="Audit ledger is empty.",
+    )
+    return f"{queue}<h3>Audit ledger · append-only</h3>{audit}"
 
 
 def _positions(lg: L.Ledger, now: float, account: str) -> str:
@@ -572,6 +750,7 @@ def render(
     supervisor_down: bool = False,
     studio: S.Studio | None = None,
     quality: D.Quality | None = None,
+    registry: Registry | None = None,
 ) -> str:
     """``lg`` must already be narrowed to the caller's grants (``demo.scope``)."""
     from algobots.demo import studio_page as SP  # imports this module
@@ -589,12 +768,18 @@ def render(
         + '<div class="grid">'
         + c.panel(
             "Accounts",
-            _accounts(lg, now, account, workers or {})
+            _accounts(lg, now, account, workers or {}, registry)
             + "<h3>Deployments by account · frozen params + artifact</h3>"
             + SP.deployments(studio, account, S.visible(tuple(lg.books))),
             financial=True,
             tag=TAG,
             cls="full",
+        )
+        + (
+            c.panel("Order ticket · broadcast", _ticket(registry), cls="ticket-panel")
+            + c.panel("Action Center · pending approvals", _action_center(registry))
+            if account == B.ALL
+            else ""
         )
         + c.panel("Positions", _positions(lg, now, account), financial=True, tag=ctx)
         + c.panel("Risk", _risk(lg, now, account), financial=True, tag=ctx)

@@ -16,8 +16,9 @@ from algobots.api.models import User
 
 def _make_account(client, headers, label="Ledger"):
     response = client.post(
-        "/api/accounts", headers=headers, json={"label": label, "broker": "alpaca",
-                                                "mode": "semi_auto"}
+        "/api/accounts",
+        headers=headers,
+        json={"label": label, "broker": "alpaca", "mode": "semi_auto"},
     )
     assert response.status_code == 201, response.text
     return response.json()
@@ -96,20 +97,25 @@ def test_ledger_distinct_from_audit_log_and_records_evidence(ledger_seed, member
     """Ledger rows carry actor/reason/latency; the HTTP audit_log stays separate."""
     session = get_session_factory()()
     try:
-        rows = list(session.scalars(select(ActionLedger).order_by(ActionLedger.created_at)))
+        user = session.scalar(select(User).where(User.email == member["email"]))
+        # scoped to this tenant: other suites (e.g. the /demo registry) share the DB
+        rows = list(
+            session.scalars(
+                select(ActionLedger)
+                .where(ActionLedger.user_id == user.id)
+                .order_by(ActionLedger.created_at)
+            )
+        )
         actions = [row.action for row in rows]
         assert actions[0] == "order_parked"
         assert actions[-1] == "approval_approved"
         approved = rows[-1]
-        user = session.scalar(select(User).where(User.email == member["email"]))
         assert approved.actor_id == user.id
         assert approved.reason == "ledger immutability seed"
         assert approved.latency_ms is not None  # park -> decision latency per action
         assert rows[0].latency_ms is None  # the park action itself has no duration
 
-        audit_rows = session.execute(
-            text("SELECT COUNT(*) FROM audit_log")
-        ).scalar_one()
+        audit_rows = session.execute(text("SELECT COUNT(*) FROM audit_log")).scalar_one()
         assert audit_rows >= 1  # middleware table exists alongside, separate
     finally:
         session.close()

@@ -216,6 +216,14 @@
     },
     {
       "repo": "algobots",
+      "path": "src/algobots/demo/accounts.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "tests/demo/test_accounts.py"
+    },
+    {
+      "repo": "algobots",
       "path": "src/algobots/demo/killswitch.py"
     },
     {

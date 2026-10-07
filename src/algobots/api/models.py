@@ -36,6 +36,11 @@ class UserRole(enum.StrEnum):
     MEMBER = "member"
 
 
+# Owner of the seeded /demo account registry (ALG-3266): inactive with an
+# unusable password hash, so it can never log in or claim the bootstrap invite.
+DEMO_OWNER_EMAIL = "demo-registry@algobots.local"
+
+
 class User(Base):
     """A platform tenant principal. Email is unique and stored lowercase."""
 
@@ -92,6 +97,10 @@ class Account(Base):
     label: Mapped[str] = mapped_column(String(120), nullable=False)
     broker: Mapped[str] = mapped_column(String(64), nullable=False)
     mode: Mapped[str] = mapped_column(String(16), nullable=False, default="paper")
+    # auto | semi_auto (ALG-3266): semi_auto parks every order for human approval
+    approval_mode: Mapped[str] = mapped_column(
+        String(16), nullable=False, default="auto", server_default="auto"
+    )
     status: Mapped[str] = mapped_column(String(16), nullable=False, default="active")
     base_currency: Mapped[str] = mapped_column(String(8), nullable=False, default="USD")
     created_at: Mapped[datetime] = mapped_column(

@@ -138,7 +138,7 @@ def list_ledger(db: Session, user: User, limit: int = 200) -> list[ActionLedger]
 
 def parks(account: Account) -> bool:
     """True when orders on this account park for human approval (semi_auto)."""
-    return account.mode == SEMI_AUTO
+    return account.mode == SEMI_AUTO or account.approval_mode == SEMI_AUTO
 
 
 def park_order(

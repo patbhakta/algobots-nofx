@@ -59,6 +59,9 @@ table.data tbody tr:hover{background:var(--c-raised)}
 .actions .field input{font:inherit;background:var(--c-bg);color:var(--c-ink);border:var(--rule-strong);padding:0 6px;height:24px;width:180px;max-width:100%}
 .action{display:inline-flex;gap:8px;align-items:center;height:24px;font:inherit;font-weight:700;color:var(--c-ink);background:var(--c-raised);border:var(--rule-strong);padding:0 10px;cursor:pointer}
 .action .ctx{font-weight:400;color:var(--c-muted)}
+.ticket fieldset{border:var(--rule-strong);margin:0 0 8px;padding:4px 8px} .ticket .leg{display:block;padding:2px 0} .ticket .why{color:var(--c-muted)}
+.ticket select{font:inherit;background:var(--c-bg);color:var(--c-ink);border:var(--rule-strong);height:24px} .ticket input[type=number]{width:70px}
+form.inline{display:inline-block;margin:0 4px 2px 0} form.inline .action .ctx{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 .bar{display:inline-block;vertical-align:middle;width:32px;height:6px;margin-right:4px;background:var(--c-rule-strong)}
 .bar>span{display:block;height:100%;background:var(--c-muted)}
 .halt-note{color:var(--c-ink)} .halt-note strong{color:var(--c-negative)}

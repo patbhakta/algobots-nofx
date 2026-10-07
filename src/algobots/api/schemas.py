@@ -63,6 +63,7 @@ class AccountCreate(BaseModel):
     # `semi_auto` (S4.3): orders on this account park for human approval
     # instead of routing live — paper-only standing law, no live entitlement.
     mode: str = Field(default="paper", pattern="^(paper|live|semi_auto)$")
+    approval_mode: str = Field(default="auto", pattern="^(auto|semi_auto)$")
     base_currency: str = Field(default="USD", min_length=3, max_length=8)
 
 
@@ -71,6 +72,7 @@ class AccountUpdate(BaseModel):
     mode: str | None = Field(
         default=None, pattern="^(paper|live|semi_auto)$"
     )
+    approval_mode: str | None = Field(default=None, pattern="^(auto|semi_auto)$")
     status: str | None = Field(default=None, pattern="^(active|paused|closed)$")
 
 
@@ -79,6 +81,7 @@ class AccountOut(ORMModel):
     label: str
     broker: str
     mode: str
+    approval_mode: str
     status: str
     base_currency: str
     created_at: datetime

@@ -8,17 +8,23 @@ from datetime import UTC, datetime
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from urllib.parse import parse_qs, urlencode
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
+from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm import Session
 
+from algobots.api.approvals.service import ApprovalError
 from algobots.api.config import get_settings
+from algobots.api.database import get_db
+from algobots.demo import accounts as A
 from algobots.demo import blotter as B
 from algobots.demo import decisions as D
 from algobots.demo import killswitch
 from algobots.demo import ledger as L
 from algobots.demo import studio as S
-from algobots.demo.page import render, render_denied
+from algobots.demo.page import Registry, render, render_denied
 from algobots.demo.scope import Denied, Scope, current_scope, narrow, resolve
 from algobots.demo.studio_page import render_studio
 from algobots.engine.workers.supervisor import LeaseDenied, Supervisor, WorkerStatus
@@ -76,9 +82,51 @@ def _supervisor_down(workers: list[dict]) -> bool:
     return SUPERVISOR is None or any(w["state"] in ("exited", "stopped") for w in workers)
 
 
+def _full(scope: Scope) -> bool:
+    """Trading actions span accounts: like the kill switch, they need every grant."""
+    return len(scope.accounts) == len(L.STRATEGIES)
+
+
+def _visible(db: Session, scope: Scope) -> list:
+    """Registry accounts this caller may see: granted strategies (+ ticket-only if full)."""
+    owner = A.ensure_seeded(db)
+    keep = set(scope.accounts)
+    return [
+        a
+        for a in A.accounts(db, owner)
+        if (A.strategy_key(a) in keep) or (A.strategy_key(a) is None and _full(scope))
+    ]
+
+
+def _registry(db: Session, scope: Scope) -> Registry | None:
+    """Registry-backed panes; None (page still renders) when the DB is unreachable."""
+    try:
+        owner = A.ensure_seeded(db)
+        full = _full(scope)
+        return Registry(
+            accounts=[(a, A.session_health(db, a)) for a in _visible(db, scope)],
+            pending=A.pending(db, owner) if full else [],
+            ledger=A.ledger_tail(db, owner) if full else [],
+            ticket=A.last_ticket(db, owner) if full else None,
+            can_trade=full,
+        )
+    except SQLAlchemyError:
+        db.rollback()
+        return None
+
+
+def _dash_actor(form: dict, request: Request) -> str:
+    host = request.client.host if request.client else "unknown"
+    name = form.get("actor", [""])[0].strip()[:40]
+    return f"{name} via dashboard ({host})" if name else f"dashboard ({host})"
+
+
 @router.get("/demo", response_class=HTMLResponse)
 def demo_page(
-    account: str | None = None, status: str | None = None, scope: Scope = Depends(current_scope)
+    account: str | None = None,
+    status: str | None = None,
+    scope: Scope = Depends(current_scope),
+    db: Session = Depends(get_db),
 ) -> HTMLResponse:
     try:
         key = resolve(account, scope)
@@ -95,6 +143,7 @@ def demo_page(
         supervisor_down=_supervisor_down(workers),
         studio=S.load(get_settings().demo_state_dir),
         quality=_quality(scope),
+        registry=_registry(db, scope),
     )
     return HTMLResponse(html, headers={"Cache-Control": "no-store"})
 
@@ -202,6 +251,81 @@ def demo_workers(account: str | None = None, scope: Scope = Depends(current_scop
         "supervisor_down": _supervisor_down(workers),
         "workers": workers,
     }
+
+
+@router.get("/demo/api/accounts")
+def demo_accounts(scope: Scope = Depends(current_scope), db: Session = Depends(get_db)) -> dict:
+    owner = A.ensure_seeded(db)
+    return {
+        "accounts": [
+            {
+                "id": str(a.id),
+                "label": a.label,
+                "broker": a.broker,
+                "environment": A.environment(a),
+                "active": a.status == "active",
+                "approval_mode": a.approval_mode,
+                "session_health": A.session_health(db, a)[1],
+                "order_actions_disabled": A.order_block_reason(a),
+            }
+            for a in _visible(db, scope)
+        ],
+        "pending_approvals": [
+            {"id": str(r.id), "account_id": str(r.account_id), "symbol": r.symbol, "qty": r.qty}
+            for r in (A.pending(db, owner) if _full(scope) else [])
+        ],
+    }
+
+
+@router.post("/demo/ticket", include_in_schema=False)
+async def demo_ticket(
+    request: Request, scope: Scope = Depends(current_scope), db: Session = Depends(get_db)
+) -> RedirectResponse:
+    if not _full(scope):
+        raise Denied(403, B.ALL, "order ticket spans all accounts")
+    form = parse_qs((await request.body()).decode())
+    side = form.get("side", ["YES"])[0]
+    try:
+        qty = float(form.get("qty", ["10"])[0])
+        ids = [UUID(v) for v in form.get("account", [])]
+    except ValueError:
+        return RedirectResponse("/demo", status_code=303)
+    if side in ("YES", "NO") and 0 < qty <= 100 and ids:
+        owner = A.ensure_seeded(db)
+        lg, _ = _ledger()
+        day = B.today(time.time())
+        halts = {}
+        for a in A.accounts(db, owner):
+            book = lg.books.get(A.strategy_key(a) or "")
+            why = B.halt(lg, book, day) if book else None
+            if why is None and lg.kill.get("engaged"):
+                why = "kill switch"
+            if why:
+                halts[a.id] = f"halted — {why}"
+        A.broadcast(
+            db, owner, ids, side=side, qty=qty, actor=_dash_actor(form, request), halts=halts
+        )
+    return RedirectResponse("/demo", status_code=303)
+
+
+@router.post("/demo/approvals/{request_id}", include_in_schema=False)
+async def demo_decide(
+    request_id: UUID,
+    request: Request,
+    scope: Scope = Depends(current_scope),
+    db: Session = Depends(get_db),
+) -> RedirectResponse:
+    if not _full(scope):
+        raise Denied(403, B.ALL, "approvals span all accounts")
+    form = parse_qs((await request.body()).decode())
+    verdict = form.get("verdict", [""])[0]
+    if verdict in ("approved", "rejected"):
+        owner = A.ensure_seeded(db)
+        try:
+            A.decide(db, owner, request_id, verdict, actor=_dash_actor(form, request))
+        except (LookupError, ApprovalError):
+            db.rollback()
+    return RedirectResponse("/demo", status_code=303)
 
 
 @router.post("/demo/kill-switch", include_in_schema=False)
