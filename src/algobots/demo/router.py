@@ -14,7 +14,7 @@ from urllib.parse import parse_qs, urlencode
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from pydantic import BaseModel
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
@@ -29,6 +29,7 @@ from algobots.demo import decisions as D
 from algobots.demo import gate as G
 from algobots.demo import killswitch
 from algobots.demo import ledger as L
+from algobots.demo import orderapi as V
 from algobots.demo import quality as Q
 from algobots.demo import studio as S
 from algobots.demo import tickets as T
@@ -229,8 +230,8 @@ def demo_page(
     if ticket and not msg:
         p = next((p for p in parents if p.id == ticket), None)
         if p:
-            sent = sum(1 for x in p.legs if x.status == "filled")
-            msg = f"{p.path} {p.id}: {p.state} — {sent}/{len(p.legs)} legs filled (paper)"
+            sent = sum(1 for x in p.legs if x.status in T.DISPATCHED)
+            msg = f"{p.path} {p.id}: {p.state} — {sent}/{len(p.legs)} legs filled or queued (paper)"
     vis = S.visible(scope.accounts)
     html = render(
         lg,
@@ -300,7 +301,12 @@ def demo_decisions(account: str | None = None, scope: Scope = Depends(current_sc
 
 def _harness(lg: L.Ledger, key: str) -> dict:
     if key in B.EQUITY or (key not in lg.books and key != B.ALL):
-        return {"account": key, "break_even": Q.BREAK_EVEN, "random_seeds": Q.RANDOM_SEEDS, "strategies": {}}
+        return {
+            "account": key,
+            "break_even": Q.BREAK_EVEN,
+            "random_seeds": Q.RANDOM_SEEDS,
+            "strategies": {},
+        }
     s = get_settings()
     since = datetime.strptime(s.demo_start, "%Y-%m-%d").replace(tzinfo=UTC).timestamp()
     return Q.quality(lg, Q.load_pending(Path(s.demo_feed_path), since_ts=since), account=key)
@@ -384,6 +390,12 @@ def _intents(t: TicketIn) -> list[T.Intent]:
 
 
 def _submit(t: TicketIn, scope: Scope) -> T.Parent:
+    """The one write path (ALG-3263): gate, then the account's paper worker.
+
+    The terminal ticket and ``/demo/api/v1`` both land here — there is no
+    in-API simulator to fall back to; a worker that is down refuses with a
+    typed ``worker_unavailable``.
+    """
     resolve(None, scope)
     if t.mode.upper() != "PAPER":
         raise T.TicketError(f"LIVE disabled — {G.LIVE_DISABLED}")
@@ -393,7 +405,7 @@ def _submit(t: TicketIn, scope: Scope) -> T.Parent:
     lg, _ = _scoped(scope)
     clip = T.parse_money(t.max_clip, "max clip") if t.path == "split" else None
     bracket = t.path == "bracket"
-    return T.submit(
+    return V.submit(
         lg,
         t.path,
         intents,
@@ -412,6 +424,10 @@ def demo_submit(t: TicketIn, scope: Scope = Depends(current_scope)) -> dict:
         p = _submit(t, scope)
     except T.TicketError as exc:
         raise HTTPException(422, str(exc)) from None
+    except V.OrderApiError as exc:
+        raise HTTPException(
+            exc.status, {"code": exc.code, "reason": exc.reason}
+        ) from None
     return asdict(p)
 
 
@@ -447,7 +463,7 @@ async def demo_ticket_form(
             ),
             scope,
         )
-    except (T.TicketError, Denied) as exc:
+    except (T.TicketError, V.OrderApiError, Denied) as exc:
         why = exc.why if isinstance(exc, Denied) else str(exc)
         return RedirectResponse(f"{base}{sep}{urlencode({'ticket_err': why})}#ticket", 303)
     return RedirectResponse(f"{base}{sep}ticket={p.id}#ticket", 303)
@@ -473,6 +489,229 @@ def demo_cancel(parent_id: str, scope: Scope = Depends(current_scope)) -> dict:
 def demo_cancel_form(parent_id: str, scope: Scope = Depends(current_scope)) -> RedirectResponse:
     p = _cancel(parent_id, scope)
     return RedirectResponse(f"/demo?ticket={p.id}#ticket", 303)
+
+
+# --- order API v1 (ALG-3263, A10-4): /demo/api/v1 keyed by account -------------------------
+#
+# Capability set follows OpenAlgo's feature list (place, basket, split, cancel,
+# cancel-all, close-position, order book, trade book, position book, funds);
+# names and payloads are ours, execution is the account's Nautilus paper
+# worker. OpenAlgo itself is a feature reference only — no bridge here.
+
+
+class V1Place(BaseModel):
+    side: str
+    notional: str
+    kind: str = "entry"
+    mode: str = "PAPER"  # LIVE is refused: no live venue approved
+
+
+class V1Basket(BaseModel):
+    orders: list[dict]  # [{side, notional, kind?}]
+    kind: str = "entry"
+    mode: str = "PAPER"
+
+
+class V1Split(BaseModel):
+    side: str
+    notional: str
+    max_clip: str
+    kind: str = "entry"
+    mode: str = "PAPER"
+
+
+class V1Close(BaseModel):
+    instrument: str | None = None  # a worker position's symbol; None closes all
+    mode: str = "PAPER"
+
+
+def _v1_keyed(account: str, scope: Scope) -> str:
+    """The path's account key, strictly scoped (404 unknown / 403 ungranted)."""
+    return resolve(account, scope)
+
+
+def _v1_mode(mode: str) -> None:
+    if mode.upper() != "PAPER":
+        raise T.TicketError(f"LIVE disabled — {G.LIVE_DISABLED}")
+
+
+def _v1_call(fn):  # noqa: ANN001 — small wrapper: typed errors out, JSON payloads in
+    try:
+        return fn()
+    except T.TicketError as exc:
+        raise HTTPException(422, str(exc)) from None
+    except V.OrderApiError as exc:
+        return JSONResponse(
+            status_code=exc.status, content={"error": {"code": exc.code, "reason": exc.reason}}
+        )
+
+
+def _v1_ledger(scope: Scope) -> L.Ledger:
+    lg, _ = _scoped(scope)
+    return lg
+
+
+@router.post("/demo/api/v1/{account}/orders/place")
+def v1_place(account: str, o: V1Place, scope: Scope = Depends(current_scope)) -> dict:
+    """One order on one account: gated (ALG-3262), then its paper worker."""
+
+    def run() -> dict:
+        key = _v1_keyed(account, scope)
+        _v1_mode(o.mode)
+        return asdict(
+            V.submit(
+                _v1_ledger(scope),
+                "single",
+                [T.Intent(key, o.side.upper(), T.parse_money(o.notional), o.kind.lower())],
+                now=time.time(),
+                state_dir=get_settings().demo_state_dir,
+            )
+        )
+
+    return _v1_call(run)
+
+
+@router.post("/demo/api/v1/{account}/orders/basket")
+def v1_basket(account: str, o: V1Basket, scope: Scope = Depends(current_scope)) -> dict:
+    """Several orders on one account as a unit; each leg gated on its own."""
+
+    def run() -> dict:
+        key = _v1_keyed(account, scope)
+        _v1_mode(o.mode)
+        if not o.orders:
+            raise T.TicketError("basket needs at least one order")
+        intents = [
+            T.Intent(
+                key,
+                str(x.get("side", "")).upper(),
+                T.parse_money(str(x.get("notional", ""))),
+                str(x.get("kind", o.kind)).lower(),
+            )
+            for x in o.orders
+        ]
+        return asdict(
+            V.submit(
+                _v1_ledger(scope), "basket", intents, now=time.time(), state_dir=_state_dir()
+            )
+        )
+
+    return _v1_call(run)
+
+
+@router.post("/demo/api/v1/{account}/orders/split")
+def v1_split(account: str, o: V1Split, scope: Scope = Depends(current_scope)) -> dict:
+    """One order chunked under a max clip; every clip gated on its own."""
+
+    def run() -> dict:
+        key = _v1_keyed(account, scope)
+        _v1_mode(o.mode)
+        return asdict(
+            V.submit(
+                _v1_ledger(scope),
+                "split",
+                [T.Intent(key, o.side.upper(), T.parse_money(o.notional), o.kind.lower())],
+                now=time.time(),
+                max_clip=T.parse_money(o.max_clip, "max clip"),
+                state_dir=_state_dir(),
+            )
+        )
+
+    return _v1_call(run)
+
+
+@router.post("/demo/api/v1/orders/{parent_id}/cancel")
+def v1_cancel(parent_id: str, scope: Scope = Depends(current_scope)) -> dict:
+    """Cancel one ticket: every leg still live cascades (fills are final)."""
+    return asdict(_cancel(parent_id, scope))
+
+
+@router.post("/demo/api/v1/{account}/orders/cancel-all")
+def v1_cancel_all(account: str, scope: Scope = Depends(current_scope)) -> dict:
+    """Cancel every live leg of ONE account; other accounts' legs are untouched."""
+
+    def run() -> dict:
+        key = _v1_keyed(account, scope)
+        return {
+            "account": key,
+            "cancelled": V.cancel_all(_state_dir(), key, now=time.time()),
+        }
+
+    return _v1_call(run)
+
+
+@router.post("/demo/api/v1/{account}/positions/close")
+def v1_close(account: str, o: V1Close, scope: Scope = Depends(current_scope)) -> dict:
+    """Exit orders for the account's open worker positions (exits are privileged)."""
+
+    def run() -> dict:
+        key = _v1_keyed(account, scope)
+        _v1_mode(o.mode)
+        return {
+            "account": key,
+            "closes": [
+                asdict(p)
+                for p in V.close_position(
+                    _v1_ledger(scope),
+                    _state_dir(),
+                    key,
+                    now=time.time(),
+                    instrument=o.instrument,
+                )
+            ],
+        }
+
+    return _v1_call(run)
+
+
+@router.get("/demo/api/v1/{account}/orders")
+def v1_orders(
+    account: str,
+    status: str | None = None,
+    limit: int = Query(200, ge=1, le=5000),
+    scope: Scope = Depends(current_scope),
+) -> dict:
+    """Order book: every journaled leg on the account (worker fills carry their IDs)."""
+    key = _v1_keyed(account, scope)
+    rows = V.order_book(_state_dir(), key, status)
+    return {"account": key, "status": status, "count": len(rows), "orders": rows[:limit]}
+
+
+@router.get("/demo/api/v1/{account}/trades")
+def v1_trades(
+    account: str,
+    limit: int = Query(200, ge=1, le=5000),
+    scope: Scope = Depends(current_scope),
+) -> dict:
+    """Trade book: the account's fills as its worker executed them."""
+    key = _v1_keyed(account, scope)
+    rows = V.trade_book(_state_dir(), key)
+    return {"account": key, "count": len(rows), "trades": rows[:limit]}
+
+
+@router.get("/demo/api/v1/{account}/positions")
+def v1_positions(account: str, scope: Scope = Depends(current_scope)) -> dict:
+    """Position book: open positions reported by the account's worker."""
+
+    def run() -> dict:
+        key = _v1_keyed(account, scope)
+        return {"account": key, "positions": V.position_book(_state_dir(), key)}
+
+    return _v1_call(run)
+
+
+@router.get("/demo/api/v1/{account}/funds")
+def v1_funds(account: str, scope: Scope = Depends(current_scope)) -> dict:
+    """Funds: cash/equity as the account's worker computes them."""
+
+    def run() -> dict:
+        key = _v1_keyed(account, scope)
+        return {"account": key, "funds": V.funds(_state_dir(), key)}
+
+    return _v1_call(run)
+
+
+def _state_dir() -> str:
+    return get_settings().demo_state_dir
 
 
 @router.get("/demo/api/state")

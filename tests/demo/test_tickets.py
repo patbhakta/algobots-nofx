@@ -1,6 +1,7 @@
 """Order ticket (ALG-3265, ALG-3262): five paths, one risk gate on every leg, privileged exits."""
 
 import json
+import os
 from decimal import Decimal
 
 import pytest
@@ -288,15 +289,59 @@ def test_page_shows_ticket_paper_note_bracket_live_disabled_and_legs():
     assert html.count("└ leg") == 2 and "broadcast p0: sent" in html
 
 
-def test_ticket_endpoints(tmp_path, monkeypatch):
-    from fastapi.testclient import TestClient
-
+def _ticket_env(tmp_path, monkeypatch):
     from algobots.api.config import get_settings
-    from algobots.api.main import app
 
     monkeypatch.setenv("ALGOBOTS_DEMO_FEED_PATH", str(tmp_path / "none.jsonl"))
     monkeypatch.setenv("ALGOBOTS_DEMO_STATE_DIR", str(tmp_path))
     get_settings.cache_clear()
+    return get_settings
+
+
+def test_ticket_endpoints_refuse_without_workers(tmp_path, monkeypatch):
+    """No worker up: the ticket API refuses with the typed error, journals nothing."""
+    from fastapi.testclient import TestClient
+
+    from algobots.api.main import app
+
+    _ticket_env(tmp_path, monkeypatch)
+    try:
+        client = TestClient(app)
+        r = client.post(
+            "/demo/api/orders",
+            json={"path": "broadcast", "accounts": ["laya"], "side": "YES", "notional": "5"},
+        )
+        assert r.status_code == 503 and r.json()["detail"]["code"] == "worker_unavailable"
+        assert T.load(str(tmp_path)) == []
+        f = client.post(
+            "/demo/orders",
+            data={"path": "single", "accounts": ["laya"], "side": "YES", "notional": "5"},
+            follow_redirects=False,
+        )
+        assert f.status_code == 303 and "worker_unavailable" in f.headers["location"]
+    finally:
+        from algobots.api.config import get_settings
+
+        get_settings.cache_clear()
+
+
+def test_ticket_endpoints(tmp_path, monkeypatch):
+    pytest.importorskip("nautilus_trader")
+    from fastapi.testclient import TestClient
+
+    from algobots.api.main import app
+    from algobots.engine.workers.lease import Lease
+    from algobots.engine.workers.paper import PaperWorker
+
+    _ticket_env(tmp_path, monkeypatch)
+    (tmp_path / "none.jsonl").write_text("")
+    workers: list[PaperWorker] = []
+    for acct in ("laya", "jev", "coin"):
+        Lease(tmp_path, acct).acquire()
+        w = PaperWorker(acct, tmp_path / "none.jsonl", tmp_path, "2026-10-06", [])
+        w.reconcile()
+        w.heartbeat()
+        workers.append(w)
     try:
         client = TestClient(app)
         r = client.post(
@@ -308,7 +353,9 @@ def test_ticket_endpoints(tmp_path, monkeypatch):
                 "notional": "5",
             },
         )
-        assert r.status_code == 200 and r.json()["state"] == "sent" and len(r.json()["legs"]) == 3
+        legs = r.json()["legs"]
+        assert r.status_code == 200 and r.json()["state"] == "sent" and len(legs) == 3
+        assert all(x["status"] == "submitted" for x in legs)
         bad = client.post(
             "/demo/api/orders",
             json={
@@ -331,7 +378,9 @@ def test_ticket_endpoints(tmp_path, monkeypatch):
                 "stop": "0.30",
             },
         ).json()
-        assert [x["status"] for x in br["legs"]] == ["filled", "working", "working"]
+        assert [x["status"] for x in br["legs"]] == ["submitted", "working", "working"]
+        for w in workers:
+            w.drain_api_orders()
         cx = client.post(f"/demo/api/orders/{br['id']}/cancel").json()
         assert [x["status"] for x in cx["legs"]] == ["filled", "cancelled", "cancelled"]
         assert client.post("/demo/api/orders/nope/cancel").status_code == 404
@@ -347,11 +396,21 @@ def test_ticket_endpoints(tmp_path, monkeypatch):
             follow_redirects=False,
         )
         assert f.status_code == 303 and "ticket=" in f.headers["location"]
+        for w in workers:
+            w.drain_api_orders()
         body = client.get("/demo/api/orders").json()
         tickets = [o for o in body["orders"] if o["source"] == "ticket"]
         assert len(tickets) == 8 and all(o["parent_id"] for o in tickets)
+        # every fill names the account's own worker (broadcast + bracket + basket legs)
+        fills = [o for o in tickets if o["status"] == "filled"]
+        assert {o["worker_trader_id"] for o in fills} == {"PAPER-LAYA", "PAPER-JEV", "PAPER-COIN"}
         assert [p["path"] for p in body["parents"]] == ["basket", "bracket", "broadcast"]
         page = client.get(f.headers["location"].split("#")[0])
-        assert "basket" in page.text and "2/2 legs filled" in page.text
+        assert "basket" in page.text and "2/2 legs filled or queued" in page.text
     finally:
+        for acct, w in zip(("laya", "jev", "coin"), workers, strict=True):
+            w.close()
+            Lease(tmp_path, acct).release(os.getpid())
+        from algobots.api.config import get_settings
+
         get_settings.cache_clear()

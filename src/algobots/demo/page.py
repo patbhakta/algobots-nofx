@@ -691,7 +691,7 @@ def _ticket_blotter(parents: list[T.Parent], account: str) -> str:
         cancel = (
             f'<form method="post" action="/demo/orders/{c.e(p.id)}/cancel" class="inline">'
             f'<button type="submit" class="action">Cancel {c.e(p.id)}</button></form>'
-            if any(x.status == "working" for x in legs)
+            if any(x.status in ("working", "submitted") for x in legs)
             else ""
         )
         rows.append(
@@ -725,9 +725,12 @@ def _ticket_blotter(parents: list[T.Parent], account: str) -> str:
                     f'<span class="num">{x.qty}</span>' if x.qty else NONE,
                     c.money(_usd(x.notional)) if x.qty else NONE,
                     c.status(
-                        {"filled": "FILLED", "working": "pending", "cancelled": "todo"}.get(
-                            x.status, "BLOCKED"
-                        ),
+                        {
+                            "filled": "FILLED",
+                            "submitted": "pending",
+                            "working": "pending",
+                            "cancelled": "todo",
+                        }.get(x.status, "BLOCKED"),
                         x.status + (" · clamped" if x.clamped else ""),
                     ),
                     f'<span class="meta" title="{c.e(x.reason)}">{c.e(x.reason)}</span>',

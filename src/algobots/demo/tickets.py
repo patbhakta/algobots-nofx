@@ -18,18 +18,24 @@ which calls ``gate.pre_trade`` — the same check the strategy decisions and the
 registry broadcast use: account mode (LIVE hard-disabled) -> demo kill switch
 -> sleeve floor -> ``risk.RiskGate`` (daily-loss envelope, rate breakers,
 order-value clamp) -> affordability. Exits are privileged: nothing blocks or
-shrinks an exit. A denied leg records the stated reason.
+shrinks an exit. A denied leg records the stated reason and its typed
+``denial_code``.
 
-Bracket children are resting orders, so they are gated on a dry-run copy of the
-gate: they pass the same checks but only consume breaker budget if they trigger.
-No order book is captured, so in this PoC they never trigger; they stay
-``working`` until cancelled or the contract settles.
+Execution (ALG-3263): a ``dispatch`` callback turns every allowed leg into a
+request for that account's Nautilus paper worker
+(``algobots.demo.orderapi`` enqueues it; the worker executes it and appends a
+``fill`` record here). Dispatched legs rest at ``submitted`` until the worker
+fills them; without a callback (unit tests) the legacy in-process paper fill
+stands in. Bracket children are resting orders, so they are gated on a dry-run
+copy of the gate and stay ``working`` regardless — no order book is captured,
+so they only end by cancel or the interval settlement.
 
-Fills are paper only: the assumed 50c mid plus the Kalshi taker fee, exactly
-as ``demo.ledger``. Ticket fills are journaled to ``ticket-orders.jsonl``; they
-do not feed back into the strategy books, which stay a replay of the feed.
-Rate-breaker state is rebuilt from that journal on every submit, so the gate
-is deterministic and survives restarts.
+The journal ``ticket-orders.jsonl`` is append-only and holds mixed records:
+``parent`` snapshots (the submission), ``fill`` / ``reject`` patches from the
+worker and ``cancel`` patches from the API. :func:`load` folds them in order,
+and fills are final — a cancel never overwrites a leg the worker already
+filled. Rate-breaker state is rebuilt from the fold on every submit, so the
+gate is deterministic and survives restarts.
 """
 
 from __future__ import annotations
@@ -51,14 +57,16 @@ PATHS = ("single", "broadcast", "basket", "split", "bracket")
 SIDES = ("YES", "NO")
 KINDS = ("entry", "exit")
 INTERVAL_S = 15 * 60
+DISPATCHED = ("submitted", "filled")  # a dispatched leg reached / will reach its worker
 BRACKET_NOTE = (
     "bracket: take-profit + stop rest as a one-cancels-other pair after the entry fills; "
     "no order book is captured, so they only end by cancel or the 15m settlement"
 )
 CANCEL_CASCADE = "parent cancelled — cascade"
+CANCEL_BEFORE_RUN = "cancelled before the worker executed it"
 PAPER_NOTE = (
-    f"paper only · fills at the assumed {L.FILL_PRICE} mid + Kalshi taker fee "
-    "(no order book captured)"
+    f"paper only · executed by the account's Nautilus paper worker at the assumed "
+    f"{L.FILL_PRICE} mid + Kalshi taker fee (no order book captured)"
 )
 # weight limits are portfolio-construction rails; the ticket gates notional only
 LIMITS = RiskLimits(max_position_pct=1.0, max_gross_exposure=1.0)
@@ -95,7 +103,7 @@ class Leg:
     side: str
     kind: str
     requested: str
-    status: str  # filled / blocked / working (bracket child) / cancelled
+    status: str  # submitted / filled / blocked / working (bracket child) / cancelled
     reason: str
     notional: str = "0"
     qty: int = 0
@@ -103,6 +111,12 @@ class Leg:
     fee: str = "0"
     clamped: bool = False
     role: str = "order"  # order / entry / take_profit / stop
+    denial_code: str | None = None  # typed gate reason when blocked
+    filled_ts: float | None = None
+    worker_trader_id: str | None = None  # the executing worker's Nautilus trader id
+    worker_order_id: str | None = None  # its client order id (embeds the account tag)
+    worker_trade_id: str | None = None
+    venue_account_id: str | None = None
 
 
 @dataclass
@@ -118,38 +132,96 @@ class Parent:
     cancelled_ts: float | None = None
 
 
-def _path(state_dir: str) -> Path:
+def journal_path(state_dir: str) -> Path:
     return Path(state_dir) / "ticket-orders.jsonl"
 
 
+def _write_event(p: Path, rec: dict) -> None:
+    p.parent.mkdir(parents=True, exist_ok=True)
+    with p.open("a", encoding="utf-8") as fh:
+        fh.write(json.dumps(rec) + "\n")
+
+
 def load(state_dir: str) -> list[Parent]:
-    p = _path(state_dir)
+    """Fold the append-only journal: parents, then worker fills/rejects, then cancels."""
+    p = journal_path(state_dir)
     if not p.exists():
         return []
-    out = []
+    by_id: dict[str, Parent] = {}
     for line in p.read_text().splitlines():
         try:
             d = json.loads(line)
-            d["legs"] = [Leg(**x) for x in d["legs"]]
-            out.append(Parent(**d))
-        except (ValueError, TypeError, KeyError):
+        except ValueError:
             continue
-    return out
+        if not isinstance(d, dict):
+            continue
+        rec = d.pop("rec", None)  # absent: a pre-ALG-3263 plain parent record
+        if rec in (None, "parent"):
+            try:
+                d["legs"] = [Leg(**x) for x in d["legs"]]
+                by_id[d["id"]] = Parent(**d)
+            except (ValueError, TypeError, KeyError):
+                continue
+        elif d.get("parent") in by_id:
+            _patch(by_id[d["parent"]], rec, d)
+    return list(by_id.values())
+
+
+def _patch(parent: Parent, rec: str, d: dict) -> None:
+    """Apply one journal patch in place; fills are final and never overwritten."""
+    if rec == "cancel":
+        ids = d.get("legs")  # None: the whole parent (legacy cascade)
+        for leg in parent.legs:
+            if leg.status in ("working", "submitted") and (ids is None or leg.id in ids):
+                was, leg.status = leg.status, "cancelled"
+                leg.reason = (
+                    f"{CANCEL_BEFORE_RUN} ({leg.reason})"
+                    if was == "submitted"
+                    else f"{CANCEL_CASCADE} ({leg.reason})"
+                )
+        if d.get("full"):
+            parent.cancelled_ts = d.get("ts")
+        return
+    for leg in parent.legs:
+        if leg.id != d.get("leg"):
+            continue
+        if rec == "fill":
+            if leg.status == "filled":
+                continue
+            leg.status = "filled"
+            if d.get("notional") is not None:
+                leg.notional = str(d["notional"])
+            leg.qty = int(Decimal(str(d.get("qty", leg.qty))))
+            leg.price = str(d.get("price", leg.price))
+            leg.fee = str(d.get("fee", leg.fee))
+            leg.filled_ts = d.get("ts")
+            leg.worker_trader_id = d.get("trader_id")
+            leg.worker_order_id = d.get("client_order_id")
+            leg.worker_trade_id = d.get("trade_id")
+            leg.venue_account_id = d.get("venue_account_id")
+        elif rec == "reject" and leg.status == "submitted":
+            leg.status, leg.reason = "blocked", f"venue rejected — {d.get('reason', 'unknown')}"
+
+
+def append_event(state_dir: str, rec: dict) -> None:
+    """Append one ``fill`` / ``reject`` / ``cancel`` patch (worker and API side)."""
+    _write_event(journal_path(state_dir), {**rec, "rec": rec.get("rec", "fill")})
 
 
 def _append(state_dir: str, parent: Parent) -> None:
-    p = _path(state_dir)
-    p.parent.mkdir(parents=True, exist_ok=True)
-    with p.open("a", encoding="utf-8") as fh:
-        fh.write(json.dumps(asdict(parent)) + "\n")
+    _write_event(journal_path(state_dir), {"rec": "parent", **asdict(parent)})
 
 
 def make_gate(history: Iterable[Parent], state_dir: str | None = None) -> RiskGate:
-    """A RiskGate whose breakers have replayed every journaled filled leg."""
+    """A RiskGate whose breakers have replayed every journaled dispatched leg.
+
+    Dispatched (``filled`` or still-``submitted``) legs both count: an order
+    queued for a worker has been sent, rate-wise, the moment it passed here.
+    """
     breakers = RateBreakers(clock=lambda: 0.0)
     for parent in history:
         for leg in parent.legs:
-            if leg.status == "filled":
+            if leg.status in DISPATCHED:
                 breakers.record(leg.kind, deployment_id=leg.account, now=parent.ts)  # type: ignore[arg-type]
     sink = JsonlSink(Path(state_dir) / "risk-audit.jsonl") if state_dir else None
     if state_dir:
@@ -159,11 +231,12 @@ def make_gate(history: Iterable[Parent], state_dir: str | None = None) -> RiskGa
 
 def gate_leg(
     gate: RiskGate, lg: L.Ledger, intent: Intent, now: float, path: str = "single"
-) -> tuple[bool, Decimal, str, bool]:
-    """THE gate for every leg on every path: (allowed, approved notional, reason, clamped).
+) -> tuple[bool, Decimal, str, bool, str | None]:
+    """THE gate for every leg on every path: (allowed, approved, reason, clamped, code).
 
     A thin adapter onto ``gate.pre_trade`` (looked up on the module, so a spy
-    patched there sees every ticket leg).
+    patched there sees every ticket leg). ``code`` is the typed denial reason
+    (``kill_switch``, ``max_daily_loss``, …) or None when allowed.
     """
     book = lg.books[intent.account]
     g = G.pre_trade(
@@ -183,13 +256,13 @@ def gate_leg(
         gate,
     )
     if not g.allowed:
-        return False, Decimal(0), g.reason, False
+        return False, Decimal(0), g.reason, False, g.code
     if intent.kind == "exit":
-        return True, g.approved, "exit — privileged, never blocked or clamped", False
+        return True, g.approved, "exit — privileged, never blocked or clamped", False, None
     if g.approved != intent.notional:
         why = g.reason or f"size cut {intent.notional} → {g.approved} USD (sleeve can pay)"
-        return True, g.approved, why, True
-    return True, g.approved, "within limits", False
+        return True, g.approved, why, True, None
+    return True, g.approved, "within limits", False, None
 
 
 def _legs_for(path: str, intents: list[Intent], max_clip: Decimal | None) -> list[Intent]:
@@ -244,8 +317,16 @@ def parse_price(raw: str | None, what: str) -> Decimal:
     return v.quantize(L.CENT)
 
 
-def _leg(pid: str, n: int, it: Intent, gated: tuple[bool, Decimal, str, bool], role: str) -> Leg:
-    ok, approved, why, clamped = gated
+def _leg(
+    pid: str,
+    n: int,
+    it: Intent,
+    gated: tuple[bool, Decimal, str, bool, str | None],
+    role: str,
+    submitted: bool = False,
+) -> Leg:
+    ok, approved, why, clamped, code = gated
+    status = "submitted" if ok and submitted else ("filled" if ok else "blocked")
     leg = Leg(
         id=f"{pid}-{n}",
         parent_id=pid,
@@ -254,16 +335,18 @@ def _leg(pid: str, n: int, it: Intent, gated: tuple[bool, Decimal, str, bool], r
         side=it.side,
         kind=it.kind,
         requested=str(it.notional),
-        status="filled" if ok else "blocked",
+        status=status,
         reason=why,
         role=role,
+        denial_code=code if not ok else None,
     )
     if ok:
         leg.notional = str(approved)
         leg.qty = int(approved / L.FILL_PRICE)
-        leg.price = str(L.FILL_PRICE)
-        leg.fee = str(L.fee_for(approved))
         leg.clamped = clamped
+        if status == "filled":  # the legacy in-process paper fill; a worker overwrites this
+            leg.price = str(L.FILL_PRICE)
+            leg.fee = str(L.fee_for(approved))
     return leg
 
 
@@ -284,7 +367,7 @@ def _children(
         n += 1
         it = Intent(entry.account, entry.side, Decimal(entry.notional), "exit")
         leg = _leg(pid, n, it, gate_leg(probe, lg, it, now, "bracket"), role)
-        if leg.status == "filled":
+        if leg.status in ("filled", "submitted"):
             leg.status, leg.price, leg.fee = "working", str(px), "0"
             label = role.replace("_", "-")
             leg.reason = f"{label} @ {px} · OCO with leg {entry.seq} · {leg.reason}"
@@ -303,9 +386,15 @@ def submit(
     stop: Decimal | None = None,
     gate: RiskGate | None = None,
     state_dir: str | None = None,
+    dispatch: Callable[[Parent, Leg], None] | None = None,
     new_id: Callable[[], str] = lambda: uuid.uuid4().hex[:12],
 ) -> Parent:
-    """Route a ticket down one path; every leg through :func:`gate_leg`; journal it."""
+    """Route a ticket down one path; every leg through :func:`gate_leg`; journal it.
+
+    ``dispatch(parent, leg)`` hands every allowed leg to its account's worker
+    (ALG-3263): the leg rests ``submitted`` until the worker's ``fill`` record
+    lands in the journal. Without it the legacy in-process paper fill stands in.
+    """
     legs_in = _legs_for(path, intents, max_clip)
     if path == "bracket":
         if take_profit is None or stop is None:
@@ -324,37 +413,45 @@ def submit(
     for it in legs_in:
         n = len(parent.legs) + 1
         role = "entry" if path == "bracket" else "order"
-        leg = _leg(pid, n, it, gate_leg(gate, lg, it, now, path), role)
+        leg = _leg(pid, n, it, gate_leg(gate, lg, it, now, path), role, dispatch is not None)
         parent.legs.append(leg)
-        if path == "bracket" and leg.status == "filled":
+        if path == "bracket" and leg.status in DISPATCHED:
             parent.legs += _children(pid, n, gate, lg, leg, take_profit, stop, now)  # type: ignore[arg-type]
     heads = [x for x in parent.legs if x.role in ("order", "entry")]
-    sent = sum(1 for x in heads if x.status == "filled")
+    sent = sum(1 for x in heads if x.status in DISPATCHED)
     parent.state = classify_broadcast(len(heads), sent, 0) if sent else "rejected"
     if state_dir:
         _append(state_dir, parent)
+    if dispatch is not None:
+        for leg in parent.legs:
+            if leg.status == "submitted":
+                dispatch(parent, leg)
     return parent
 
 
-def cancel(state_dir: str, parent_id: str, *, now: float) -> Parent:
-    """Cancel a ticket: every child still ``working`` is cancelled with it (cascade).
+def cancel(
+    state_dir: str, parent_id: str, *, now: float, accounts: Iterable[str] | None = None
+) -> Parent:
+    """Cancel a ticket's live legs (``working`` / ``submitted``); fills stay final.
 
-    Fills are final, so filled legs stay filled. Rewrites the journal in place.
+    The whole parent by default; ``accounts`` narrows the blast radius to those
+    accounts' legs (the v1 ``cancel-all`` per account). Appends a ``cancel``
+    record — the worker drops any not-yet-executed request it finds cancelled.
     """
-    parents = load(state_dir)
-    hit = next((p for p in parents if p.id == parent_id), None)
+    hit = next((p for p in load(state_dir) if p.id == parent_id), None)
     if hit is None:
         raise TicketError(f"unknown ticket {parent_id!r}")
-    if hit.cancelled_ts is None:
-        hit.cancelled_ts = now
-        for leg in hit.legs:
-            if leg.status == "working":
-                leg.status, leg.reason = "cancelled", f"{CANCEL_CASCADE} ({leg.reason})"
-        p = _path(state_dir)
-        tmp = p.with_suffix(".tmp")
-        tmp.write_text("".join(json.dumps(asdict(x)) + "\n" for x in parents), encoding="utf-8")
-        tmp.replace(p)
-    return hit
+    ids: list[str] | None = None
+    if accounts is not None:
+        keep = set(accounts)
+        ids = [x.id for x in hit.legs if x.account in keep]
+        if not ids:
+            return hit  # none of this account's legs are on that parent
+    append_event(
+        state_dir,
+        {"rec": "cancel", "parent": parent_id, "legs": ids, "ts": now, "full": ids is None},
+    )
+    return next(p for p in load(state_dir) if p.id == parent_id)
 
 
 def parse_money(raw: str | None, what: str = "notional") -> Decimal:
@@ -417,6 +514,8 @@ def blotter_rows(
                     "status": leg.status,
                     "clamped": leg.clamped,
                     "reason": leg.reason,
+                    "denial_code": leg.denial_code,
+                    "filled_ts": leg.filled_ts,
                     "source": "ticket",
                     "parent_id": leg.parent_id,
                     "leg_id": leg.id,
@@ -424,6 +523,10 @@ def blotter_rows(
                     "kind": leg.kind,
                     "role": leg.role,
                     "parent_state": p.state,
+                    "worker_trader_id": leg.worker_trader_id,
+                    "worker_order_id": leg.worker_order_id,
+                    "worker_trade_id": leg.worker_trade_id,
+                    "venue_account_id": leg.venue_account_id,
                 }
             )
     return out

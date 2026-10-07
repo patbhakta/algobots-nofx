@@ -20,6 +20,14 @@ refusal exits ``EXIT_REFUSED`` (77), distinct from the lease denial's
 are recorded from Nautilus ``OrderFilled`` events (``strategy.fills``), not
 read back from the ledger. ``reconcile_fills`` diffs them against the ledger.
 
+Order API (ALG-3263): ``drain_api_orders`` claims this account's inbox
+(``workers/<account>.inbox.jsonl``, written by ``demo.orderapi`` after the
+shared risk gate) and executes every still-``submitted`` leg on this worker's
+Nautilus engine, appending a ``fill`` record (this trader's identity on it)
+to the ticket journal. Fills are final; a leg cancelled first is dropped.
+Every heartbeat also carries a ``report``: funds and open positions as this
+worker computes them — the v1 read endpoints serve nothing else.
+
 The ledger stays the P&L source of truth: settlement is not modelled in the
 paper venue yet, so the venue account is frozen and positions stay open.
 Liveness goes to ``<state_dir>/workers/<account>.json`` every poll.
@@ -36,12 +44,16 @@ intervals. A crashed worker is therefore never resumed straight into trading.
 from __future__ import annotations
 
 import argparse
+import fcntl
 import json
 import os
 import signal
 import time
 import warnings
+from collections.abc import Callable
+from dataclasses import dataclass
 from datetime import UTC, datetime
+from decimal import Decimal, InvalidOperation
 from pathlib import Path
 
 from nautilus_trader.backtest.engine import BacktestEngine, BacktestEngineConfig
@@ -49,11 +61,18 @@ from nautilus_trader.config import LoggingConfig, StrategyConfig
 from nautilus_trader.model.currencies import USD
 from nautilus_trader.model.data import QuoteTick
 from nautilus_trader.model.enums import AccountType, AssetClass, OmsType, OrderSide
-from nautilus_trader.model.identifiers import InstrumentId, Symbol, TraderId, Venue
+from nautilus_trader.model.identifiers import (
+    ClientOrderId,
+    InstrumentId,
+    Symbol,
+    TraderId,
+    Venue,
+)
 from nautilus_trader.model.instruments import BinaryOption
 from nautilus_trader.model.objects import Money, Price, Quantity
 from nautilus_trader.trading.strategy import Strategy
 
+from algobots.demo import blotter as B
 from algobots.demo import killswitch
 from algobots.demo import ledger as L
 from algobots.engine.workers.execution import (
@@ -113,17 +132,46 @@ def quote(inst: BinaryOption, ts: float) -> QuoteTick:
     return QuoteTick(inst.id, px, px, sz, sz, ts_ns, ts_ns)
 
 
+def current_event(now: float) -> str:
+    """The KXBTC15M interval id an entry at ``now`` trades (same ticker format)."""
+    slot = datetime.fromtimestamp(int(now // 900) * 900, UTC)
+    return f"{B.INSTRUMENT}-{slot.strftime('%y%b%d%H%M').upper()}"
+
+
+def event_ts(event_id: str, fallback: float) -> float:
+    """When ``<prefix>-<yyMonddHHMM>`` settles (``ledger.interval_ts`` twin)."""
+    try:
+        return (
+            datetime.strptime(event_id.split("-")[1], "%y%b%d%H%M").replace(tzinfo=UTC).timestamp()
+        )
+    except (IndexError, ValueError):
+        return fallback
+
+
+@dataclass
+class ApiOrder:
+    """A gated order-api request riding the same queue path as a decision."""
+
+    req: dict
+    event: str  # interval id the contract belongs to
+    ts: float
+    stake: Decimal
+    sell: bool = False  # kind == exit: sell the contracts back at the mid
+    qty: int | None = None  # fixed size (position close); entries size from the stake
+    done: bool = False  # an OrderFilled event landed for it
+
+
 class DemoPaperConfig(StrategyConfig, frozen=True):
     account: str = ""
 
 
 class DemoPaperStrategy(Strategy):
-    """Submits the ledger's FILLED decisions as market orders, tagged by account."""
+    """Submits the ledger's FILLED decisions (and order-api legs) as market orders."""
 
     def __init__(self, config: DemoPaperConfig) -> None:
         super().__init__(config)
         self.account = config.account
-        self.pending: dict[InstrumentId, L.Decision] = {}
+        self.pending: dict[InstrumentId, list[L.Decision | ApiOrder]] = {}
         self.submitted = 0
         self.filled = 0
         self.restored = 0  # submitted while reconciling, to rebuild venue state
@@ -131,44 +179,56 @@ class DemoPaperStrategy(Strategy):
         self.frozen = True  # no entries until the worker has reconciled
         self.restoring = False
         self.last_order: dict | None = None
-        self.decision_for: dict[str, L.Decision] = {}  # client_order_id -> decision
+        self.decision_for: dict[str, L.Decision | ApiOrder] = {}  # client_order_id -> order
         self.fills: list[dict] = []  # one per Nautilus OrderFilled event
+        self.api_pending: dict[str, ApiOrder] = {}  # client_order_id -> not-yet-filled api leg
+        self.api_filled = 0
+        self.api_rejected = 0
+        self.api_sink: Callable | None = None  # worker hook: (OrderFilled, ApiOrder) -> None
 
     @property
     def accepting(self) -> bool:
         return self.restoring or not self.frozen
 
-    def queue(self, inst_id: InstrumentId, decision: L.Decision) -> bool:
-        """Queue an entry for the next quote; refused (and counted) while entry-frozen."""
+    def queue(self, inst_id: InstrumentId, order: L.Decision | ApiOrder) -> bool:
+        """Queue an entry for the next quote; refused (and counted) while entry-frozen.
+
+        Several orders can ride one instrument (a split's clips all trade the
+        same interval contract): the queue is a list per instrument.
+        """
         if not self.accepting:
             self.rejected_frozen += 1
             return False
-        self.pending[inst_id] = decision
+        self.pending.setdefault(inst_id, []).append(order)
         self.subscribe_quote_ticks(inst_id)
         return True
 
     def on_quote_tick(self, tick: QuoteTick) -> None:
-        d = self.pending.pop(tick.instrument_id, None)
-        if d is None:
-            return
-        qty = int(d.stake / L.FILL_PRICE)  # whole contracts at 50c, floored
-        order = self.order_factory.market(
-            tick.instrument_id,
-            OrderSide.BUY,
-            Quantity.from_int(qty),
-            tags=[f"acct:{self.account}", f"event:{d.event}"],
-        )
-        self.decision_for[str(order.client_order_id)] = d
-        self.submit_order(order)
-        self.submitted += 1
-        self.restored += self.restoring
-        self.last_order = {
-            "client_order_id": str(order.client_order_id),
-            "instrument": str(tick.instrument_id),
-            "qty": qty,
-            "stake": str(d.stake),
-            "ts": d.ts,
-        }
+        for d in self.pending.pop(tick.instrument_id, []):
+            api = isinstance(d, ApiOrder)
+            qty = (
+                d.qty if api and d.qty else int(d.stake / L.FILL_PRICE)
+            )  # whole contracts at 50c, floored
+            order = self.order_factory.market(
+                tick.instrument_id,
+                OrderSide.SELL if api and d.sell else OrderSide.BUY,
+                Quantity.from_int(qty),
+                tags=[f"acct:{self.account}", f"event:{d.event}"]
+                + ([f"api:{d.req['leg_id']}"] if api else []),
+            )
+            self.decision_for[str(order.client_order_id)] = d
+            if api:
+                self.api_pending[str(order.client_order_id)] = d
+            self.submit_order(order)
+            self.submitted += 1
+            self.restored += self.restoring
+            self.last_order = {
+                "client_order_id": str(order.client_order_id),
+                "instrument": str(tick.instrument_id),
+                "qty": qty,
+                "stake": str(d.stake),
+                "ts": d.ts,
+            }
 
     def on_order_filled(self, event) -> None:  # noqa: ANN001 — Nautilus OrderFilled
         d = self.decision_for.get(str(event.client_order_id))
@@ -186,6 +246,12 @@ class DemoPaperStrategy(Strategy):
             }
         )
         self.filled += 1
+        if isinstance(d, ApiOrder):
+            d.done = True
+            self.api_pending.pop(str(event.client_order_id), None)
+            self.api_filled += 1
+            if self.api_sink is not None:
+                self.api_sink(event, d)
 
 
 def strategy_kwargs(account: str) -> dict[str, str]:
@@ -235,6 +301,8 @@ class PaperWorker:
         self.done_events: set[str] = set()
         self.rows_seen = 0
         self.ran = False  # Nautilus refuses end() on an engine that never ran
+        self.last_book: L.StrategyBook | None = None  # latest ledger build for this account
+        self.api_inbox = state_dir / "workers" / f"{account}.inbox.jsonl"
         self.engine = BacktestEngine(
             BacktestEngineConfig(
                 trader_id=TraderId(self.ids["trader_id"]),
@@ -251,6 +319,7 @@ class PaperWorker:
             frozen_account=True,
         )
         self.strategy = DemoPaperStrategy(DemoPaperConfig(**strategy_kwargs(account)))
+        self.strategy.api_sink = self._record_api_fill
         self.engine.add_strategy(self.strategy)
         self.status_path = state_dir / "workers" / f"{account}.json"
 
@@ -277,6 +346,7 @@ class PaperWorker:
         """
         rows = L.load_rows(self.feed, since_ts=self.since)
         lg = L.build(rows, killswitch.read(str(self.state_dir)), self.refills)
+        self.last_book = lg.books[self.account]
         new = [d for d in lg.books[self.account].decisions if d.event not in self.done_events]
         ticks = []
         for d in new:
@@ -319,16 +389,196 @@ class PaperWorker:
             "last_fill": s.fills[-1] if s.fills else None,
             "orders_restored": s.restored,
             "orders_rejected_frozen": s.rejected_frozen,
+            "api_orders_filled": s.api_filled,
+            "api_orders_rejected": s.api_rejected,
             "open_positions": len(self.engine.cache.positions_open()),
             "last_order": s.last_order,
             "mode": "paper",
             "execution": self.spec.execution,
+            "report": self.report(),
         }
         self.status_path.parent.mkdir(parents=True, exist_ok=True)
         tmp = self.status_path.with_suffix(".tmp")
         tmp.write_text(json.dumps(status))
         tmp.replace(self.status_path)
         return status
+
+    def report(self) -> dict:
+        """Funds and open positions as THIS worker computes them (v1 reads)."""
+        from algobots.demo import tickets as TK
+
+        def _d(x) -> str:  # noqa: ANN001 — Money/Price/Quantity -> plain decimal string
+            return str(x.as_decimal()) if hasattr(x, "as_decimal") else str(x)
+
+        legs = [
+            x
+            for p in TK.load(str(self.state_dir))
+            for x in p.legs
+            if x.account == self.account and x.worker_order_id
+        ]
+        api_fees = sum((Decimal(x.fee) for x in legs), Decimal(0))
+        entries = sum((Decimal(x.notional) for x in legs if x.kind == "entry"), Decimal(0))
+        exits = sum((Decimal(x.notional) for x in legs if x.kind == "exit"), Decimal(0))
+        book = self.last_book
+        accounts = self.engine.cache.accounts()
+        balance = _d(accounts[0].balance_total(USD)) if accounts else None
+        return {
+            "funds": {
+                "currency": "USD",
+                "venue_balance": balance,  # frozen: the ledger owns P&L, the venue holds cash
+                "allocated": str(book.allocated) if book else str(L.SLEEVE),
+                "equity": str((book.equity if book else L.SLEEVE) - api_fees),
+                "strategy_pnl": str(book.pnl) if book else "0",
+                "api_fees_paid": str(api_fees),
+                "api_open_notional": str(max(Decimal(0), entries - exits)),
+                "open_positions": len(self.engine.cache.positions_open()),
+            },
+            "positions": [
+                {
+                    "symbol": str(p.instrument_id.symbol),
+                    "venue": str(p.instrument_id.venue),
+                    "instrument": str(p.instrument_id),
+                    "side": p.side.name if hasattr(p.side, "name") else str(p.side),
+                    "qty": _d(p.quantity),
+                    "avg_price": _d(p.avg_px_open),
+                    "opened_ts": (p.ts_opened / NS) if p.ts_opened else None,
+                    "unrealized_pnl": None,  # no quotes are captured: nothing to mark against
+                }
+                for p in self.engine.cache.positions_open()
+            ],
+        }
+
+    # --- order API (ALG-3263): execute the API's gated legs on this worker ------------------
+
+    def _record_api_fill(self, event, order: ApiOrder) -> None:  # noqa: ANN001 — OrderFilled
+        """Append the worker-executed fill to the ticket journal (identity on it)."""
+        from algobots.demo import tickets as TK
+
+        qty, px = Decimal(str(event.last_qty)), Decimal(str(event.last_px))
+        TK.append_event(
+            str(self.state_dir),
+            {
+                "rec": "fill",
+                "parent": order.req["parent_id"],
+                "leg": order.req["leg_id"],
+                "ts": time.time(),
+                "qty": str(qty),
+                "price": str(px),
+                "notional": str((qty * px).quantize(L.CENT)),
+                "fee": str(L.fee_for((qty * px).quantize(L.CENT))),
+                "trader_id": self.ids["trader_id"],
+                "order_id_tag": self.ids["order_id_tag"],
+                "client_order_id": str(event.client_order_id),
+                "trade_id": str(event.trade_id),
+                "venue_account_id": str(event.account_id),
+                "instrument": str(event.instrument_id),
+            },
+        )
+
+    def _record_api_reject(self, req: dict, reason: str) -> None:
+        from algobots.demo import tickets as TK
+
+        self.strategy.api_rejected += 1
+        TK.append_event(
+            str(self.state_dir),
+            {"rec": "reject", "parent": req["parent_id"], "leg": req["leg_id"], "reason": reason},
+        )
+
+    def _claim_inbox(self) -> list[dict]:
+        """Atomically take every queued request: API appends under the same lock."""
+        try:
+            with open(self.api_inbox.with_suffix(".lock"), "a") as lock:
+                fcntl.flock(lock, fcntl.LOCK_EX)
+                try:
+                    text = self.api_inbox.read_text() if self.api_inbox.exists() else ""
+                    self.api_inbox.write_text("")
+                finally:
+                    fcntl.flock(lock, fcntl.LOCK_UN)
+        except OSError:
+            return []
+        out = []
+        for line in text.splitlines():
+            try:
+                req = json.loads(line)
+                if isinstance(req, dict) and req.get("leg_id") and req.get("parent_id"):
+                    out.append(req)
+            except ValueError:
+                continue
+        return out
+
+    def drain_api_orders(self) -> list[dict]:
+        """Execute every still-submitted API leg on this worker's Nautilus engine.
+
+        A leg cancelled (or already filled) is dropped, never executed twice;
+        a request the journal no longer knows is dropped with a reject record.
+        Entry-frozen workers leave their inbox untouched for after reconcile.
+        """
+        from algobots.demo import tickets as TK
+
+        if not self.reconciled:
+            return []
+        reqs = self._claim_inbox()
+        if not reqs:
+            return []
+        now = time.time()
+        parents = {p.id: p for p in TK.load(str(self.state_dir))}
+        executed: list[dict] = []
+        ticks: dict[str, BinaryOption] = {}
+        for req in reqs:
+            parent = parents.get(req.get("parent_id"))
+            leg = (
+                next((x for x in parent.legs if x.id == req.get("leg_id")), None)
+                if parent
+                else None
+            )
+            if leg is not None and leg.account != self.account:
+                continue  # misrouted: another worker owns it
+            if leg is None:
+                self._record_api_reject(req, "journal no longer knows this leg")
+                continue
+            if leg.status != "submitted":
+                continue  # cancelled first, or already filled: fills are final
+            try:
+                notional = Decimal(str(req.get("notional", "0")))
+                if notional <= 0:
+                    raise InvalidOperation
+            except InvalidOperation:
+                self._record_api_reject(req, "notional must be > 0 USD")
+                continue
+            symbol = req.get("symbol") or f"{current_event(now)}-{leg.side}"
+            event_id, _, outcome = str(symbol).rpartition("-")
+            inst_id = InstrumentId(Symbol(str(symbol)), self.venue)
+            inst = self.engine.cache.instrument(inst_id)
+            if inst is None:
+                inst = instrument(self.venue, event_id, outcome.upper(), event_ts(event_id, now))
+                self.engine.add_instrument(inst)
+            order = ApiOrder(
+                req=req,
+                event=event_id,
+                ts=now,
+                stake=notional,
+                sell=leg.kind == "exit",
+                qty=int(req["qty"]) if req.get("qty") else None,
+            )
+            if not self.strategy.queue(inst_id, order):
+                raise RuntimeError("reconciled worker refused an api entry")  # unreachable
+            ticks[str(symbol)] = inst
+            executed.append(req)
+        if ticks:
+            self.engine.add_data([quote(inst, now) for inst in ticks.values()])
+            self.engine.run(streaming=True)
+            self.engine.clear_data()
+            self.ran = True
+            for oid, order in list(self.strategy.api_pending.items()):
+                venue_order = self.engine.cache.order(ClientOrderId(oid))
+                why = (
+                    f"venue left it {venue_order.status}"
+                    if venue_order is not None
+                    else "venue order not found"
+                )
+                self._record_api_reject(order.req, why)
+            self.strategy.api_pending.clear()
+        return executed
 
     def close(self) -> None:
         if self.ran:
@@ -385,6 +635,7 @@ def main(argv: list[str] | None = None) -> None:
         w.reconcile()
         while True:
             w.step()
+            w.drain_api_orders()
             w.heartbeat()
             if a.once or stop:
                 break

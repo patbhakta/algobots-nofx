@@ -529,6 +529,14 @@
     {
       "repo": "algobots",
       "path": "docs/adr/0001-nautilus-execution-spine.md"
+    },
+    {
+      "repo": "algobots",
+      "path": "src/algobots/demo/orderapi.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "tests/demo/test_order_api.py"
     }
   ],
   "scope_revisions": [

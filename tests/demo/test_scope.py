@@ -164,15 +164,36 @@ def test_one_line_states_disconnected_empty_connected():
     assert "DISCONNECTED · worker supervisor down" in down
 
 
-def test_order_ticket_is_scoped_to_grants(client):
-    c = client("laya", "coin")
-    order = {"path": "broadcast", "side": "YES", "notional": "5"}
-    denied = c.post("/demo/api/orders", json={**order, "accounts": ["laya", "jev"]})
-    assert denied.status_code == 403  # an ungranted leg fails the whole ticket, nothing journaled
-    ok = c.post("/demo/api/orders", json={**order, "accounts": ["laya", "coin"]})
-    assert ok.status_code == 200 and ok.json()["state"] == "sent"
-    client("laya", "jev", "coin").post("/demo/api/orders", json={**order, "accounts": ["jev"]})
-    body = client("laya", "coin").get("/demo/api/orders").json()
-    assert {o["account"] for o in body["orders"] if o["source"] == "ticket"} == {"laya", "coin"}
-    assert len(body["parents"]) == 1  # the jev-only parent never reaches this caller
-    assert 'value="jev"' not in client("laya", "coin").get("/demo").text
+def test_order_ticket_is_scoped_to_grants(client, tmp_path):
+    pytest.importorskip("nautilus_trader")  # the ticket now executes on paper workers
+    from pathlib import Path
+
+    from algobots.api.config import get_settings
+    from algobots.engine.workers.lease import Lease
+    from algobots.engine.workers.paper import PaperWorker
+
+    workers = {}
+    for acct in ("laya", "jev", "coin"):
+        Lease(tmp_path, acct).acquire()
+        w = PaperWorker(acct, Path(get_settings().demo_feed_path), tmp_path, "2026-10-06", [])
+        w.reconcile()
+        w.heartbeat()
+        workers[acct] = w
+    try:
+        c = client("laya", "coin")
+        order = {"path": "broadcast", "side": "YES", "notional": "5"}
+        denied = c.post("/demo/api/orders", json={**order, "accounts": ["laya", "jev"]})
+        assert denied.status_code == 403  # ungranted leg: whole ticket refused, nothing journaled
+        ok = c.post("/demo/api/orders", json={**order, "accounts": ["laya", "coin"]})
+        assert ok.status_code == 200 and ok.json()["state"] == "sent"
+        client("laya", "jev", "coin").post("/demo/api/orders", json={**order, "accounts": ["jev"]})
+        body = client("laya", "coin").get("/demo/api/orders").json()
+        assert {o["account"] for o in body["orders"] if o["source"] == "ticket"} == {"laya", "coin"}
+        assert len(body["parents"]) == 1  # the jev-only parent never reaches this caller
+        assert 'value="jev"' not in client("laya", "coin").get("/demo").text
+    finally:
+        import os
+
+        for acct, w in workers.items():
+            w.close()
+            Lease(tmp_path, acct).release(os.getpid())
