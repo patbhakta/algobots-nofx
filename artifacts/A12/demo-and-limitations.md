@@ -1,7 +1,7 @@
 # A12 / G1 walkthrough — demo and limitations (ALG-3257)
 
 Run: `uv run --extra workers make demo-g1` (needs node + playwright-core for
-the screenshots). Green run 2026-10-07: 5/5 capabilities in ~52 s on this VPS.
+the screenshots). Green run 2026-10-07: 5/5 capabilities in 62.7 s on this VPS.
 
 - What the run proves, capability by capability: `docs/gates/G1/decision.md`
   (the gate call: proven / simulated / blocked / failed).
@@ -15,6 +15,11 @@ fills at the assumed 0.50 mid + Kalshi taker fee on the Nautilus paper venue;
 the app does not auto-restart a killed worker (restart-with-reconciliation is
 proven at the engine layer); the strategies have no edge and nothing here
 measures profitability; no fleet capacity is inferred from one host.
+
+Errata: `engine/measurements.json` self-labels `"packet": "A06", "slice":
+"A06-3"` because phase 2 reuses the shared A06 fixture harness unchanged; its
+measurement window opens 42 s after this run's `started_at` in `demo-run.json`,
+so the timestamps prove it measured this A12 run, not the A06 packet.
 
 Descope record (A12-2, ALG-3303): original A12 AC3–AC5 — the knowledge
 importer (source anchor + tenant scope), the DecisionModel/Jev mock + live

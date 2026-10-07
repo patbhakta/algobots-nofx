@@ -214,7 +214,8 @@ def phase1(run: Path) -> dict:
                     samples[a]["rss_mb"].append(rss)
                     if a in prev:
                         t0, c0 = prev[a]
-                        samples[a]["cpu_pct"].append(round(100 * (cpu - c0) / (time.time() - t0), 1))
+                        dt = time.time() - t0
+                        samples[a]["cpu_pct"].append(round(100 * (cpu - c0) / dt, 1))
                     prev[a] = (time.time(), cpu)
                 stop.wait(1.0)
 
@@ -260,7 +261,9 @@ def phase1(run: Path) -> dict:
 
         # C4a: LIVE is refused outright.
         code, body = _req(
-            "POST", f"{base}/demo/api/v1/laya/orders/place", {"side": "YES", "notional": "10", "mode": "LIVE"}
+            "POST",
+            f"{base}/demo/api/v1/laya/orders/place",
+            {"side": "YES", "notional": "10", "mode": "LIVE"},
         )
         live_denial = body.get("detail") or body.get("error")
         assert code == 422 and live_denial and "LIVE" in str(live_denial), (code, body)
@@ -268,7 +271,9 @@ def phase1(run: Path) -> dict:
             "live_mode": {"status": code, "reason": live_denial},
             "kill_switch": None,
         }
-        report["trace_ids"].append({"kind": "denial", "code": "live_disabled", "reason": live_denial})
+        report["trace_ids"].append(
+            {"kind": "denial", "code": "live_disabled", "reason": live_denial}
+        )
         mark("live_refused", status=code, reason=live_denial)
 
         # C4b: kill switch engaged -> next order denied with a stated, audited reason.
@@ -295,7 +300,9 @@ def phase1(run: Path) -> dict:
         )
         mark("kill_switch_denial", code=leg["denial_code"], reason=leg["reason"])
         code, _ = _req(
-            "POST", f"{base}/demo/kill-switch", form=b"engaged=off&actor=g1-walkthrough&account=laya"
+            "POST",
+            f"{base}/demo/kill-switch",
+            form=b"engaged=off&actor=g1-walkthrough&account=laya",
         )
         assert code in (200, 303), code
 
@@ -344,8 +351,14 @@ def phase1(run: Path) -> dict:
         thread.join(timeout=5)
         per = {
             a: {
-                "rss_mb": {"p50": _pct(samples[a]["rss_mb"], 50), "p95": _pct(samples[a]["rss_mb"], 95)},
-                "cpu_pct": {"p50": _pct(samples[a]["cpu_pct"], 50), "p95": _pct(samples[a]["cpu_pct"], 95)},
+                "rss_mb": {
+                    "p50": _pct(samples[a]["rss_mb"], 50),
+                    "p95": _pct(samples[a]["rss_mb"], 95),
+                },
+                "cpu_pct": {
+                    "p50": _pct(samples[a]["cpu_pct"], 50),
+                    "p95": _pct(samples[a]["cpu_pct"], 95),
+                },
                 "n": len(samples[a]["rss_mb"]),
             }
             for a in ACCOUNTS
@@ -380,7 +393,8 @@ def phase1(run: Path) -> dict:
         if not np:
             import glob
 
-            for path in sorted(glob.glob(str(Path.home() / ".npm" / "_npx" / "*" / "node_modules"))):
+            npm_glob = Path.home() / ".npm" / "_npx" / "*" / "node_modules"
+            for path in sorted(glob.glob(str(npm_glob))):
                 if (Path(path) / "playwright-core").is_dir():
                     np = path
                     break
@@ -467,7 +481,10 @@ def main() -> int:
 
         log(traceback.format_exc())
         (OUT / "demo-run.json").write_text(
-            json.dumps({"packet": "A12", "failed": repr(exc), "timeline": LOG_LINES}, indent=2) + "\n"
+            json.dumps(
+                {"packet": "A12", "failed": repr(exc), "timeline": LOG_LINES}, indent=2
+            )
+            + "\n"
         )
         (OUT / "demo-run.log").write_text("\n".join(LOG_LINES) + "\n")
         return 1

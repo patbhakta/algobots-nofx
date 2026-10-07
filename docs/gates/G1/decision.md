@@ -15,7 +15,7 @@ live money is **blocked** on real edge + venue integration + risk sign-off.
 |---|------------|----------|
 | C1 | Multi-account | three paper accounts (`laya`, `jev`, `coin`), per-account scoping: `GET /demo/api/decisions?account=jev` returns jev only; grants enforced (403/404 on ungranted keys — A10-2 tests) |
 | C2 | Multi-strategy | all three strategies deciding from the same feed (per-strategy books, decisions, P&L in `/demo/api/state`) |
-| C3 | Multi-worker isolation | one OS process per account, distinct PIDs, separate Nautilus traders (`PAPER-LAYA-001` …); a fill on one account is executed by that account's worker only (`worker_trader_id` in the order book) |
+| C3 | Multi-worker isolation | one OS process per account, distinct PIDs, separate Nautilus traders (`PAPER-LAYA` … `PAPER-COIN`, one per account); a fill on one account is executed by that account's worker only (`worker_trader_id` in the order book) |
 | C4 | Risk denial with stated reason | LIVE mode refused (`live_disabled`, 422); kill switch engaged → next order's legs `blocked`, `denial_code=kill_switch`, reason "kill switch engaged — entry blocked", every flip audited in `kill-switch.json` history |
 | C5 | Kill / restart / reconciliation | app level: SIGKILL one worker → the other two keep heartbeating, the dead account refuses entries (`worker_unavailable`, 503, reason names the dead lease — no fallback exists). Engine level (`artifacts/A12/engine/`): kill → restart → entry-frozen `reconciling` → `ready` with orders restored from the durable ledger; other accounts never paused |
 
