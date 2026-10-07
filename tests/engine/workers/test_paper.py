@@ -1,4 +1,4 @@
-"""ALG-3255 Nautilus paper worker: ledger FILLED decisions -> tagged paper orders."""
+"""ALG-3255/3258 Nautilus paper worker: ledger FILLED decisions -> tagged paper orders."""
 
 import json
 
@@ -47,7 +47,7 @@ def test_worker_submits_exactly_the_ledger_fills_and_only_new_ones(tmp_path):
     feed.write_text("\n".join(_rows(6)) + "\n")
     w = _worker(tmp_path, "laya")
     try:
-        assert w.step() == 6
+        assert w.reconcile() == 4  # first start: the ledger's fills, restored
         fills = L.build(L.load_rows(feed)).books["laya"].fills
         assert w.strategy.submitted == w.strategy.filled == len(fills) == 4
         hb = w.heartbeat()
@@ -72,7 +72,41 @@ def test_kill_switch_blocks_worker_orders(tmp_path):
     killswitch.set_engaged(str(tmp_path), True, actor="test", now=T0 - 1)
     w = _worker(tmp_path, "coin")
     try:
-        assert w.step() == 4
+        assert w.reconcile() == 0
+        assert w.step() == 0
         assert w.strategy.submitted == 0
+    finally:
+        w.close()
+
+
+def test_crash_restart_is_entry_frozen_until_reconciled(tmp_path):
+    """AC4: a restarted worker submits nothing until it has reconciled."""
+    feed = tmp_path / "feed.jsonl"
+    feed.write_text("\n".join(_rows(6)) + "\n")
+    first = _worker(tmp_path, "laya")
+    first.reconcile()
+    assert first.strategy.submitted == 4
+    first.close()  # the "crash": everything in memory is gone
+
+    feed.write_text(feed.read_text() + "\n".join(_rows(3, start=6)) + "\n")
+    w = _worker(tmp_path, "laya")
+    try:
+        assert w.heartbeat()["phase"] == "reconciling" and not w.reconciled
+        w.step()  # new FILLED intervals arrive before reconcile
+        assert w.strategy.submitted == 0 and w.strategy.rejected_frozen > 0
+        assert w.engine.cache.orders() == []
+        rejected = w.strategy.rejected_frozen
+
+        fills = len(L.build(L.load_rows(feed)).books["laya"].fills)
+        assert w.reconcile() == fills  # refused intervals are restored, not lost
+        hb = w.heartbeat()
+        assert hb["phase"] == "ready" and hb["reconciled"] is True
+        assert hb["orders_restored"] == fills and hb["orders_rejected_frozen"] == rejected
+
+        feed.write_text(feed.read_text() + "\n".join(_rows(2, start=9)) + "\n")
+        w.step()
+        total = len(L.build(L.load_rows(feed)).books["laya"].fills)
+        assert w.strategy.submitted == total and w.strategy.restored == fills
+        assert w.strategy.rejected_frozen == rejected  # no refusals once reconciled
     finally:
         w.close()

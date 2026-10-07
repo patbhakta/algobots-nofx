@@ -204,8 +204,11 @@ def main(argv: list[str] | None = None) -> None:
     lease = Lease(Path(state_dir), a.account)
     if a.command == "show":
         h = lease.holder()
-        print(json.dumps({"path": str(lease.path), "status": h.status, "reason": h.reason,
-                          "lease": h.lease}))
+        print(
+            json.dumps(
+                {"path": str(lease.path), "status": h.status, "reason": h.reason, "lease": h.lease}
+            )
+        )
         return
     try:
         h = lease.force_release()

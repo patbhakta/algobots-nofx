@@ -1,4 +1,5 @@
-"""ALG-3255 supervisor: N accounts -> N processes; one kill is isolated and reported."""
+"""ALG-3255/3258 supervisor: N accounts -> N processes; one kill is isolated and reported;
+one owner per account across supervisors; a restart is entry-frozen until reconciled."""
 
 import os
 import signal
@@ -8,6 +9,7 @@ import time
 
 from fastapi.testclient import TestClient
 
+from algobots.engine.workers.lease import Lease
 from algobots.engine.workers.supervisor import Supervisor, proc_stats
 
 FAKE_WORKER = textwrap.dedent(
@@ -20,10 +22,13 @@ FAKE_WORKER = textwrap.dedent(
     signal.signal(signal.SIGTERM, lambda *_: sys.exit(0))
     out = Path(os.environ["STATE"]) / "workers" / f"{a.account}.json"
     t0, n = time.time(), 0
+    frozen_until = t0 + float(os.environ.get("RECONCILE_S", "0"))
     while True:
-        n += 1
+        ok = time.time() >= frozen_until
+        n += ok  # entries only once reconciled
         out.write_text(json.dumps({
             "pid": os.getpid(), "last_heartbeat": time.time(), "ready_at": t0,
+            "reconciled": ok, "phase": "ready" if ok else "reconciling",
             "trader_id": f"PAPER-{a.account.upper()}",
             "account_id": f"PAPER_{a.account.upper()}-001",
             "order_id_tag": a.account.upper(), "orders_submitted": n, "orders_filled": n,
@@ -43,7 +48,7 @@ def _wait(pred, timeout=10.0):
     return False
 
 
-def _supervisor(tmp_path) -> Supervisor:
+def _supervisor(tmp_path, **env) -> Supervisor:
     script = tmp_path / "fake_worker.py"
     script.write_text(FAKE_WORKER)
     return Supervisor(
@@ -51,7 +56,7 @@ def _supervisor(tmp_path) -> Supervisor:
         tmp_path,
         poll=0.1,
         command=[sys.executable, str(script)],
-        env={"STATE": str(tmp_path)},
+        env={"STATE": str(tmp_path), **env},
     )
 
 
@@ -89,6 +94,7 @@ def test_n_accounts_n_processes_kill_one_others_keep_running(tmp_path):
     finally:
         sup.stop()
     assert {s["state"] for s in sup.snapshot()} == {"stopped"}
+    assert not any(Lease(tmp_path, a).path.exists() for a in sup.accounts)  # released on stop
 
 
 def test_stale_heartbeat_is_reported(tmp_path):

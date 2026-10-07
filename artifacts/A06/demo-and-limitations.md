@@ -85,3 +85,49 @@ otherwise unchanged; `smoke-after-move.txt` re-runs it from the new path.
   on this 15 GB host but is the number to watch for fan-out (A11).
 - The terminal Accounts-pane worker column (slice c) belongs with A10-2
   (ALG-3254), which renders `/demo/api/workers`.
+
+## A06-2 — ownership lease, takeover denial, reconcile-before-entries (ALG-3258)
+
+**Ownership.** `src/algobots/engine/workers/lease.py` keeps one lease per
+tenant/account/environment at
+`<state_dir>/workers/leases/demo.<account>.paper.lease`. Each lease holds the
+owner PID, its kernel start time, its host and its PID namespace.
+`Supervisor.start` runs check, spawn and record under an `flock`, so two API
+processes can't both win. The worker re-acquires the lease itself at boot, and
+a worker that loses the race exits with code 75 (state `denied`). `start` raises
+`LeaseDenied`, and `WorkerStatus.state` is `denied` with `denied_reason` and
+`lease_pid`, when:
+
+- a live process holds the lease (the same PID with the same start time), or
+- liveness can't be confirmed: the lease is from another host or PID namespace
+  (e.g. a container that was hard-killed), the file is unreadable, or `/proc`
+  can't be read.
+
+Takeover happens only when the old owner is confirmed terminated: its PID is
+gone, a zombie, or reused by another process. A clean stop releases the lease.
+A crash leaves it behind, and the next start takes it over once the PID is
+confirmed dead. For the uncertain case:
+
+    python -m algobots.engine.workers.lease show          --account laya
+    python -m algobots.engine.workers.lease force-release --account laya   # refuses a live owner
+
+**Lifecycle.** `starting → reconciling → ready → stopped | exited | denied`,
+plus `stale`. A fresh or restarted worker is entry-frozen: `queue()` refuses and
+counts every entry (`orders_rejected_frozen`) until `reconcile()` has replayed
+the durable ledger, which restores past fills into the paper venue
+(`orders_restored`). Then the heartbeat reports `reconciled: true` and the
+supervisor reports `ready`. There is still no auto-restart. A crashed account
+stays `exited`, and therefore frozen, until someone starts it again, while the
+other accounts keep trading.
+
+**Verification.** `make verify-A06` runs `tests/engine/workers` and
+`tests/packets/A06`, then writes `artifacts/A06/acceptance.json`: AC2–AC4 PASS,
+and AC1 and AC5 PENDING. AC1 is PENDING because the demo has 3 accounts, not 4;
+AC5's p95 RSS/CPU measurement is A06-3. `test_paper` needs the `workers` extra.
+Without it, AC1 and AC3 report PENDING, never PASS.
+
+**Limitations.** Ownership is per host. There is no distributed lock and no
+automatic failover, as the A06 exclusions state. A hard-killed container leaves
+leases that the next container can't verify, so they need `force-release`. A
+clean `docker compose up` sends SIGTERM to the API, which stops the workers and
+releases the leases.

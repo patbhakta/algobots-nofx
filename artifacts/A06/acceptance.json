@@ -1,0 +1,69 @@
+{
+  "packet": "A06",
+  "slice": "A06-2 (ALG-3258)",
+  "tested_commit": "7802323",
+  "command": "make verify-A06",
+  "cases": {
+    "AC1": {
+      "status": "PENDING",
+      "case": "GIVEN four paper accounts WHEN started THEN four separate Nautilus processes have unique IDs and account namespaces",
+      "note": "the demo runs 3 accounts (laya/jev/coin); N->N processes and unique IDs are tested and live, but a 4-account Nautilus run is not exercised yet",
+      "tests": {
+        "tests/engine/workers/test_supervisor.py::test_n_accounts_n_processes_kill_one_others_keep_running": "passed",
+        "tests/engine/workers/test_paper.py::test_ids_are_unique_per_account": "passed"
+      },
+      "evidence": [
+        "artifacts/A06/test-results/junit.xml",
+        "artifacts/A06/processes.txt",
+        "artifacts/A06/workers-before-kill.json"
+      ]
+    },
+    "AC2": {
+      "status": "PASS",
+      "case": "GIVEN two authorized humans viewing one account THEN only one execution worker exists",
+      "note": "2 tests passed",
+      "tests": {
+        "tests/engine/workers/test_lease.py::test_two_supervisors_one_account_exactly_one_worker": "passed",
+        "tests/engine/workers/test_lease.py::test_second_start_on_same_supervisor_is_denied_and_keeps_worker": "passed"
+      },
+      "evidence": [
+        "artifacts/A06/test-results/junit.xml"
+      ]
+    },
+    "AC3": {
+      "status": "PASS",
+      "case": "GIVEN one worker crashes THEN other accounts continue and the crashed account cannot submit until recovery completes",
+      "note": "3 tests passed",
+      "tests": {
+        "tests/engine/workers/test_lease.py::test_crash_freezes_only_that_account_until_reconciled": "passed",
+        "tests/engine/workers/test_paper.py::test_crash_restart_is_entry_frozen_until_reconciled": "passed",
+        "tests/engine/workers/test_supervisor.py::test_n_accounts_n_processes_kill_one_others_keep_running": "passed"
+      },
+      "evidence": [
+        "artifacts/A06/test-results/junit.xml"
+      ]
+    },
+    "AC4": {
+      "status": "PASS",
+      "case": "GIVEN an attempted second active worker or unknown old-process status THEN start is denied",
+      "note": "5 tests passed",
+      "tests": {
+        "tests/engine/workers/test_lease.py::test_live_pid_lease_denies_start": "passed",
+        "tests/engine/workers/test_lease.py::test_unknown_owner_denies_start_until_force_release": "passed",
+        "tests/engine/workers/test_lease.py::test_worker_that_loses_the_race_exits_denied": "passed",
+        "tests/engine/workers/test_lease.py::test_start_all_starts_free_accounts_and_reports_denied_ones": "passed",
+        "tests/engine/workers/test_lease.py::test_dead_or_reused_pid_is_taken_over": "passed"
+      },
+      "evidence": [
+        "artifacts/A06/test-results/junit.xml"
+      ]
+    },
+    "AC5": {
+      "status": "PENDING",
+      "case": "GIVEN the target workload THEN record measured p95 RSS/CPU; do not infer a fleet capacity without measurements",
+      "note": "A06-3: p95 RSS/CPU under the declared fixture is not measured yet",
+      "tests": {},
+      "evidence": []
+    }
+  }
+}

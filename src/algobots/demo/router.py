@@ -21,7 +21,7 @@ from algobots.demo import studio as S
 from algobots.demo.page import render, render_denied
 from algobots.demo.scope import Denied, Scope, current_scope, narrow, resolve
 from algobots.demo.studio_page import render_studio
-from algobots.engine.workers.supervisor import Supervisor, WorkerStatus
+from algobots.engine.workers.supervisor import LeaseDenied, Supervisor, WorkerStatus
 
 router = APIRouter(tags=["demo"])
 SUPERVISOR: Supervisor | None = None
@@ -34,7 +34,10 @@ def start_workers() -> None:
     if not s.demo_workers_enabled or SUPERVISOR is not None:
         return
     SUPERVISOR = Supervisor(list(L.STRATEGIES), Path(s.demo_state_dir), poll=s.demo_worker_poll_s)
-    SUPERVISOR.start()
+    try:
+        SUPERVISOR.start()
+    except LeaseDenied:
+        pass  # the API still boots; denied accounts show state "denied" with the reason
 
 
 def stop_workers() -> None:

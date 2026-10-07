@@ -54,3 +54,17 @@ verify-A10:
 	PYTHONPATH=$(CURDIR)/src $(PYTHON) -m pytest tests/demo tests/packets/A10 -q -p no:cacheprovider -rs \
 		--junitxml=$(A10_RESULTS)/junit.xml
 	sed -i -E 's/ (timestamp|hostname|time)="[^"]*"//g' $(A10_RESULTS)/junit.xml
+
+A06_RESULTS := artifacts/A06/test-results
+
+.PHONY: verify-A06
+
+# Worker supervisor/lease/paper tests + packet checks, then acceptance.json
+# (AC1-AC5 as PASS / FAIL / PENDING with evidence paths). test_paper needs the
+# `workers` extra (nautilus_trader); without it AC1/AC3 stay PENDING, never PASS.
+verify-A06:
+	mkdir -p $(A06_RESULTS)
+	PYTHONPATH=$(CURDIR)/src $(PYTHON) -m pytest tests/engine/workers tests/packets/A06 -q -p no:cacheprovider -rs \
+		--junitxml=$(A06_RESULTS)/junit.xml
+	sed -i -E 's/ (timestamp|hostname|time)="[^"]*"//g' $(A06_RESULTS)/junit.xml
+	PYTHONPATH=$(CURDIR)/src $(PYTHON) tests/packets/A06/acceptance.py $(A06_RESULTS)/junit.xml
