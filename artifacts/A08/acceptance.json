@@ -1,7 +1,7 @@
 {
   "packet": "A08",
   "slice": "A08 packet (ALG-3104)",
-  "tested_commit": "8d22845",
+  "tested_commit": "db81205",
   "command": "make verify-A08",
   "cases": {
     "AC1": {
