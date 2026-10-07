@@ -30,7 +30,6 @@ import json
 import math
 import os
 import signal
-import statistics
 import time
 import warnings
 from pathlib import Path
@@ -297,8 +296,6 @@ def main(argv: list[str] | None = None) -> None:
         w.close()
         lease.release(os.getpid())
 
-
-statistics  # noqa: B018 — kept for callers computing summary stats from heartbeats
 
 if __name__ == "__main__":
     main()

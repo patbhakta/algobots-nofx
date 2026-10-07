@@ -43,7 +43,12 @@ EXIT_SANDBOX = 78  # EX_CONFIG: a required isolation control could not be applie
 ENV_ALLOW = ("PATH", "LANG", "LC_ALL", "TZ", "PYTHONPATH", "PYTHONUNBUFFERED", "VIRTUAL_ENV")
 ENV_ALLOW_PREFIXES = ("ALGOBOTS_DEMO_",)
 # Research code and the vault must never be visible to a trading worker.
-FORBIDDEN_PATHS = ("/root/repos", "/opt/stock-vaults", "/root/stock-vaults", "/data/stock-vaults")
+FORBIDDEN_PATHS = (
+    "/root/repos",
+    "/root/repos/stock-vaults",
+    "/mnt/funnytree/stock-vaults",
+    "/opt/stock-vaults",
+)
 
 
 def account_secret_prefix(account: str) -> str:

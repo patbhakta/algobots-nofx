@@ -58,6 +58,7 @@ class Isolation:
     mem_mb: int = 4096  # RLIMIT_AS: Nautilus maps ~2.4 GB virtual for ~350 MB RSS
     nice: int = 10
     netns: bool = True  # try a private netns; falls back to "asserted" without CAP_SYS_ADMIN
+    forbid: tuple[str, ...] | None = None  # None: sandbox.FORBIDDEN_PATHS
 
     @classmethod
     def from_env(cls, environ: dict[str, str] | None = None) -> Isolation:
@@ -74,6 +75,8 @@ class Isolation:
         a = [sys.executable, "-m", "algobots.engine.workers.sandbox", "--account", account]
         a += ["--state-dir", str(state_dir), "--mem-mb", str(self.mem_mb)]
         a += ["--nice", str(self.nice)] + (["--netns"] if self.netns else [])
+        for p in self.forbid or ():
+            a += ["--forbid", p]
         if self.uid is not None:
             a += ["--uid", str(self.uid), "--gid", str(self.gid if self.gid is not None else self.uid)]
         return [*a, "--"]
