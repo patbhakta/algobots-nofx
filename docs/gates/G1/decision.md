@@ -45,6 +45,10 @@ only; no fleet capacity is inferred.
 - **Any edge claim**: blocked on strategy research; nothing in A12 measures or
   implies profitability.
 - **Fleet capacity**: blocked on more accounts/hosts than this demo runs.
+- **A12 AC3–AC5** (knowledge importer note anchors, DecisionModel/Jev mock
+  + live smoke, invalid-answer shadow REVIEW/ABSTAIN): descoped per Pat's
+  Oct 6 functional-terminal ruling — redirected to A14 (ALG-3110) /
+  A17 (ALG-3113) / A18 (ALG-3114); nothing here proves those capabilities.
 
 ## Failed
 

@@ -67,6 +67,22 @@ verify-A10:
 demo-g1:
 	$(PYTHON) tests/packets/A12/demo.py
 
+A12_RESULTS := artifacts/A12/test-results
+
+.PHONY: verify-A12
+
+# A12-2 packet closure (ALG-3303): the always-on packet tests (no `workers`
+# extra, no node/playwright — screenshots stay with `make demo-g1`), then
+# acceptance.json. AC1/AC2 re-check the recorded five-capability evidence;
+# AC3-AC5 are DESCOPED to A14/A17/A18 per Pat's Oct 6 functional-terminal
+# ruling, so this stays CI-runnable (same install as the plain `pytest` CI).
+verify-A12:
+	mkdir -p $(A12_RESULTS)
+	PYTHONPATH=$(CURDIR)/src $(PYTHON) -m pytest tests/packets/A12 -q -p no:cacheprovider -rs \
+		--junitxml=$(A12_RESULTS)/junit.xml
+	sed -i -E 's/ (timestamp|hostname|time)="[^"]*"//g' $(A12_RESULTS)/junit.xml
+	PYTHONPATH=$(CURDIR)/src $(PYTHON) tests/packets/A12/acceptance.py $(A12_RESULTS)/junit.xml
+
 A06_RESULTS := artifacts/A06/test-results
 
 .PHONY: verify-A06
