@@ -24,13 +24,17 @@ CASES: dict[str, dict] = {
     "AC1": {
         "case": "GIVEN four paper accounts WHEN started THEN four separate Nautilus processes "
         "have unique IDs and account namespaces",
-        "pending": "the demo runs 3 accounts (laya/jev/coin); N->N processes and unique IDs are "
-        "tested and live, but a 4-account Nautilus run is not exercised yet",
         "tests": [
             f"{W}/test_supervisor.py::test_n_accounts_n_processes_kill_one_others_keep_running",
             f"{W}/test_paper.py::test_ids_are_unique_per_account",
+            f"{W}/test_fixture.py::test_fixture_declares_four_accounts_eight_unique_deployments",
+            f"{W}/test_fixture.py::test_four_nautilus_accounts_kill_one_others_continue",
         ],
-        "evidence": ["artifacts/A06/processes.txt", "artifacts/A06/workers-before-kill.json"],
+        "evidence": [
+            "artifacts/A06/processes.txt",
+            "artifacts/A06/workers-before-kill.json",
+            "artifacts/A06/demo-run.json",
+        ],
     },
     "AC2": {
         "case": "GIVEN two authorized humans viewing one account THEN only one execution worker "
@@ -66,9 +70,11 @@ CASES: dict[str, dict] = {
     "AC5": {
         "case": "GIVEN the target workload THEN record measured p95 RSS/CPU; do not infer a "
         "fleet capacity without measurements",
-        "pending": "A06-3: p95 RSS/CPU under the declared fixture is not measured yet",
-        "tests": [],
-        "evidence": [],
+        "tests": [
+            f"{W}/test_fixture.py::test_fixture_is_entry_frozen_until_reconciled_and_reports_metrics",
+            "tests/packets/A06/test_a06_packet.py::test_measurements_are_committed_and_complete",
+        ],
+        "evidence": ["artifacts/A06/measurements.json", "deploy/workers/README.md"],
     },
 }
 
@@ -122,13 +128,21 @@ def main(argv: list[str]) -> int:
         ["git", "rev-parse", "--short", "HEAD"], cwd=ROOT, capture_output=True, text=True
     ).stdout.strip()
     cases = verdicts(results(junit))
+    tested_commit = head
+    if OUT.exists():
+        try:
+            old = json.loads(OUT.read_text())
+            if old.get("tested_commit") and old.get("cases") == cases:
+                tested_commit = old["tested_commit"]
+        except Exception:
+            pass
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(
         json.dumps(
             {
                 "packet": "A06",
-                "slice": "A06-2 (ALG-3258)",
-                "tested_commit": head,
+                "slice": "A06-3 (ALG-3259)",
+                "tested_commit": tested_commit,
                 "command": "make verify-A06",
                 "cases": cases,
             },

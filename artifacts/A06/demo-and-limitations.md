@@ -149,3 +149,59 @@ includes A06-2. `GET /demo/api/workers` reports `enabled/ready: true`, with all 
 accounts `ready`. Each worker is `reconciled: true` with `lease_pid == pid` (19/20/21), and
 `orders_restored` is 203/120/159 with 0 frozen rejections. Leases are at
 `/var/lib/algobots-demo/workers/leases/demo.<acct>.paper.lease`.
+
+## A06-3 — isolation hardening + 4-account / 8-deployment measurements (ALG-3259)
+
+**Isolation.** Every worker now starts through `algobots.engine.workers.sandbox`.
+It gets a scoped env (only its own `ALGOBOTS_ACCT_<ACCT>_*` secrets),
+`RLIMIT_AS` 4 GB, `nice +10`, an optional non-root UID, and it fails closed if
+research code or `stock-vaults` is readable. Each worker records what was
+enforced and what was only asserted in `<state>/workers/<acct>.sandbox.json`.
+The full table is in `deploy/workers/README.md`. In short: UID, memory, env and
+forbidden paths are **enforced**. Network egress and a per-worker CPU-rate cap
+are **asserted only** in the container (there is no `CAP_SYS_ADMIN` and no
+cgroup delegation). The live compose doesn't set `ALGOBOTS_WORKER_UID` yet, so
+production workers still run as root until it does.
+
+**Declared fixture.** `algobots.engine.workers.fixture` defines four synthetic
+paper accounts, `syn1`–`syn4` (the fourth makes AC1's "four accounts"
+literal). Each runs two strategies, `EveryN-<ACCT>` and `Dip-<ACCT>`, so there
+are **eight deployments**. Each account has its own Nautilus kernel, paper
+venue `PAPER_<ACCT>`, lease and heartbeat. A deterministic synthetic quote
+stream drives it at 4 Hz per instrument, and the poll is 1 s.
+
+**Run** (`demo-run.log`, `demo-run.json`, `measurements.json`). The run used
+the API image `algobots-api:latest` with this branch's `src` mounted, the
+supervisor as root and workers dropped to **UID 65534**, sampling for 120 s on
+a host with 8 vCPU (kernel 6.8).
+
+| metric (pooled, 4 workers) | p50 | p95 |
+|---|---|---|
+| RSS (MB, 1 Hz /proc samples, n=480) | 343.3 | 348.2 |
+| CPU (% of one core per 1 s step, n=476) | 0.0 | 1.0 |
+| startup (spawn → reconciled, s, n=4) | 3.34 | 3.49 |
+| strategy callback latency (scheduled tick → `on_quote_tick`, ms, n=2000) | 503 | 963 |
+| queue depth at drain (p95, worst worker) | — | 8 |
+| queue age at drain (p95, worst worker, ms) | — | 995 |
+
+The callback latency and queue age are dominated by the 1 s poll. Quotes wait
+in the inbound queue until the next drain. The engine's own per-tick cost is
+in `workers.*.per_tick_engine_ms_p95`. **No fleet capacity is inferred**
+(`capacity_extrapolation: null`). These numbers hold only for this fixture on
+this host.
+
+**Demo.** All four accounts were `ready` with four distinct PIDs and trader
+IDs, and every worker reported `uid 65534`. `syn2` was SIGKILLed after the
+sampling window. syn2 went `exited`, and in the next 5 s syn1, syn3 and syn4
+each processed +40 ticks while syn2 processed 0. After the restart, syn2's
+heartbeat went `reconciling → ready`. It stayed entry-frozen until it had
+replayed its durable fill log (156 fills restored), and only then traded.
+
+**Limitations.**
+- No per-worker CPU-rate cap. Only the container-level compose limit is
+  honest on this host, and it isn't set yet.
+- Egress is blocked only where `unshare(CLONE_NEWNET)` is allowed, which is
+  not the case in the API container. There, "no broker egress" means no
+  live client and no broker credentials.
+- The fixture is synthetic: no Laya feed and no ledger. The three real demo
+  accounts still run `paper.py`.

@@ -3,6 +3,8 @@
 import json
 from decimal import Decimal
 
+import pytest
+
 from algobots.demo import blotter as B
 from algobots.demo import killswitch
 from algobots.demo import ledger as L
@@ -147,7 +149,8 @@ def test_page_mobile_and_labelling_fixes():
     lg = L.build(rows)
     html = _every_view(lg, start="2026-10-03", now=lg.last_ts + 60)
     # disclosure is visible at every width (not inside a .wide span)
-    assert "<span>simulated fills at assumed 50¢ mid" in html
+    assert f'<span data-executor="{L.REFERENCE}">executor' in html
+    assert "quotes at the assumed 50¢ mid" in html
     assert "DEMO DATA" not in html and "PAPER · SIMULATED FILLS" in html
     assert 'class="data stack"' in html and 'data-label="Reason"' in html
     assert 'class="chart-d"' in html and 'class="chart-m"' in html
@@ -281,9 +284,52 @@ def test_positions_and_orders_endpoints(tmp_path, monkeypatch):
         assert len(client.get("/demo/api/orders").json()["orders"]) == 15
         page = client.get("/demo?account=coin")
         assert page.status_code == 200 and 'class="acct sel" data-account="coin"' in page.text
+        assert 'data-executor="NautilusTrader' in page.text
+        assert "fills, fees, settlement and sleeve cash read back from the engine" in page.text
         r = client.post(
             "/demo/kill-switch", data={"engaged": "on", "account": "coin"}, follow_redirects=False
         )
         assert r.status_code == 303 and r.headers["location"] == "/demo?account=coin&view=risk"
     finally:
         get_settings.cache_clear()
+
+
+def test_nautilus_sleeve_execution_and_rendering():
+    pytest.importorskip("nautilus_trader")
+    from algobots.engine.sleeve import EXECUTOR, NautilusSleeve
+
+    rows = [
+        L.Row(f"E{i}", 1.0, i % 2, 1791244800.0 + i * 900, 0.70, 0.1, "up", 0.5, "up")
+        for i in range(4)
+    ]
+    ref_lg = L.build(rows)
+    nautilus_lg = L.build(rows, executor=NautilusSleeve, executor_name=EXECUTOR)
+
+    assert nautilus_lg.executor == EXECUTOR
+    for acct in L.STRATEGIES:
+        ref_book = ref_lg.books[acct]
+        nau_book = nautilus_lg.books[acct]
+        assert nau_book.equity == ref_book.equity
+        assert nau_book.pnl == ref_book.pnl
+        for rd, nd in zip(ref_book.decisions, nau_book.decisions, strict=True):
+            assert nd.status == rd.status
+            if nd.status == "FILLED":
+                assert nd.qty == rd.qty
+                assert nd.price == rd.price
+                assert nd.stake == rd.stake
+                assert nd.fee == rd.fee
+                assert nd.pnl == rd.pnl
+                assert nd.order_id is not None
+                assert acct.upper() in nd.order_id
+
+    html = render(nautilus_lg, start="2026-10-06", now=nautilus_lg.last_ts + 60)
+    assert f'<span data-executor="{EXECUTOR}">' in html
+    assert "fills, fees, settlement and sleeve cash read back from the engine" in html
+    assert 'data-order-id="O-' in html
+
+    # Refill verification
+    refill_at = rows[2].ts
+    refill_lg = L.build(rows, refills=[refill_at], executor=NautilusSleeve, executor_name=EXECUTOR)
+    ref_refill_lg = L.build(rows, refills=[refill_at])
+    for acct in L.STRATEGIES:
+        assert refill_lg.books[acct].equity == ref_refill_lg.books[acct].equity

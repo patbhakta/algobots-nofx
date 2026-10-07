@@ -1,0 +1,71 @@
+{
+  "issue": "ALG-3145",
+  "title": "RESEARCH: Shelpid.WI3M trading-bot thread + dashboard (Pat likes the dashboard)",
+  "agent": "AlgoBots R&D (fc49f730-259d-4e6e-b5f5-67984371cc7d)",
+  "target_repository": "https://github.com/Shelpid/SETS",
+  "verdict": "SALVAGE-PARTS",
+  "rationale": "Adopt novel dashboard visualization language for NoFX warm-paper req; skip evolutionary parameter search for alpha generation (zero free alpha doctrine).",
+  "license_audit": {
+    "code_license": "MIT License (Copyright (c) 2026 SETS MACHINE contributors)",
+    "font_licenses": "SIL Open Font License 1.1 (JetBrains Mono, Space Grotesk)",
+    "market_data": "Binance public market data API (BTCUSDT hourly klines)",
+    "clean_room_requirement": "Clean-room reimplementation inside AlgoBots Warm Paper Design System (A09). Do not copy code wholesale."
+  },
+  "verification": {
+    "engine_tests": {
+      "command": "node --test tests/*.test.mjs",
+      "result": "8 passed, 0 failed, 0 skipped",
+      "duration_ms": 784.5
+    },
+    "workspace_tests": {
+      "command": "uv run pytest -q",
+      "result": "All passed",
+      "status": "PASS"
+    },
+    "browser_capture": {
+      "headless_browser": "Playwright Chromium 153.0.8010.12",
+      "viewports": ["1440x900 (Desktop)", "390x844 (Mobile)"],
+      "mobile_scroll_metrics": {
+        "clientWidth": 390,
+        "scrollWidth": 390,
+        "bodyScrollWidth": 390,
+        "innerWidth": 390,
+        "horizontal_overflow": false
+      }
+    }
+  },
+  "artifacts": {
+    "research_report": "artifacts/ALG-3145/research-report.md",
+    "dashboard_element_spec": "docs/design/shelpid-sets-dashboard-spec.md",
+    "dashboard_element_spec_copy": "artifacts/ALG-3145/dashboard-element-spec.md",
+    "screenshots_directory": "artifacts/ALG-3145/screenshots",
+    "screenshots_count": 25,
+    "screenshots_manifest": [
+      "sets-dashboard-1440-full.png",
+      "sets-dashboard-1440-inspecting.png",
+      "sets-dashboard-390-full.png",
+      "01-header-hdr-1440.png",
+      "01-header-hdr-390.png",
+      "02-controls-bar-1440.png",
+      "02-controls-bar-390.png",
+      "03-evolution-ring-1440.png",
+      "03-evolution-ring-390.png",
+      "04-fitness-history-1440.png",
+      "04-fitness-history-390.png",
+      "05-gene-pool-mesh-1440.png",
+      "05-gene-pool-mesh-390.png",
+      "06-genome-leader-1440.png",
+      "06-genome-leader-390.png",
+      "06b-genome-inspecting-1440.png",
+      "06b-genome-inspecting-390.png",
+      "07-selection-funnel-1440.png",
+      "07-selection-funnel-390.png",
+      "08-kelly-sizing-1440.png",
+      "08-kelly-sizing-390.png",
+      "09-paper-grid-chart-1440.png",
+      "09-paper-grid-chart-390.png",
+      "10-order-grid-log-1440.png",
+      "10-order-grid-log-390.png"
+    ]
+  }
+}

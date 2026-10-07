@@ -1,0 +1,224 @@
+{
+  "packet": "A06",
+  "slice": "A06-3 (ALG-3259)",
+  "fixture": {
+    "accounts": [
+      "syn1",
+      "syn2",
+      "syn3",
+      "syn4"
+    ],
+    "strategies_per_account": 2,
+    "deployments": 8,
+    "quote_rate_per_instrument_hz": 4.0,
+    "poll_s": 1.0,
+    "worker": "algobots.engine.workers.fixture (Nautilus BacktestEngine, paper venue)"
+  },
+  "host": {
+    "python": "3.12.15",
+    "kernel": "6.8.0-139-generic",
+    "cpus": 8,
+    "isolation_uid": 65534
+  },
+  "window": {
+    "started_at": 1791392098.6248999,
+    "sample_seconds": 120.0,
+    "sample_hz": 1
+  },
+  "pooled": {
+    "rss_mb": {
+      "p50": 343.3,
+      "p95": 348.2,
+      "max": 348.4,
+      "n": 480
+    },
+    "cpu_pct_of_one_core": {
+      "p50": 0.0,
+      "p95": 1.0,
+      "max": 2.0,
+      "n": 476
+    },
+    "startup_s": {
+      "p50": 3.34,
+      "p95": 3.49,
+      "max": 3.49,
+      "n": 4
+    },
+    "callback_latency_ms": {
+      "p50": 503.181,
+      "p95": 962.586,
+      "max": 1014.804,
+      "n": 2000
+    },
+    "queue_depth_p95_max": 8,
+    "queue_age_ms_p95_max": 995.4636096954346
+  },
+  "workers": {
+    "syn1": {
+      "rss_mb": {
+        "p50": 343.2,
+        "p95": 343.9,
+        "max": 343.9,
+        "n": 120
+      },
+      "cpu_pct": {
+        "p50": 0.0,
+        "p95": 1.0,
+        "max": 2.0,
+        "n": 119
+      },
+      "startup_s": 3.14,
+      "callback_latency_ms": {
+        "p50": 507.967,
+        "p95": 962.775,
+        "max": 1014.804,
+        "n": 500
+      },
+      "queue_depth": {
+        "p50": 8,
+        "p95": 8,
+        "max": 10
+      },
+      "queue_age_ms": {
+        "p50": 873.981237411499,
+        "p95": 995.4636096954346,
+        "max": 1014.1220092773438
+      },
+      "per_tick_engine_ms_p95": 0.7317117415368557,
+      "ticks": 968,
+      "orders_submitted": 156,
+      "orders_filled": 156,
+      "uid": 65534,
+      "trader_id": "PAPER-SYN1",
+      "strategies": [
+        "EveryN-SYN1-SYN10",
+        "Dip-SYN1-SYN11"
+      ]
+    },
+    "syn2": {
+      "rss_mb": {
+        "p50": 343.4,
+        "p95": 343.9,
+        "max": 344.1,
+        "n": 120
+      },
+      "cpu_pct": {
+        "p50": 0.0,
+        "p95": 1.0,
+        "max": 2.0,
+        "n": 119
+      },
+      "startup_s": 3.49,
+      "callback_latency_ms": {
+        "p50": 502.72,
+        "p95": 956.275,
+        "max": 1010.094,
+        "n": 500
+      },
+      "queue_depth": {
+        "p50": 8,
+        "p95": 8,
+        "max": 10
+      },
+      "queue_age_ms": {
+        "p50": 871.875524520874,
+        "p95": 993.1118488311768,
+        "max": 1008.3017349243164
+      },
+      "per_tick_engine_ms_p95": 0.6530148966703564,
+      "ticks": 968,
+      "orders_submitted": 156,
+      "orders_filled": 156,
+      "uid": 65534,
+      "trader_id": "PAPER-SYN2",
+      "strategies": [
+        "EveryN-SYN2-SYN20",
+        "Dip-SYN2-SYN21"
+      ]
+    },
+    "syn3": {
+      "rss_mb": {
+        "p50": 347.8,
+        "p95": 348.3,
+        "max": 348.4,
+        "n": 120
+      },
+      "cpu_pct": {
+        "p50": 0.0,
+        "p95": 1.0,
+        "max": 2.0,
+        "n": 119
+      },
+      "startup_s": 3.48,
+      "callback_latency_ms": {
+        "p50": 501.755,
+        "p95": 968.147,
+        "max": 1008.294,
+        "n": 500
+      },
+      "queue_depth": {
+        "p50": 8,
+        "p95": 8,
+        "max": 10
+      },
+      "queue_age_ms": {
+        "p50": 873.9063739776611,
+        "p95": 993.375301361084,
+        "max": 1007.6577663421631
+      },
+      "per_tick_engine_ms_p95": 0.6561761256307364,
+      "ticks": 968,
+      "orders_submitted": 156,
+      "orders_filled": 156,
+      "uid": 65534,
+      "trader_id": "PAPER-SYN3",
+      "strategies": [
+        "EveryN-SYN3-SYN30",
+        "Dip-SYN3-SYN31"
+      ]
+    },
+    "syn4": {
+      "rss_mb": {
+        "p50": 340.1,
+        "p95": 340.6,
+        "max": 340.7,
+        "n": 120
+      },
+      "cpu_pct": {
+        "p50": 0.0,
+        "p95": 1.0,
+        "max": 2.0,
+        "n": 119
+      },
+      "startup_s": 3.34,
+      "callback_latency_ms": {
+        "p50": 503.181,
+        "p95": 965.719,
+        "max": 1005.808,
+        "n": 500
+      },
+      "queue_depth": {
+        "p50": 8,
+        "p95": 8,
+        "max": 10
+      },
+      "queue_age_ms": {
+        "p50": 881.5488815307617,
+        "p95": 994.8365688323975,
+        "max": 1005.1703453063965
+      },
+      "per_tick_engine_ms_p95": 0.6712573522236198,
+      "ticks": 968,
+      "orders_submitted": 156,
+      "orders_filled": 156,
+      "uid": 65534,
+      "trader_id": "PAPER-SYN4",
+      "strategies": [
+        "EveryN-SYN4-SYN40",
+        "Dip-SYN4-SYN41"
+      ]
+    }
+  },
+  "capacity_extrapolation": null,
+  "note": "measured for this fixture on this host only; no fleet capacity is inferred"
+}
