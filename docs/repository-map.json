@@ -272,6 +272,10 @@
     },
     {
       "repo": "algobots",
+      "path": "src/algobots/demo/bars.py"
+    },
+    {
+      "repo": "algobots",
       "path": "tests/demo/test_scope.py"
     },
     {
@@ -521,6 +525,10 @@
     {
       "repo": "algobots",
       "path": "docs/research/sets-machine/panel-10-order-grid-log.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "docs/adr/0001-nautilus-execution-spine.md"
     }
   ],
   "scope_revisions": [
