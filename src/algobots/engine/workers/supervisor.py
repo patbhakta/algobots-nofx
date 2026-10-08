@@ -14,6 +14,15 @@ previous run, holds it or its owner's liveness can't be confirmed. A
 restarted worker reports ``reconciling`` and is entry-frozen until its
 heartbeat says ``ready`` (reconciled from the durable ledger).
 
+Stale-generation reclaim (ALG-3308): after the API container is recreated,
+leases in the shared state volume still name holders in the dead container's
+PID namespace — liveness can never be confirmed from the new one, and every
+start used to be denied (the demo then ran with zero engines, silently). The
+supervisor therefore reclaims an unknown holder's lease when BOTH its age and
+the account's heartbeat silence exceed ``stale_after`` (default 10 min): fresh
+heartbeat evidence always wins (a rolling overlap stays denied), and every
+eviction preserves the old lease in a ``*.evicted`` sidecar.
+
 Lifecycle: ``starting -> reconciling -> ready -> stopped / exited / denied``
 (plus ``stale`` when heartbeats stop).
 
@@ -31,6 +40,7 @@ Stdlib only: the API imports this without importing Nautilus.
 from __future__ import annotations
 
 import json
+import logging
 import os
 import subprocess
 import sys
@@ -39,10 +49,17 @@ import time
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
-from algobots.engine.workers.lease import EXIT_DENIED, Lease, LeaseDenied
+from algobots.engine.workers.lease import (
+    EXIT_DENIED,
+    STALE_LEASE_S,
+    Lease,
+    LeaseDenied,
+)
 from algobots.engine.workers.sandbox import scoped_env
 
 __all__ = ["Isolation", "LeaseDenied", "Supervisor", "WorkerStatus"]
+
+logger = logging.getLogger("algobots.engine.workers")
 
 HEARTBEAT_STALE_S = 60.0  # > 2 polls missed at the 15 s default
 _CLK_TCK = os.sysconf("SC_CLK_TCK") if hasattr(os, "sysconf") else 100
@@ -155,6 +172,8 @@ class Supervisor:
         command: list[str] | None = None,
         env: dict[str, str] | None = None,
         isolation: Isolation | None = None,
+        stale_after: float = STALE_LEASE_S,
+        reclaim_stale_leases: bool = True,
     ) -> None:
         self.accounts = list(accounts)
         self.state_dir = Path(state_dir)
@@ -163,10 +182,13 @@ class Supervisor:
         self.command = command or [sys.executable, "-m", "algobots.engine.workers.paper"]
         self.env = env  # extras added after the per-account scoping
         self.isolation = isolation or Isolation.from_env()
+        self.stale_after = stale_after
+        self.reclaim_stale_leases = reclaim_stale_leases
         self.procs: dict[str, subprocess.Popen] = {}
         self.spawned_at: dict[str, float] = {}
         self.stopped: set[str] = set()
         self.denied: dict[str, str] = {}  # account -> why start was refused
+        self.reclaimed: dict[str, str] = {}  # account -> why a stale lease was evicted (ALG-3308)
         self.leases = {a: Lease(self.state_dir, a) for a in self.accounts}
         self._lock = threading.Lock()
 
@@ -203,11 +225,18 @@ class Supervisor:
         lease = self.leases[acct]
         with lease.locked():  # check -> spawn -> record child, atomically w.r.t. other owners
             try:
-                lease.check()
+                holder = lease.check(
+                    now=time.time(),
+                    stale_after=self.stale_after,
+                    reclaim_stale=self.reclaim_stale_leases,
+                )
             except LeaseDenied as e:
                 self.denied[acct] = e.reason
                 self.procs.pop(acct, None)
                 raise
+            if holder.lease is not None and holder.reason.startswith("reclaimed stale lease:"):
+                self.reclaimed[acct] = holder.reason
+                logger.warning("reclaimed stale lease for %s: %s", acct, holder.reason)
             hb = self.state_dir / "workers" / f"{acct}.json"
             hb.unlink(missing_ok=True)  # never report a previous run's heartbeat
             log = self.state_dir / "workers" / f"{acct}.log"

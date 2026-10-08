@@ -11,7 +11,17 @@ A lease can be taken over only after the previous owner's termination is
 *confirmed*: its PID is gone, a zombie, or now belongs to a different process.
 If the owner is alive, the lease is denied. It is also denied when liveness
 can't be determined: the lease was written on another host or PID namespace,
-the file is unreadable, or ``/proc`` can't be read. The operator then runs
+the file is unreadable, or ``/proc`` can't be read.
+
+The one unknown case that is PROVABLY stale (ALG-3308): a lease written by a
+holder whose PID namespace we cannot probe — a previous container generation
+sharing the state volume — is dead when BOTH its acquisition and the
+account's last heartbeat are older than ``STALE_LEASE_S``. A live generation
+heartbeats every ~15 s, so fresh heartbeat evidence always wins and the lease
+stays denied (rolling overlap stays safe); only a generation that has gone
+silent for the whole window is reclaimed, with the evicted lease preserved in
+a ``*.evicted`` sidecar for forensics. Corrupt leases and leases without an
+acquisition timestamp are never auto-reclaimed: the operator runs
 ``force-release``:
 
     python -m algobots.engine.workers.lease force-release --account laya
@@ -35,6 +45,7 @@ from pathlib import Path
 TENANT = "demo"
 ENVIRONMENT = "paper"
 EXIT_DENIED = 75  # EX_TEMPFAIL: a worker that can't own its account exits with this
+STALE_LEASE_S = 600.0  # unknown-holder lease + silent heartbeat window before reclaim
 
 
 class LeaseDenied(RuntimeError):
@@ -43,6 +54,51 @@ class LeaseDenied(RuntimeError):
     def __init__(self, account: str, reason: str, holder: dict | None = None) -> None:
         super().__init__(f"{account}: {reason}")
         self.account, self.reason, self.holder = account, reason, holder
+
+
+def _read_json(path: Path) -> dict | None:
+    try:
+        data = json.loads(path.read_text())
+    except (OSError, ValueError):
+        return None
+    return data if isinstance(data, dict) else None
+
+
+def provably_stale(
+    lease: dict | None,
+    heartbeat: dict | None,
+    *,
+    now: float,
+    stale_after: float = STALE_LEASE_S,
+) -> tuple[bool, str]:
+    """Is an UNPROBABLE holder's lease (unknown liveness) provably stale?
+
+    The evidence: the lease was acquired long ago AND the account's heartbeat
+    is equally old (or absent). A live generation heartbeats every ~15 s, so
+    fresh heartbeat evidence always answers "not stale" — a rolling overlap
+    with the old container still alive stays denied. A lease without an
+    acquisition timestamp, a corrupt lease, or a young lease is never stale:
+    a holder may legitimately still be starting (slow reconcile).
+    """
+    if not lease or not isinstance(lease.get("acquired_at"), int | float):
+        return False, "lease has no acquisition time; staleness cannot be proven"
+    lease_age = now - lease["acquired_at"]
+    if lease_age < stale_after:
+        return False, (
+            f"lease acquired {lease_age:.0f}s ago (< {stale_after:.0f}s); "
+            "holder may still be starting"
+        )
+    hb_age: float | None = None
+    if heartbeat and isinstance(heartbeat.get("last_heartbeat"), int | float):
+        hb_age = now - heartbeat["last_heartbeat"]
+    if hb_age is not None and hb_age < stale_after:
+        return False, (
+            f"account heartbeat is fresh ({hb_age:.0f}s old); holder generation looks alive"
+        )
+    silence = "no heartbeat on record" if hb_age is None else f"heartbeat {hb_age:.0f}s old"
+    return True, (
+        f"lease {lease_age:.0f}s old and {silence}; holder generation is gone"
+    )
 
 
 def proc_start_time(pid: int) -> int | None:
@@ -117,6 +173,10 @@ class Lease:
         self.key = f"{tenant}.{account}.{environment}"
         self.path = Path(state_dir) / "workers" / "leases" / f"{self.key}.lease"
 
+    def heartbeat_path(self) -> Path:
+        """The account's heartbeat file — the holder generation's liveness witness."""
+        return self.path.parent.parent / f"{self.account}.json"
+
     @contextlib.contextmanager
     def locked(self) -> Iterator[None]:
         self.path.parent.mkdir(parents=True, exist_ok=True)
@@ -144,15 +204,49 @@ class Lease:
         lease = self.read()
         return bool(lease) and lease.get("pid") == pid and inspect(lease).status == "live"
 
-    def check(self) -> Holder:
+    def check(
+        self,
+        *,
+        now: float | None = None,
+        stale_after: float = STALE_LEASE_S,
+        reclaim_stale: bool = False,
+    ) -> Holder:
         """Raise ``LeaseDenied`` unless the lease is free or its owner is confirmed dead.
 
         Call with ``locked()`` held when acting on the answer.
+
+        With ``reclaim_stale`` (the supervisor's startup posture, ALG-3308), an
+        UNKNOWN holder — a PID namespace this process cannot probe, i.e. a
+        previous container generation — is evicted when both its lease age and
+        the account's heartbeat silence exceed ``stale_after``: the holder
+        generation is provably gone. Fresh heartbeat evidence or a young lease
+        still denies. The evicted lease is preserved in a ``*.evicted`` sidecar.
         """
         h = self.holder()
         if h.status in ("live", "unknown"):
+            if h.status == "unknown" and reclaim_stale:
+                stale, why = provably_stale(
+                    h.lease,
+                    _read_json(self.heartbeat_path()),
+                    now=time.time() if now is None else now,
+                    stale_after=stale_after,
+                )
+                if stale:
+                    self._evict(h.lease, why)
+                    return Holder("dead", f"reclaimed stale lease: {why}", h.lease)
             raise LeaseDenied(self.account, h.reason, h.lease)
         return h
+
+    def _evict(self, lease: dict | None, why: str) -> None:
+        """Remove a provably-stale lease, preserving it for forensics."""
+        now = time.time()
+        sidecar = self.path.with_suffix(f".{int(now)}.evicted")
+        sidecar.write_text(
+            json.dumps(
+                {"evicted_lease": lease, "reason": why, "by": identity(os.getpid()), "at": now}
+            )
+        )
+        self.path.unlink(missing_ok=True)
 
     def write(self, pid: int) -> dict:
         """Record ``pid`` as owner. Call with ``locked()`` held, after ``check()``."""
