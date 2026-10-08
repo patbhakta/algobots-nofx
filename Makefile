@@ -135,3 +135,22 @@ verify-A08:
 # removing stops, into artifacts/A08/demo-run.json (the packet's required demo).
 demo-A08:
 	PYTHONPATH=$(CURDIR)/src $(PYTHON) tests/packets/A08/demo.py
+
+A11_RESULTS := artifacts/A11/test-results
+
+.PHONY: verify-A11
+
+# A11 evidence packet (ALG-3283): the four A11 lanes — studio
+# (tests/demo/test_studio.py), runner (tests/engine/workers/test_template.py),
+# campaign (tests/demo/test_campaigns.py), breaker
+# (tests/strategies/test_deployments_api.py) — then acceptance.json
+# (AC1-AC6 as PASS / FAIL / BLOCKED with reasons). AC6's tenant-scoped breaker
+# tests ride the A03 branch (see the BLOCKED note) until it integrates.
+verify-A11:
+	mkdir -p $(A11_RESULTS)
+	PYTHONPATH=$(CURDIR)/src $(PYTHON) -m pytest tests/demo/test_studio.py tests/demo/test_campaigns.py \
+		tests/engine/workers/test_template.py tests/strategies/test_deployments_api.py \
+		-q -p no:cacheprovider -rs \
+		--junitxml=$(A11_RESULTS)/junit.xml
+	sed -i -E 's/ (timestamp|hostname|time)="[^"]*"//g' $(A11_RESULTS)/junit.xml
+	PYTHONPATH=$(CURDIR)/src $(PYTHON) tests/packets/A11/acceptance.py $(A11_RESULTS)/junit.xml

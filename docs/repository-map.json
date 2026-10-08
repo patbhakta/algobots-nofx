@@ -604,6 +604,16 @@
       "reason": "migrations go through the single Alembic tree under the db-migrations lock"
     },
     {
+      "packet": "A08",
+      "from_revision": 1,
+      "to_revision": 2,
+      "removed": [],
+      "added": [
+        "src/algobots/api/risk/"
+      ],
+      "reason": "A08 commit 63bd5b9 added the risk API router under api/risk/ without registering it (map drift found by the ALG-3283 A11-4 evidence packet when the A01 repo-map test went red); registered after the fact under the packet that wrote it"
+    },
+    {
       "packet": "A10",
       "from_revision": 1,
       "to_revision": 2,
@@ -1155,7 +1165,7 @@
       "dependencies": [
         "A07"
       ],
-      "revision": 1,
+      "revision": 2,
       "repositories": [
         "algobots"
       ],
@@ -1163,6 +1173,11 @@
         {
           "repo": "algobots",
           "path": "src/algobots/risk/",
+          "status": "real"
+        },
+        {
+          "repo": "algobots",
+          "path": "src/algobots/api/risk/",
           "status": "real"
         },
         {
