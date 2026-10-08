@@ -1,0 +1,7 @@
+make verify-A11 @ 23dc172 — 60 tests, 0 failures, 0 errors, 0 skipped
+AC1: PASS — 5 tests passed
+AC2: PASS — 3 tests passed
+AC3: PASS — 3 tests passed
+AC4: PASS — 3 tests passed
+AC5: PASS — 5 tests passed
+AC6: BLOCKED — tenant-scoped fleet breakers (ALG-3186, commit db6f400) ride the A03 branch feat/alg-3099-a03-tenant-auth and are not on main yet; the three proving tests below run there, not here. Main still ships the per-user fleet breaker (base test listed), so the AC6 assertion cannot be proven or disproven on this commit. Unblock owner: A03 integration (ALG-3099) merges feat/alg-3099-a03-tenant-auth into main; then re-run make verify-A11 with tests/api/test_fleet_breaker_tenancy.py added to the breaker lane.
