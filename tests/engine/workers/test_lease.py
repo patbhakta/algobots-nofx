@@ -6,6 +6,7 @@ import signal
 import subprocess
 import sys
 import threading
+import time
 
 import pytest
 
@@ -216,6 +217,98 @@ def test_worker_that_loses_the_race_exits_denied(tmp_path, sleeper):
     sup.procs["laya"].wait()
     st = sup.status("laya")
     assert st.state == "denied" and f"pid {sleeper.pid}" in st.denied_reason
+
+
+# --- ALG-3308: stale leases from a dead container generation --------------------
+
+
+def _plant_from_old_container(
+    tmp_path, account: str, *, acquired_ago: float, heartbeat_ago: float | None
+):
+    """Lease + heartbeat as a DEAD container generation left them: holder in
+    an unprobable PID namespace, acquisition and heartbeat from that era."""
+    now = time.time()
+    _plant(
+        tmp_path,
+        account,
+        **{**LS.identity(os.getpid()), "pidns": "pid:[1]", "acquired_at": now - acquired_ago},
+    )
+    hb = tmp_path / "workers" / f"{account}.json"
+    hb.parent.mkdir(parents=True, exist_ok=True)
+    if heartbeat_ago is not None:
+        hb.write_text(json.dumps({"pid": 1, "last_heartbeat": now - heartbeat_ago}))
+
+
+def test_stale_generation_lease_is_reclaimed_at_start(tmp_path):
+    """The incident replay: container recreated >10 min after death. The new
+    supervisor cannot probe the old namespace, but lease age + heartbeat
+    silence prove the generation is gone -> evict, start, ready."""
+    _plant_from_old_container(
+        tmp_path, "laya", acquired_ago=900, heartbeat_ago=900
+    )
+    sup = _supervisor(tmp_path)
+    ls = Lease(tmp_path, "laya")
+    sup.start("laya")
+    try:
+        assert _wait(lambda: sup.status("laya").state == "ready")
+        assert sup.status("laya").denied_reason is None
+        assert "laya" in sup.reclaimed and "generation is gone" in sup.reclaimed["laya"]
+        assert ls.read()["pid"] == sup.status("laya").pid
+        evicted = list(ls.path.parent.glob("*.evicted"))
+        assert len(evicted) == 1, "the evicted lease is preserved for forensics"
+        record = json.loads(evicted[0].read_text())
+        assert record["evicted_lease"]["pidns"] == "pid:[1]"
+        assert "generation is gone" in record["reason"]
+    finally:
+        sup.stop()
+
+
+def test_missing_heartbeat_old_lease_is_also_reclaimable(tmp_path):
+    """Old lease, no heartbeat file at all: the holder never got ready or the
+    generation died before writing one — either way it has been silent."""
+    _plant_from_old_container(tmp_path, "jev", acquired_ago=1200, heartbeat_ago=None)
+    sup = _supervisor(tmp_path)
+    sup.start("jev")
+    try:
+        assert _wait(lambda: sup.status("jev").state == "ready")
+        assert "no heartbeat on record" in sup.reclaimed["jev"]
+    finally:
+        sup.stop()
+
+
+def test_fresh_unknown_lease_still_denied(tmp_path):
+    """A young lease in another namespace may be a concurrently-starting
+    generation (fast recreate, slow reconcile): denied, not reclaimed."""
+    _plant_from_old_container(tmp_path, "coin", acquired_ago=60, heartbeat_ago=60)
+    sup = _supervisor(tmp_path)
+    with pytest.raises(LeaseDenied):
+        sup.start("coin")
+    assert sup.status("coin").state == "denied" and "laya" not in sup.reclaimed
+    assert sup.reclaimed == {} and not list(Lease(tmp_path, "coin").path.parent.glob("*.evicted"))
+    sup.stop()
+
+
+def test_old_lease_with_fresh_heartbeat_still_denied(tmp_path):
+    """Rolling overlap: the other container's worker is alive and heartbeating
+    (long-running, lease acquired long ago) — fresh evidence wins, no reclaim."""
+    _plant_from_old_container(tmp_path, "laya", acquired_ago=3600, heartbeat_ago=5)
+    sup = _supervisor(tmp_path)
+    with pytest.raises(LeaseDenied):
+        sup.start("laya")
+    assert sup.status("laya").state == "denied" and sup.reclaimed == {}
+    sup.stop()
+
+
+def test_timestampless_lease_is_never_auto_reclaimed(tmp_path, sleeper):
+    """Planted/corrupt leases carry no acquired_at: no proof, no eviction —
+    the operator force-release path stays the only way (A06 behavior)."""
+    _plant(tmp_path, "laya", **{**LS.identity(sleeper.pid), "pidns": "pid:[1]"})
+    assert Lease(tmp_path, "laya").read().get("acquired_at") is None
+    sup = _supervisor(tmp_path)
+    with pytest.raises(LeaseDenied):
+        sup.start("laya")
+    assert sup.reclaimed == {} and Lease(tmp_path, "laya").path.exists()
+    sup.stop()
 
 
 # --- AC4: crash -> that account is frozen until restart + reconcile; others keep running

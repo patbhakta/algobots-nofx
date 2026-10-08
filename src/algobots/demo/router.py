@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import sys
 import threading
 import time
@@ -54,8 +55,21 @@ def start_workers() -> None:
     SUPERVISOR = Supervisor(list(L.STRATEGIES), Path(s.demo_state_dir), poll=s.demo_worker_poll_s)
     try:
         SUPERVISOR.start()
-    except LeaseDenied:
-        pass  # the API still boots; denied accounts show state "denied" with the reason
+    except LeaseDenied as e:
+        # LOUD on purpose (ALG-3308): a denied account means the demo is running
+        # with fewer/zero engines — never let that pass silently again.
+        for denial in getattr(e, "denials", [e]):
+            logging.getLogger("algobots.demo").error(
+                "paper worker start DENIED for %s: %s (state stays 'denied' on "
+                "/demo/api/workers; stale-generation leases reclaim automatically "
+                "only when provably dead)",
+                denial.account,
+                denial.reason,
+            )
+    for acct, why in SUPERVISOR.reclaimed.items():
+        logging.getLogger("algobots.demo").warning(
+            "reclaimed stale worker lease for %s: %s", acct, why
+        )
     TEMPLATES = Supervisor(
         [],
         Path(s.demo_state_dir),
