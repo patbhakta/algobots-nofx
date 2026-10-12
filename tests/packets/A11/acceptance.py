@@ -1,9 +1,9 @@
 """Write artifacts/A11/acceptance.json + test-results/summary.txt (ALG-3283).
 
 Each acceptance case lists the tests that prove it. A case is PASS only when
-every listed test ran and passed. A failing test makes it FAIL, and a skipped,
-missing or spec-declared-blocked case is BLOCKED with the reason (fail-closed;
-A08 pattern with the A11 PASS/FAIL/BLOCKED vocabulary).
+every listed test ran and passed. A failing test makes it FAIL, and a skipped
+or missing case is BLOCKED with the reason (fail-closed; A08 pattern with the
+A11 PASS/FAIL/BLOCKED vocabulary).
 
     python tests/packets/A11/acceptance.py artifacts/A11/test-results/junit.xml
 """
@@ -21,16 +21,6 @@ OUT = ROOT / "artifacts" / "A11" / "acceptance.json"
 SUMMARY = ROOT / "artifacts" / "A11" / "test-results" / "summary.txt"
 R281 = "artifacts/A11/ALG-3281"
 R282 = "artifacts/A11/ALG-3282"
-AC6_BLOCKED = (
-    "tenant-scoped fleet breakers (ALG-3186, commit db6f400) ride the A03 "
-    "branch feat/alg-3099-a03-tenant-auth and are not on main yet; the three "
-    "proving tests below run there, not here. Main still ships the per-user "
-    "fleet breaker (base test listed), so the AC6 assertion cannot be proven "
-    "or disproven on this commit. Unblock owner: A03 integration (ALG-3099) "
-    "merges feat/alg-3099-a03-tenant-auth into main; then re-run "
-    "make verify-A11 with tests/api/test_fleet_breaker_tenancy.py added to "
-    "the breaker lane."
-)
 
 CASES: dict[str, dict] = {
     "AC1": {
@@ -94,14 +84,13 @@ CASES: dict[str, dict] = {
     "AC6": {
         "case": "GIVEN a fleet-breaker halt in tenant A WHEN it is reset from "
         "tenant A THEN tenant B's halt stays in place",
-        "blocked": AC6_BLOCKED,
         "tests": [
             "tests/strategies/test_deployments_api.py::test_fleet_breaker_halts_every_deployment_in_scope",
             "tests/api/test_fleet_breaker_tenancy.py::test_reset_in_personal_tenant_cannot_unhalt_tenant_a",
             "tests/api/test_fleet_breaker_tenancy.py::test_trip_is_scoped_one_tenant_halt_does_not_cross",
             "tests/api/test_fleet_breaker_tenancy.py::test_fleet_state_endpoint_reports_active_tenant_row",
         ],
-        "evidence": ["origin/feat/alg-3099-a03-tenant-auth @ db6f400"],
+        "evidence": ["main @ 3d1c2d1 merged feat/alg-3099-a03-tenant-auth db6f400 (ALG-3312)"],
     },
 }
 
@@ -145,8 +134,6 @@ def verdicts(res: dict[str, tuple[str, str]]) -> dict[str, dict]:
         skipped = {t: d for t, (o, d) in tests.items() if o == "skipped"}
         if failed:
             status, note = "FAIL", f"failing: {failed}"
-        elif spec.get("blocked"):
-            status, note = "BLOCKED", spec["blocked"]
         elif skipped:
             status, note = "BLOCKED", f"not run: {skipped}"
         elif any(o == "missing" for o, _ in tests.values()):

@@ -1,7 +1,7 @@
 {
   "packet": "A11",
   "slice": "A11-4 evidence packet (ALG-3283)",
-  "tested_commit": "23dc172",
+  "tested_commit": "3d1c2d1",
   "command": "make verify-A11",
   "cases": {
     "AC1": {
@@ -81,18 +81,18 @@
       ]
     },
     "AC6": {
-      "status": "BLOCKED",
+      "status": "PASS",
       "case": "GIVEN a fleet-breaker halt in tenant A WHEN it is reset from tenant A THEN tenant B's halt stays in place",
-      "note": "tenant-scoped fleet breakers (ALG-3186, commit db6f400) ride the A03 branch feat/alg-3099-a03-tenant-auth and are not on main yet; the three proving tests below run there, not here. Main still ships the per-user fleet breaker (base test listed), so the AC6 assertion cannot be proven or disproven on this commit. Unblock owner: A03 integration (ALG-3099) merges feat/alg-3099-a03-tenant-auth into main; then re-run make verify-A11 with tests/api/test_fleet_breaker_tenancy.py added to the breaker lane.",
+      "note": "4 tests passed",
       "tests": {
         "tests/strategies/test_deployments_api.py::test_fleet_breaker_halts_every_deployment_in_scope": "passed",
-        "tests/api/test_fleet_breaker_tenancy.py::test_reset_in_personal_tenant_cannot_unhalt_tenant_a": "missing",
-        "tests/api/test_fleet_breaker_tenancy.py::test_trip_is_scoped_one_tenant_halt_does_not_cross": "missing",
-        "tests/api/test_fleet_breaker_tenancy.py::test_fleet_state_endpoint_reports_active_tenant_row": "missing"
+        "tests/api/test_fleet_breaker_tenancy.py::test_reset_in_personal_tenant_cannot_unhalt_tenant_a": "passed",
+        "tests/api/test_fleet_breaker_tenancy.py::test_trip_is_scoped_one_tenant_halt_does_not_cross": "passed",
+        "tests/api/test_fleet_breaker_tenancy.py::test_fleet_state_endpoint_reports_active_tenant_row": "passed"
       },
       "evidence": [
         "artifacts/A11/test-results/junit.xml",
-        "origin/feat/alg-3099-a03-tenant-auth @ db6f400"
+        "main @ 3d1c2d1 merged feat/alg-3099-a03-tenant-auth db6f400 (ALG-3312)"
       ]
     }
   }

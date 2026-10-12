@@ -144,13 +144,14 @@ A11_RESULTS := artifacts/A11/test-results
 # A11 evidence packet (ALG-3283): the four A11 lanes — studio
 # (tests/demo/test_studio.py), runner (tests/engine/workers/test_template.py),
 # campaign (tests/demo/test_campaigns.py), breaker
-# (tests/strategies/test_deployments_api.py) — then acceptance.json
-# (AC1-AC6 as PASS / FAIL / BLOCKED with reasons). AC6's tenant-scoped breaker
-# tests ride the A03 branch (see the BLOCKED note) until it integrates.
+# (tests/strategies/test_deployments_api.py +
+# tests/api/test_fleet_breaker_tenancy.py since the A03 merge, ALG-3310) —
+# then acceptance.json (AC1-AC6 as PASS / FAIL / BLOCKED with reasons).
 verify-A11:
 	mkdir -p $(A11_RESULTS)
 	PYTHONPATH=$(CURDIR)/src $(PYTHON) -m pytest tests/demo/test_studio.py tests/demo/test_campaigns.py \
 		tests/engine/workers/test_template.py tests/strategies/test_deployments_api.py \
+		tests/api/test_fleet_breaker_tenancy.py \
 		-q -p no:cacheprovider -rs \
 		--junitxml=$(A11_RESULTS)/junit.xml
 	sed -i -E 's/ (timestamp|hostname|time)="[^"]*"//g' $(A11_RESULTS)/junit.xml
