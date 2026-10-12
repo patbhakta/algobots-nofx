@@ -1,0 +1,67 @@
+{
+  "packet": "A02",
+  "slice": "A02 sprint-1 (ALG-3098): transactional claims + leases",
+  "tested_commit": "524c5cc",
+  "command": "make verify-A02",
+  "cases": {
+    "AC1": {
+      "status": "PASS",
+      "case": "GIVEN two (or more) concurrent claimants THEN exactly one active claim exists on the task",
+      "note": "4 tests passed",
+      "tests": {
+        "tests.packets.A02.test_acceptance::test_ac1_concurrent_processes_produce_exactly_one_active_claim": "passed",
+        "tests.packets.A02.test_acceptance::test_ac1_concurrent_threads_produce_exactly_one_active_claim": "passed",
+        "tests.agent_queue.test_authority.TestClaim::test_second_claim_while_lease_live_is_denied": "passed",
+        "tests.agent_queue.test_authority.TestClaim::test_expired_lease_is_reclaimable_and_bumps_epoch": "passed"
+      },
+      "evidence": [
+        "artifacts/A02/test-results/junit.xml",
+        "artifacts/A02/demo-run.json"
+      ]
+    },
+    "AC2": {
+      "status": "PASS",
+      "case": "GIVEN an expired or revoked attempt THEN it can neither merge (integrate) nor publish a current completion",
+      "note": "5 tests passed",
+      "tests": {
+        "tests.packets.A02.test_acceptance::test_ac2_expired_attempt_cannot_complete": "passed",
+        "tests.packets.A02.test_acceptance::test_ac2_revoked_attempt_cannot_publish_after_reclaim": "passed",
+        "tests.agent_queue.test_authority.TestStaleAttempts::test_expired_attempt_cannot_complete": "passed",
+        "tests.agent_queue.test_authority.TestStaleAttempts::test_expired_attempt_cannot_integrate_after_passing": "passed",
+        "tests.agent_queue.test_authority.TestStaleAttempts::test_revoked_attempt_cannot_publish_after_reclaim": "passed"
+      },
+      "evidence": [
+        "artifacts/A02/test-results/junit.xml"
+      ]
+    },
+    "AC3": {
+      "status": "PASS",
+      "case": "GIVEN a failed integration THEN dependents stay ineligible despite passing branch tests",
+      "note": "3 tests passed",
+      "tests": {
+        "tests.packets.A02.test_acceptance::test_ac3_failed_integration_leaves_dependents_ineligible": "passed",
+        "tests.agent_queue.test_authority.TestCompleteAndIntegrate::test_complete_passed_waits_for_integration": "passed",
+        "tests.agent_queue.test_authority.TestCompleteAndIntegrate::test_happy_path_to_done_makes_dependent_claimable": "passed"
+      },
+      "evidence": [
+        "artifacts/A02/test-results/junit.xml"
+      ]
+    },
+    "AC4": {
+      "status": "PASS",
+      "case": "GIVEN budget exhaustion THEN the task checkpoints as BLOCKED with a published reason and no retry loop can continue",
+      "note": "5 tests passed",
+      "tests": {
+        "tests.packets.A02.test_acceptance::test_ac4_budget_exhaustion_checkpoints_without_retry_loop": "passed",
+        "tests.agent_queue.test_authority.TestBudgetsAndBlocking::test_budget_exhaustion_checkpoints_blocked_no_loop": "passed",
+        "tests.agent_queue.test_authority.TestBudgetsAndBlocking::test_reclaim_loop_also_terminates_in_blocked": "passed",
+        "tests.agent_queue.test_authority.TestBudgetsAndBlocking::test_same_failure_repair_cap_blocks": "passed",
+        "tests.agent_queue.test_authority.TestBudgetsAndBlocking::test_blocked_state_is_durable_and_inspectable": "passed"
+      },
+      "evidence": [
+        "artifacts/A02/test-results/junit.xml",
+        "artifacts/A02/demo-run.json"
+      ]
+    }
+  }
+}

@@ -1,0 +1,84 @@
+{
+  "blocked": {},
+  "compatible": true,
+  "coordinator": "tools/agent_queue.TaskAuthority",
+  "done": [],
+  "graph": {
+    "default_budget_attempts": 3,
+    "edges": 83,
+    "initial_status": "BACKLOG for every task regardless of file contents",
+    "load_time_checks": [
+      "non-empty tasks list",
+      "unique ids",
+      "deps resolve to known ids",
+      "no self-dependency",
+      "no dependency cycles"
+    ],
+    "roots": [
+      "A00"
+    ],
+    "shared_resources": {},
+    "tasks": 38
+  },
+  "mechanism": {
+    "budget_attempts_default": 3,
+    "claim_exclusivity": "one ACTIVE lease per task; epoch bumps on reclaim",
+    "done_requires": [
+      "completion receipt (branch tests passed)",
+      "exact-commit independent review (review commit == integration commit)",
+      "accepted integration"
+    ],
+    "lease_ttl_s": 900.0,
+    "max_same_failure_repairs": 3,
+    "resource_locks": "exclusive per named shared resource; held only by an ACTIVE attempt",
+    "transaction": "flock-guarded read-modify-write; tmp + fsync + os.replace",
+    "worktrees": "one reserved path per task (.wt-<id>); created/removed by the runner"
+  },
+  "reuse_decision": "A06's verified worker lease (algobots.engine.workers.lease) governs long-lived account workers via PID liveness; packet attempts need epoch-stamped transactional claims instead, so this authority reuses the flock + atomic-replace technique, not the module.",
+  "schema": "agent-queue-compat/1.0",
+  "single_authority": {
+    "lock": "/tmp/paperclip-run-alg-3098-6213ff75-de2-54ezcV/a02-demo-_38f9gxh/queue-state.json.lock",
+    "rule": "one coordinator per state file; no second claimant of the same work",
+    "state_file": "/tmp/paperclip-run-alg-3098-6213ff75-de2-54ezcV/a02-demo-_38f9gxh/queue-state.json"
+  },
+  "statuses": {
+    "A00": "BACKLOG",
+    "A01": "BACKLOG",
+    "A02": "BACKLOG",
+    "A03": "BACKLOG",
+    "A04": "BACKLOG",
+    "A05": "BACKLOG",
+    "A06": "BACKLOG",
+    "A07": "BACKLOG",
+    "A08": "BACKLOG",
+    "A09": "BACKLOG",
+    "A10": "BACKLOG",
+    "A11": "BACKLOG",
+    "A12": "BACKLOG",
+    "A13": "BACKLOG",
+    "A14": "BACKLOG",
+    "A15": "BACKLOG",
+    "A16": "BACKLOG",
+    "A17": "BACKLOG",
+    "A18": "BACKLOG",
+    "A19": "BACKLOG",
+    "A20": "BACKLOG",
+    "A21": "BACKLOG",
+    "A22": "BACKLOG",
+    "A23": "BACKLOG",
+    "A24": "BACKLOG",
+    "A25": "BACKLOG",
+    "A26": "BACKLOG",
+    "A27": "BACKLOG",
+    "A28": "BACKLOG",
+    "A29": "BACKLOG",
+    "A30": "BACKLOG",
+    "A31": "BACKLOG",
+    "A32": "BACKLOG",
+    "A33": "BACKLOG",
+    "A34": "BACKLOG",
+    "A35": "BACKLOG",
+    "A36": "BACKLOG",
+    "A37": "BACKLOG"
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "tasks": [
+    {"id": "ROOT", "deps": [], "budget_attempts": 3},
+    {"id": "A", "deps": ["ROOT"], "budget_attempts": 3},
+    {"id": "B", "deps": ["A"], "budget_attempts": 3},
+    {"id": "TIGHT", "deps": [], "budget_attempts": 2},
+    {"id": "LOCK1", "deps": [], "budget_attempts": 3, "resources": ["task-authority"]},
+    {"id": "LOCK2", "deps": [], "budget_attempts": 3, "resources": ["task-authority"]}
+  ]
+}

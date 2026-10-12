@@ -157,6 +157,26 @@ verify-A11:
 	sed -i -E 's/ (timestamp|hostname|time)="[^"]*"//g' $(A11_RESULTS)/junit.xml
 	PYTHONPATH=$(CURDIR)/src $(PYTHON) tests/packets/A11/acceptance.py $(A11_RESULTS)/junit.xml
 
+A02_RESULTS := artifacts/A02/test-results
+
+.PHONY: verify-A02 demo-A02
+
+# A02 atomic task queue (ALG-3098; make-targets proposal via A02). Unit
+# suite (tests/agent_queue) + packet acceptance AC1-AC4 (real cross-process
+# claim races), then acceptance.json (cases as PASS / FAIL / PENDING with
+# evidence paths). PYTHONPATH pins this checkout's root for tools.agent_queue.
+verify-A02:
+	mkdir -p $(A02_RESULTS)
+	PYTHONPATH=$(CURDIR) $(PYTHON) -m pytest tests/agent_queue tests/packets/A02 -q -p no:cacheprovider -rs \
+		--junitxml=$(A02_RESULTS)/junit.xml
+	sed -i -E 's/ (timestamp|hostname|time)="[^"]*"//g' $(A02_RESULTS)/junit.xml
+	PYTHONPATH=$(CURDIR) $(PYTHON) tests/packets/A02/acceptance.py $(A02_RESULTS)/junit.xml
+
+# Demo evidence: 38-packet queue walkthrough + budget-exhaustion failure
+# path, into artifacts/A02/demo-run.json + compatibility-report.json.
+demo-A02:
+	PYTHONPATH=$(CURDIR) $(PYTHON) tests/packets/A02/demo.py
+
 # A03 (proposed by ALG-3099 for the make-targets owner). PostgreSQL cases in
 # tests/packets/A03/test_pg_rls.py run only when ALGOBOTS_A03_PG_ADMIN_URL
 # names a role that can create databases and roles; otherwise they skip as
