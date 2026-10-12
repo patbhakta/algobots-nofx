@@ -83,7 +83,7 @@ def verdicts(junit: Path) -> dict[str, dict]:
     outcomes: dict[str, str] = {}
     for case in tree.iter("testcase"):
         classname = case.get("classname", "").replace(".", "/")
-        name = f"{classname}::{case.get('name')}"
+        name = f"{classname}.py::{case.get('name')}"
         if case.find("failure") is not None or case.find("error") is not None:
             outcomes[name] = "FAIL"
         elif case.find("skipped") is not None:
