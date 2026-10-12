@@ -5,7 +5,7 @@
   "cases": {
     "AC1": {
       "case": "GIVEN BTC/USD spot at two venues and a BTC perpetual THEN all are distinct executable IDs",
-      "status": "PENDING",
+      "status": "PASS",
       "tests": [
         "tests/marketdata/test_instruments.py::test_btc_spot_two_venues_and_perp_are_distinct_executable_ids",
         "tests/marketdata/test_instruments.py::test_identity_triple_roundtrips_and_rejects_unknown",
@@ -15,19 +15,11 @@
       ],
       "evidence": [
         "src/algobots/instruments/instruments.json"
-      ],
-      "skipped": [],
-      "missing": [
-        "tests/marketdata/test_instruments.py::test_btc_spot_two_venues_and_perp_are_distinct_executable_ids",
-        "tests/marketdata/test_instruments.py::test_identity_triple_roundtrips_and_rejects_unknown",
-        "tests/marketdata/test_instruments.py::test_registry_rejects_duplicate_identity_or_triple",
-        "tests/marketdata/test_instruments.py::test_research_symbols_normalize_separately_from_executable_ids",
-        "tests/marketdata/test_instruments.py::test_perpetual_swap_is_identity_only_and_fails_closed"
       ]
     },
     "AC2": {
       "case": "GIVEN quantities near tick/lot boundaries THEN decimal rounding matches the configured instrument and residuals are explicit",
-      "status": "PENDING",
+      "status": "PASS",
       "tests": [
         "tests/marketdata/test_rounding.py::test_equity_price_rounds_to_nearest_cent_with_residual",
         "tests/marketdata/test_rounding.py::test_kraken_tick_coarser_than_coinbase_rounds_differently",
@@ -35,19 +27,11 @@
         "tests/marketdata/test_rounding.py::test_btc_satoshi_lot_never_rounds_quantity_up",
         "tests/marketdata/test_rounding.py::test_exact_values_have_zero_residual"
       ],
-      "evidence": [],
-      "skipped": [],
-      "missing": [
-        "tests/marketdata/test_rounding.py::test_equity_price_rounds_to_nearest_cent_with_residual",
-        "tests/marketdata/test_rounding.py::test_kraken_tick_coarser_than_coinbase_rounds_differently",
-        "tests/marketdata/test_rounding.py::test_share_quantities_round_down_to_whole_lots",
-        "tests/marketdata/test_rounding.py::test_btc_satoshi_lot_never_rounds_quantity_up",
-        "tests/marketdata/test_rounding.py::test_exact_values_have_zero_residual"
-      ]
+      "evidence": []
     },
     "AC3": {
       "case": "GIVEN weekend equities, 24/7 crypto, DST transitions, incomplete bars, and stale quotes THEN eligibility/freshness results match fixture expectations",
-      "status": "PENDING",
+      "status": "PASS",
       "tests": [
         "tests/marketdata/test_calendar_freshness.py::test_weekend_equity_session_closed",
         "tests/marketdata/test_calendar_freshness.py::test_equity_regular_session_boundaries",
@@ -62,24 +46,11 @@
       ],
       "evidence": [
         "src/algobots/marketdata/fixtures/recordings.jsonl"
-      ],
-      "skipped": [],
-      "missing": [
-        "tests/marketdata/test_calendar_freshness.py::test_weekend_equity_session_closed",
-        "tests/marketdata/test_calendar_freshness.py::test_equity_regular_session_boundaries",
-        "tests/marketdata/test_calendar_freshness.py::test_dst_transitions_shift_the_utc_mapping_not_the_wall_clock",
-        "tests/marketdata/test_calendar_freshness.py::test_crypto_trades_24x7_including_weekends",
-        "tests/marketdata/test_calendar_freshness.py::test_open_market_fresh_quote_is_eligible_and_fresh",
-        "tests/marketdata/test_calendar_freshness.py::test_weekend_equity_tick_is_fresh_but_not_eligible",
-        "tests/marketdata/test_calendar_freshness.py::test_stale_quote_rejected_by_age_and_flag",
-        "tests/marketdata/test_calendar_freshness.py::test_no_data_and_unentitled_sources_fail_closed",
-        "tests/marketdata/test_bars_features.py::test_incomplete_bar_is_never_emitted",
-        "tests/marketdata/test_bars_features.py::test_gap_detection_counts_missing_intervals"
       ]
     },
     "AC4": {
       "case": "GIVEN a later-published filing or corrected price WHEN replaying an earlier as-of time THEN it is unavailable to that decision",
-      "status": "PENDING",
+      "status": "PASS",
       "tests": [
         "tests/marketdata/test_replay_asof.py::test_correction_unavailable_before_publication",
         "tests/marketdata/test_replay_asof.py::test_later_event_time_never_outruns_its_available_time",
@@ -88,18 +59,9 @@
         "tests/marketdata/test_replay_asof.py::test_precedence_fails_closed_on_unknown_sources",
         "tests/marketdata/test_replay_asof.py::test_raw_records_retained_for_correction_replay"
       ],
-      "evidence": [],
-      "skipped": [],
-      "missing": [
-        "tests/marketdata/test_replay_asof.py::test_correction_unavailable_before_publication",
-        "tests/marketdata/test_replay_asof.py::test_later_event_time_never_outruns_its_available_time",
-        "tests/marketdata/test_replay_asof.py::test_as_of_view_is_stable_under_replay",
-        "tests/marketdata/test_replay_asof.py::test_price_source_precedence_picks_entitled_websocket_over_rest",
-        "tests/marketdata/test_replay_asof.py::test_precedence_fails_closed_on_unknown_sources",
-        "tests/marketdata/test_replay_asof.py::test_raw_records_retained_for_correction_replay"
-      ]
+      "evidence": []
     }
   },
-  "all_pass": false,
+  "all_pass": true,
   "external_environment_cases": "BLOCKED (never claimed; recorded fixtures only)"
 }

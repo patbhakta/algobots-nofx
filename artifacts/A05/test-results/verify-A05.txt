@@ -1,6 +1,11 @@
+$ make verify-A05 PYTHON=python3 (rebased on origin/main a1a93c9)
+mkdir -p artifacts/A05/test-results
+PYTHONPATH=/root/repos/algobots/src python3 -m algobots.contracts --check-transition 
 schema lock in sync (28 contracts)
-schema lock transition from 8bd615f53e15 ok
-.............................................s.......................... [ 39%]
+schema lock transition from a1a93c9db317 ok
+PYTHONPATH=/root/repos/algobots/src python3 -m pytest tests/marketdata tests/packets/A05 tests/contracts \
+	-q -rs -p no:cacheprovider --junitxml=artifacts/A05/test-results/junit.xml
+........................................................................ [ 39%]
 ........................................................................ [ 78%]
 .......................................                                  [100%]
 =============================== warnings summary ===============================
@@ -9,10 +14,29 @@ schema lock transition from 8bd615f53e15 ok
     from starlette.testclient import TestClient as TestClient  # noqa
 
 -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+sed -i -E 's/ (timestamp|hostname|time)="[^"]*"//g' artifacts/A05/test-results/junit.xml
+PYTHONPATH=/root/repos/algobots/src python3 tests/packets/A05/acceptance.py artifacts/A05/test-results/junit.xml
+/root/repos/algobots/artifacts/A05/acceptance.json — all_pass=True
+  AC1: PASS
+  AC2: PASS
+  AC3: PASS
+  AC4: PASS
+
+$ make demo-A05 PYTHON=python3
+PYTHONPATH=/root/repos/algobots/src python3 tests/packets/A05/demo.py
+wrote /root/repos/algobots/artifacts/A05/demo-and-limitations.md (5 Saturday rows, 2 Friday rows)
+
+$ pytest full regression (no exclusions; ALG-3328 fixed at new base)
+FAILED tests/packets/A03/test_write_scope.py::test_branch_changes_stay_inside_a03_write_scope
+FAILED tests/packets/A04/test_a04_write_scope.py::test_branch_changes_stay_inside_a04_write_scope
+FAILED tests/packets/A14/test_write_scope.py::test_branch_stays_inside_a14_write_scope
+
+$ pytest full regression — sibling packet write-scope guards (A03/A04/A14) excluded: branch-scoped by design, pass only on their own branch/main
+    result = context.run(func, *args)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
 =========================== short test summary info ============================
-SKIPPED [1] tests/packets/A05/test_a05_write_scope.py:73: branch already merged (empty diff)
-/root/repos/algobots/artifacts/A05/acceptance.json — all_pass=False
-  AC1: PENDING
-  AC2: PENDING
-  AC3: PENDING
-  AC4: PENDING
+FAILED tests/demo/test_ledger.py::test_positions_and_orders_endpoints - asser...
+1 failed, 1073 passed, 18 skipped, 3 warnings in 120.61s (0:02:00)
+
+NOTE: tests/demo/test_ledger.py::test_positions_and_orders_endpoints fails identically at origin/main a1a93c9 without A05 changes — pre-existing, reported for TL follow-up.
