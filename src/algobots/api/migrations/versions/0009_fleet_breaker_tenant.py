@@ -49,9 +49,11 @@ SET tenant_id = (
 """
 
 # Downgrade keeps the personal-tenant row when a user somehow has several.
+# IS DISTINCT FROM: the SQLite-only ``IS NOT (subquery)`` spelling is a syntax
+# error on PostgreSQL (the pg_rls suite downgrades to base on teardown).
 _DEDUPE = """
 DELETE FROM fleet_breakers
-WHERE tenant_id IS NOT (
+WHERE tenant_id IS DISTINCT FROM (
     SELECT m.tenant_id
     FROM tenant_memberships m
     WHERE m.user_id = fleet_breakers.user_id
