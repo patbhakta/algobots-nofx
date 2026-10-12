@@ -16,8 +16,8 @@
     "1fcb716 fix: close ALG-3183 review findings 1, 2, 4 (tenant/role enforcement for routers outside A03, ORM tenant criteria, last-owner lock)",
     "restore six out-of-scope files from 48642df; A03 write-scope guard test (ALG-3184 F1)"
   ],
-  "integrated_commit": null,
-  "review_receipt": null,
+  "integrated_commit": "3d1c2d1",
+  "review_receipt": "ALG-3183 (Oct 6) at f11ab2a: FAIL (F1 cross-tenant router access blocker, F2 last-owner race) -> fixed 1fcb716. ALG-3184 (Oct 6) at 3c49be6: FAIL (write scope, fleet-breaker limitation wording) -> fixed 5ab8250 + 5352cac. ALG-3187 (Oct 6) at 5352cac: PASS, round 3 (CI runs 37453360814 / 37454720370 / 37456195654 on the successive heads). ALG-3186 (Oct 7, PM-dispatched) at db6f400: fleet_breakers scoped to (tenant, user), 3 regression tests. Integrated onto main as merge 3d1c2d1 (ALG-3312); A11 AC6 flipped PASS at 28a6f41.",
   "environment": {
     "python": "3.12.3",
     "sqlalchemy": "2.1.1",
@@ -36,7 +36,7 @@
       "python -m pytest tests/packets/A03 tests/api -q -rs -p no:cacheprovider --junitxml=artifacts/A03/test-results/junit.xml",
       "sed strips timestamp/hostname/time from junit.xml"
     ],
-    "result": "78 passed, 0 failed, 0 skipped (40 A03 + 38 control-plane in tests/api)",
+    "result": "81 passed, 0 failed, 0 skipped with PostgreSQL enabled (40 A03 + 41 tests/api: control-plane + fleet-breaker tenancy), re-verified on main after integration",
     "without_postgres": "31 passed, 9 skipped; every skip carries the BLOCKED reason in test_pg_rls.py",
     "full_suite": "python -m pytest -> 408 passed (368 pre-existing + 40 A03), with PostgreSQL enabled",
     "contracts": "python -m algobots.contracts --check-transition -> schema lock in sync (19 contracts); transition from 48642df ok. No file under src/algobots/contracts/ changed",
@@ -49,7 +49,8 @@
       "last-owner FOR UPDATE + re-check reverted -> test_ac3_concurrent_mutual_demotion_keeps_an_owner and test_last_owner_guard_serializes_on_postgres fail (2/2 runs)"
     ],
     "ci": "GitHub CI has no PostgreSQL service, so test_pg_rls.py skips there; the PostgreSQL evidence is local (see environment). Proposed follow-up: add a postgres service to .github/workflows (not in A03 write scope)",
-    "write_scope": "tests/packets/A03/test_write_scope.py compares the branch diff against packets.A03 in docs/repository-map.json (0001-0004 frozen; Makefile only as the A01 proposal). It flagged the 6 files on 3c49be6 and passes now. The deployments, accounts and approvals packages and migrations 0001-0004 have zero diff against 48642df"
+    "write_scope": "tests/packets/A03/test_write_scope.py compares the branch diff against packets.A03 in docs/repository-map.json (0001-0004 frozen; Makefile only as the A01 proposal). It flagged the 6 files on 3c49be6 and passes now. The deployments, accounts and approvals packages and migrations 0001-0004 have zero diff against 48642df",
+    "pg_downgrade_fix": "0009 (0006 on the branch) downgrade dedupe used SQLite-only IS NOT (subquery); fixed to IS DISTINCT FROM (valid on SQLite 3.39+ and PostgreSQL). The pg_rls suite downgrades to base on teardown and caught it; verify-A03 green after the fix."
   },
   "acceptance_cases": [
     {
@@ -162,6 +163,15 @@
         "1": "fixed: the six files ruff-formatted outside the write scope were restored byte-for-byte from 48642df; a scope guard test was added",
         "2": "addressed by option (a): limitation 4 now states that a fleet-breaker reset un-halts deployments across tenants; follow-up ALG-3186 filed under A11 (ALG-3107)",
         "nit": "fixed: the viewer probe sends {\"action\": \"trip\"}"
+      }
+    },
+    {
+      "round": 3,
+      "review_issue": "ALG-3187",
+      "reviewed_head": "5352cac",
+      "verdict": "PASS",
+      "findings": {
+        "none": "clean pass; branch then carried only the PM-dispatched ALG-3186 fix (db6f400)"
       }
     }
   ]
