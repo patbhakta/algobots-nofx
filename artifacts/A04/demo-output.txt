@@ -1,0 +1,30 @@
+/root/repos/algobots/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+  from starlette.testclient import TestClient as TestClient  # noqa
+== onboarding: four mock accounts, distinct identities and environment labels ==
+[Mock alpha] mock:synthetic-paper session=CONNECTED fidelity=high base=USD identity=mock/…1a2a
+[Mock beta] mock:synthetic-paper session=CONNECTED fidelity=high base=EUR identity=mock/…405a
+[Mock gamma] mock:development session=CONNECTED fidelity=high base=USD identity=mock/…90e6
+[Mock delta] mock:synthetic-paper session=CONNECTED fidelity=high base=USD identity=mock/…db2c
+
+== grants: one execution identity per account secret ==
+[execsvc://worker-alpha] secret://tenant/b854a5e7-e02c-44ef-85ed-467d7757602a/account/eb836d9f-f7fe-48ce-8e3a-4312b0edacaa state=ACTIVE v1
+[execsvc://worker-beta] secret://tenant/b854a5e7-e02c-44ef-85ed-467d7757602a/account/cad183f3-f311-4e53-ba18-edf81e44f0e2 state=ACTIVE v1
+[execsvc://worker-gamma] secret://tenant/b854a5e7-e02c-44ef-85ed-467d7757602a/account/a4a29952-b5c7-4a4f-ab41-9ecd0015c335 state=ACTIVE v1
+[execsvc://worker-delta] secret://tenant/b854a5e7-e02c-44ef-85ed-467d7757602a/account/6766af43-46ff-4822-8219-d9ae566382cf state=ACTIVE v1
+
+== rotation: Mock beta rotated in place, duplicate external account rejected ==
+[rotate] version 1 -> 2, state=ROTATED, same grant row
+[duplicate re-onboard] HTTP 409 (this external account is already connected; ownership tran…)
+
+== preview: equity stop on mock venue -> rejected (unknown features are disabled)
+
+== per-account status ==
+[Mock alpha] status=active session=CONNECTED secret=ACTIVE v1 reconciliation=ok
+[Mock beta] status=active session=CONNECTED secret=ROTATED v2 reconciliation=ok
+[Mock gamma] status=active session=CONNECTED secret=ACTIVE v1 reconciliation=ok
+[Mock delta] status=active session=CONNECTED secret=ACTIVE v1 reconciliation=ok
+
+== recovery: revoked Mock delta ==
+[Mock delta] status=frozen session=EXPIRED reconciliation=needs_reconciliation (credentials revoked) — exposure flagged, not flat
+
+A04 demo complete: 4 accounts onboarded, 1 rotated in place, 1 revoked+flagged.

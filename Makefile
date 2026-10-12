@@ -213,3 +213,24 @@ verify-A14:
 # delete with lineage and processing cost, into artifacts/A14/demo-output.txt.
 demo-A14:
 	PYTHONPATH=$(CURDIR)/src $(PYTHON) tests/packets/A14/demo.py
+
+# A04 (proposed by ALG-3100 for the make-targets owner). The contracts
+# transition check guards the two new registrations (BrokerAdapterCapabilities,
+# SecretResolver) against the lock at the merge base with origin/main.
+# PostgreSQL RLS cases in tests/packets/A04/test_pg_rls.py run only when
+# ALGOBOTS_A04_PG_ADMIN_URL names a role that can create databases and roles;
+# otherwise they skip as BLOCKED (-rs prints the reason). tests/api re-runs
+# the account-registry suite the auth contract must keep green.
+A04_RESULTS := artifacts/A04/test-results
+
+.PHONY: verify-A04 demo-A04
+
+verify-A04:
+	mkdir -p $(A04_RESULTS)
+	PYTHONPATH=$(CURDIR)/src $(PYTHON) -m algobots.contracts --check-transition $(SCHEMA_BASE)
+	PYTHONPATH=$(CURDIR)/src $(PYTHON) -m pytest tests/api/test_accounts.py tests/packets/A04 \
+		-q -rs -p no:cacheprovider --junitxml=$(A04_RESULTS)/junit.xml
+	sed -i -E 's/ (timestamp|hostname|time)="[^"]*"//g' $(A04_RESULTS)/junit.xml
+
+demo-A04:
+	PYTHONPATH=$(CURDIR)/src $(PYTHON) tests/packets/A04/demo.py

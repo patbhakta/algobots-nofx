@@ -384,3 +384,407 @@ def test_dashboard_html_renders(client: TestClient, member_headers):
     assert "alpaca (2)" in html_out
     assert "Render &lt;me&gt; &amp; co" in html_out
     assert "Second" in html_out and "2 accounts" in html_out
+
+
+# --- A04: onboarding, capability registry, secret grants (ALG-3100) ---
+
+import json as _json
+
+from algobots.api.accounts.models import ExternalAccountIdentity
+from algobots.api.models import AuditLog
+from algobots.secrets import ResolutionDenied, SecretStore, build_secret_ref
+from algobots.secrets.models import SecretGrant
+
+
+def row_detail(row) -> str:
+    return row.detail_json or ""
+
+A04_KEY = "ak-a04-SECRET-2f81c9"
+A04_SECRET = "as-a04-SECRET-77b0de"
+A04_TOKEN = "tok-a04-SECRET-31cc02"
+A04_ROTATED_KEY = "ak-a04-ROTATED-KEY-90a1"
+A04_ROTATED_SECRET = "as-a04-ROTATED-SECRET-4b2c"
+
+PRINCIPAL_A = "execsvc://worker-alpha"
+
+
+def _onboard(client, headers, *, label, external_id, provider="mock", environment="synthetic-paper",
+             api_key=A04_KEY, api_secret=A04_SECRET, mode="paper", base_currency="USD"):
+    response = client.post(
+        "/api/broker-accounts",
+        headers=headers,
+        json={
+            "label": label,
+            "provider": provider,
+            "environment": environment,
+            "external_account_id": external_id,
+            "base_currency": base_currency,
+            "mode": mode,
+            "credentials": {
+                "api_key": api_key,
+                "api_secret": api_secret,
+                "token": A04_TOKEN,
+                "token_expires_at": FRESH.isoformat(),
+            },
+        },
+    )
+    return response
+
+
+def _grant(client, headers, account_id, *, principal=PRINCIPAL_A,
+           environments=("synthetic-paper", "development"), hosts=("mock.local",)):
+    return client.post(
+        "/api/account-grants",
+        headers=headers,
+        json={
+            "account_id": str(account_id),
+            "assigned_principal_id": principal,
+            "allowed_environments": list(environments),
+            "egress_allowlist": list(hosts),
+            "rotation_policy": "manual",
+        },
+    )
+
+
+def test_a04_two_accounts_same_venue_are_fully_distinct(client: TestClient, member_headers):
+    """AC1: same venue, two onboardings -> distinct identities, credentials,
+    grants and environment labels."""
+    first = _onboard(client, member_headers, label="Mock one", external_id="ext-mock-001",
+                     environment="synthetic-paper").json()
+    second = _onboard(client, member_headers, label="Mock two", external_id="ext-mock-002",
+                      environment="development").json()
+
+    assert first["id"] != second["id"]
+    assert first["external_identity"] != second["external_identity"]
+    assert first["environment_label"] == "mock:synthetic-paper"
+    assert second["environment_label"] == "mock:development"
+    assert first["connection"]["session_state"] == "CONNECTED"
+
+    g1 = _grant(client, member_headers, first["id"], principal="execsvc://worker-one").json()
+    g2 = _grant(client, member_headers, second["id"], principal="execsvc://worker-two").json()
+    assert g1["secret_ref"] != g2["secret_ref"]
+    assert g1["assigned_principal_id"] != g2["assigned_principal_id"]
+
+    with _db_session() as db:
+        ids = [UUID(first["id"]), UUID(second["id"])]
+        assert db.query(AccountCredential).filter(
+            AccountCredential.account_id.in_(ids)
+        ).count() == 2
+        fingerprints = {
+            row.fingerprint for row in db.query(ExternalAccountIdentity).filter(
+                ExternalAccountIdentity.account_id.in_(ids)
+            )
+        }
+    assert len(fingerprints) == 2
+
+
+def test_a04_no_plaintext_credential_anywhere(client: TestClient, member_headers, caplog):
+    """AC2: no plaintext credential in API responses, DB bytes, logs or errors."""
+    import logging as _logging
+
+    with caplog.at_level(_logging.DEBUG, logger="algobots"):
+        created = _onboard(client, member_headers, label="Leak probe", external_id="ext-mock-leak")
+        assert created.status_code == 201, created.text
+        account_id = created.json()["id"]
+        grant = _grant(client, member_headers, account_id)
+        assert grant.status_code == 201, grant.text
+        dup = _onboard(client, member_headers, label="Leak probe 2", external_id="ext-mock-leak")
+        assert dup.status_code == 409
+        rotated = client.post(
+            f"/api/account-grants/{grant.json()['id']}/rotate",
+            headers=member_headers,
+            json={"credentials": {
+                "api_key": A04_ROTATED_KEY,
+                "api_secret": A04_ROTATED_SECRET,
+                "token": A04_TOKEN,
+                "token_expires_at": FRESH.isoformat(),
+            }},
+        )
+        assert rotated.status_code == 200, rotated.text
+
+    blobs = [
+        created.text, grant.text, dup.text, rotated.text,
+        _json.dumps(_db_file_bytes()[:].decode("latin-1")),
+        caplog.text,
+    ]
+    for secret in (A04_KEY, A04_SECRET, A04_TOKEN, A04_ROTATED_KEY, A04_ROTATED_SECRET):
+        for blob in blobs:
+            assert secret not in blob, f"plaintext {secret[:8]}… leaked"
+
+
+def test_a04_cross_tenant_and_cross_principal_resolution_denied(
+    client: TestClient, member_headers, founder_headers
+):
+    """AC3: tenant A worker credentials cannot resolve tenant B's secret; only
+    the assigned execution identity in the owning tenant can."""
+    created = _onboard(client, member_headers, label="AC3 target", external_id="ext-mock-ac3")
+    account_id = created.json()["id"]
+    grant = _grant(client, member_headers, account_id).json()
+
+    with _db_session() as db:
+        account = db.get(Account, UUID(account_id))
+        owner_tenant = account.tenant_id
+
+        store = SecretStore()
+        # Allowed: the assigned execution identity inside the owning tenant.
+        resolution = store.resolve(
+            db,
+            principal_id=PRINCIPAL_A,
+            principal_tenant_id=owner_tenant,
+            secret_ref=grant["secret_ref"],
+            environment="synthetic-paper",
+        )
+        assert resolution.secrets["api_key"] == A04_KEY
+        assert resolution.egress_allowlist == ("mock.local",)
+
+        # Tenant A worker asking for tenant B's secret: denied (tenant mismatch).
+        foreign_tenant = UUID("00000000-0000-0000-0000-000000000001")
+        with pytest.raises(ResolutionDenied, match="cross-tenant"):
+            store.resolve(
+                db,
+                principal_id=PRINCIPAL_A,
+                principal_tenant_id=foreign_tenant,
+                secret_ref=grant["secret_ref"],
+                environment="synthetic-paper",
+            )
+
+        # Same denial for a well-formed but nonexistent reference: a caller
+        # outside the tenant cannot distinguish existing from absent grants
+        # (no grant-existence oracle for guessed (tenant, account) pairs).
+        ghost_ref = build_secret_ref(owner_tenant, UUID(int=0xABCDEF))
+        with pytest.raises(ResolutionDenied, match="cross-tenant"):
+            store.resolve(
+                db,
+                principal_id=PRINCIPAL_A,
+                principal_tenant_id=foreign_tenant,
+                secret_ref=ghost_ref,
+                environment="synthetic-paper",
+            )
+
+        # Right tenant, wrong execution identity: denied.
+        with pytest.raises(ResolutionDenied, match="assigned execution identity"):
+            store.resolve(
+                db,
+                principal_id="execsvc://worker-other",
+                principal_tenant_id=owner_tenant,
+                secret_ref=grant["secret_ref"],
+                environment="synthetic-paper",
+            )
+
+        # Wrong environment: denied.
+        with pytest.raises(ResolutionDenied, match="not allowed"):
+            store.resolve(
+                db,
+                principal_id=PRINCIPAL_A,
+                principal_tenant_id=owner_tenant,
+                secret_ref=grant["secret_ref"],
+                environment="paper",
+            )
+
+        # Non-allowlisted egress destination: denied.
+        with pytest.raises(ResolutionDenied, match="allowlisted"):
+            store.resolve(
+                db,
+                principal_id=PRINCIPAL_A,
+                principal_tenant_id=owner_tenant,
+                secret_ref=grant["secret_ref"],
+                environment="synthetic-paper",
+                egress_host="evil.example",
+            )
+
+        # Denials audited, with ids/reasons only — and cross-tenant probes are
+        # attributed to the CALLER's tenant, not the victim's.
+        denials = db.query(AuditLog).filter(AuditLog.path == "secret.resolution_denied").all()
+        assert len(denials) == 5
+        for row in denials:
+            assert A04_KEY not in row.detail_json and A04_SECRET not in row.detail_json
+        cross_tenant = [r for r in denials if "cross-tenant" in row_detail(r)]
+        assert len(cross_tenant) == 2
+        assert all(r.tenant_id == foreign_tenant for r in cross_tenant)
+
+
+def test_a04_preview_rejects_unsupported_before_submission(client: TestClient, member_headers):
+    """AC4: unsupported order types/products are rejected at preview time."""
+    def preview(product, order_type, provider="mock", environment="synthetic-paper"):
+        return client.post(
+            "/api/broker-accounts/preview",
+            headers=member_headers,
+            json={"provider": provider, "environment": environment,
+                  "product": product, "order_type": order_type},
+        )
+
+    allowed = preview("equity", "limit")
+    assert allowed.status_code == 200 and allowed.json()["decision"] == "allowed"
+
+    # stop orders are not in the mock catalog -> rejected pre-submission
+    stopped = preview("equity", "stop")
+    assert stopped.status_code == 200 and stopped.json()["decision"] == "rejected"
+    assert "disabled" in stopped.json()["reason"]
+
+    # spot-crypto is not offered by the mock venue at all
+    crypto = preview("spot-crypto", "market")
+    assert crypto.status_code == 200 and crypto.json()["decision"] == "rejected"
+
+    # unknown provider -> no capability statement, rejected with 422
+    unknown = preview("equity", "market", provider="notabroker")
+    assert unknown.status_code == 422
+
+    statement = client.get(
+        "/api/broker-accounts/capabilities",
+        headers=member_headers,
+        params={"provider": "mock", "environment": "synthetic-paper"},
+    )
+    assert statement.status_code == 200
+    entries = {(e["product"], e["order_type"]) for e in statement.json()["entries"]}
+    assert ("equity", "stop") not in entries  # absent => disabled
+
+
+def test_a04_rotation_keeps_single_ownership_record(client: TestClient, member_headers):
+    """AC5: rotating credentials for the same external account creates no
+    second account, identity or grant row."""
+    created = _onboard(client, member_headers, label="Rotate me", external_id="ext-mock-rot")
+    account_id = created.json()["id"]
+    grant = _grant(client, member_headers, account_id).json()
+    rotated = client.post(
+        f"/api/account-grants/{grant['id']}/rotate",
+        headers=member_headers,
+        json={"credentials": {
+            "api_key": A04_ROTATED_KEY,
+            "api_secret": A04_ROTATED_SECRET,
+            "token_expires_at": FRESH.isoformat(),
+        }},
+    )
+    assert rotated.status_code == 200, rotated.text
+    body = rotated.json()
+    assert body["id"] == grant["id"]          # same grant row
+    assert body["secret_version"] == 2        # version bumped in place
+    assert body["state"] == "ROTATED"
+
+    with _db_session() as db:
+        account_uuid = UUID(account_id)
+        accounts = db.query(Account).filter(Account.label == "Rotate me").all()
+        assert len(accounts) == 1
+        identities = db.query(ExternalAccountIdentity).filter(
+            ExternalAccountIdentity.account_id == account_uuid
+        ).all()
+        assert len(identities) == 1 and identities[0].ownership_epoch == 1
+        grants = db.query(SecretGrant).filter(SecretGrant.account_id == account_uuid).all()
+        assert len(grants) == 1
+
+        # The rotated secret resolves under the same grant reference.
+        resolution = SecretStore().resolve(
+            db,
+            principal_id=PRINCIPAL_A,
+            principal_tenant_id=accounts[0].tenant_id,
+            secret_ref=grants[0].secret_ref,
+            environment="synthetic-paper",
+        )
+        assert resolution.secrets["api_key"] == A04_ROTATED_KEY
+        assert resolution.secret_version == 2
+
+
+def test_a04_duplicate_external_account_conflict_hides_owner(
+    client: TestClient, member_headers, founder_headers
+):
+    """Duplicate detection across tenants: 409 with no owner information."""
+    first = _onboard(client, member_headers, label="Mine first", external_id="ext-mock-dup")
+    assert first.status_code == 201
+    owner = first.json()
+
+    # A different tenant onboards the SAME external account.
+    duplicate = _onboard(client, founder_headers, label="Second claim", external_id="ext-mock-dup")
+    assert duplicate.status_code == 409
+    body = duplicate.json()
+    text = _json.dumps(body)
+    # No tenant, account, user or label of the existing holder leaks.
+    assert str(owner["tenant_id"]) not in text
+    assert owner["id"] not in text
+    assert "Mine first" not in text
+    assert "already connected" in body["detail"]
+
+    # Same tenant retrying also conflicts, still without owner data.
+    again = _onboard(client, member_headers, label="Mine again", external_id="ext-mock-dup")
+    assert again.status_code == 409
+
+
+def test_a04_revoke_freezes_and_requires_reconciliation(client: TestClient, member_headers):
+    """Recovery: revoked credentials freeze entries; exposure flags
+    reconciliation instead of looking flat."""
+    created = _onboard(client, member_headers, label="Revoke me", external_id="ext-mock-rev")
+    account_id = created.json()["id"]
+    grant = _grant(client, member_headers, account_id).json()
+
+    revoked = client.post(
+        f"/api/account-grants/{grant['id']}/revoke", headers=member_headers
+    )
+    assert revoked.status_code == 200, revoked.text
+    body = revoked.json()
+    assert body["state"] == "REVOKED" and body["revoked_at"] is not None
+
+    listed = client.get("/api/broker-accounts", headers=member_headers).json()
+    row = [r for r in listed if r["id"] == account_id][0]
+    assert row["status"] == "frozen"
+    assert row["connection"]["session_state"] == "EXPIRED"
+    assert row["connection"]["reconciliation_state"] == "needs_reconciliation"
+    assert row["connection"]["reconciliation_reason"] == "credentials revoked"
+
+    with _db_session() as db:
+        account = db.get(Account, UUID(account_id))
+        with pytest.raises(ResolutionDenied, match="not resolvable"):
+            SecretStore().resolve(
+                db,
+                principal_id=PRINCIPAL_A,
+                principal_tenant_id=account.tenant_id,
+                secret_ref=body["secret_ref"],
+                environment="synthetic-paper",
+            )
+
+    # A revoked grant cannot rotate back to life.
+    rotate = client.post(
+        f"/api/account-grants/{grant['id']}/rotate",
+        headers=member_headers,
+        json={"credentials": {
+            "api_key": A04_ROTATED_KEY, "api_secret": A04_ROTATED_SECRET,
+        }},
+    )
+    assert rotate.status_code == 409
+
+
+def test_a04_candidate_provider_is_configuration_only(client: TestClient, member_headers):
+    """Mock onboards connected; the real provider candidate stays UNCONFIGURED
+    and `live` is never onboardable."""
+    candidate = _onboard(client, member_headers, label="Alpaca candidate",
+                         external_id="ext-alpaca-9", provider="alpaca", environment="paper")
+    assert candidate.status_code == 201, candidate.text
+    assert candidate.json()["connection"]["session_state"] == "UNCONFIGURED"
+    assert candidate.json()["connection"]["sandbox_fidelity"] == "partial"
+
+    wrong_env = _onboard(client, member_headers, label="Alpaca dev",
+                         external_id="ext-alpaca-10", provider="alpaca",
+                         environment="development")
+    assert wrong_env.status_code == 422
+
+    live = _onboard(client, member_headers, label="Never live",
+                    external_id="ext-mock-live", environment="live")
+    assert live.status_code == 422
+
+    unknown = _onboard(client, member_headers, label="Ghost",
+                       external_id="ext-ghost", provider="notabroker")
+    assert unknown.status_code == 422
+
+
+def test_a04_registry_rows_are_tenant_scoped(client: TestClient, member_headers, founder_headers):
+    """Broker-accounts and grant views never cross tenants."""
+    mine = _onboard(client, member_headers, label="Only mine", external_id="ext-mock-iso")
+    assert mine.status_code == 201
+    account_id = mine.json()["id"]
+    assert _grant(client, member_headers, account_id).status_code == 201
+
+    their_accounts = client.get("/api/broker-accounts", headers=founder_headers).json()
+    assert all(row["id"] != account_id for row in their_accounts)
+    their_grants = client.get("/api/account-grants", headers=founder_headers).json()
+    assert all(g["account_id"] != account_id for g in their_grants)
+
+    stranger_grant = _grant(client, founder_headers, account_id,
+                            principal="execsvc://founder-worker")
+    assert stranger_grant.status_code == 404

@@ -54,6 +54,11 @@ EXPECTED_TABLES = {
     "tenant_invites",
     "auth_sessions",
     "account_grants",
+    # A04 (ALG-3100): broker connections, external account identities,
+    # secret-resolution grants
+    "broker_connections",
+    "external_account_identities",
+    "secret_grants",
 }
 
 

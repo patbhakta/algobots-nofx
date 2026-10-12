@@ -297,3 +297,6 @@ from algobots.api.auth import models as _auth_models  # noqa: E402, F401
 # S4.2: import so Deployment (frozen snapshots) + FleetBreaker register likewise.
 from algobots.api.deployments import models as _deployments_models  # noqa: E402, F401
 from algobots.api.memberships import models as _memberships_models  # noqa: E402, F401
+
+# A04: secret-resolution grants register on the same Base for Alembic 0010.
+from algobots.secrets import models as _secrets_models  # noqa: E402, F401
