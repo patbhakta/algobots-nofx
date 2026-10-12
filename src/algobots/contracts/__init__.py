@@ -13,6 +13,8 @@ from .decision import DecisionRequest, DecisionResponse, EvidencePacket, Signal,
 from .envelope import Envelope
 from .events import FillEvent, OrderEvent
 from .identity import Grant, IdentityKind, Principal
+from .instrument import Instrument
+from .marketdata import FeatureSnapshot, MarketSnapshot
 from .memory import MemoryRecord, MemoryScope, MemoryStore, namespace_permits
 from .outbox import ChildOrderStatusView, IntentStatusResponse, OutboxEvent
 from .plan import ExecutionCommand, IntentRequest, OrderPlan, Reservation, canonical_hash
@@ -35,10 +37,13 @@ __all__ = [
     "EvidencePacket",
     "ExecutionCommand",
     "FillEvent",
+    "FeatureSnapshot",
     "Grant",
     "IdentityKind",
     "IntentRequest",
     "IntentStatusResponse",
+    "Instrument",
+    "MarketSnapshot",
     "MemoryRecord",
     "MemoryScope",
     "MemoryStore",

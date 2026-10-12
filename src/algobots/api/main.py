@@ -27,6 +27,8 @@ from algobots.api.routers.resources import router as resources_router
 from algobots.demo import router as demo
 from algobots.demo.router import router as demo_router
 from algobots.knowledge.ingest.router import register as register_knowledge_router
+from algobots.marketdata.routes import instruments_router
+from algobots.marketdata.routes import marketdata_router
 
 
 @asynccontextmanager
@@ -61,6 +63,10 @@ app.include_router(risk_router)
 app.include_router(demo_router)
 app.include_router(tenancy_me_router)
 app.include_router(memberships_router)
+# A05 instrument & market-data read-only routers (ALG-3101): proposal through
+# the api owner per the A03/A04 mount precedent (see the A05 scope guard).
+app.include_router(instruments_router)
+app.include_router(marketdata_router)
 
 # A14 knowledge ingestion (ALG-3110): register() hook keeps the ingest core
 # stdlib-only; store root via ALGOBOTS_KNOWLEDGE_STORE (else var/knowledge-ingest).

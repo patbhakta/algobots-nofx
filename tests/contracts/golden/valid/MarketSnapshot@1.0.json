@@ -1,0 +1,32 @@
+{
+  "schema_version": "1.0",
+  "instrument_id": "COINBASE:spot-crypto:BTC-USD",
+  "event_time": "2026-10-31T10:02:00Z",
+  "available_time": "2026-10-31T10:30:00Z",
+  "receive_time": "2026-10-31T10:30:00Z",
+  "source": "coinbase-ws",
+  "sequence": 6,
+  "entitled": true,
+  "quality": [
+    "corrected"
+  ],
+  "bid": {
+    "amount": "61011.00",
+    "currency": "USD"
+  },
+  "ask": {
+    "amount": "61011.10",
+    "currency": "USD"
+  },
+  "bid_size": {
+    "value": "0.75",
+    "unit": "BTC"
+  },
+  "ask_size": {
+    "value": "0.75",
+    "unit": "BTC"
+  },
+  "last": null,
+  "last_size": null,
+  "correction_of": 3
+}
