@@ -6,6 +6,9 @@
     "BrokerAccount": {
       "1.0": "2a030f89a6a6ccf27179f4cac87b5256a291e2e4cd8efcb49a51f32ff0122e67"
     },
+    "BrokerAdapterCapabilities": {
+      "1.0": "a6998ac37a488950c1db238d499b65de1fc77c09d74bcc4d65dd17c6ca38eb8e"
+    },
     "Capabilities": {
       "1.0": "cd65289c7613ce615543155063c19949641aa6ba22afb0fbb9ceb77004105aeb"
     },
@@ -59,6 +62,9 @@
     },
     "RiskPolicyVersion": {
       "1.0": "d8a1900be562c32f83de5e00108fb13a3a23aa8d77dfce598584151fcbedd051"
+    },
+    "SecretResolver": {
+      "1.0": "2206b70698976951108651aa2804d1903cbd8719092550e8a6317243f38e23f7"
     },
     "Signal": {
       "1.0": "7132035007a60b30f2267622f699dc75755c5885ead45b114671b839be1924d1"

@@ -13,6 +13,7 @@ from fastapi import FastAPI, Response, status
 from sqlalchemy import text
 
 from algobots.api.accounts.router import router as accounts_router
+from algobots.api.accounts.broker_accounts import router as broker_accounts_router
 from algobots.api.approvals.router import router as approvals_router
 from algobots.api.database import get_session_factory
 from algobots.api.deployments.router import router as deployments_router
@@ -52,6 +53,7 @@ app.include_router(auth_router)
 app.include_router(users_router)
 app.include_router(resources_router)
 app.include_router(accounts_router)
+app.include_router(broker_accounts_router)
 app.include_router(deployments_router)
 app.include_router(approvals_router)
 app.include_router(risk_router)

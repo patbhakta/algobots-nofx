@@ -1,0 +1,77 @@
+{
+  "packet": "A04",
+  "revision": 3,
+  "issue": "ALG-3100",
+  "repository": "algobots",
+  "branch": "feat/alg-3100-a04-accounts-secrets",
+  "base_commit": "3472e0f (origin/main at dispatch+rebase; dispatch named 524c5cc)",
+  "implementation_commits": [],
+  "acceptance_cases": {
+    "AC1_two_accounts_same_venue_distinct": {
+      "status": "PASS",
+      "evidence": "tests/api/test_accounts.py::test_a04_two_accounts_same_venue_are_fully_distinct — distinct ids, external identities, credentials rows, grant secret_refs, environment labels (mock:synthetic-paper vs mock:development)"
+    },
+    "AC2_no_plaintext_credential": {
+      "status": "PASS",
+      "evidence": "tests/api/test_accounts.py::test_a04_no_plaintext_credential_anywhere — API responses, raw DB bytes, caplog logs and the 409 conflict body all asserted free of every known secret value"
+    },
+    "AC3_cross_tenant_resolution_denied": {
+      "status": "PASS",
+      "evidence": "tests/api/test_accounts.py::test_a04_cross_tenant_and_cross_principal_resolution_denied — tenant mismatch, wrong principal, wrong environment and non-allowlisted egress each raise ResolutionDenied; 4 audited denial rows without secret material; the allowed path resolves"
+    },
+    "AC4_unsupported_rejected_at_preview": {
+      "status": "PASS",
+      "evidence": "tests/api/test_accounts.py::test_a04_preview_rejects_unsupported_before_submission — equity stop and spot-crypto rejected pre-submission (unknown = disabled); unknown provider 422; capability statement lists no absent rows"
+    },
+    "AC5_rotation_single_ownership": {
+      "status": "PASS",
+      "evidence": "tests/api/test_accounts.py::test_a04_rotation_keeps_single_ownership_record — version 1→2 on the same grant row; account, external identity and grant counts stay 1; rotated secret resolves under the same secret_ref"
+    },
+    "PG_RLS_registry_tables": {
+      "status": "PASS",
+      "evidence": "tests/packets/A04/test_a04_pg_rls.py (PostgreSQL 16.15, throwaway socket-only cluster) — FORCE RLS + tenant policy on broker_connections/external_account_identities/secret_grants; default-deny without app.tenant_id; cross-tenant INSERT rejected; global fingerprint unique index blocks cross-tenant duplicates; app role NOSUPERUSER NOBYPASSRLS"
+    },
+    "duplicate_detection_no_owner_leak": {
+      "status": "PASS",
+      "evidence": "tests/api/test_accounts.py::test_a04_duplicate_external_account_conflict_hides_owner — 409 across tenants and within a tenant; response carries no tenant id, account id or label of the existing holder"
+    },
+    "recovery_freeze_and_reconciliation": {
+      "status": "PASS",
+      "evidence": "tests/api/test_accounts.py::test_a04_revoke_freezes_and_requires_reconciliation — account status frozen, session EXPIRED, reconciliation_state needs_reconciliation (not flat); resolution denied; revoked grant cannot rotate (409)"
+    }
+  },
+  "external_blocked_cases": {
+    "real_provider_connectivity": "BLOCKED: alpaca is candidate/configuration-only in A04 (no real sessions, no external mutation — separate authorization per activation rule)",
+    "live_environment": "BLOCKED: onboarding and grants reject the live environment in A04; live trading needs its own authorization",
+    "ci_postgresql": "BLOCKED: GitHub CI has no PostgreSQL service; PG RLS cases run locally against a throwaway cluster and skip as BLOCKED in CI (A03 limitation 1 applies unchanged)"
+  },
+  "verification": {
+    "command": "make verify-A04",
+    "results": "29 tests, 0 failures, 1 skip (write-scope guard pre-commit; passes on the committed branch); with ALGOBOTS_A04_PG_ADMIN_URL set the 2 PG RLS cases run and PASS",
+    "regression": "pytest tests/contracts tests/api tests/packets/A03 tests/packets/A04 (with PG admin URLs): 226 passed, 1 skipped",
+    "junit": "artifacts/A04/test-results/junit.xml"
+  },
+  "contracts": {
+    "new_versions": [
+      "BrokerAdapterCapabilities@1.0",
+      "SecretResolver@1.0"
+    ],
+    "lock_transition": "python -m algobots.contracts --check-transition origin/main — ok (additive only, no locked fingerprint rewritten)",
+    "pins": "A04 pins updated in docs/repository-map.json (rev 3)"
+  },
+  "migration": {
+    "id": "0010_a04_accounts_secrets",
+    "tables": ["broker_connections", "external_account_identities", "secret_grants"],
+    "destructive": false,
+    "rls": "PostgreSQL FORCE RLS + tenant policy (0008 family); DML granted to algobots_app"
+  },
+  "review_receipt": "PENDING — independent review card to be dispatched after the implementation commit; the writer never approves",
+  "environment": {
+    "python": "3.12.3",
+    "fastapi": "0.141.1",
+    "sqlalchemy": "2.1.1",
+    "psycopg": "3.3.6",
+    "postgresql": "16.15 (throwaway socket-only cluster, trust auth, user pgdemo)",
+    "allowed": ["development", "synthetic-paper"]
+  }
+}

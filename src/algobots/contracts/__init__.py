@@ -6,7 +6,7 @@ Frozen by packet A01. Every top-level contract is registered in
 """
 
 from . import registry
-from .account import BrokerAccount, Capabilities, CapabilityEntry
+from .account import BrokerAccount, BrokerAdapterCapabilities, Capabilities, CapabilityEntry
 from .approval import ApprovalEnvelope
 from .base import ContractModel, Money, Quantity, VersionedContract
 from .decision import DecisionRequest, DecisionResponse, EvidencePacket, Signal, TargetPortfolio
@@ -17,6 +17,7 @@ from .memory import MemoryRecord, MemoryScope, MemoryStore, namespace_permits
 from .outbox import ChildOrderStatusView, IntentStatusResponse, OutboxEvent
 from .plan import ExecutionCommand, IntentRequest, OrderPlan, Reservation, canonical_hash
 from .risk import RiskDecision, RiskPolicyVersion
+from .secrets import SecretResolver
 from .strategy import Deployment, StrategyVersion
 
 __all__ = [
@@ -49,6 +50,7 @@ __all__ = [
     "Reservation",
     "RiskDecision",
     "RiskPolicyVersion",
+    "SecretResolver",
     "Signal",
     "StrategyVersion",
     "TargetPortfolio",

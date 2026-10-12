@@ -702,6 +702,21 @@
         "src/algobots/dashboard/build_activity/"
       ],
       "reason": "hyphenated directory is not a valid Python package name"
+    },
+    {
+      "packet": "A04",
+      "from_revision": 2,
+      "to_revision": 3,
+      "removed": [],
+      "added": [
+        "src/algobots/contracts/",
+        "src/algobots/api/main.py",
+        "src/algobots/api/models.py",
+        "tests/contracts/golden/valid/",
+        "tests/api/test_control_plane.py",
+        "docs/repository-map.json"
+      ],
+      "reason": "dispatched spec requires registering BrokerAdapterCapabilities + SecretResolver as new schema versions (contracts package + schema-lock.json; goldens are the schema-registry mechanism, A07 precedent e843999); the A04 router mounts in api/main.py and its ORM models register via api/models.py for Alembic 0010; EXPECTED_TABLES lists the migrated tables (A07 precedent); repository-map carries this revision and the packet's contract pins"
     }
   ],
   "packets": {
@@ -967,7 +982,7 @@
       "dependencies": [
         "A03"
       ],
-      "revision": 2,
+      "revision": 3,
       "repositories": [
         "algobots"
       ],
@@ -1011,6 +1026,36 @@
           "repo": "algobots",
           "path": "docs/accounts.md",
           "status": "real"
+        },
+        {
+          "repo": "algobots",
+          "path": "src/algobots/contracts/",
+          "status": "real"
+        },
+        {
+          "repo": "algobots",
+          "path": "src/algobots/api/main.py",
+          "status": "real"
+        },
+        {
+          "repo": "algobots",
+          "path": "src/algobots/api/models.py",
+          "status": "real"
+        },
+        {
+          "repo": "algobots",
+          "path": "tests/contracts/golden/valid/",
+          "status": "real"
+        },
+        {
+          "repo": "algobots",
+          "path": "tests/api/test_control_plane.py",
+          "status": "real"
+        },
+        {
+          "repo": "algobots",
+          "path": "docs/repository-map.json",
+          "status": "real"
         }
       ],
       "shared_resources": [
@@ -1018,8 +1063,10 @@
       ],
       "contract_pins": {
         "BrokerAccount": "1.0",
+        "BrokerAdapterCapabilities": "1.0",
         "Capabilities": "1.0",
-        "Principal": "1.0"
+        "Principal": "1.0",
+        "SecretResolver": "1.0"
       }
     },
     "A05": {
