@@ -10,9 +10,10 @@ account); a conflicting create returns 409 (A11 case 4). Stopped deployments
 free the tuple.
 
 Breakers: a daily-loss breach against the FROZEN envelope opens that
-deployment's breaker only. The fleet breaker (one per user) halts every
-deployment in the caller's scope; resetting it resumes exactly the
-fleet-halted ones.
+deployment's breaker only. The fleet breaker (one row per tenant x user,
+ALG-3186) halts every deployment in that (tenant, user) scope; resetting it
+resumes exactly the fleet-halted ones in the SAME tenant — a reset under
+tenant A never resumes tenant B.
 
 Logging discipline: structured, secret-free events (`deployment_created`,
 `deployment_breaker_tripped`, ...) — ids, symbols, hashes, and money caps
@@ -240,29 +241,64 @@ def reset_deployment_breaker(db: Session, deployment: Deployment) -> Deployment:
 # --- fleet breaker ----------------------------------------------------------------
 
 
-def get_fleet_breaker(db: Session, user: User) -> FleetBreaker:
-    """The caller's fleet breaker row (never None; default closed, untrip state)."""
-    row = db.scalar(select(FleetBreaker).where(FleetBreaker.user_id == user.id))
+def get_fleet_breaker(db: Session, user: User, tenant_id) -> FleetBreaker:
+    """The caller's fleet breaker row in the ACTIVE tenant (never None;
+    default closed, untrip state). One row per (tenant, user) (ALG-3186)."""
+    row = db.scalar(
+        select(FleetBreaker).where(
+            FleetBreaker.tenant_id == tenant_id,
+            FleetBreaker.user_id == user.id,
+        )
+    )
     if row is None:
-        row = FleetBreaker(user_id=user.id)
+        row = FleetBreaker(tenant_id=tenant_id, user_id=user.id)
         db.add(row)
         db.commit()
     return row
 
 
+def fleet_breaker_for_deployment(db: Session, deployment: Deployment) -> FleetBreaker | None:
+    """The breaker row that GOVERNS this deployment: its account's tenant and
+    the deployment's user — never the caller's active tenant, so a halt in
+    tenant A stays visible (and real) from any session."""
+    account = db.get(Account, deployment.account_id)
+    if account is None:
+        return None
+    return db.scalar(
+        select(FleetBreaker).where(
+            FleetBreaker.tenant_id == account.tenant_id,
+            FleetBreaker.user_id == deployment.user_id,
+        )
+    )
+
+
+def _deployments_in_tenant(db: Session, user: User, tenant_id) -> list[Deployment]:
+    """The user's deployments whose account belongs to this tenant."""
+    return list(
+        db.scalars(
+            select(Deployment)
+            .join(Account, Account.id == Deployment.account_id)
+            .where(Deployment.user_id == user.id, Account.tenant_id == tenant_id)
+        )
+    )
+
+
 def set_fleet_breaker(
-    db: Session, user: User, action: str, reason: str = ""
+    db: Session, user: User, tenant_id, action: str, reason: str = ""
 ) -> tuple[FleetBreaker, list[Deployment]]:
-    """Trip or reset the caller's fleet breaker; returns affected deployments."""
-    fleet = get_fleet_breaker(db, user)
+    """Trip or reset the caller's fleet breaker in the ACTIVE tenant; returns
+    the affected deployments — the user's deployments in THAT tenant only, so
+    a reset under tenant A never resumes tenant B."""
+    fleet = get_fleet_breaker(db, user, tenant_id)
     if action == "trip":
         fleet.state = BreakerState.OPEN.value
         fleet.reason = reason or "manual fleet breaker trip"
         fleet.tripped_at = datetime.now(UTC)
         db.commit()
-        halted = list_deployments(db, user)
+        halted = _deployments_in_tenant(db, user, tenant_id)
         logger.info(
-            "fleet_breaker_tripped user_id=%s halted_deployments=%d reason=%s",
+            "fleet_breaker_tripped tenant_id=%s user_id=%s halted_deployments=%d reason=%s",
+            tenant_id,
             user.id,
             len(halted),
             fleet.reason,
@@ -273,17 +309,15 @@ def set_fleet_breaker(
     fleet.reason = ""
     fleet.tripped_at = None
     db.commit()
-    resumed = list(
-        db.scalars(
-            select(Deployment).where(
-                Deployment.user_id == user.id,
-                Deployment.breaker_state == BreakerState.CLOSED.value,
-                Deployment.status != DeploymentStatus.STOPPED.value,
-            )
-        )
-    )
+    resumed = [
+        dep
+        for dep in _deployments_in_tenant(db, user, tenant_id)
+        if dep.breaker_state == BreakerState.CLOSED.value
+        and dep.status != DeploymentStatus.STOPPED.value
+    ]
     logger.info(
-        "fleet_breaker_reset user_id=%s resumed_deployments=%d",
+        "fleet_breaker_reset tenant_id=%s user_id=%s resumed_deployments=%d",
+        tenant_id,
         user.id,
         len(resumed),
     )

@@ -48,6 +48,12 @@ EXPECTED_TABLES = {
     "reservations",
     "account_controls",
     "instrument_marks",
+    # A03 (ALG-3099): tenants, memberships, hashed invites, sessions, grants
+    "tenants",
+    "tenant_memberships",
+    "tenant_invites",
+    "auth_sessions",
+    "account_grants",
 }
 
 

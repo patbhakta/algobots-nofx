@@ -50,6 +50,12 @@ class Settings(BaseSettings):
     demo_principal_id: str = Field(default="demo-viewer")
     demo_tenant_id: str = Field(default="demo")
     demo_account_grants: str = Field(default="laya,jev,coin")
+    # A03 OIDC seam (development/synthetic-paper only): an HS256 shared secret
+    # for a local or fake provider. Empty issuer disables OIDC login. OIDC
+    # authenticates existing members only; it never provisions accounts.
+    oidc_issuer: str = Field(default="")
+    oidc_audience: str = Field(default="algobots")
+    oidc_shared_secret: str = Field(default="")
 
     def sqlalchemy_url(self) -> str:
         """Normalize the configured URL for SQLAlchemy drivers.

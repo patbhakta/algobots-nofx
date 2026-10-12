@@ -53,11 +53,14 @@ def _write_audit_row(request: Request, response: Response) -> None:
     detail = json.dumps(
         {"request_id": response.headers.get("X-Request-Id", "")}, separators=(",", ":")
     )
+    # Set by the auth dependency (A03) on the shared ASGI scope state.
+    tenant_id = request.scope.get("state", {}).get("tenant_id")
     session = get_session_factory()()
     try:
         session.add(
             AuditLog(
                 user_id=_actor_uuid(request),
+                tenant_id=tenant_id,
                 method=request.method,
                 path=request.url.path,
                 status_code=response.status_code,
