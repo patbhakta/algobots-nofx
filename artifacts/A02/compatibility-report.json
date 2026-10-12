@@ -37,9 +37,9 @@
   "reuse_decision": "A06's verified worker lease (algobots.engine.workers.lease) governs long-lived account workers via PID liveness; packet attempts need epoch-stamped transactional claims instead, so this authority reuses the flock + atomic-replace technique, not the module.",
   "schema": "agent-queue-compat/1.0",
   "single_authority": {
-    "lock": "/tmp/paperclip-run-alg-3098-04eb3be2-e8b-pphMQM/a02-demo-5080ulre/queue-state.json.lock",
+    "lock": "/tmp/paperclip-run-alg-3098-d84b525b-7f5-86tKMp/a02-demo-xargsihn/queue-state.json.lock",
     "rule": "one coordinator per state file; no second claimant of the same work",
-    "state_file": "/tmp/paperclip-run-alg-3098-04eb3be2-e8b-pphMQM/a02-demo-5080ulre/queue-state.json"
+    "state_file": "/tmp/paperclip-run-alg-3098-d84b525b-7f5-86tKMp/a02-demo-xargsihn/queue-state.json"
   },
   "statuses": {
     "A00": "BACKLOG",

@@ -20,15 +20,31 @@ OUT = ROOT / "artifacts" / "A02" / "acceptance.json"
 P = "tests.packets.A02.test_acceptance"
 Q = "tests.agent_queue.test_authority"
 
-# Independent review receipt (static evidence; ALG-3322 verdict comment).
-# Filled in as reviews land: the reviewed commit and verdict are data, not
-# derived from the junit, so rerunning this script reproduces them exactly.
+# Independent review receipts (static evidence; verdict comments on the
+# review issues). Filled in as reviews land: the reviewed commits and
+# verdicts are data, not derived from the junit, so rerunning this script
+# reproduces them exactly.
 REVIEW = {
-    "issue": "ALG-3322",
-    "reviewed_commit": "87f5ad4",
-    "verdict": "PASS",
-    "note": "AC1-AC4 PASS; 5 non-blocking findings (F1-F5) fixed in follow-up "
-            "commits on the same branch, delta re-reviewed before integration",
+    "independent_review": {
+        "issue": "ALG-3322",
+        "reviewed_commit": "87f5ad4",
+        "verdict": "PASS",
+        "note": "AC1-AC4 PASS; 5 non-blocking findings (F1-F5)",
+    },
+    "delta_re_review": {
+        "issue": "ALG-3323",
+        "reviewed_commit": "f469a02",
+        "base": "87f5ad4",
+        "verdict": "PASS",
+        "note": "all F1-F5 verified fixed; 49/49 green; approved for integration",
+    },
+    "integration": {
+        "integrated_commit": "f469a02",
+        "on_main": True,
+        "main_tip_verified": "40ae460",
+        "note": "f469a02 is an ancestor of main (fast-forward integration); "
+                "acceptance re-run at main tip 40ae460",
+    },
 }
 
 CASES: dict[str, dict] = {
