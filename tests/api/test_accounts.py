@@ -7,6 +7,7 @@ Q&A gate coverage:
 4. No secret ever appears in logs, audit rows, or API responses (assert-tested).
 """
 
+import json as _json
 import logging
 import traceback
 from datetime import UTC, datetime, timedelta
@@ -17,12 +18,14 @@ from fastapi.testclient import TestClient
 from sqlalchemy import text
 
 from algobots.api.accounts.crypto import REDACTED, get_credential_cipher
-from algobots.api.accounts.models import AccountCredential
+from algobots.api.accounts.models import AccountCredential, ExternalAccountIdentity
 from algobots.api.accounts.refresh import REFRESHERS, RefreshOutcome
 from algobots.api.accounts.service import sweep_token_health
 from algobots.api.database import get_session_factory
-from algobots.api.models import Account
+from algobots.api.models import Account, AuditLog
 from algobots.dashboard.accounts import registry_snapshot, render_accounts_html
+from algobots.secrets import ResolutionDenied, SecretStore, build_secret_ref
+from algobots.secrets.models import SecretGrant
 
 SECRET_API_KEY = "ak-live-SECRET-7f3d2a"
 SECRET_API_SECRET = "as-SECRET-9b2c41-DO-NOT-LOG"
@@ -387,13 +390,6 @@ def test_dashboard_html_renders(client: TestClient, member_headers):
 
 
 # --- A04: onboarding, capability registry, secret grants (ALG-3100) ---
-
-import json as _json
-
-from algobots.api.accounts.models import ExternalAccountIdentity
-from algobots.api.models import AuditLog
-from algobots.secrets import ResolutionDenied, SecretStore, build_secret_ref
-from algobots.secrets.models import SecretGrant
 
 
 def row_detail(row) -> str:

@@ -110,7 +110,7 @@ def main() -> int:
     say(f"version chain       : {len(doc2.version_history)} versions "
         f"({', '.join(v[:12] + '…' for v in doc2.version_history)})")
     say(f"embeddings paid     : {edited.embeddings_new} (chunk ids are version-keyed,")
-    say(f"                      so the edited document re-embeds; other documents reuse)")
+    say("                      so the edited document re-embeds; other documents reuse)")
     say(f"processing cost     : {edit_ms:.0f} ms")
     hit = SearchService(store).search("owner", "cost analysis", tenant_id=TENANT)["hits"][0]
     say(f"new section cited   : {hit['path']}#{hit['anchor']} (v {hit['version_id'][:12]}…)")

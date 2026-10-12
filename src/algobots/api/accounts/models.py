@@ -96,7 +96,9 @@ class BrokerConnection(Base):
     sandbox_fidelity: Mapped[str] = mapped_column(String(16), nullable=False, default="unknown")
     reconciliation_state: Mapped[str] = mapped_column(String(32), nullable=False, default="ok")
     reconciliation_reason: Mapped[str] = mapped_column(String(200), nullable=False, default="")
-    session_checked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    session_checked_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_utcnow, nullable=False
     )
@@ -144,7 +146,9 @@ class ExternalAccountIdentity(Base):
 
     @classmethod
     def fingerprint_of(cls, provider: str, environment: str, external_account_id: str) -> str:
-        material = f"{provider.lower()}:{environment}:{external_account_id.strip().lower()}".encode()
+        material = (
+            f"{provider.lower()}:{environment}:{external_account_id.strip().lower()}".encode()
+        )
         return hashlib.sha256(material).hexdigest()
 
     @property

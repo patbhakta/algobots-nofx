@@ -27,7 +27,9 @@ __all__ = [
 
 # secret://tenant/<tenant-id>/account/<account-id>
 SecretRefText = Annotated[str, Field(pattern=r"^secret://tenant/[A-Za-z0-9._:/#@-]+/account/[A-Za-z0-9._:/#@-]+$")]
-EgressHost = Annotated[str, Field(min_length=1, max_length=253, pattern=r"^[A-Za-z0-9.*-]+(\.[A-Za-z0-9*-]+)*$")]
+EgressHost = Annotated[
+    str, Field(min_length=1, max_length=253, pattern=r"^[A-Za-z0-9.*-]+(\.[A-Za-z0-9*-]+)*$")
+]
 SecretState = Literal["ACTIVE", "ROTATED", "REVOKED", "EXPIRED"]
 ROTATION_POLICIES = ("manual", "scheduled", "on-refresh")  # type: ignore[assignment]
 

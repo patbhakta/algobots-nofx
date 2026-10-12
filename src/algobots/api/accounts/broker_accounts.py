@@ -243,7 +243,9 @@ def _tenant_triple(
 # --- onboarding + registry views ------------------------------------------------
 
 
-@router.post("/broker-accounts", response_model=BrokerAccountOut, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/broker-accounts", response_model=BrokerAccountOut, status_code=status.HTTP_201_CREATED
+)
 def onboard_account(
     payload: OnboardRequest,
     response: Response,

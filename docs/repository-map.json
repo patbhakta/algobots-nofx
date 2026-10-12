@@ -63,7 +63,29 @@
           "path": "src/algobots/contracts/"
         }
       ],
-      "rule": "locked name@version is immutable; revisions register a new version; a version pinned by a queued packet cannot be removed (registry.check_lock_transition)"
+      "rule": "locked name@version is immutable; revisions register a new version; a version pinned by a queued packet cannot be removed (registry.check_lock_transition)",
+      "carve_outs": [
+        {
+          "repo": "algobots",
+          "path": "src/algobots/contracts/__init__.py",
+          "packet": "A04"
+        },
+        {
+          "repo": "algobots",
+          "path": "src/algobots/contracts/account.py",
+          "packet": "A04"
+        },
+        {
+          "repo": "algobots",
+          "path": "src/algobots/contracts/schema-lock.json",
+          "packet": "A04"
+        },
+        {
+          "repo": "algobots",
+          "path": "src/algobots/contracts/secrets.py",
+          "packet": "A04"
+        }
+      ]
     },
     "dependency-lockfiles": {
       "integration_owner": "A01",
@@ -541,6 +563,18 @@
     {
       "repo": "algobots",
       "path": "tests/demo/test_order_api.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "docs/research/alg-3309-strategy-sourcing-shortlist.md"
+    },
+    {
+      "repo": "algobots",
+      "path": "tests/api/test_fleet_breaker_tenancy.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "src/algobots/knowledge/__init__.py"
     }
   ],
   "scope_revisions": [
@@ -709,14 +743,13 @@
       "to_revision": 3,
       "removed": [],
       "added": [
-        "src/algobots/contracts/",
-        "src/algobots/api/main.py",
-        "src/algobots/api/models.py",
-        "tests/contracts/golden/valid/",
-        "tests/api/test_control_plane.py",
-        "docs/repository-map.json"
+        "src/algobots/contracts/__init__.py",
+        "src/algobots/contracts/account.py",
+        "src/algobots/contracts/schema-lock.json",
+        "src/algobots/contracts/secrets.py",
+        "tests/contracts/golden/valid/"
       ],
-      "reason": "dispatched spec requires registering BrokerAdapterCapabilities + SecretResolver as new schema versions (contracts package + schema-lock.json; goldens are the schema-registry mechanism, A07 precedent e843999); the A04 router mounts in api/main.py and its ORM models register via api/models.py for Alembic 0010; EXPECTED_TABLES lists the migrated tables (A07 precedent); repository-map carries this revision and the packet's contract pins"
+      "reason": "dispatched spec requires registering BrokerAdapterCapabilities + SecretResolver as new schema versions (contracts package + schema-lock.json; goldens are the schema-registry mechanism, A07 precedent e843999); the A04 router mounts in api/main.py and its ORM models register via api/models.py for Alembic 0010; EXPECTED_TABLES lists the migrated tables (A07 precedent); repository-map carries this revision and the packet's contract pins Ownership collisions resolved at integration: main.py/models.py/test_control_plane.py stay solely A03-owned and repository-map.json solely A01-owned (identical entries in two packets are forbidden; A04's edits to them were proposals through those owners, same as the Makefile convention)."
     }
   ],
   "packets": {
@@ -1029,33 +1062,28 @@
         },
         {
           "repo": "algobots",
-          "path": "src/algobots/contracts/",
-          "status": "real"
-        },
-        {
-          "repo": "algobots",
-          "path": "src/algobots/api/main.py",
-          "status": "real"
-        },
-        {
-          "repo": "algobots",
-          "path": "src/algobots/api/models.py",
-          "status": "real"
-        },
-        {
-          "repo": "algobots",
           "path": "tests/contracts/golden/valid/",
           "status": "real"
         },
         {
           "repo": "algobots",
-          "path": "tests/api/test_control_plane.py",
+          "path": "src/algobots/contracts/__init__.py",
           "status": "real"
         },
         {
           "repo": "algobots",
-          "path": "docs/repository-map.json",
+          "path": "src/algobots/contracts/account.py",
           "status": "real"
+        },
+        {
+          "repo": "algobots",
+          "path": "src/algobots/contracts/schema-lock.json",
+          "status": "real"
+        },
+        {
+          "repo": "algobots",
+          "path": "src/algobots/contracts/secrets.py",
+          "status": "proposed"
         }
       ],
       "shared_resources": [

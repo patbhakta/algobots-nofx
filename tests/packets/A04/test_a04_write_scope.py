@@ -16,7 +16,16 @@ from pathlib import Path
 import pytest
 
 ROOT = Path(__file__).resolve().parents[3]
-PROPOSED_TO_OWNER = {"Makefile", "docs/repository-map.json"}
+PROPOSED_TO_OWNER = {
+    "Makefile",
+    "docs/repository-map.json",
+    # A03-owned surfaces A04 mounted into (router mount, ORM registration,
+    # control-plane expectations); identical write-scope entries in two
+    # packets are forbidden, so these stay proposals through the A03 owner.
+    "src/algobots/api/main.py",
+    "src/algobots/api/models.py",
+    "tests/api/test_control_plane.py",
+}
 FROZEN_MIGRATIONS = tuple(
     f"src/algobots/api/migrations/versions/{n:04d}_"
     for n in range(1, 10)  # 0001-0009 predate A04; only 0010+ may be added

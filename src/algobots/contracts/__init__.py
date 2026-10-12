@@ -23,6 +23,7 @@ from .strategy import Deployment, StrategyVersion
 __all__ = [
     "ApprovalEnvelope",
     "BrokerAccount",
+    "BrokerAdapterCapabilities",
     "Capabilities",
     "CapabilityEntry",
     "ChildOrderStatusView",

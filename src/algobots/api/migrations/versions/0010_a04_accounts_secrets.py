@@ -74,12 +74,20 @@ def upgrade() -> None:
         sa.Column("user_id", sa.Uuid(), sa.ForeignKey("users.id"), nullable=False),
         sa.Column("provider", sa.String(length=32), nullable=False),
         sa.Column("environment", sa.String(length=32), nullable=False),
-        sa.Column("session_state", sa.String(length=16), nullable=False, server_default="UNCONFIGURED"),
+        sa.Column(
+            "session_state", sa.String(length=16), nullable=False, server_default="UNCONFIGURED"
+        ),
         sa.Column("egress_allowlist", sa.Text(), nullable=False, server_default=""),
         sa.Column("capabilities_revision", sa.Integer(), nullable=False, server_default="0"),
-        sa.Column("sandbox_fidelity", sa.String(length=16), nullable=False, server_default="unknown"),
-        sa.Column("reconciliation_state", sa.String(length=32), nullable=False, server_default="ok"),
-        sa.Column("reconciliation_reason", sa.String(length=200), nullable=False, server_default=""),
+        sa.Column(
+            "sandbox_fidelity", sa.String(length=16), nullable=False, server_default="unknown"
+        ),
+        sa.Column(
+            "reconciliation_state", sa.String(length=32), nullable=False, server_default="ok"
+        ),
+        sa.Column(
+            "reconciliation_reason", sa.String(length=200), nullable=False, server_default=""
+        ),
         _ts("session_checked_at"),
         _ts("created_at", nullable=False),
         _ts("updated_at"),
@@ -90,7 +98,9 @@ def upgrade() -> None:
             ondelete="CASCADE",
         ),
     )
-    op.create_index("uq_broker_connections_account", "broker_connections", ["account_id"], unique=True)
+    op.create_index(
+        "uq_broker_connections_account", "broker_connections", ["account_id"], unique=True
+    )
     op.create_index("ix_broker_connections_tenant", "broker_connections", ["tenant_id"])
 
     op.create_table(
@@ -112,7 +122,10 @@ def upgrade() -> None:
         ),
     )
     op.create_index(
-        "uq_external_account_fingerprint", "external_account_identities", ["fingerprint"], unique=True
+        "uq_external_account_fingerprint",
+        "external_account_identities",
+        ["fingerprint"],
+        unique=True,
     )
     op.create_index(
         "ix_external_account_identities_tenant", "external_account_identities", ["tenant_id"]
@@ -141,7 +154,9 @@ def upgrade() -> None:
             name="fk_secret_grants_tenant_account",
             ondelete="CASCADE",
         ),
-        sa.UniqueConstraint("account_id", "assigned_principal_id", name="uq_secret_grants_principal"),
+        sa.UniqueConstraint(
+            "account_id", "assigned_principal_id", name="uq_secret_grants_principal"
+        ),
     )
     op.create_index("ix_secret_grants_tenant_state", "secret_grants", ["tenant_id", "state"])
 

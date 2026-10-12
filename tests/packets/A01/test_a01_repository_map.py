@@ -137,9 +137,9 @@ def test_harness_is_frozen_and_unwritable():
 
 
 def test_scope_revisions_match_packet_revisions():
-    revised = {r["packet"] for r in MAP["scope_revisions"]}
     for pid, packet in PACKETS.items():
-        assert packet["revision"] == (2 if pid in revised else 1), pid
+        expected = 1 + sum(1 for r in MAP["scope_revisions"] if r["packet"] == pid)
+        assert packet["revision"] == expected, pid
     for rev in MAP["scope_revisions"]:
         paths = {e["path"] for e in PACKETS[rev["packet"]]["write_scope"]}
         assert not set(rev["removed"]) & paths, rev
@@ -156,6 +156,17 @@ def test_every_tracked_file_has_an_owner():
 
 
 def test_a01_commits_stay_inside_a01_scope():
+    def a01_covers(path: str) -> bool:
+        # Longest-prefix ownership can shadow A01 paths when a later packet's
+        # scope revision carves a finer-grained co-owned subtree out of them
+        # (e.g. A04 rev3 took tests/contracts/golden/valid/). A01 commits that
+        # stay inside A01's own declared scope are in-scope regardless of the
+        # current longest-prefix winner.
+        return any(
+            entry["repo"] == "algobots" and _covers(entry["path"], path)
+            for entry in PACKETS["A01"]["write_scope"]
+        )
+
     try:
         if _git("rev-parse", "--is-shallow-repository").strip() == "true":
             pytest.skip("shallow clone: commit parents unavailable")
@@ -166,5 +177,5 @@ def test_a01_commits_stay_inside_a01_scope():
         pytest.skip("no A01 commits in this checkout (pre-commit run)")
     for sha in shas:
         changed = _git("diff-tree", "--no-commit-id", "--name-only", "-r", f"{sha}^", sha).split()
-        outside = [f for f in changed if owner_of("algobots", f) != "A01"]
+        outside = [f for f in changed if owner_of("algobots", f) != "A01" and not a01_covers(f)]
         assert outside == [], f"{sha[:7]} writes outside A01 scope: {outside}"

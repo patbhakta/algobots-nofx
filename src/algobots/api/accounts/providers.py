@@ -56,7 +56,9 @@ CANDIDATE = ProviderConfig(
     display_name="Alpaca (candidate)",
     environments=("paper",),
     default_egress_hosts=("*.alpaca.markets",),
-    note="Configuration-only in A04: sessions stay UNCONFIGURED; live activation is a later packet.",
+    note=(
+        "Configuration-only in A04: sessions stay UNCONFIGURED; live activation is a later packet."
+    ),
 )
 
 PROVIDERS: dict[str, ProviderConfig] = {p.slug: p for p in (MOCK, CANDIDATE)}
@@ -82,7 +84,9 @@ def _entry(
         "support": support,
         "price_decimals": 2 if product is not ProductClass.SPOT_CRYPTO else 4,
         "quantity_decimals": 4,
-        "min_order": Quantity(value="1", unit="shares" if product is not ProductClass.SPOT_CRYPTO else "BTC"),
+        "min_order": Quantity(
+            value="1", unit="shares" if product is not ProductClass.SPOT_CRYPTO else "BTC"
+        ),
         "client_order_id_max_length": 48,
         "client_order_id_reusable": reusable,
         "client_order_id_uniqueness": "trading-day",

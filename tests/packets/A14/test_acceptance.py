@@ -291,7 +291,9 @@ def test_ac4_traversal_symlink_malformed_rejected_within_source_root(tmp_path: P
 # ------------------------------------------------------------------ AC5 --
 
 def test_ac5_failed_extraction_reported_no_invented_text(tmp_path: Path):
-    root = make_vault(tmp_path, "notes/simple-note.md", "assets/fake-scan.png", "assets/mystery.bin")
+    root = make_vault(
+        tmp_path, "notes/simple-note.md", "assets/fake-scan.png", "assets/mystery.bin"
+    )
     store, service, source, status = sync(tmp_path, root)
     assert status.status == "ok"  # queued assets are not extraction failures yet
 

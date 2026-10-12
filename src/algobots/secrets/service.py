@@ -15,8 +15,11 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass
 from datetime import UTC, datetime
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from uuid import UUID
+
+if TYPE_CHECKING:
+    from algobots.api.models import Account
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -308,7 +311,9 @@ class SecretStore:
         if account is None or account.tenant_id != grant.tenant_id:
             raise ValueError("grant does not resolve to its tenant's account")
         if grant.state == "REVOKED":
-            raise ResolutionDenied("a revoked grant cannot rotate; re-onboard the account", grant=grant)
+            raise ResolutionDenied(
+                "a revoked grant cannot rotate; re-onboard the account", grant=grant
+            )
 
         from algobots.api.accounts.service import get_credential_row
 

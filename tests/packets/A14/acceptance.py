@@ -155,7 +155,8 @@ def verdicts(res: dict[str, tuple[str, str]]) -> dict[str, dict]:
 
 
 def main(argv: list[str]) -> int:
-    junit = Path(argv[1]) if len(argv) > 1 else ROOT / "artifacts" / "A14" / "test-results" / "junit.xml"
+    default_junit = ROOT / "artifacts" / "A14" / "test-results" / "junit.xml"
+    junit = Path(argv[1]) if len(argv) > 1 else default_junit
     head = subprocess.run(
         ["git", "rev-parse", "--short", "HEAD"], cwd=ROOT, capture_output=True, text=True
     ).stdout.strip()
