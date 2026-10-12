@@ -1,0 +1,6 @@
+make verify-A14 @ af63dea — 115 tests, 0 failures, 0 errors, 0 skipped
+AC1: PASS — 5 tests passed
+AC2: PASS — 6 tests passed
+AC3: PASS — 6 tests passed
+AC4: PASS — 8 tests passed
+AC5: PASS — 6 tests passed

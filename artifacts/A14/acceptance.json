@@ -1,0 +1,94 @@
+{
+  "packet": "A14",
+  "slice": "A14-3 flow + acceptance + demo (ALG-3320)",
+  "tested_commit": "83bdf1c",
+  "command": "make verify-A14",
+  "cases": {
+    "AC1": {
+      "status": "PASS",
+      "case": "GIVEN an imported vault WHEN it is re-imported unchanged THEN zero chunks are re-embedded (idempotent, content-keyed writes)",
+      "note": "5 tests passed",
+      "tests": {
+        "tests/packets/A14/test_acceptance.py::test_ac1_unchanged_reimport_reembeds_zero_chunks": "passed",
+        "tests/knowledge/ingest/test_idempotency.py::test_unchanged_reimport_is_zero_work_everywhere": "passed",
+        "tests/knowledge/ingest/test_idempotency.py::test_edit_flip_only_the_edited_document": "passed",
+        "tests/knowledge/ingest/test_idempotency.py::test_reregister_same_root_same_source_id": "passed",
+        "tests/knowledge/ingest/test_indexing.py::test_unchanged_resync_is_zero_index_work": "passed"
+      },
+      "evidence": [
+        "artifacts/A14/test-results/junit.xml",
+        "artifacts/A14/demo-output.txt"
+      ]
+    },
+    "AC2": {
+      "status": "PASS",
+      "case": "GIVEN an imported note WHEN it is renamed THEN document identity and citations are kept; WHEN its content is edited THEN a new version is chained on the same identity",
+      "note": "6 tests passed",
+      "tests": {
+        "tests/packets/A14/test_acceptance.py::test_ac2_rename_keeps_identity_and_citations_edit_makes_new_version": "passed",
+        "tests/knowledge/ingest/test_identity.py::test_rename_keeps_document_identity": "passed",
+        "tests/knowledge/ingest/test_identity.py::test_edit_creates_new_version_same_document": "passed",
+        "tests/knowledge/ingest/test_identity.py::test_revert_relinks_existing_version_zero_new_work": "passed",
+        "tests/knowledge/ingest/test_identity.py::test_rename_and_edit_combined_is_a_new_document": "passed",
+        "tests/knowledge/ingest/test_indexing.py::test_edit_reembeds_only_changed_chunks": "passed"
+      },
+      "evidence": [
+        "artifacts/A14/test-results/junit.xml",
+        "artifacts/A14/demo-output.txt"
+      ]
+    },
+    "AC3": {
+      "status": "PASS",
+      "case": "GIVEN an exposed source WHEN it is deleted (tombstone) or its ACL is revoked THEN exposure ceases within 60s and removal is owner-only",
+      "note": "6 tests passed",
+      "tests": {
+        "tests/packets/A14/test_acceptance.py::test_ac3_delete_and_acl_revoke_exposure_ceases_within_60s": "passed",
+        "tests/knowledge/ingest/test_tombstone.py::test_removal_propagation_window_real_timed": "passed",
+        "tests/knowledge/ingest/test_tombstone.py::test_removal_requires_owner_role": "passed",
+        "tests/knowledge/ingest/test_tombstone.py::test_removed_source_stays_hidden_from_cache_after_invalidation": "passed",
+        "tests/knowledge/ingest/test_tombstone.py::test_cache_ttl_sits_inside_propagation_window": "passed",
+        "tests/knowledge/ingest/test_acl.py::test_revoked_acl_denies_every_role_including_owner": "passed"
+      },
+      "evidence": [
+        "artifacts/A14/test-results/junit.xml",
+        "artifacts/A14/demo-output.txt"
+      ]
+    },
+    "AC4": {
+      "status": "PASS",
+      "case": "GIVEN traversal attempts, escaping symlinks and malformed notes WHEN the vault is ingested THEN all are rejected within the source root, quarantined visibly, and no outside byte is ever read",
+      "note": "8 tests passed",
+      "tests": {
+        "tests/packets/A14/test_acceptance.py::test_ac4_traversal_symlink_malformed_rejected_within_source_root": "passed",
+        "tests/knowledge/ingest/test_security.py::test_symlink_escape_rejected_and_outside_bytes_never_read": "passed",
+        "tests/knowledge/ingest/test_security.py::test_symlinked_directory_escape_rejected": "passed",
+        "tests/knowledge/ingest/test_security.py::test_dotdot_traversal_rejected": "passed",
+        "tests/knowledge/ingest/test_security.py::test_nested_traversal_net_rejected": "passed",
+        "tests/knowledge/ingest/test_security.py::test_malformed_utf8_note_quarantined_no_placeholder": "passed",
+        "tests/knowledge/ingest/test_security.py::test_bad_frontmatter_line_quarantined": "passed",
+        "tests/knowledge/ingest/test_quarantine_surface.py::test_failed_doc_is_queryable_with_visible_error": "passed"
+      },
+      "evidence": [
+        "artifacts/A14/test-results/junit.xml",
+        "artifacts/A14/demo-output.txt"
+      ]
+    },
+    "AC5": {
+      "status": "PASS",
+      "case": "GIVEN an asset whose extraction fails or has no approved processor THEN the failure is reported and visible; no invented text is ever substituted",
+      "note": "6 tests passed",
+      "tests": {
+        "tests/packets/A14/test_acceptance.py::test_ac5_failed_extraction_reported_no_invented_text": "passed",
+        "tests/knowledge/ingest/test_assets.py::test_processor_failure_recorded_never_substituted": "passed",
+        "tests/knowledge/ingest/test_assets.py::test_no_approved_processor_stays_visible": "passed",
+        "tests/knowledge/ingest/test_assets.py::test_unknown_type_queued_unsupported_never_routed": "passed",
+        "tests/knowledge/ingest/test_quarantine_surface.py::test_unsupported_asset_surfaces_as_failure": "passed",
+        "tests/knowledge/ingest/test_parsing.py::test_failed_parse_surfaces_error_and_generates_no_chunks": "passed"
+      },
+      "evidence": [
+        "artifacts/A14/test-results/junit.xml",
+        "artifacts/A14/demo-output.txt"
+      ]
+    }
+  }
+}
