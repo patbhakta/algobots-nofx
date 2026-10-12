@@ -41,6 +41,8 @@ from algobots.api.approvals.service import (
     parks,
     report_broadcast,
 )
+from algobots.api.memberships.models import Tenant
+from algobots.api.memberships.service import create_personal_tenant
 from algobots.api.models import DEMO_OWNER_EMAIL, Account, Order, User
 from algobots.demo import ledger as L
 
@@ -118,7 +120,12 @@ def order_block_reason(account: Account) -> str | None:
 
 
 def ensure_seeded(db: Session) -> User:
-    """Idempotently create the demo registry owner and its accounts (all PAPER but one)."""
+    """Idempotently create the demo registry owner and its accounts (all PAPER but one).
+
+    The owner is provisioned outside registration, so it also gets the personal
+    tenant every tenant-owned row needs (A03): without one the seeded accounts
+    fail the ``tenant_id`` NOT NULL constraint.
+    """
     owner = db.scalar(select(User).where(User.email == DEMO_OWNER_EMAIL))
     if owner is None:
         owner = User(
@@ -133,12 +140,21 @@ def ensure_seeded(db: Session) -> User:
         except IntegrityError:  # a concurrent request seeded it first
             db.rollback()
             owner = db.scalar(select(User).where(User.email == DEMO_OWNER_EMAIL))
+    tenant = db.scalar(select(Tenant).where(Tenant.personal_owner_user_id == owner.id))
+    if tenant is None:
+        try:
+            tenant = create_personal_tenant(db, owner)
+            db.commit()
+        except IntegrityError:  # a concurrent request won the unique owner column
+            db.rollback()
+            tenant = db.scalar(select(Tenant).where(Tenant.personal_owner_user_id == owner.id))
     have = set(db.scalars(select(Account.label).where(Account.user_id == owner.id)))
     missing = [label for label in SEED if label not in have]
     for label in missing:
         broker, mode, approval, status, _ = SEED[label]
         db.add(
             Account(
+                tenant_id=tenant.id,
                 user_id=owner.id,
                 label=label,
                 broker=broker,
@@ -224,6 +240,7 @@ def broadcast(
             ticket.legs.append(Leg(account.id, account.label, "blocked", block))
             continue
         order = Order(
+            tenant_id=account.tenant_id,
             user_id=owner.id,
             account_id=account.id,
             symbol=f"{SYMBOL}:{side}",  # Kalshi: buy the YES or the NO contract
