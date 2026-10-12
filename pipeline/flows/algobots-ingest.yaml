@@ -1,0 +1,44 @@
+id: algobots-ingest
+namespace: algobots
+description: >
+  Obsidian vault -> knowledge lineage -> incremental index (packet A14).
+  Deterministic spine mirroring the verified docvault doctrine: register +
+  snapshot-first ingest, hash-keyed incremental embeddings/FTS (local,
+  zero API spend), then a status gate. Exit 3 = sync FAILED, exit 4 =
+  PARTIAL (quarantine/failures are visible on the sources screen, never
+  substituted with invented text); both halt the flow.
+
+inputs:
+  - id: vault_root
+    type: STRING
+    defaults: /root/repos/algobots/var/vaults/default
+  - id: store_dir
+    type: STRING
+    defaults: /root/repos/algobots/var/knowledge-ingest
+  - id: tenant_id
+    type: STRING
+  - id: permission_class
+    type: STRING
+    defaults: authored_knowledge
+
+tasks:
+  - id: ingest_index
+    type: io.kestra.plugin.scripts.shell.Commands
+    taskRunner:
+      type: io.kestra.plugin.core.runner.Process
+    timeout: PT30M
+    env:
+      VAULT_ROOT: "{{ inputs.vault_root }}"
+      STORE_DIR: "{{ inputs.store_dir }}"
+      TENANT_ID: "{{ inputs.tenant_id }}"
+      PERMISSION_CLASS: "{{ inputs.permission_class }}"
+    commands:
+      - >-
+        cd /root/repos/algobots &&
+        PYTHONPATH=src .venv/bin/python -m algobots.knowledge.ingest.sync
+        --root "$VAULT_ROOT" --store "$STORE_DIR"
+        --tenant "$TENANT_ID" --class "$PERMISSION_CLASS"
+    description: >
+      register (idempotent) -> snapshot -> lineage -> incremental index;
+      prints the sync status JSON. Source removals/tombstones are operator
+      actions through the /api/knowledge surface, never part of the flow.
