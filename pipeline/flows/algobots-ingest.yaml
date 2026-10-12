@@ -3,10 +3,15 @@ namespace: algobots
 description: >
   Obsidian vault -> knowledge lineage -> incremental index (packet A14).
   Deterministic spine mirroring the verified docvault doctrine: register +
-  snapshot-first ingest, hash-keyed incremental embeddings/FTS (local,
-  zero API spend), then a status gate. Exit 3 = sync FAILED, exit 4 =
-  PARTIAL (quarantine/failures are visible on the sources screen, never
-  substituted with invented text); both halt the flow.
+  snapshot-first ingest (every parse reads only the immutable snapshot,
+  never the live vault), then the incremental hash-keyed embeddings/FTS
+  index (local, zero API spend), then the status gate. Writes are idempotent
+  and keyed by source version (content-addressed ids), so the bounded retry
+  below re-runs a partially failed stage safely: unchanged versions do zero
+  work and a retry can never duplicate an embed or a version. Exit 3 = sync
+  FAILED, exit 4 = PARTIAL (quarantine/failures are visible on the sources
+  screen, never substituted with invented text); both are nonzero, exhaust
+  the bounded retries and halt the flow — slop never advances.
 
 inputs:
   - id: vault_root
@@ -27,6 +32,10 @@ tasks:
     taskRunner:
       type: io.kestra.plugin.core.runner.Process
     timeout: PT30M
+    retries:
+      type: constant
+      interval: PT30S
+      maxAttempt: 3
     env:
       VAULT_ROOT: "{{ inputs.vault_root }}"
       STORE_DIR: "{{ inputs.store_dir }}"
@@ -40,5 +49,8 @@ tasks:
         --tenant "$TENANT_ID" --class "$PERMISSION_CLASS"
     description: >
       register (idempotent) -> snapshot -> lineage -> incremental index;
-      prints the sync status JSON. Source removals/tombstones are operator
-      actions through the /api/knowledge surface, never part of the flow.
+      prints the sync status JSON. Bounded retries (3 attempts) are keyed by
+      source version: content-addressed writes make every retry a no-op for
+      everything that already succeeded. Source removals/tombstones are
+      operator actions through the /api/knowledge surface, never part of the
+      flow.
