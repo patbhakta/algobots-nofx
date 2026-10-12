@@ -1453,7 +1453,7 @@
       ],
       "write_scope": [
         {
-          "repo": "stock-vaults",
+          "repo": "algobots",
           "path": "pipeline/flows/algobots-ingest.yaml",
           "status": "proposed"
         },

@@ -25,6 +25,7 @@ from algobots.api.routers.auth import users_router
 from algobots.api.routers.resources import router as resources_router
 from algobots.demo import router as demo
 from algobots.demo.router import router as demo_router
+from algobots.knowledge.ingest.router import register as register_knowledge_router
 
 
 @asynccontextmanager
@@ -58,6 +59,10 @@ app.include_router(risk_router)
 app.include_router(demo_router)
 app.include_router(tenancy_me_router)
 app.include_router(memberships_router)
+
+# A14 knowledge ingestion (ALG-3110): register() hook keeps the ingest core
+# stdlib-only; store root via ALGOBOTS_KNOWLEDGE_STORE (else var/knowledge-ingest).
+register_knowledge_router(app)
 
 
 @app.get("/healthz")

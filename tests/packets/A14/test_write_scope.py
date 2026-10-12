@@ -22,16 +22,12 @@ REPO = "algobots"
 # subpackage requires the one-line parent package marker next to it. Nothing
 # else under src/algobots/knowledge/ is allowed by this guard.
 #
-# Second mechanical exception (ALG-3320): the ALG-3320 frozen scope and the
-# landed A14-2 branch place `pipeline/flows/algobots-ingest.yaml` in THIS
-# repo, but docs/repository-map.json (A01-owned, outside A14 scope) still
-# lists that path under repo "stock-vaults" (which is read-only reference).
-# The map entry is drift; the flow file is in scope. Reported on ALG-3320
-# for the TL — do not widen this exception beyond the named file.
+# (The `pipeline/flows/algobots-ingest.yaml` exception added in ALG-3320 was
+# dropped at TL integration: docs/repository-map.json now attributes that
+# path to repo "algobots", so it is covered by the write_scope entries.)
 MECHANICAL_PACKAGE_MARKERS = frozenset(
     {
         "src/algobots/knowledge/__init__.py",
-        "pipeline/flows/algobots-ingest.yaml",
     }
 )
 
