@@ -48,7 +48,10 @@ class OnboardRequest(BaseModel):
     environment: str
     external_account_id: str = Field(min_length=1, max_length=128)
     base_currency: str = Field(default="USD", pattern=r"^[A-Z0-9]{3,10}$")
-    mode: str = Field(default="paper", pattern=r"^(paper|live)$")
+    # A04 onboards paper-mode accounts only; live mode is a later, separately
+    # authorized activation (the environment guard blocks live environments,
+    # this keeps the account row itself paper).
+    mode: str = Field(default="paper", pattern=r"^paper$")
     credentials: CredentialSet
 
     @field_validator("environment")

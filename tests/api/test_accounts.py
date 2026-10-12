@@ -392,8 +392,12 @@ import json as _json
 
 from algobots.api.accounts.models import ExternalAccountIdentity
 from algobots.api.models import AuditLog
-from algobots.secrets import ResolutionDenied, SecretStore
+from algobots.secrets import ResolutionDenied, SecretStore, build_secret_ref
 from algobots.secrets.models import SecretGrant
+
+
+def row_detail(row) -> str:
+    return row.detail_json or ""
 
 A04_KEY = "ak-a04-SECRET-2f81c9"
 A04_SECRET = "as-a04-SECRET-77b0de"
@@ -544,6 +548,19 @@ def test_a04_cross_tenant_and_cross_principal_resolution_denied(
                 environment="synthetic-paper",
             )
 
+        # Same denial for a well-formed but nonexistent reference: a caller
+        # outside the tenant cannot distinguish existing from absent grants
+        # (no grant-existence oracle for guessed (tenant, account) pairs).
+        ghost_ref = build_secret_ref(owner_tenant, UUID(int=0xABCDEF))
+        with pytest.raises(ResolutionDenied, match="cross-tenant"):
+            store.resolve(
+                db,
+                principal_id=PRINCIPAL_A,
+                principal_tenant_id=foreign_tenant,
+                secret_ref=ghost_ref,
+                environment="synthetic-paper",
+            )
+
         # Right tenant, wrong execution identity: denied.
         with pytest.raises(ResolutionDenied, match="assigned execution identity"):
             store.resolve(
@@ -575,11 +592,15 @@ def test_a04_cross_tenant_and_cross_principal_resolution_denied(
                 egress_host="evil.example",
             )
 
-        # Denials audited, with ids/reasons only.
+        # Denials audited, with ids/reasons only — and cross-tenant probes are
+        # attributed to the CALLER's tenant, not the victim's.
         denials = db.query(AuditLog).filter(AuditLog.path == "secret.resolution_denied").all()
-        assert len(denials) == 4
+        assert len(denials) == 5
         for row in denials:
             assert A04_KEY not in row.detail_json and A04_SECRET not in row.detail_json
+        cross_tenant = [r for r in denials if "cross-tenant" in row_detail(r)]
+        assert len(cross_tenant) == 2
+        assert all(r.tenant_id == foreign_tenant for r in cross_tenant)
 
 
 def test_a04_preview_rejects_unsupported_before_submission(client: TestClient, member_headers):

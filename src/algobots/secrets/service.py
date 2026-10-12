@@ -21,7 +21,6 @@ from uuid import UUID
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from algobots.api.accounts.crypto import redact
 from algobots.api.accounts.models import AccountCredential  # noqa: F401 — re-exported for tests
 from algobots.secrets.keyservice import KeyServiceError, SecretKeyService, get_key_service
 from algobots.secrets.models import RESOLVABLE_STATES, SecretGrant
@@ -191,16 +190,26 @@ class SecretStore:
         try:
             ref = parse_secret_ref(secret_ref)
         except SecretRefError as exc:
-            self._audit(db, "secret.resolution_denied", tenant_id=None, grant=None, reason="malformed_ref")
+            self._audit(
+                db,
+                "secret.resolution_denied",
+                tenant_id=principal_tenant_id,
+                grant=None,
+                principal_id=principal_id,
+                reason="malformed_ref",
+            )
             raise ResolutionDenied("not a canonical secret reference") from exc
 
         grant = self._grant_by_ref(db, ref.tenant_id, ref.account_id)
 
         def deny(reason: str) -> ResolutionDenied:
+            # Audit under the CALLER's tenant so a cross-tenant probe is
+            # attributable at its origin; the target account id travels in the
+            # detail payload (never secret material).
             self._audit(
                 db,
                 "secret.resolution_denied",
-                tenant_id=ref.tenant_id,
+                tenant_id=principal_tenant_id,
                 grant=grant,
                 principal_id=principal_id,
                 account_id=ref.account_id,
@@ -217,10 +226,13 @@ class SecretStore:
             )
             return ResolutionDenied(reason, grant=grant)
 
-        if grant is None:
-            raise deny("no grant for this secret reference")
+        # Tenant scope first: a caller outside the reference's tenant learns
+        # nothing about whether a grant exists (no grant-existence oracle for
+        # guessed (tenant, account) pairs).
         if principal_tenant_id != ref.tenant_id:
             raise deny("cross-tenant secret resolution denied")
+        if grant is None:
+            raise deny("no grant for this secret reference")
         if grant.assigned_principal_id != principal_id:
             raise deny("only the assigned execution identity may resolve this secret")
         if grant.state not in RESOLVABLE_STATES:
@@ -304,7 +316,9 @@ class SecretStore:
         if cred is None:
             raise ValueError("no credential stored for this account")
 
-        old = self._key_service().open(cred.encrypted_secrets, cred.key_id)
+        # Fail closed: refuse to rotate a blob we cannot open (key mismatch or
+        # corruption) rather than overwriting the only copy.
+        self._key_service().open(cred.encrypted_secrets, cred.key_id)
         blob, key_id = self._key_service().seal(secrets)
         expires = secrets.get("token_expires_at")
         if isinstance(expires, str):
@@ -328,8 +342,6 @@ class SecretStore:
             secret_version=grant.secret_version,
         )
         db.commit()
-        # Known-secret redaction keeps any adapter echo out of stored text.
-        _ = redact("", *[v for v in (*old.values(), *secrets.values()) if isinstance(v, str)])
         logger.info(
             "secret_rotated account_id=%s grant_id=%s version=%s",
             grant.account_id,

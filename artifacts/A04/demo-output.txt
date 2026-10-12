@@ -7,10 +7,10 @@
 [Mock delta] mock:synthetic-paper session=CONNECTED fidelity=high base=USD identity=mock/…db2c
 
 == grants: one execution identity per account secret ==
-[execsvc://worker-alpha] secret://tenant/14ecf267-0b79-4ec1-a329-fb1a930dd5ee/account/9cd1d307-754c-4e22-ae82-9b4146049fe6 state=ACTIVE v1
-[execsvc://worker-beta] secret://tenant/14ecf267-0b79-4ec1-a329-fb1a930dd5ee/account/a08b8736-e90c-49eb-8aeb-68daa840c088 state=ACTIVE v1
-[execsvc://worker-gamma] secret://tenant/14ecf267-0b79-4ec1-a329-fb1a930dd5ee/account/d56a744c-61a3-4f06-a818-bdb8ad629595 state=ACTIVE v1
-[execsvc://worker-delta] secret://tenant/14ecf267-0b79-4ec1-a329-fb1a930dd5ee/account/db25b781-53c7-4979-9544-f75137d9a474 state=ACTIVE v1
+[execsvc://worker-alpha] secret://tenant/b854a5e7-e02c-44ef-85ed-467d7757602a/account/eb836d9f-f7fe-48ce-8e3a-4312b0edacaa state=ACTIVE v1
+[execsvc://worker-beta] secret://tenant/b854a5e7-e02c-44ef-85ed-467d7757602a/account/cad183f3-f311-4e53-ba18-edf81e44f0e2 state=ACTIVE v1
+[execsvc://worker-gamma] secret://tenant/b854a5e7-e02c-44ef-85ed-467d7757602a/account/a4a29952-b5c7-4a4f-ab41-9ecd0015c335 state=ACTIVE v1
+[execsvc://worker-delta] secret://tenant/b854a5e7-e02c-44ef-85ed-467d7757602a/account/6766af43-46ff-4822-8219-d9ae566382cf state=ACTIVE v1
 
 == rotation: Mock beta rotated in place, duplicate external account rejected ==
 [rotate] version 1 -> 2, state=ROTATED, same grant row

@@ -5,73 +5,93 @@
   "repository": "algobots",
   "branch": "feat/alg-3100-a04-accounts-secrets",
   "base_commit": "3472e0f (origin/main at dispatch+rebase; dispatch named 524c5cc)",
-  "implementation_commits": [],
+  "implementation_commits": [
+    "145e24e feat(ALG-3100): A04 accounts, secrets, and capability registry",
+    "review-fix commit (ALG-3324 F1-F4): acceptance.json evidence corrected to reproducible numbers; F2 dead redact call removed; F3 tenant check ordered before grant lookup + denial audits attributed to the caller's tenant; F4 OnboardRequest.mode restricted to paper"
+  ],
   "acceptance_cases": {
     "AC1_two_accounts_same_venue_distinct": {
       "status": "PASS",
-      "evidence": "tests/api/test_accounts.py::test_a04_two_accounts_same_venue_are_fully_distinct — distinct ids, external identities, credentials rows, grant secret_refs, environment labels (mock:synthetic-paper vs mock:development)"
+      "evidence": "tests/api/test_accounts.py::test_a04_two_accounts_same_venue_are_fully_distinct \u2014 distinct ids, external identities, credentials rows, grant secret_refs, environment labels (mock:synthetic-paper vs mock:development)"
     },
     "AC2_no_plaintext_credential": {
       "status": "PASS",
-      "evidence": "tests/api/test_accounts.py::test_a04_no_plaintext_credential_anywhere — API responses, raw DB bytes, caplog logs and the 409 conflict body all asserted free of every known secret value"
+      "evidence": "tests/api/test_accounts.py::test_a04_no_plaintext_credential_anywhere \u2014 API responses, raw DB bytes, caplog logs and the 409 conflict body all asserted free of every known secret value"
     },
     "AC3_cross_tenant_resolution_denied": {
       "status": "PASS",
-      "evidence": "tests/api/test_accounts.py::test_a04_cross_tenant_and_cross_principal_resolution_denied — tenant mismatch, wrong principal, wrong environment and non-allowlisted egress each raise ResolutionDenied; 4 audited denial rows without secret material; the allowed path resolves"
+      "evidence": "tests/api/test_accounts.py::test_a04_cross_tenant_and_cross_principal_resolution_denied \u2014 tenant mismatch, wrong principal, wrong environment and non-allowlisted egress each raise ResolutionDenied; 4 audited denial rows without secret material; the allowed path resolves"
     },
     "AC4_unsupported_rejected_at_preview": {
       "status": "PASS",
-      "evidence": "tests/api/test_accounts.py::test_a04_preview_rejects_unsupported_before_submission — equity stop and spot-crypto rejected pre-submission (unknown = disabled); unknown provider 422; capability statement lists no absent rows"
+      "evidence": "tests/api/test_accounts.py::test_a04_preview_rejects_unsupported_before_submission \u2014 equity stop and spot-crypto rejected pre-submission (unknown = disabled); unknown provider 422; capability statement lists no absent rows"
     },
     "AC5_rotation_single_ownership": {
       "status": "PASS",
-      "evidence": "tests/api/test_accounts.py::test_a04_rotation_keeps_single_ownership_record — version 1→2 on the same grant row; account, external identity and grant counts stay 1; rotated secret resolves under the same secret_ref"
+      "evidence": "tests/api/test_accounts.py::test_a04_rotation_keeps_single_ownership_record \u2014 version 1\u21922 on the same grant row; account, external identity and grant counts stay 1; rotated secret resolves under the same secret_ref"
     },
     "PG_RLS_registry_tables": {
       "status": "PASS",
-      "evidence": "tests/packets/A04/test_a04_pg_rls.py (PostgreSQL 16.15, throwaway socket-only cluster) — FORCE RLS + tenant policy on broker_connections/external_account_identities/secret_grants; default-deny without app.tenant_id; cross-tenant INSERT rejected; global fingerprint unique index blocks cross-tenant duplicates; app role NOSUPERUSER NOBYPASSRLS"
+      "evidence": "tests/packets/A04/test_a04_pg_rls.py (PostgreSQL 16.15, throwaway socket-only cluster) \u2014 FORCE RLS + tenant policy on broker_connections/external_account_identities/secret_grants; default-deny without app.tenant_id; cross-tenant INSERT rejected; global fingerprint unique index blocks cross-tenant duplicates; app role NOSUPERUSER NOBYPASSRLS"
     },
     "duplicate_detection_no_owner_leak": {
       "status": "PASS",
-      "evidence": "tests/api/test_accounts.py::test_a04_duplicate_external_account_conflict_hides_owner — 409 across tenants and within a tenant; response carries no tenant id, account id or label of the existing holder"
+      "evidence": "tests/api/test_accounts.py::test_a04_duplicate_external_account_conflict_hides_owner \u2014 409 across tenants and within a tenant; response carries no tenant id, account id or label of the existing holder"
     },
     "recovery_freeze_and_reconciliation": {
       "status": "PASS",
-      "evidence": "tests/api/test_accounts.py::test_a04_revoke_freezes_and_requires_reconciliation — account status frozen, session EXPIRED, reconciliation_state needs_reconciliation (not flat); resolution denied; revoked grant cannot rotate (409)"
+      "evidence": "tests/api/test_accounts.py::test_a04_revoke_freezes_and_requires_reconciliation \u2014 account status frozen, session EXPIRED, reconciliation_state needs_reconciliation (not flat); resolution denied; revoked grant cannot rotate (409)"
     }
   },
   "external_blocked_cases": {
-    "real_provider_connectivity": "BLOCKED: alpaca is candidate/configuration-only in A04 (no real sessions, no external mutation — separate authorization per activation rule)",
+    "real_provider_connectivity": "BLOCKED: alpaca is candidate/configuration-only in A04 (no real sessions, no external mutation \u2014 separate authorization per activation rule)",
     "live_environment": "BLOCKED: onboarding and grants reject the live environment in A04; live trading needs its own authorization",
     "ci_postgresql": "BLOCKED: GitHub CI has no PostgreSQL service; PG RLS cases run locally against a throwaway cluster and skip as BLOCKED in CI (A03 limitation 1 applies unchanged)"
   },
   "verification": {
-    "command": "make verify-A04",
-    "results": "29 tests, 0 failures, 1 skip (write-scope guard pre-commit; passes on the committed branch); with ALGOBOTS_A04_PG_ADMIN_URL set the 2 PG RLS cases run and PASS",
-    "regression": "pytest tests/contracts tests/api tests/packets/A03 tests/packets/A04 (with PG admin URLs): 226 passed, 1 skipped",
-    "junit": "artifacts/A04/test-results/junit.xml"
+    "verify_with_postgresql": {
+      "command": "make verify-A04  # with ALGOBOTS_A04_PG_ADMIN_URL -> throwaway socket-only PostgreSQL 16.15 cluster",
+      "result": "29 passed, 0 failed, 0 skipped (schema lock transition from 3472e0f ok, additive)",
+      "junit": "artifacts/A04/test-results/junit.xml"
+    },
+    "verify_without_postgresql": {
+      "command": "make verify-A04  # no ALGOBOTS_A04_PG_ADMIN_URL (CI shape)",
+      "result": "27 passed, 2 skipped (the two PG RLS cases skip as BLOCKED and must not be claimed on SQLite)"
+    },
+    "regression_pre_merge": {
+      "command": "pytest tests/contracts tests/api tests/packets/A03 tests/packets/A04 --deselect 'tests/packets/A03/test_write_scope.py::test_branch_changes_stay_inside_a03_write_scope'  # with both PG admin URLs",
+      "result": "226 passed, 1 deselected",
+      "caveat": "The deselected A03 write-scope test asserts the whole branch diff is inside A03's scope; it fails by construction on any foreign feature branch pre-merge and passes trivially post-merge (empty diff). It is a post-merge-only assertion, not an A04 regression."
+    }
   },
   "contracts": {
     "new_versions": [
       "BrokerAdapterCapabilities@1.0",
       "SecretResolver@1.0"
     ],
-    "lock_transition": "python -m algobots.contracts --check-transition origin/main — ok (additive only, no locked fingerprint rewritten)",
+    "lock_transition": "python -m algobots.contracts --check-transition origin/main \u2014 ok (additive only, no locked fingerprint rewritten)",
     "pins": "A04 pins updated in docs/repository-map.json (rev 3)"
   },
   "migration": {
     "id": "0010_a04_accounts_secrets",
-    "tables": ["broker_connections", "external_account_identities", "secret_grants"],
+    "tables": [
+      "broker_connections",
+      "external_account_identities",
+      "secret_grants"
+    ],
     "destructive": false,
     "rls": "PostgreSQL FORCE RLS + tenant policy (0008 family); DML granted to algobots_app"
   },
-  "review_receipt": "PENDING — independent review card to be dispatched after the implementation commit; the writer never approves",
+  "review_receipt": "ALG-3324 (Oct 12, Tech Lead, independent \u2014 writer never approves): VERDICT PASS @ 145e24e. Reviewer independently reproduced make verify-A04, the PostgreSQL RLS lane from scratch, the additive lock transition, and the write-scope guard; all 7 mapped acceptance tests claim-checked. F1 (MEDIUM, evidence accuracy): acceptance.json numbers did not reproduce \u2014 corrected in the follow-up commit with the exact reproducible commands/counts above and the A03 write-scope pre-merge caveat. F2 (dead redact call), F3 (tenant check before grant lookup; cross-tenant denial audits attributed to the caller's tenant; oracle-proof denial text \u2014 locked in by an added AC3 assertion), F4 (mode restricted to paper) fixed in the same commit; reviewer scoped F1-F4 as writer fixes with no re-review required.",
   "environment": {
     "python": "3.12.3",
     "fastapi": "0.141.1",
     "sqlalchemy": "2.1.1",
     "psycopg": "3.3.6",
     "postgresql": "16.15 (throwaway socket-only cluster, trust auth, user pgdemo)",
-    "allowed": ["development", "synthetic-paper"]
+    "allowed": [
+      "development",
+      "synthetic-paper"
+    ]
   }
 }
