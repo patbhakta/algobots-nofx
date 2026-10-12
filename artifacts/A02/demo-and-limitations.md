@@ -61,7 +61,12 @@ The demo (`tests/packets/A02/demo.py`) uses only deterministic fixtures
   processes/threads share the authority safely (AC1 races both ways).
 - **Lease expiry uses wall-clock time** (`clock` is injectable; the CLI uses
   real time). `--lease-ttl` bounds it; there is no automatic revoke daemon —
-  a lapsed lease is reclaimed lazily by the next claimant.
+  a lapsed lease is reclaimed lazily by the next claimant, and a lapsed
+  holder's resource locks are dropped when another task needs the resource
+  (the dead attempt cannot write, so the release is safe — ALG-3322 F2 fix).
+  Every BLOCKED checkpoint — failure-path and claim-path (budget) — is
+  written durably before the denial is returned (ALG-3322 F1 fix), and the
+  state file rename is directory-fsynced (ALG-3322 F4 fix).
 - **Review is verified, not performed.** `integrate` enforces that the
   review receipt names the exact integration commit; the review itself is
   an out-of-band human/agent act (per the A02 spec's independent-review

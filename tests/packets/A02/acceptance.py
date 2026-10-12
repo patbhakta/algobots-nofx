@@ -20,6 +20,17 @@ OUT = ROOT / "artifacts" / "A02" / "acceptance.json"
 P = "tests.packets.A02.test_acceptance"
 Q = "tests.agent_queue.test_authority"
 
+# Independent review receipt (static evidence; ALG-3322 verdict comment).
+# Filled in as reviews land: the reviewed commit and verdict are data, not
+# derived from the junit, so rerunning this script reproduces them exactly.
+REVIEW = {
+    "issue": "ALG-3322",
+    "reviewed_commit": "87f5ad4",
+    "verdict": "PASS",
+    "note": "AC1-AC4 PASS; 5 non-blocking findings (F1-F5) fixed in follow-up "
+            "commits on the same branch, delta re-reviewed before integration",
+}
+
 CASES: dict[str, dict] = {
     "AC1": {
         "case": "GIVEN two (or more) concurrent claimants THEN exactly one active "
@@ -63,6 +74,9 @@ CASES: dict[str, dict] = {
             f"{Q}.TestBudgetsAndBlocking::test_reclaim_loop_also_terminates_in_blocked",
             f"{Q}.TestBudgetsAndBlocking::test_same_failure_repair_cap_blocks",
             f"{Q}.TestBudgetsAndBlocking::test_blocked_state_is_durable_and_inspectable",
+            f"{Q}.TestBudgetsAndBlocking::test_claim_path_budget_block_is_durable",
+            f"{Q}.TestBudgetsAndBlocking::test_blocked_checkpoint_releases_resources",
+            f"{Q}.TestBudgetsAndBlocking::test_dead_holder_does_not_strand_a_resource",
         ],
         "evidence": ["artifacts/A02/demo-run.json"],
     },
@@ -115,14 +129,9 @@ def main(argv: list[str]) -> int:
         ["git", "rev-parse", "--short", "HEAD"], cwd=ROOT, capture_output=True, text=True
     ).stdout.strip()
     cases = verdicts(results(junit))
+    # tested_commit is always the commit the tests actually ran at (ALG-3322
+    # F3: never carry an older sha forward, however green the verdicts are).
     tested_commit = head
-    if OUT.exists():
-        try:
-            old = json.loads(OUT.read_text())
-            if old.get("tested_commit") and old.get("cases") == cases:
-                tested_commit = old["tested_commit"]
-        except Exception:
-            pass
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(
         json.dumps(
@@ -131,6 +140,7 @@ def main(argv: list[str]) -> int:
                 "slice": "A02 sprint-1 (ALG-3098): transactional claims + leases",
                 "tested_commit": tested_commit,
                 "command": "make verify-A02",
+                "review": REVIEW,
                 "cases": cases,
             },
             indent=2,

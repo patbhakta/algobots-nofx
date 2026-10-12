@@ -202,6 +202,50 @@ class TestBudgetsAndBlocking:
         with pytest.raises(ClaimDenied, match="blocked: budget exhausted: 2/2"):
             authority.claim("C", "owner")
 
+    def test_claim_path_budget_block_is_durable(self, tmp_path):
+        """ALG-3322 F1: the denial must leave a persisted BLOCKED checkpoint."""
+        authority, clock = make_authority(tmp_path, [{"id": "C", "budget_attempts": 2}])
+        for _ in range(2):
+            authority.claim("C", "owner")
+            clock["t"] += TTL + 1
+        with pytest.raises(ClaimDenied, match="blocked: budget exhausted"):
+            authority.claim("C", "owner")
+        raw = json.loads((tmp_path / "state.json").read_text())
+        assert raw["tasks"]["C"]["status"] == BLOCKED
+        assert raw["tasks"]["C"]["blocked"]["reason"].startswith("budget exhausted")
+        assert authority.blocked_record("C") is not None
+        assert authority.status("C")["status"] == BLOCKED
+
+    def test_blocked_checkpoint_releases_resources(self, tmp_path):
+        """ALG-3322 F2: a budget-blocked task cannot strand its resource."""
+        authority, clock = make_authority(
+            tmp_path,
+            [{"id": "X", "budget_attempts": 1, "resources": ["task-authority"]},
+             {"id": "Y", "resources": ["task-authority"]}],
+        )
+        authority.claim("X", "owner-1")
+        clock["t"] += TTL + 1
+        with pytest.raises(ClaimDenied, match="blocked: budget exhausted: 1/1"):
+            authority.claim("X", "owner-1")
+        claim = authority.claim("Y", "owner-2")  # resource was released
+        assert claim.epoch == 1
+
+    def test_dead_holder_does_not_strand_a_resource(self, tmp_path):
+        """ALG-3322 F2: an expired-lease holder is provably stale, so its
+        resource lock is dropped when another task needs the resource."""
+        authority, clock = make_authority(
+            tmp_path,
+            [{"id": "X", "budget_attempts": 5, "resources": ["task-authority"]},
+             {"id": "Y", "resources": ["task-authority"]}],
+        )
+        authority.claim("X", "owner-1")
+        clock["t"] += TTL + 1
+        claim = authority.claim("Y", "owner-2")  # X's lease lapsed: lock released
+        assert claim.epoch == 1
+        # a live holder is still exclusive
+        with pytest.raises(ClaimDenied, match="resource task-authority held by Y"):
+            authority.claim("X", "owner-3")
+
     def test_same_failure_repair_cap_blocks(self, tmp_path):
         authority, _ = make_authority(tmp_path, [{"id": "S", "budget_attempts": 10}])
         for _ in range(3):

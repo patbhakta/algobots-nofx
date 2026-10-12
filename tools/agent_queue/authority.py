@@ -147,6 +147,13 @@ class TaskAuthority:
             fh.flush()
             os.fsync(fh.fileno())
         os.replace(tmp, self._path)
+        # fsync the parent directory so the rename itself survives a crash
+        # (ALG-3322 F4): fsyncing only the tmp file can lose os.replace.
+        dir_fd = os.open(self._path.parent, os.O_DIRECTORY)
+        try:
+            os.fsync(dir_fd)
+        finally:
+            os.close(dir_fd)
 
     @contextmanager
     def _transaction(self) -> Iterator[dict[str, Any]]:
@@ -233,17 +240,27 @@ class TaskAuthority:
                 )
             if (pending := self.ineligible_deps(state, task_id)):
                 raise ClaimDenied(task_id, f"dependencies not DONE: {', '.join(pending)}")
+            self._release_dead_holders(state, now)
             budget = self._graph.by_id()[task_id].budget_attempts
             if row["attempts_used"] >= budget:
+                # Budget exhausted: checkpoint BLOCKED durably BEFORE denying
+                # (ALG-3322 F1) and release any resources the dead attempts
+                # still hold (ALG-3322 F2) — the raise below skips the
+                # transaction's own save, so write here.
+                reason = f"budget exhausted: {row['attempts_used']}/{budget} attempts"
                 row["status"] = BLOCKED
                 row["blocked"] = {
                     "task_id": task_id,
-                    "reason": f"budget exhausted: {row['attempts_used']}/{budget} attempts",
+                    "reason": reason,
                     "attempts": row["attempts_used"],
                     "epoch": row["epoch"],
                     "created_at": now,
                 }
-                raise ClaimDenied(task_id, f"blocked: {row['blocked']['reason']}")
+                row["owner"] = None
+                row["lease_expires_at"] = None
+                self._release_resources(state, task_id)
+                self._write(state)
+                raise ClaimDenied(task_id, f"blocked: {reason}")
             spec = self._graph.by_id()[task_id]
             for resource in spec.resources:
                 holder = state["resource_holders"].get(resource)
@@ -347,9 +364,7 @@ class TaskAuthority:
             row["owner"] = None
             row["lease_expires_at"] = None
             row["integrated_commit"] = commit
-            for resource in row["resources"]:
-                if state["resource_holders"].get(resource) == task_id:
-                    del state["resource_holders"][resource]
+            self._release_resources(state, task_id)
             return receipt
 
     def integration_failed(
@@ -381,13 +396,33 @@ class TaskAuthority:
             row["status"] = CANCELLED
             row["owner"] = None
             row["lease_expires_at"] = None
-            for resource in row["resources"]:
-                if state["resource_holders"].get(resource) == task_id:
-                    del state["resource_holders"][resource]
+            self._release_resources(state, task_id)
             if reason:
                 row["last_failure"] = {"kind": "cancelled", "note": reason}
 
     # -- internals ------------------------------------------------------
+
+    def _release_resources(self, state: dict[str, Any], task_id: str) -> None:
+        for resource, holder in list(state["resource_holders"].items()):
+            if holder == task_id:
+                del state["resource_holders"][resource]
+
+    def _release_dead_holders(self, state: dict[str, Any], now: float) -> None:
+        """Drop resource locks whose holder's attempt is provably dead.
+
+        A holder with an expired lease can no longer write (StaleAttemptError
+        on every path), so letting it keep an exclusive resource would strand
+        siblings forever (ALG-3322 F2). Live holders are untouched.
+        """
+        for resource, holder in list(state["resource_holders"].items()):
+            if holder not in state["tasks"]:
+                del state["resource_holders"][resource]
+                continue
+            row = state["tasks"][holder]
+            if row["status"] in (ACTIVE, WAITING_INTEGRATION) and \
+                    row["lease_expires_at"] is not None and \
+                    now >= row["lease_expires_at"]:
+                del state["resource_holders"][resource]
 
     def _require_live_attempt(
         self, state: dict[str, Any], task_id: str, owner: str, epoch: int, now: float
@@ -425,9 +460,7 @@ class TaskAuthority:
         row["last_failure"] = {"kind": kind, "note": note}
         row["owner"] = None
         row["lease_expires_at"] = None
-        for resource in row["resources"]:
-            if state["resource_holders"].get(resource) == task_id:
-                del state["resource_holders"][resource]
+        self._release_resources(state, task_id)
         budget = self._graph.by_id()[task_id].budget_attempts
         reason = None
         if streak >= MAX_SAME_FAILURE_REPAIRS:

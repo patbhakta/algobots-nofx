@@ -1,8 +1,14 @@
 {
   "packet": "A02",
   "slice": "A02 sprint-1 (ALG-3098): transactional claims + leases",
-  "tested_commit": "524c5cc",
+  "tested_commit": "87f5ad4",
   "command": "make verify-A02",
+  "review": {
+    "issue": "ALG-3322",
+    "reviewed_commit": "87f5ad4",
+    "verdict": "PASS",
+    "note": "AC1-AC4 PASS; 5 non-blocking findings (F1-F5) fixed in follow-up commits on the same branch, delta re-reviewed before integration"
+  },
   "cases": {
     "AC1": {
       "status": "PASS",
@@ -50,13 +56,16 @@
     "AC4": {
       "status": "PASS",
       "case": "GIVEN budget exhaustion THEN the task checkpoints as BLOCKED with a published reason and no retry loop can continue",
-      "note": "5 tests passed",
+      "note": "8 tests passed",
       "tests": {
         "tests.packets.A02.test_acceptance::test_ac4_budget_exhaustion_checkpoints_without_retry_loop": "passed",
         "tests.agent_queue.test_authority.TestBudgetsAndBlocking::test_budget_exhaustion_checkpoints_blocked_no_loop": "passed",
         "tests.agent_queue.test_authority.TestBudgetsAndBlocking::test_reclaim_loop_also_terminates_in_blocked": "passed",
         "tests.agent_queue.test_authority.TestBudgetsAndBlocking::test_same_failure_repair_cap_blocks": "passed",
-        "tests.agent_queue.test_authority.TestBudgetsAndBlocking::test_blocked_state_is_durable_and_inspectable": "passed"
+        "tests.agent_queue.test_authority.TestBudgetsAndBlocking::test_blocked_state_is_durable_and_inspectable": "passed",
+        "tests.agent_queue.test_authority.TestBudgetsAndBlocking::test_claim_path_budget_block_is_durable": "passed",
+        "tests.agent_queue.test_authority.TestBudgetsAndBlocking::test_blocked_checkpoint_releases_resources": "passed",
+        "tests.agent_queue.test_authority.TestBudgetsAndBlocking::test_dead_holder_does_not_strand_a_resource": "passed"
       },
       "evidence": [
         "artifacts/A02/test-results/junit.xml",

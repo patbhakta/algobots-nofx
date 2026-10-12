@@ -164,7 +164,9 @@ A02_RESULTS := artifacts/A02/test-results
 # A02 atomic task queue (ALG-3098; make-targets proposal via A02). Unit
 # suite (tests/agent_queue) + packet acceptance AC1-AC4 (real cross-process
 # claim races), then acceptance.json (cases as PASS / FAIL / PENDING with
-# evidence paths). PYTHONPATH pins this checkout's root for tools.agent_queue.
+# evidence paths). Needs the project environment (repo .venv / editable
+# install): tests/conftest.py imports app deps; PYTHONPATH additionally
+# pins this checkout's root for tools.agent_queue (ALG-3322 F5).
 verify-A02:
 	mkdir -p $(A02_RESULTS)
 	PYTHONPATH=$(CURDIR) $(PYTHON) -m pytest tests/agent_queue tests/packets/A02 -q -p no:cacheprovider -rs \
