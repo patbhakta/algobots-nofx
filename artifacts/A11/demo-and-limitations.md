@@ -108,11 +108,12 @@ Live-check narratives: [`ALG-3281/README.md`](ALG-3281/README.md),
 1. **Prices are synthetic bars.** The runner consumes deterministic synthetic
    OHLCV (`src/algobots/demo/bars.py`), not market data; the page says so.
    Nothing in A11 is validated against real quotes.
-2. **Fleet breakers are user-scoped, not tenant-scoped (AC6 BLOCKED).** On
-   this commit a fleet-breaker reset resumes the user's deployments across
-   all their scopes; the (tenant, user) scoping from ALG-3186 rides the A03
-   branch `feat/alg-3099-a03-tenant-auth` (`db6f400`) and lands with the A03
-   integration. Until then AC6 is BLOCKED, not PASS.
+2. **Fleet breakers are tenant-scoped since A03 landed (AC6 PASS).** The
+   (tenant, user) scoping from ALG-3186 merged into main with A03 at
+   `3d1c2d1` (`feat/alg-3099-a03-tenant-auth`, `db6f400`); a reset in one
+   tenant no longer resumes another tenant's deployments. AC6 is PASS on
+   main, proven by the 4 breaker-lane tests (including
+   `tests/api/test_fleet_breaker_tenancy.py`) via `make verify-A11`.
 3. **Studio state is one JSON file.** `studio.json` next to the kill switch,
    written atomically under a process-local lock — fine for the single-node
    demo; it is not a multi-writer database (the control-plane API lanes use
