@@ -324,28 +324,6 @@
       "overflowing": [],
       "clipped": [],
       "scroll_within_viewport": true
-    },
-    {
-      "page": "workspace-good.html",
-      "size": "1440x900",
-      "query": {
-        "texture": "off"
-      },
-      "png": "artifacts/A09/screenshots/workspace-good-1440x900-texture-off.png",
-      "overflowing": [],
-      "clipped": [],
-      "scroll_within_viewport": true
-    },
-    {
-      "page": "overview-good.html",
-      "size": "390x844",
-      "query": {
-        "motion": "off"
-      },
-      "png": "artifacts/A09/screenshots/overview-good-390x844-motion-off.png",
-      "overflowing": [],
-      "clipped": [],
-      "scroll_within_viewport": true
     }
   ]
 }

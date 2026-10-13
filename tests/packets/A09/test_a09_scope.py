@@ -43,7 +43,9 @@ def test_a09_commits_stay_inside_a09_scope():
     try:
         if _git("rev-parse", "--is-shallow-repository").strip() == "true":
             pytest.skip("shallow clone: commit parents unavailable")
-        log = _git("log", "--no-merges", "--format=%H %s", "--grep=ALG-3105").splitlines()
+        log = _git(
+            "log", "--no-merges", "--format=%H %s", "--grep=ALG-3105", "--grep=ALG-3337"
+        ).splitlines()
     except (OSError, subprocess.CalledProcessError):
         pytest.skip("git history unavailable")
     if not log:
