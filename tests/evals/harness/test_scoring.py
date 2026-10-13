@@ -66,6 +66,12 @@ def test_brier_perfect_and_uniform():
     assert summarize([uniform]).brier == pytest.approx(2.0 / 3.0)
 
 
+def test_brier_scores_against_realized_band_not_the_call():
+    # Confident UP call, market went DOWN: Brier must punish it (1^2 + 1^2 = 2).
+    wrong = _record("1", "up", {"up": 1.0, "flat": 0.0, "down": 0.0}, settled=True, realized=-0.05)
+    assert summarize([wrong]).brier == pytest.approx(2.0)
+
+
 def test_mean_alpha_against_benchmark():
     records = [
         _record(

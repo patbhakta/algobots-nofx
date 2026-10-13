@@ -1,0 +1,56 @@
+{
+  "packet": "A12",
+  "source": "app-level workers (uvicorn + supervisor), 1 Hz /proc sampling",
+  "startup_s": {
+    "laya": 1.94,
+    "jev": 1.98,
+    "coin": 1.9
+  },
+  "workers": {
+    "laya": {
+      "rss_mb": {
+        "p50": 369.0,
+        "p95": 369.0
+      },
+      "cpu_pct": {
+        "p50": 0.0,
+        "p95": 1.0
+      },
+      "n": 33
+    },
+    "jev": {
+      "rss_mb": {
+        "p50": 369.7,
+        "p95": 369.7
+      },
+      "cpu_pct": {
+        "p50": 0.0,
+        "p95": 1.0
+      },
+      "n": 33
+    },
+    "coin": {
+      "rss_mb": {
+        "p50": 370.0,
+        "p95": 370.0
+      },
+      "cpu_pct": {
+        "p50": 0.0,
+        "p95": 1.0
+      },
+      "n": 16
+    }
+  },
+  "pooled": {
+    "rss_mb": {
+      "p50": 369.7,
+      "p95": 370.0
+    },
+    "cpu_pct_of_one_core": {
+      "p50": 0.0,
+      "p95": 1.0
+    }
+  },
+  "engine_level": "artifacts/A12/engine/measurements.json (phase 2)",
+  "note": "measured on this host for this run only; no fleet capacity inferred"
+}

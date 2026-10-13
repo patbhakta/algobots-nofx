@@ -37,6 +37,25 @@ class Settings(BaseSettings):
     demo_feed_path: str = Field(default="/opt/laya/kalshi/observations.jsonl")
     demo_state_dir: str = Field(default="./.demo-state")
     demo_start: str = Field(default="2026-10-03")
+    # Comma-separated UTC timestamps (YYYY-MM-DDTHH:MM) at which every demo
+    # sleeve is topped back up to its starting capital. Empty = never.
+    demo_sleeve_refills: str = Field(default="")
+    # ALG-3255: spawn one Nautilus paper worker process per demo account at
+    # API startup (needs the `workers` extra). Off by default so tests and
+    # dev servers never fork trading processes.
+    demo_workers_enabled: bool = Field(default=False)
+    demo_worker_poll_s: float = Field(default=15.0)
+    # ALG-3260: /demo has no login; callers act as this synthetic principal and
+    # see only the accounts listed here (the grant check runs either way).
+    demo_principal_id: str = Field(default="demo-viewer")
+    demo_tenant_id: str = Field(default="demo")
+    demo_account_grants: str = Field(default="laya,jev,coin")
+    # A03 OIDC seam (development/synthetic-paper only): an HS256 shared secret
+    # for a local or fake provider. Empty issuer disables OIDC login. OIDC
+    # authenticates existing members only; it never provisions accounts.
+    oidc_issuer: str = Field(default="")
+    oidc_audience: str = Field(default="algobots")
+    oidc_shared_secret: str = Field(default="")
 
     def sqlalchemy_url(self) -> str:
         """Normalize the configured URL for SQLAlchemy drivers.

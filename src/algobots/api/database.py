@@ -5,6 +5,7 @@ from collections.abc import Generator
 from sqlalchemy import create_engine
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
+from algobots.api.auth.context import install_pool_reset
 from algobots.api.config import get_settings
 
 
@@ -30,6 +31,7 @@ def get_engine():
     if _engine is None:
         url = get_settings().sqlalchemy_url()
         _engine = create_engine(url, **_engine_kwargs(url))
+        install_pool_reset(_engine)
         _session_factory = sessionmaker(bind=_engine, expire_on_commit=False)
     return _engine
 

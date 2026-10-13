@@ -1,0 +1,99 @@
+{
+  "packet": "A11",
+  "slice": "A11-4 evidence packet (ALG-3283)",
+  "tested_commit": "3d1c2d1",
+  "command": "make verify-A11",
+  "cases": {
+    "AC1": {
+      "status": "PASS",
+      "case": "GIVEN three instances of one template with different params THEN each keeps its own isolated, attributable version, orders and statistics",
+      "note": "5 tests passed",
+      "tests": {
+        "tests/demo/test_studio.py::test_dsl_templates_hash_through_dsl_and_change_with_params": "passed",
+        "tests/demo/test_studio.py::test_three_template_instances_stay_attributable": "passed",
+        "tests/demo/test_studio.py::test_orders_carry_live_deployment_attribution": "passed",
+        "tests/engine/workers/test_template.py::test_three_instances_produce_orders_attributed_to_their_deployment": "passed",
+        "tests/engine/workers/test_template.py::test_demo_page_and_api_show_template_orders_per_account": "passed"
+      },
+      "evidence": [
+        "artifacts/A11/test-results/junit.xml",
+        "artifacts/A11/ALG-3281/README.md"
+      ]
+    },
+    "AC2": {
+      "status": "PASS",
+      "case": "GIVEN a running deployment WHEN its template is edited THEN the deployment keeps the frozen version it deployed with",
+      "note": "3 tests passed",
+      "tests": {
+        "tests/demo/test_studio.py::test_edit_never_changes_running_deployment": "passed",
+        "tests/engine/workers/test_template.py::test_editing_the_template_mid_run_does_not_change_a_running_deployment": "passed",
+        "tests/engine/workers/test_template.py::test_tampered_frozen_params_refuse_to_run": "passed"
+      },
+      "evidence": [
+        "artifacts/A11/test-results/junit.xml",
+        "artifacts/A11/ALG-3281/README.md"
+      ]
+    },
+    "AC3": {
+      "status": "PASS",
+      "case": "GIVEN four accounts where one is ineligible for the strategy THEN fan-out yields three independent children and one explicit skip, in both preview and execution",
+      "note": "3 tests passed",
+      "tests": {
+        "tests/demo/test_studio.py::test_skips_carry_explicit_reasons": "passed",
+        "tests/demo/test_campaigns.py::test_four_accounts_one_ineligible_fan_out_three_children_and_a_skip": "passed",
+        "tests/demo/test_campaigns.py::test_child_rejected_by_risk_carries_the_denial_reason": "passed"
+      },
+      "evidence": [
+        "artifacts/A11/test-results/junit.xml",
+        "artifacts/A11/ALG-3282/README.md",
+        "artifacts/A11/ALG-3282/studio-campaign-partial-desktop.png"
+      ]
+    },
+    "AC4": {
+      "status": "PASS",
+      "case": "GIVEN an instrument already owned by an active deployment THEN a conflicting deployment is rejected with an explanation naming the owner",
+      "note": "3 tests passed",
+      "tests": {
+        "tests/demo/test_campaigns.py::test_conflicting_instrument_is_rejected_naming_the_owner": "passed",
+        "tests/demo/test_campaigns.py::test_etf_weights_count_as_owned_instruments": "passed",
+        "tests/demo/test_campaigns.py::test_pending_deployment_owns_until_it_stops": "passed"
+      },
+      "evidence": [
+        "artifacts/A11/test-results/junit.xml",
+        "artifacts/A11/ALG-3282/README.md"
+      ]
+    },
+    "AC5": {
+      "status": "PASS",
+      "case": "GIVEN a campaign where some children fail THEN partial success is never displayed as campaign success and no fill is reversed",
+      "note": "5 tests passed",
+      "tests": {
+        "tests/demo/test_campaigns.py::test_two_of_four_succeed_is_partial_and_the_fills_stay": "passed",
+        "tests/demo/test_campaigns.py::test_a_failing_child_never_reverses_its_siblings": "passed",
+        "tests/demo/test_campaigns.py::test_parent_state_is_derived_and_strict": "passed",
+        "tests/demo/test_campaigns.py::test_partially_filled_child_blocks_a_succeeded_parent": "passed",
+        "tests/demo/test_campaigns.py::test_studio_page_shows_campaign_children_and_partial_status": "passed"
+      },
+      "evidence": [
+        "artifacts/A11/test-results/junit.xml",
+        "artifacts/A11/ALG-3282/README.md",
+        "artifacts/A11/ALG-3282/studio-campaign-partial-desktop.png"
+      ]
+    },
+    "AC6": {
+      "status": "PASS",
+      "case": "GIVEN a fleet-breaker halt in tenant A WHEN it is reset from tenant A THEN tenant B's halt stays in place",
+      "note": "4 tests passed",
+      "tests": {
+        "tests/strategies/test_deployments_api.py::test_fleet_breaker_halts_every_deployment_in_scope": "passed",
+        "tests/api/test_fleet_breaker_tenancy.py::test_reset_in_personal_tenant_cannot_unhalt_tenant_a": "passed",
+        "tests/api/test_fleet_breaker_tenancy.py::test_trip_is_scoped_one_tenant_halt_does_not_cross": "passed",
+        "tests/api/test_fleet_breaker_tenancy.py::test_fleet_state_endpoint_reports_active_tenant_row": "passed"
+      },
+      "evidence": [
+        "artifacts/A11/test-results/junit.xml",
+        "main @ 3d1c2d1 merged feat/alg-3099-a03-tenant-auth db6f400 (ALG-3312)"
+      ]
+    }
+  }
+}

@@ -3,8 +3,13 @@
 Tables (per ALG-3078): `users`, `invite_codes`, `accounts`, `strategies`,
 `deployments`, `orders`, `decisions`, `clamp_events`, `audit_log`.
 
-Tenancy rule: every domain row carries `user_id`; routers always filter by the
-authenticated user, so one tenant can never observe or mutate another's rows.
+Tenancy rule (A03): every tenant-owned row carries `tenant_id` (the workspace)
+and `user_id` (the member who wrote it). Routers filter on the tenant derived
+from the authenticated session's membership, never from a request body, and on
+PostgreSQL migration 0008 adds row-level policies keyed on the
+transaction-local `app.tenant_id` (see `algobots.api.auth.context`). Child rows
+reference parents through composite `(tenant_id, id)` foreign keys, so a row
+can't point at another tenant's parent.
 Schema shapes informed by Fincept `broker_accounts` (ALG-3070) and NoFX
 user-scoped stores (ALG-3069).
 """
@@ -15,7 +20,16 @@ from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID, uuid4
 
-from sqlalchemy import DateTime, Float, ForeignKey, Index, String, Text, Uuid
+from sqlalchemy import (
+    DateTime,
+    Float,
+    ForeignKey,
+    ForeignKeyConstraint,
+    Index,
+    String,
+    Text,
+    Uuid,
+)
 from sqlalchemy.orm import Mapped, mapped_column
 
 from algobots.api.database import Base
@@ -34,6 +48,11 @@ class UserRole(enum.StrEnum):
 
     OWNER = "owner"
     MEMBER = "member"
+
+
+# Owner of the seeded /demo account registry (ALG-3266): inactive with an
+# unusable password hash, so it can never log in or claim the bootstrap invite.
+DEMO_OWNER_EMAIL = "demo-registry@algobots.local"
 
 
 class User(Base):
@@ -85,13 +104,21 @@ class Account(Base):
     __tablename__ = "accounts"
     __table_args__ = (
         Index("uq_accounts_user_label", "user_id", "label", unique=True),
+        Index("uq_accounts_tenant_id", "tenant_id", "id", unique=True),
     )
 
     id: Mapped[UUID] = mapped_column(Uuid, primary_key=True, default=_new_uuid)
+    tenant_id: Mapped[UUID] = mapped_column(
+        Uuid, ForeignKey("tenants.id"), nullable=False, index=True
+    )
     user_id: Mapped[UUID] = mapped_column(Uuid, ForeignKey("users.id"), nullable=False, index=True)
     label: Mapped[str] = mapped_column(String(120), nullable=False)
     broker: Mapped[str] = mapped_column(String(64), nullable=False)
     mode: Mapped[str] = mapped_column(String(16), nullable=False, default="paper")
+    # auto | semi_auto (ALG-3266): semi_auto parks every order for human approval
+    approval_mode: Mapped[str] = mapped_column(
+        String(16), nullable=False, default="auto", server_default="auto"
+    )
     status: Mapped[str] = mapped_column(String(16), nullable=False, default="active")
     base_currency: Mapped[str] = mapped_column(String(8), nullable=False, default="USD")
     created_at: Mapped[datetime] = mapped_column(
@@ -106,8 +133,12 @@ class Strategy(Base):
     """User-owned strategy definition with free-form parameters."""
 
     __tablename__ = "strategies"
+    __table_args__ = (Index("uq_strategies_tenant_id", "tenant_id", "id", unique=True),)
 
     id: Mapped[UUID] = mapped_column(Uuid, primary_key=True, default=_new_uuid)
+    tenant_id: Mapped[UUID] = mapped_column(
+        Uuid, ForeignKey("tenants.id"), nullable=False, index=True
+    )
     user_id: Mapped[UUID] = mapped_column(Uuid, ForeignKey("users.id"), nullable=False, index=True)
     name: Mapped[str] = mapped_column(String(120), nullable=False)
     kind: Mapped[str] = mapped_column(String(64), nullable=False)
@@ -130,9 +161,19 @@ class Order(Base):
     """Order routed through a broker account (execution writes these)."""
 
     __tablename__ = "orders"
-    __table_args__ = (Index("ix_orders_user_created", "user_id", "created_at"),)
+    __table_args__ = (
+        Index("ix_orders_user_created", "user_id", "created_at"),
+        ForeignKeyConstraint(
+            ["tenant_id", "account_id"],
+            ["accounts.tenant_id", "accounts.id"],
+            name="fk_orders_tenant_account",
+        ),
+    )
 
     id: Mapped[UUID] = mapped_column(Uuid, primary_key=True, default=_new_uuid)
+    tenant_id: Mapped[UUID] = mapped_column(
+        Uuid, ForeignKey("tenants.id"), nullable=False, index=True
+    )
     user_id: Mapped[UUID] = mapped_column(Uuid, ForeignKey("users.id"), nullable=False, index=True)
     account_id: Mapped[UUID] = mapped_column(
         Uuid, ForeignKey("accounts.id"), nullable=False, index=True
@@ -158,8 +199,18 @@ class Decision(Base):
     """Strategy decision record (explainability feed for evals)."""
 
     __tablename__ = "decisions"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["tenant_id", "strategy_id"],
+            ["strategies.tenant_id", "strategies.id"],
+            name="fk_decisions_tenant_strategy",
+        ),
+    )
 
     id: Mapped[UUID] = mapped_column(Uuid, primary_key=True, default=_new_uuid)
+    tenant_id: Mapped[UUID] = mapped_column(
+        Uuid, ForeignKey("tenants.id"), nullable=False, index=True
+    )
     user_id: Mapped[UUID] = mapped_column(Uuid, ForeignKey("users.id"), nullable=False, index=True)
     strategy_id: Mapped[UUID] = mapped_column(
         Uuid, ForeignKey("strategies.id"), nullable=False, index=True
@@ -180,8 +231,18 @@ class ClampEvent(Base):
     """Risk-clamp application record (exposure caps, kill-switch trips)."""
 
     __tablename__ = "clamp_events"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["tenant_id", "account_id"],
+            ["accounts.tenant_id", "accounts.id"],
+            name="fk_clamp_events_tenant_account",
+        ),
+    )
 
     id: Mapped[UUID] = mapped_column(Uuid, primary_key=True, default=_new_uuid)
+    tenant_id: Mapped[UUID] = mapped_column(
+        Uuid, ForeignKey("tenants.id"), nullable=False, index=True
+    )
     user_id: Mapped[UUID] = mapped_column(Uuid, ForeignKey("users.id"), nullable=False, index=True)
     deployment_id: Mapped[UUID | None] = mapped_column(
         Uuid, ForeignKey("deployments.id"), nullable=True, index=True
@@ -209,6 +270,9 @@ class AuditLog(Base):
     __table_args__ = (Index("ix_audit_log_user_created", "user_id", "created_at"),)
 
     id: Mapped[UUID] = mapped_column(Uuid, primary_key=True, default=_new_uuid)
+    # Active tenant of the actor, when known; NULL for unauthenticated
+    # requests (register/login) and rows written before migration 0008.
+    tenant_id: Mapped[UUID | None] = mapped_column(Uuid, nullable=True, index=True)
     user_id: Mapped[UUID | None] = mapped_column(Uuid, nullable=True, index=True)
     method: Mapped[str] = mapped_column(String(8), nullable=False)
     path: Mapped[str] = mapped_column(String(512), nullable=False)
@@ -227,5 +291,12 @@ from algobots.api.accounts import models as _accounts_models  # noqa: E402, F401
 # S4.3: import so ApprovalRequest + Broadcast + ActionLedger register likewise.
 from algobots.api.approvals import models as _approvals_models  # noqa: E402, F401
 
+# A03: sessions, tenants, memberships, invites and account grants.
+from algobots.api.auth import models as _auth_models  # noqa: E402, F401
+
 # S4.2: import so Deployment (frozen snapshots) + FleetBreaker register likewise.
 from algobots.api.deployments import models as _deployments_models  # noqa: E402, F401
+from algobots.api.memberships import models as _memberships_models  # noqa: E402, F401
+
+# A04: secret-resolution grants register on the same Base for Alembic 0010.
+from algobots.secrets import models as _secrets_models  # noqa: E402, F401

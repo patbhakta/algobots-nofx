@@ -1,0 +1,57 @@
+{
+    "enabled": true,
+    "ready": false,
+    "workers": [
+        {
+            "account": "laya",
+            "state": "ready",
+            "pid": 3871132,
+            "exit_code": null,
+            "rss_mb": 345.6,
+            "cpu_s": 2.12,
+            "started_at": 1791326948.757109,
+            "startup_s": 1.81,
+            "last_heartbeat": 1791326975.7944489,
+            "trader_id": "PAPER-LAYA",
+            "account_id": "PAPER_LAYA-001",
+            "order_id_tag": "LAYA",
+            "orders_submitted": 164,
+            "orders_filled": 164,
+            "open_positions": 164
+        },
+        {
+            "account": "jev",
+            "state": "exited",
+            "pid": 3871133,
+            "exit_code": -9,
+            "rss_mb": null,
+            "cpu_s": null,
+            "started_at": 1791326948.7579472,
+            "startup_s": 1.75,
+            "last_heartbeat": 1791326960.615312,
+            "trader_id": "PAPER-JEV",
+            "account_id": "PAPER_JEV-001",
+            "order_id_tag": "JEV",
+            "orders_submitted": 83,
+            "orders_filled": 83,
+            "open_positions": 83
+        },
+        {
+            "account": "coin",
+            "state": "ready",
+            "pid": 3871134,
+            "exit_code": null,
+            "rss_mb": 344.6,
+            "cpu_s": 1.89,
+            "started_at": 1791326948.7611566,
+            "startup_s": 1.79,
+            "last_heartbeat": 1791326975.76921,
+            "trader_id": "PAPER-COIN",
+            "account_id": "PAPER_COIN-001",
+            "order_id_tag": "COIN",
+            "orders_submitted": 130,
+            "orders_filled": 130,
+            "open_positions": 130
+        }
+    ]
+}

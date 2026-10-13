@@ -1,0 +1,45 @@
+{
+  "schema_version": "1.0",
+  "provider": "mock",
+  "environment": "synthetic-paper",
+  "revision": 2,
+  "observed_at": "2026-10-12T00:00:00Z",
+  "sandbox_fidelity": "high",
+  "reconcile_methods": [
+    "positions",
+    "balances"
+  ],
+  "entries": [
+    {
+      "product": "equity",
+      "order_type": "limit",
+      "support": "native",
+      "price_decimals": 2,
+      "quantity_decimals": 4,
+      "min_order": {
+        "value": "1",
+        "unit": "shares"
+      },
+      "client_order_id_max_length": 48,
+      "client_order_id_reusable": false,
+      "client_order_id_uniqueness": "trading-day",
+      "lookup_methods": [
+        "by-client-order-id",
+        "open-orders"
+      ],
+      "reconcile_methods": [
+        "positions",
+        "balances",
+        "open-orders"
+      ],
+      "protection_options": [
+        "stop",
+        "stop-limit"
+      ],
+      "cancel_semantics": "sync",
+      "rate_limit_per_minute": 600,
+      "market_data_entitled": true,
+      "test_environment_fidelity": "high"
+    }
+  ]
+}

@@ -1,36 +1,38 @@
-"""Warm paper design tokens (DASHBOARD-SPEC "Reference and visual direction").
+"""NoFX design tokens (ALG-3336 board directive): flat, dark, effects-free.
 
-The spec lists proposed values and asks for contrast validation in
-implementation. `SPEC_COLORS` keeps the proposed values verbatim; `COLORS` is
-what ships. A text token differs from the spec only where the spec value fails
-WCAG AA (4.5:1) on a paper surface under the worst-case grain composite; each
-change is a small lightness reduction (same hue and saturation) landing in
-4.6-4.8:1 (the band the tests enforce; within 1-2 RGB steps of the exact
-minimum), and is listed in `ADJUSTMENTS`.
+Base values are the /demo terminal theme (`src/algobots/demo/theme.py`) kept
+verbatim in `SPEC_COLORS`; `COLORS` is what ships. A text token differs from
+the /demo value only where it misses WCAG AA (4.5:1) on a dark surface; each
+change is a small lightness shift (same hue) with its measured ratio recorded
+in `ADJUSTMENTS`. Every /demo text value already clears AA on bg, panel and
+raised (tightest: muted on raised at 4.75:1), so `ADJUSTMENTS` is empty.
+
+There are no motion, shadow or grain tokens: texture and motion are effects,
+and NoFX ships none.
 """
 
 from types import MappingProxyType
 
 SPEC_COLORS = MappingProxyType(
     {
-        "paper": "#EEE9DD",
-        "raised": "#F5F1E8",
-        "ink": "#292722",
-        "muted": "#686358",
-        "rule-strong": "#777064",
-        "rule-faint": "#D4CEC1",
-        "positive": "#27734E",
-        "negative": "#B43732",
-        "attention": "#946014",
-        "focus": "#346D88",
+        "bg": "#0a0d10",
+        "panel": "#0f1418",
+        "raised": "#151b21",
+        "ink": "#d6dde4",
+        "muted": "#7c8794",
+        "rule-faint": "#1d252d",
+        "rule-strong": "#2b3540",
+        "positive": "#2ecc71",
+        "negative": "#ff5c5c",
+        "attention": "#e0a33a",
+        "focus": "#5aa9ff",
     }
 )
 
 ADJUSTMENTS = MappingProxyType(
     {
-        "positive": ("#266F4B", "spec 4.45:1 on paper under 3% grain"),
-        "attention": ("#895912", "spec 4.40:1 on plain paper (4.12:1 under grain)"),
-        "focus": ("#326982", "spec 4.40:1 on paper under 3% grain"),
+        # All /demo values pass AA on every dark surface; nothing adjusted.
+        # Entries would be: name -> (value, "spec X.XX:1 on <surface>; shipped Y.YY:1")
     }
 )
 
@@ -38,44 +40,28 @@ COLORS = MappingProxyType(
     {name: ADJUSTMENTS[name][0] if name in ADJUSTMENTS else v for name, v in SPEC_COLORS.items()}
 )
 
-SURFACES = ("paper", "raised")
+SURFACES = ("bg", "panel", "raised")
 TEXT = ("ink", "muted", "positive", "negative", "attention", "focus")
-NON_TEXT = ("rule-strong", "focus")  # WCAG 1.4.11: 3:1 for UI boundaries and focus rings
-
-GRAIN = MappingProxyType(
-    {
-        "opacity": 0.03,  # spec: start at 2-4%
-        "tile_px": 96,
-        "seed": 3105,
-        "levels": (0, 255),  # full-range monochrome: contrast math uses black/white extremes
-    }
-)
+# WCAG 1.4.11: 3:1 for focus rings (state indicators). Rule tokens are
+# decorative hairline separators, not state indicators (/demo precedent).
+NON_TEXT = ("focus",)
 
 TYPE = MappingProxyType(
     {
-        "sans": '"Inter", "Source Sans 3", "Helvetica Neue", Arial, sans-serif',
-        "mono": '"IBM Plex Mono", "JetBrains Mono", ui-monospace, Menlo, monospace',
-        "body_px": 15,  # spec 14-16
-        "meta_px": 12.5,  # spec 12-13
-        "headline_px": 26,  # spec 22-28
+        "mono": (
+            'ui-monospace, "JetBrains Mono", "SFMono-Regular", Menlo, Consolas, '
+            '"Liberation Mono", monospace'
+        ),
+        "body_px": 12.5,  # /demo body
+        "meta_px": 11.5,  # /demo disclosure line
+        "headline_px": 17,  # /demo metric value
         "line_height": 1.45,
     }
 )
 
 SPACE = MappingProxyType({"1": "4px", "2": "8px", "3": "12px", "4": "16px", "6": "24px"})
-RADIUS = "3px"  # compact corners
+RADIUS = "0"  # NoFX: no radius flourishes (the /demo terminal has none)
 RULE_WIDTH = "1px"
-SHADOW = "0 1px 0 rgba(41, 39, 34, 0.06)"  # restrained
-
-MOTION_MS = MappingProxyType(
-    {
-        "kpi-highlight": 600,
-        "depth": 200,  # spec 150-250
-        "signal-select": 150,  # spec ~150
-        "edge-pulse": 400,
-        "drawer": 200,  # spec 180-240
-    }
-)
 
 
 def _channel(c: int) -> float:
@@ -100,43 +86,18 @@ def contrast(a: str, b: str) -> float:
     return (hi + 0.05) / (lo + 0.05)
 
 
-def composite(base: str, overlay: str, alpha: float) -> str:
-    """`overlay` at `alpha` over opaque `base` (source-over)."""
-    mixed = (
-        round(b * (1 - alpha) + o * alpha) for b, o in zip(rgb(base), rgb(overlay), strict=True)
-    )
-    return "#{:02X}{:02X}{:02X}".format(*mixed)
-
-
-def grain_extremes(surface: str, opacity: float | None = None) -> tuple[str, str]:
-    """Darkest and lightest backgrounds a grain pixel can produce under text."""
-    a = GRAIN["opacity"] if opacity is None else opacity
-    lo, hi = GRAIN["levels"]
-    return composite(surface, f"#{lo:02X}{lo:02X}{lo:02X}", a), composite(
-        surface, f"#{hi:02X}{hi:02X}{hi:02X}", a
-    )
-
-
-def worst_contrast(fg: str, surface: str, grain: bool) -> float:
-    if not grain:
-        return contrast(fg, surface)
-    return min(contrast(fg, bg) for bg in grain_extremes(surface))
-
-
 def contrast_report() -> list[dict]:
-    """Every shipped text/surface pair, grain off and on (accessibility report rows)."""
+    """Every shipped text/surface pair with its measured ratio (report rows)."""
     rows = []
     for surface in SURFACES:
         for fg in TEXT:
-            for grain in (False, True):
-                ratio = worst_contrast(COLORS[fg], COLORS[surface], grain)
-                rows.append(
-                    {
-                        "fg": fg,
-                        "surface": surface,
-                        "grain": grain,
-                        "ratio": round(ratio, 2),
-                        "aa_text": ratio >= 4.5,
-                    }
-                )
+            ratio = contrast(COLORS[fg], COLORS[surface])
+            rows.append(
+                {
+                    "fg": fg,
+                    "surface": surface,
+                    "ratio": round(ratio, 2),
+                    "aa_text": ratio >= 4.5,
+                }
+            )
     return rows

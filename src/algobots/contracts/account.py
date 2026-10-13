@@ -12,17 +12,20 @@ from .enums import ConnectionState, OrderType, ProductClass, RuntimeEnvironment
 
 __all__ = [
     "BrokerAccount",
+    "BrokerAdapterCapabilities",
     "CapabilityEntry",
     "Capabilities",
     "ClientOrderIdScope",
     "LookupMethod",
     "ProtectionOption",
+    "ProviderSlug",
     "ReconcileMethod",
     "SupportStatus",
 ]
 
 Currency = Annotated[str, Field(pattern=r"^[A-Z0-9]{3,10}$")]
 SupportStatus = Literal["native", "emulated", "unsupported"]
+ProviderSlug = Annotated[str, Field(pattern=r"^[a-z0-9][a-z0-9-]{0,31}$")]
 # Scope within which the venue enforces client-order-ID uniqueness.
 ClientOrderIdScope = Literal["account", "session", "trading-day", "venue", "unknown"]
 LookupMethod = Literal["by-client-order-id", "by-broker-order-id", "open-orders", "executions"]
@@ -102,4 +105,50 @@ class Capabilities(VersionedContract):
         return "unsupported"
 
     def is_enabled(self, product: ProductClass, order_type: OrderType) -> bool:
+        return self.support_for(product, order_type) != "unsupported"
+
+
+@registry.register
+class BrokerAdapterCapabilities(VersionedContract):
+    """Adapter-level capability statement for one (provider, environment) pair.
+
+    A04 output contract. Whereas :class:`Capabilities` records what one account
+    was observed to support, this is the registry the control plane consults
+    *before* a deployment is submitted: unknown (product, order_type) pairs are
+    disabled (:meth:`is_enabled` is default-deny), and optional fields left
+    unset mean "unknown", i.e. disabled.
+    """
+
+    contract_name: ClassVar[str] = "BrokerAdapterCapabilities"
+    contract_version: ClassVar[str] = "1.0"
+
+    provider: ProviderSlug
+    environment: RuntimeEnvironment
+    revision: Annotated[int, Field(ge=0)]
+    observed_at: UtcDatetime
+    # Fidelity of this environment relative to the venue's production behavior.
+    sandbox_fidelity: Literal["high", "partial", "none", "unknown"]
+    # Reconciliation surfaces this provider exposes (checked after every session).
+    reconcile_methods: tuple[ReconcileMethod, ...] = ()
+    entries: tuple[CapabilityEntry, ...]
+
+    @model_validator(mode="after")
+    def _unique_entries(self) -> BrokerAdapterCapabilities:
+        keys = [(e.product, e.order_type) for e in self.entries]
+        if len(set(keys)) != len(keys):
+            raise ValueError("duplicate capability entry for a (product, order_type) pair")
+        return self
+
+    def entry_for(self, product: ProductClass, order_type: OrderType) -> CapabilityEntry | None:
+        for entry in self.entries:
+            if entry.product is product and entry.order_type is order_type:
+                return entry
+        return None
+
+    def support_for(self, product: ProductClass, order_type: OrderType) -> SupportStatus:
+        entry = self.entry_for(product, order_type)
+        return "unsupported" if entry is None else entry.support
+
+    def is_enabled(self, product: ProductClass, order_type: OrderType) -> bool:
+        """Default-deny: absent or non-native/emulated rows are disabled."""
         return self.support_for(product, order_type) != "unsupported"

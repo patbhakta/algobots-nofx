@@ -6,6 +6,9 @@
     "BrokerAccount": {
       "1.0": "2a030f89a6a6ccf27179f4cac87b5256a291e2e4cd8efcb49a51f32ff0122e67"
     },
+    "BrokerAdapterCapabilities": {
+      "1.0": "a6998ac37a488950c1db238d499b65de1fc77c09d74bcc4d65dd17c6ca38eb8e"
+    },
     "Capabilities": {
       "1.0": "cd65289c7613ce615543155063c19949641aa6ba22afb0fbb9ceb77004105aeb"
     },
@@ -33,6 +36,9 @@
     "IntentRequest": {
       "1.0": "17a2647122d720f28481a562a6f0f95155cf008155e25c6edba8434e1ce67b8a"
     },
+    "IntentStatusResponse": {
+      "1.0": "e0d9298811b98bd370e9906ac6175112b6266905e3946e046ea6025fb41fcdfd"
+    },
     "MemoryRecord": {
       "1.0": "af294b029f2c833430ce63718927bad213070017c575e9b6c939da1058f69aff"
     },
@@ -42,11 +48,23 @@
     "OrderPlan": {
       "1.0": "d2530ca0348fe1a7dfd25cb326842e1cf5973a5cc4afac90bf8054f9bf78ac48"
     },
+    "OutboxEvent": {
+      "1.0": "b9468fd29cb15a62048367793a7b340075e9d4450bab424be5e9efce031f82a4"
+    },
     "Principal": {
       "1.0": "f1ee428b839e7125942e5eed79baa56c75e9b83c02ceacf4158e1c8cab17552c"
     },
     "Reservation": {
       "1.0": "2c028f7a2bf313e3b5bf886d7e14d5688f466f142afca749f5eaeb4205dcb9a2"
+    },
+    "RiskDecision": {
+      "1.0": "d61db48b56af12e84268dfbc4950d723de92b8c0c639130fc304a64f82511eb5"
+    },
+    "RiskPolicyVersion": {
+      "1.0": "d8a1900be562c32f83de5e00108fb13a3a23aa8d77dfce598584151fcbedd051"
+    },
+    "SecretResolver": {
+      "1.0": "2206b70698976951108651aa2804d1903cbd8719092550e8a6317243f38e23f7"
     },
     "Signal": {
       "1.0": "7132035007a60b30f2267622f699dc75755c5885ead45b114671b839be1924d1"

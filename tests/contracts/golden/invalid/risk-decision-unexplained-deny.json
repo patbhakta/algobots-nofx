@@ -1,0 +1,9 @@
+{
+  "contract": "RiskDecision",
+  "error_contains": "DENY must name the rule",
+  "data": {
+    "schema_version": "1.0",
+    "decision": "DENY",
+    "policy_revision": "risk-a08-golden"
+  }
+}

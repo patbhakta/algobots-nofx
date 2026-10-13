@@ -12,7 +12,7 @@ license = { text = "Proprietary" }
 dependencies = [
     "fastapi>=0.115",
     "uvicorn[standard]>=0.32",
-    "pydantic>=2.9",
+    "pydantic==2.13.5",
     "pydantic-settings>=2.6",
     "sqlalchemy>=2.0",
     "alembic>=1.13",
@@ -30,6 +30,9 @@ dev = [
     "httpx>=0.27",
     "ruff>=0.7",
     "hypothesis>=6",
+]
+workers = [
+    "nautilus-trader>=1.231",
 ]
 
 [tool.setuptools.packages.find]

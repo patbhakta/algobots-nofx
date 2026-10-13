@@ -3,9 +3,12 @@
 import json
 from decimal import Decimal
 
+import pytest
+
+from algobots.demo import blotter as B
 from algobots.demo import killswitch
 from algobots.demo import ledger as L
-from algobots.demo.page import render
+from algobots.demo.page import VIEWS, render
 
 
 def _row(i: int, p: float, outcome: int, choice: str = "up", conf: float = 0.5) -> L.Row:
@@ -80,18 +83,255 @@ def test_load_rows_skips_bad_lines_and_filters_start(tmp_path):
     assert [r.ts for r in L.load_rows(f, since_ts=100)] == [200.0]
 
 
-def test_page_renders_paper_only_with_all_panels():
+def _every_view(lg: L.Ledger, **kw) -> str:
+    """All tabs concatenated: every pane must stay reachable from /demo (ALG-3288)."""
+    return "".join(render(lg, view=v, **kw) for v in VIEWS)
+
+
+def test_overview_reads_cold_without_the_dense_panes():
     lg = L.build([_row(i, 0.45 + 0.03 * (i % 4), i % 2) for i in range(12)])
     html = render(lg, start="2026-10-06", now=lg.last_ts + 60)
+    assert 'data-view="overview"' in html and "Needs your attention" in html
+    assert "paper-trading Kalshi" in html and "No real money is at risk" in html
+    assert html.count("data-card=") == 3 and html.count('class="spark"') == 3
+    assert '<svg class="chart-d"' in html and "data-pts=" in html  # hover-able hero chart
+    assert "Flat — no open positions" in html and "All orders →" in html
+    for dense in ('aria-label="Orders"', 'aria-label="Risk"', 'aria-label="Accounts"', "<table"):
+        assert dense not in html, dense  # dense panes live behind tabs
+    for k, label in VIEWS.items():
+        assert f'data-view="{k}">{label}' in html.replace("&amp;", "&"), k
+    assert 'href="/demo?account=laya"' in html  # card drills in
+    halted = L.build([_row(i, 0.70, 0) for i in range(6)])  # Laya trips its daily cap
+    assert "Laya System One stopped trading" in render(halted, start="x", now=halted.last_ts + 60)
+
+
+def test_page_renders_paper_only_with_all_panels():
+    lg = L.build([_row(i, 0.45 + 0.03 * (i % 4), i % 2) for i in range(12)])
+    html = _every_view(lg, start="2026-10-06", now=lg.last_ts + 60)
     for needle in (
         "PAPER TRADING",
         "Strategy performance",
-        "Risk state",
-        "Kill switch",
-        "Recent decisions and reasons",
         "Accounts",
+        "Positions",
+        "Orders",
+        "Risk",
+        "Kill switch",
+        "No open positions",  # everything settled -> explicit empty state
         "Laya System One",
         "<svg",
     ):
         assert needle in html
-    assert "LIVE" not in html.replace("Live", "")  # no live-environment badge anywhere
+    assert 'data-environment="LIVE"' not in html  # no live-environment badge anywhere
+    # LIVE only appears as a disabled option that states why (ALG-3262)
+    assert 'value="LIVE" disabled' in html and "no live venue approved" in html
+
+
+def test_refill_tops_sleeve_up_as_capital_not_pnl():
+    rows = [
+        L.Row(f"E{i}", 1.0, 0, 1791244800.0 + i * 86400, 0.70, 0.1, None, None, None)
+        for i in range(20)
+    ]
+    plain = L.build(rows).books["laya"]
+    refill_at = rows[15].ts
+    book = L.build(rows, refills=[refill_at]).books["laya"]
+    assert plain.exhausted and len(book.refills) == 1
+    ts, added = book.refills[0]
+    assert ts == refill_at and added == L.SLEEVE - plain.curve[14][1]
+    assert book.allocated == L.SLEEVE + added
+    assert book.decisions[15].status == "FILLED"  # trades again after the refill
+    assert book.equity == book.allocated + book.pnl  # P&L stays cumulative
+    assert book.pnl < plain.pnl and book.max_drawdown <= plain.max_drawdown
+
+
+def test_page_mobile_and_labelling_fixes():
+    rows = [
+        L.Row(f"E{i}", 1.0, 0, 1791244800.0 + i * 86400, 0.70, 0.1, "up", 0.5, "up")
+        for i in range(20)
+    ]
+    lg = L.build(rows)
+    html = _every_view(lg, start="2026-10-03", now=lg.last_ts + 60)
+    # disclosure is visible at every width (not inside a .wide span)
+    assert f'<span data-executor="{L.REFERENCE}">executor' in html
+    assert "quotes at the assumed 50¢ mid" in html
+    assert "DEMO DATA" not in html and "PAPER · SIMULATED FILLS" in html
+    assert 'class="data stack"' in html and 'data-label="Reason"' in html
+    assert 'class="chart-d"' in html and 'class="chart-m"' in html
+    assert html.count("HALT SLEEVE EXHAUSTED") >= 2  # accounts + risk honour the sleeve
+    assert 'name="actor"' in html
+
+
+def test_spread_keeps_labels_apart_and_in_bounds():
+    from algobots.demo.page import _spread
+
+    out = _spread({"a": 210.0, "b": 211.0, "c": 212.0, "d": 100.0}, 15, 12, 240)
+    ys = sorted(out.values())
+    assert all(b - a >= 15 for a, b in zip(ys, ys[1:], strict=False))
+    assert ys[0] >= 12 and ys[-1] <= 240
+
+
+def _states(html: str, pane: str, account: str) -> dict[str, str]:
+    """Account name -> state label for each per-account row in a pane."""
+    import re
+
+    sec = html.split(f'aria-label="{pane}"')[1].split("</section>")[0]
+    out = {}
+    for tr in re.findall(r"<tr[^>]*>(.*?)</tr>", sec):
+        name = re.search(r"(Laya System One|Jev zero-shot|Coin-flip control)", tr)
+        state = re.search(
+            r'data-label="State"><span class="status[^"]*" [^>]*aria-label="([^"]+)"', tr
+        )
+        if name and state:
+            out[name.group(1)] = state.group(1)
+    assert out and (pane == "Accounts" or account == "all" or len(out) == 1)
+    return out
+
+
+def test_accounts_state_agrees_with_risk_and_return_ignores_refills():
+    rows = [_row(i, 0.70, 0) for i in range(6)]  # Laya trips its daily cap after 3 losses
+    lg = L.build(rows, refills=[rows[1].ts])
+    html = _every_view(lg, start="2026-10-06", now=lg.last_ts + 60)
+    # regression: Accounts and Risk states agree, in the aggregate and in each account context
+    for account in ("all", *L.STRATEGIES):
+        page = _every_view(lg, start="2026-10-06", now=lg.last_ts + 60, account=account)
+        risk = _states(page, "Risk", account)  # filtered to the context
+        assert {k: v for k, v in _states(page, "Accounts", account).items() if k in risk} == risk
+    assert "HALT DAILY CAP HIT · RESUMES 00:00Z" in _states(html, "Risk", "all")["Laya System One"]
+    laya = lg.books["laya"]
+    pnl = sum((b.pnl for b in lg.books.values()), Decimal(0))
+    assert laya.refills  # the refill landed after the first loss
+    ret = f"{pnl / (L.SLEEVE * 3) * 100:.2f}"
+    assert ret.lstrip("-") in html and "refills excluded" in html
+
+
+def test_account_context_filters_every_pane_and_round_trips_in_url():
+    lg = L.build([_row(i, 0.45 + 0.03 * (i % 4), i % 2) for i in range(12)])
+    now = lg.last_ts + 60
+    html = _every_view(lg, start="2026-10-06", now=now, account="jev", status="filled")
+    assert 'data-account="jev"' in html and 'class="acct sel" data-account="jev"' in html
+    # overview: positions + activity; Positions, Orders, Risk, Ticket blotter, 3 quality panes
+    assert html.count("ctx: Jev zero-shot") == 9
+    orders = html.split('aria-label="Orders"')[1].split("</section>")[0]
+    assert "Jev zero-shot" in orders and "Laya System One" not in orders
+    # filters keep the context and the tab
+    assert 'href="/demo?account=jev&amp;view=orders&amp;status=blocked"' in orders
+    for k in VIEWS:  # every tab keeps the account context
+        assert f'href="/demo?account=jev&amp;view={k}"' in html or k == "overview", k
+    assert 'name="account" value="jev"' in html  # kill switch returns to the same context
+    workers = {
+        "laya": {
+            "account": "laya",
+            "state": "ready",
+            "pid": 41,
+            "rss_mb": 88.0,
+            "last_heartbeat": now - 5,
+        },
+        "jev": {"account": "jev", "state": "exited", "exit_code": 1},
+    }
+    w = render(lg, start="x", now=now, workers=workers, view="accounts")
+    assert 'READY</span> <span class="meta">pid 41 · 88MB · hb 5s ago' in w
+    assert 'data-status="BLOCKED"' in w and "EXITED (1)" in w  # exited reads as an alert
+    assert "1/3 ready" in w
+    bogus = render(lg, start="x", now=now, account="bogus")  # unknown -> aggregate
+    assert bogus.count('class="acct sel" data-account="all"') == 1
+
+
+def test_blotter_orders_newest_first_and_open_positions():
+    rows = [_row(i, 0.60, i % 2) for i in range(4)]
+    lg = L.build(rows)
+    out = B.orders(lg, "laya")
+    assert [o["ts"] for o in out] == sorted((o["ts"] for o in out), reverse=True)
+    assert {o["status"] for o in B.orders(lg, B.ALL, "filled")} == {"filled"}
+    assert B.positions(lg, rows[-1].ts + 1) == []  # all settled
+    live = B.positions(lg, rows[-1].ts - 60, "laya")
+    assert len(live) == 1 and live[0]["qty"] == int(Decimal(out[0]["notional"]) / L.FILL_PRICE)
+    assert live[0]["expires_in_s"] == 60
+
+
+def test_positions_and_orders_endpoints(tmp_path, monkeypatch):
+    from fastapi.testclient import TestClient
+
+    from algobots.api.config import get_settings
+    from algobots.api.main import app
+
+    feed = tmp_path / "observations.jsonl"
+    feed.write_text(
+        "\n".join(
+            json.dumps(
+                {
+                    "event": f"E{i}",
+                    "strike": 1,
+                    "outcome": i % 2,
+                    "ts": 1791244800 + i * 900,
+                    "p": 0.6,
+                    "conf": 0.1,
+                    "jev_choice": "up",
+                    "jev_conf": 0.5,
+                    "jev_p": 0.6,
+                }
+            )
+            for i in range(5)
+        )
+    )
+    monkeypatch.setenv("ALGOBOTS_DEMO_FEED_PATH", str(feed))
+    monkeypatch.setenv("ALGOBOTS_DEMO_STATE_DIR", str(tmp_path))
+    monkeypatch.setenv("ALGOBOTS_DEMO_START", "2026-10-06")
+    get_settings.cache_clear()
+    try:
+        client = TestClient(app)
+        pos = client.get("/demo/api/positions?account=laya").json()
+        assert pos["account"] == "laya" and pos["positions"] == []
+        body = client.get("/demo/api/orders?account=jev&status=filled&limit=3").json()
+        assert body["account"] == "jev" and body["status"] == "filled" and len(body["orders"]) == 3
+        assert all(o["account"] == "jev" and o["status"] == "filled" for o in body["orders"])
+        assert len(client.get("/demo/api/orders").json()["orders"]) == 15
+        page = client.get("/demo?account=coin")
+        assert page.status_code == 200 and 'class="acct sel" data-account="coin"' in page.text
+        assert 'data-executor="NautilusTrader' in page.text
+        assert "fills, fees, settlement and sleeve cash read back from the engine" in page.text
+        r = client.post(
+            "/demo/kill-switch", data={"engaged": "on", "account": "coin"}, follow_redirects=False
+        )
+        assert r.status_code == 303 and r.headers["location"] == "/demo?account=coin&view=risk"
+    finally:
+        get_settings.cache_clear()
+
+
+def test_nautilus_sleeve_execution_and_rendering():
+    pytest.importorskip("nautilus_trader")
+    from algobots.engine.sleeve import EXECUTOR, NautilusSleeve
+
+    rows = [
+        L.Row(f"E{i}", 1.0, i % 2, 1791244800.0 + i * 900, 0.70, 0.1, "up", 0.5, "up")
+        for i in range(4)
+    ]
+    ref_lg = L.build(rows)
+    nautilus_lg = L.build(rows, executor=NautilusSleeve, executor_name=EXECUTOR)
+
+    assert nautilus_lg.executor == EXECUTOR
+    for acct in L.STRATEGIES:
+        ref_book = ref_lg.books[acct]
+        nau_book = nautilus_lg.books[acct]
+        assert nau_book.equity == ref_book.equity
+        assert nau_book.pnl == ref_book.pnl
+        for rd, nd in zip(ref_book.decisions, nau_book.decisions, strict=True):
+            assert nd.status == rd.status
+            if nd.status == "FILLED":
+                assert nd.qty == rd.qty
+                assert nd.price == rd.price
+                assert nd.stake == rd.stake
+                assert nd.fee == rd.fee
+                assert nd.pnl == rd.pnl
+                assert nd.order_id is not None
+                assert acct.upper() in nd.order_id
+
+    html = render(nautilus_lg, start="2026-10-06", now=nautilus_lg.last_ts + 60)
+    assert f'<span data-executor="{EXECUTOR}">' in html
+    assert "fills, fees, settlement and sleeve cash read back from the engine" in html
+    assert 'data-order-id="O-' in html
+
+    # Refill verification
+    refill_at = rows[2].ts
+    refill_lg = L.build(rows, refills=[refill_at], executor=NautilusSleeve, executor_name=EXECUTOR)
+    ref_refill_lg = L.build(rows, refills=[refill_at])
+    for acct in L.STRATEGIES:
+        assert refill_lg.books[acct].equity == ref_refill_lg.books[acct].equity

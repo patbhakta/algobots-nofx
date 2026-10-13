@@ -1,0 +1,67 @@
+{
+  "packet": "A12",
+  "slice": "A12-2 packet closure (ALG-3303)",
+  "tested_commit": "d4e6eb0",
+  "command": "make verify-A12",
+  "cases": {
+    "AC1": {
+      "status": "PASS",
+      "case": "GIVEN the A12 five-capability run THEN all five multi-* demonstrations succeed with no tenant leakage or duplicate effect",
+      "note": "2 tests passed; evidence re-checked: C1-C5 recorded in demo-run.json and proven in decision.md",
+      "tests": {
+        "tests/packets/A12/test_a12_packet.py::test_terminal_carries_collapsible_five_step_card_at_the_top": "passed",
+        "tests/packets/A12/test_a12_packet.py::test_gate_decision_lists_all_four_call_categories_and_no_edge": "passed"
+      },
+      "evidence": [
+        "artifacts/A12/test-results/junit.xml",
+        "artifacts/A12/demo-run.json",
+        "docs/gates/G1/decision.md"
+      ]
+    },
+    "AC2": {
+      "status": "PASS",
+      "case": "GIVEN a killed worker holding pending orders THEN restart reconciles from the durable ledger within 60s without blind resubmit",
+      "note": "2 tests passed; evidence re-checked: kill->reconciling->ready in 7.3s (<=60), 14 orders restored, 0 blind resubmits",
+      "tests": {
+        "tests/packets/A12/test_a12_packet.py::test_terminal_carries_collapsible_five_step_card_at_the_top": "passed",
+        "tests/packets/A12/test_a12_packet.py::test_makefile_exposes_demo_g1_running_the_a12_driver": "passed"
+      },
+      "evidence": [
+        "artifacts/A12/test-results/junit.xml",
+        "artifacts/A12/demo-run.json",
+        "artifacts/A12/engine/demo-run.json",
+        "artifacts/A12/engine/measurements.json"
+      ]
+    },
+    "AC3": {
+      "status": "DESCOPED",
+      "case": "GIVEN a retrieved note THEN it shows its source anchor and tenant scope",
+      "note": "knowledge importer slice descoped by Pat's Oct 6 functional-terminal ruling; redirected to A14 (ALG-3110) / A17 (ALG-3113)",
+      "tests": {},
+      "evidence": [
+        "docs/gates/G1/decision.md",
+        "artifacts/A12/demo-and-limitations.md"
+      ]
+    },
+    "AC4": {
+      "status": "DESCOPED",
+      "case": "GIVEN missing Jev credentials THEN the mock is labeled and the live smoke reports BLOCKED",
+      "note": "DecisionModel interface + mock descoped with the same ruling; redirected to A18 (ALG-3114)",
+      "tests": {},
+      "evidence": [
+        "docs/gates/G1/decision.md",
+        "artifacts/A12/demo-and-limitations.md"
+      ]
+    },
+    "AC5": {
+      "status": "DESCOPED",
+      "case": "GIVEN an invalid model answer THEN shadow mode returns REVIEW/ABSTAIN and no order path is taken",
+      "note": "DecisionModel interface + mock descoped with the same ruling; redirected to A18 (ALG-3114)",
+      "tests": {},
+      "evidence": [
+        "docs/gates/G1/decision.md",
+        "artifacts/A12/demo-and-limitations.md"
+      ]
+    }
+  }
+}

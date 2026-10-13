@@ -1,0 +1,27 @@
+--- a/Makefile
++++ b/Makefile
+@@ -192,3 +192,24 @@
+ 
+ demo-A03:
+ 	$(PYTHON) tests/packets/A03/demo.py
++
++A14_RESULTS := artifacts/A14/test-results
++
++.PHONY: verify-A14 demo-A14
++
++# A14 production Obsidian ingestion (ALG-3320; make-targets proposal via
++# A14-3). Full ingest lane: unit suite (tests/knowledge/ingest) + packet
++# acceptance AC1-AC5 (end-to-end cases + scope guard), then acceptance.json
++# (cases as PASS / FAIL / BLOCKED with evidence paths). Fully offline:
++# synthetic fixtures only, deterministic local embedder, zero API spend.
++verify-A14:
++	mkdir -p $(A14_RESULTS)
++	PYTHONPATH=$(CURDIR)/src $(PYTHON) -m pytest tests/knowledge/ingest tests/packets/A14 -q -p no:cacheprovider -rs \
++		--junitxml=$(A14_RESULTS)/junit.xml
++	sed -i -E 's/ (timestamp|hostname|time)="[^"]*"//g' $(A14_RESULTS)/junit.xml
++	PYTHONPATH=$(CURDIR)/src $(PYTHON) tests/packets/A14/acceptance.py $(A14_RESULTS)/junit.xml
++
++# Demo evidence: one synthetic vault through import -> edit -> rename ->
++# delete with lineage and processing cost, into artifacts/A14/demo-output.txt.
++demo-A14:
++	PYTHONPATH=$(CURDIR)/src $(PYTHON) tests/packets/A14/demo.py

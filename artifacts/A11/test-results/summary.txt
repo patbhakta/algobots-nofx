@@ -1,0 +1,7 @@
+make verify-A11 @ 3d1c2d1 — 63 tests, 0 failures, 0 errors, 0 skipped
+AC1: PASS — 5 tests passed
+AC2: PASS — 3 tests passed
+AC3: PASS — 3 tests passed
+AC4: PASS — 3 tests passed
+AC5: PASS — 5 tests passed
+AC6: PASS — 4 tests passed

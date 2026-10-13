@@ -1,0 +1,483 @@
+{
+  "killed": "syn2",
+  "timeline": [
+    {
+      "t": 1791414952.988,
+      "event": "started",
+      "accounts": [
+        "syn1",
+        "syn2",
+        "syn3",
+        "syn4"
+      ]
+    },
+    {
+      "t": 1791414955.516,
+      "event": "all_ready",
+      "startup_s": {
+        "syn1": 1.31,
+        "syn2": 1.3,
+        "syn3": 1.42,
+        "syn4": 1.47
+      }
+    },
+    {
+      "t": 1791414965.527,
+      "event": "killed",
+      "account": "syn2",
+      "pid": 3273585
+    },
+    {
+      "t": 1791414970.63,
+      "event": "after_kill",
+      "states": {
+        "syn1": "ready",
+        "syn2": "exited",
+        "syn3": "ready",
+        "syn4": "ready"
+      },
+      "ticks_delta": {
+        "syn1": 40,
+        "syn2": 0,
+        "syn3": 40,
+        "syn4": 48
+      }
+    },
+    {
+      "t": 1791414972.844,
+      "event": "restarted",
+      "account": "syn2",
+      "pid": 3274358,
+      "phases_seen": [
+        "reconciling",
+        "ready"
+      ],
+      "orders_restored": 14,
+      "orders_rejected_frozen": 0
+    },
+    {
+      "t": 1791414973.175,
+      "event": "stopped"
+    }
+  ],
+  "before_kill": [
+    {
+      "account": "syn1",
+      "state": "ready",
+      "pid": 3273584,
+      "exit_code": null,
+      "rss_mb": 337.4,
+      "cpu_s": 1.46,
+      "started_at": 1791414952.9843996,
+      "startup_s": 1.31,
+      "last_heartbeat": 1791414955.3007574,
+      "trader_id": "PAPER-SYN1",
+      "account_id": "PAPER_SYN1-001",
+      "order_id_tag": "SYN1",
+      "intervals": 8,
+      "orders_submitted": 0,
+      "orders_filled": 0,
+      "open_positions": 0,
+      "reconciled": true,
+      "orders_restored": 0,
+      "orders_rejected_frozen": 0,
+      "denied_reason": null,
+      "lease_pid": 3273584,
+      "uid": 0
+    },
+    {
+      "account": "syn2",
+      "state": "ready",
+      "pid": 3273585,
+      "exit_code": null,
+      "rss_mb": 337.6,
+      "cpu_s": 1.43,
+      "started_at": 1791414952.9857328,
+      "startup_s": 1.3,
+      "last_heartbeat": 1791414955.299179,
+      "trader_id": "PAPER-SYN2",
+      "account_id": "PAPER_SYN2-001",
+      "order_id_tag": "SYN2",
+      "intervals": 8,
+      "orders_submitted": 0,
+      "orders_filled": 0,
+      "open_positions": 0,
+      "reconciled": true,
+      "orders_restored": 0,
+      "orders_rejected_frozen": 0,
+      "denied_reason": null,
+      "lease_pid": 3273585,
+      "uid": 0
+    },
+    {
+      "account": "syn3",
+      "state": "ready",
+      "pid": 3273586,
+      "exit_code": null,
+      "rss_mb": 338.1,
+      "cpu_s": 1.54,
+      "started_at": 1791414952.9869916,
+      "startup_s": 1.42,
+      "last_heartbeat": 1791414955.416372,
+      "trader_id": "PAPER-SYN3",
+      "account_id": "PAPER_SYN3-001",
+      "order_id_tag": "SYN3",
+      "intervals": 8,
+      "orders_submitted": 0,
+      "orders_filled": 0,
+      "open_positions": 0,
+      "reconciled": true,
+      "orders_restored": 0,
+      "orders_rejected_frozen": 0,
+      "denied_reason": null,
+      "lease_pid": 3273586,
+      "uid": 0
+    },
+    {
+      "account": "syn4",
+      "state": "ready",
+      "pid": 3273587,
+      "exit_code": null,
+      "rss_mb": 338.6,
+      "cpu_s": 1.61,
+      "started_at": 1791414952.9880698,
+      "startup_s": 1.47,
+      "last_heartbeat": 1791414955.468799,
+      "trader_id": "PAPER-SYN4",
+      "account_id": "PAPER_SYN4-001",
+      "order_id_tag": "SYN4",
+      "intervals": 8,
+      "orders_submitted": 0,
+      "orders_filled": 0,
+      "open_positions": 0,
+      "reconciled": true,
+      "orders_restored": 0,
+      "orders_rejected_frozen": 0,
+      "denied_reason": null,
+      "lease_pid": 3273587,
+      "uid": 0
+    }
+  ],
+  "after_kill": [
+    {
+      "account": "syn1",
+      "state": "ready",
+      "pid": 3273584,
+      "exit_code": null,
+      "rss_mb": 338.2,
+      "cpu_s": 1.51,
+      "started_at": 1791414952.9843996,
+      "startup_s": 1.31,
+      "last_heartbeat": 1791414970.3886588,
+      "trader_id": "PAPER-SYN1",
+      "account_id": "PAPER_SYN1-001",
+      "order_id_tag": "SYN1",
+      "intervals": 128,
+      "orders_submitted": 21,
+      "orders_filled": 21,
+      "open_positions": 2,
+      "reconciled": true,
+      "orders_restored": 0,
+      "orders_rejected_frozen": 0,
+      "denied_reason": null,
+      "lease_pid": 3273584,
+      "uid": 0
+    },
+    {
+      "account": "syn2",
+      "state": "exited",
+      "pid": 3273585,
+      "exit_code": -9,
+      "rss_mb": null,
+      "cpu_s": null,
+      "started_at": 1791414952.9857328,
+      "startup_s": 1.3,
+      "last_heartbeat": 1791414965.3751166,
+      "trader_id": "PAPER-SYN2",
+      "account_id": "PAPER_SYN2-001",
+      "order_id_tag": "SYN2",
+      "intervals": 88,
+      "orders_submitted": 14,
+      "orders_filled": 14,
+      "open_positions": 2,
+      "reconciled": true,
+      "orders_restored": 0,
+      "orders_rejected_frozen": 0,
+      "denied_reason": null,
+      "lease_pid": 3273585,
+      "uid": null
+    },
+    {
+      "account": "syn3",
+      "state": "ready",
+      "pid": 3273586,
+      "exit_code": null,
+      "rss_mb": 339.1,
+      "cpu_s": 1.59,
+      "started_at": 1791414952.9869916,
+      "startup_s": 1.42,
+      "last_heartbeat": 1791414970.497735,
+      "trader_id": "PAPER-SYN3",
+      "account_id": "PAPER_SYN3-001",
+      "order_id_tag": "SYN3",
+      "intervals": 128,
+      "orders_submitted": 21,
+      "orders_filled": 21,
+      "open_positions": 2,
+      "reconciled": true,
+      "orders_restored": 0,
+      "orders_rejected_frozen": 0,
+      "denied_reason": null,
+      "lease_pid": 3273586,
+      "uid": 0
+    },
+    {
+      "account": "syn4",
+      "state": "ready",
+      "pid": 3273587,
+      "exit_code": null,
+      "rss_mb": 339.2,
+      "cpu_s": 1.66,
+      "started_at": 1791414952.9880698,
+      "startup_s": 1.47,
+      "last_heartbeat": 1791414970.5638463,
+      "trader_id": "PAPER-SYN4",
+      "account_id": "PAPER_SYN4-001",
+      "order_id_tag": "SYN4",
+      "intervals": 128,
+      "orders_submitted": 21,
+      "orders_filled": 21,
+      "open_positions": 2,
+      "reconciled": true,
+      "orders_restored": 0,
+      "orders_rejected_frozen": 0,
+      "denied_reason": null,
+      "lease_pid": 3273587,
+      "uid": 0
+    }
+  ],
+  "after_restart": [
+    {
+      "account": "syn1",
+      "state": "ready",
+      "pid": 3273584,
+      "exit_code": null,
+      "rss_mb": 338.2,
+      "cpu_s": 1.52,
+      "started_at": 1791414952.9843996,
+      "startup_s": 1.31,
+      "last_heartbeat": 1791414972.3999293,
+      "trader_id": "PAPER-SYN1",
+      "account_id": "PAPER_SYN1-001",
+      "order_id_tag": "SYN1",
+      "intervals": 144,
+      "orders_submitted": 21,
+      "orders_filled": 21,
+      "open_positions": 2,
+      "reconciled": true,
+      "orders_restored": 0,
+      "orders_rejected_frozen": 0,
+      "denied_reason": null,
+      "lease_pid": 3273584,
+      "uid": 0
+    },
+    {
+      "account": "syn2",
+      "state": "ready",
+      "pid": 3274358,
+      "exit_code": null,
+      "rss_mb": 339.1,
+      "cpu_s": 2.01,
+      "started_at": 1791414970.632348,
+      "startup_s": 1.19,
+      "last_heartbeat": 1791414972.8330915,
+      "trader_id": "PAPER-SYN2",
+      "account_id": "PAPER_SYN2-001",
+      "order_id_tag": "SYN2",
+      "intervals": 8,
+      "orders_submitted": 0,
+      "orders_filled": 0,
+      "open_positions": 0,
+      "reconciled": true,
+      "orders_restored": 14,
+      "orders_rejected_frozen": 0,
+      "denied_reason": null,
+      "lease_pid": 3274358,
+      "uid": 0
+    },
+    {
+      "account": "syn3",
+      "state": "ready",
+      "pid": 3273586,
+      "exit_code": null,
+      "rss_mb": 339.1,
+      "cpu_s": 1.6,
+      "started_at": 1791414952.9869916,
+      "startup_s": 1.42,
+      "last_heartbeat": 1791414972.506677,
+      "trader_id": "PAPER-SYN3",
+      "account_id": "PAPER_SYN3-001",
+      "order_id_tag": "SYN3",
+      "intervals": 144,
+      "orders_submitted": 21,
+      "orders_filled": 21,
+      "open_positions": 2,
+      "reconciled": true,
+      "orders_restored": 0,
+      "orders_rejected_frozen": 0,
+      "denied_reason": null,
+      "lease_pid": 3273586,
+      "uid": 0
+    },
+    {
+      "account": "syn4",
+      "state": "ready",
+      "pid": 3273587,
+      "exit_code": null,
+      "rss_mb": 339.3,
+      "cpu_s": 1.67,
+      "started_at": 1791414952.9880698,
+      "startup_s": 1.47,
+      "last_heartbeat": 1791414972.5727327,
+      "trader_id": "PAPER-SYN4",
+      "account_id": "PAPER_SYN4-001",
+      "order_id_tag": "SYN4",
+      "intervals": 144,
+      "orders_submitted": 21,
+      "orders_filled": 21,
+      "open_positions": 2,
+      "reconciled": true,
+      "orders_restored": 0,
+      "orders_rejected_frozen": 0,
+      "denied_reason": null,
+      "lease_pid": 3273587,
+      "uid": 0
+    }
+  ],
+  "sandbox": {
+    "syn1": {
+      "account": "syn1",
+      "pid": 3273584,
+      "at": 1791414953.0277839,
+      "enforced": {
+        "rlimit_as_mb": 4096,
+        "rlimit_nofile": 1024,
+        "rlimit_core": 0,
+        "nice": 10,
+        "network": "own netns, loopback only: no egress",
+        "env_keys": [
+          "ALGOBOTS_DEMO_STATE_DIR",
+          "LANG",
+          "PATH",
+          "VIRTUAL_ENV"
+        ]
+      },
+      "asserted": {
+        "cpu": "no CPU-rate cap per worker; nice only (see deploy/workers/README.md)",
+        "uid": "root (no --uid given)",
+        "forbidden_paths": {
+          "/root/repos": "readable",
+          "/root/repos/stock-vaults": "readable",
+          "/mnt/funnytree/stock-vaults": "readable",
+          "/opt/stock-vaults": "absent"
+        },
+        "broker": "paper venue only; the worker builds no live data/exec client"
+      },
+      "failures": [],
+      "ok": true
+    },
+    "syn2": {
+      "account": "syn2",
+      "pid": 3274358,
+      "at": 1791414970.672878,
+      "enforced": {
+        "rlimit_as_mb": 4096,
+        "rlimit_nofile": 1024,
+        "rlimit_core": 0,
+        "nice": 10,
+        "network": "own netns, loopback only: no egress",
+        "env_keys": [
+          "ALGOBOTS_DEMO_STATE_DIR",
+          "LANG",
+          "PATH",
+          "VIRTUAL_ENV"
+        ]
+      },
+      "asserted": {
+        "cpu": "no CPU-rate cap per worker; nice only (see deploy/workers/README.md)",
+        "uid": "root (no --uid given)",
+        "forbidden_paths": {
+          "/root/repos": "readable",
+          "/root/repos/stock-vaults": "readable",
+          "/mnt/funnytree/stock-vaults": "readable",
+          "/opt/stock-vaults": "absent"
+        },
+        "broker": "paper venue only; the worker builds no live data/exec client"
+      },
+      "failures": [],
+      "ok": true
+    },
+    "syn3": {
+      "account": "syn3",
+      "pid": 3273586,
+      "at": 1791414953.0291848,
+      "enforced": {
+        "rlimit_as_mb": 4096,
+        "rlimit_nofile": 1024,
+        "rlimit_core": 0,
+        "nice": 10,
+        "network": "own netns, loopback only: no egress",
+        "env_keys": [
+          "ALGOBOTS_DEMO_STATE_DIR",
+          "LANG",
+          "PATH",
+          "VIRTUAL_ENV"
+        ]
+      },
+      "asserted": {
+        "cpu": "no CPU-rate cap per worker; nice only (see deploy/workers/README.md)",
+        "uid": "root (no --uid given)",
+        "forbidden_paths": {
+          "/root/repos": "readable",
+          "/root/repos/stock-vaults": "readable",
+          "/mnt/funnytree/stock-vaults": "readable",
+          "/opt/stock-vaults": "absent"
+        },
+        "broker": "paper venue only; the worker builds no live data/exec client"
+      },
+      "failures": [],
+      "ok": true
+    },
+    "syn4": {
+      "account": "syn4",
+      "pid": 3273587,
+      "at": 1791414953.0307984,
+      "enforced": {
+        "rlimit_as_mb": 4096,
+        "rlimit_nofile": 1024,
+        "rlimit_core": 0,
+        "nice": 10,
+        "network": "own netns, loopback only: no egress",
+        "env_keys": [
+          "ALGOBOTS_DEMO_STATE_DIR",
+          "LANG",
+          "PATH",
+          "VIRTUAL_ENV"
+        ]
+      },
+      "asserted": {
+        "cpu": "no CPU-rate cap per worker; nice only (see deploy/workers/README.md)",
+        "uid": "root (no --uid given)",
+        "forbidden_paths": {
+          "/root/repos": "readable",
+          "/root/repos/stock-vaults": "readable",
+          "/mnt/funnytree/stock-vaults": "readable",
+          "/opt/stock-vaults": "absent"
+        },
+        "broker": "paper venue only; the worker builds no live data/exec client"
+      },
+      "failures": [],
+      "ok": true
+    }
+  }
+}

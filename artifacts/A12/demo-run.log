@@ -1,0 +1,17 @@
+G1 five-capability walkthrough (ALG-3257) — state /tmp/paperclip-run-alg-3257-78449b77-553-pKKaPv/g1-demo-zghggri5
+  all_ready {'states': {'laya': 'ready', 'jev': 'ready', 'coin': 'ready'}}
+  isolation_verified {'pids': {'laya': 3272165, 'jev': 3272166, 'coin': 3272167}}
+  order_placed {'account': 'laya', 'parent_id': '526477991e2e', 'leg_id': '526477991e2e-1'}
+  order_placed {'account': 'jev', 'parent_id': 'abfce7bb452c', 'leg_id': 'abfce7bb452c-1'}
+  order_placed {'account': 'coin', 'parent_id': 'c019f034cc19', 'leg_id': 'c019f034cc19-1'}
+  order_filled {'account': 'laya', 'worker_order_id': 'O-20261007-231530-LAYA-LAYA-13'}
+  order_filled {'account': 'jev', 'worker_order_id': 'O-20261007-231530-JEV-JEV-13'}
+  order_filled {'account': 'coin', 'worker_order_id': 'O-20261007-231530-COIN-COIN-13'}
+  live_refused {'status': 422, 'reason': 'LIVE disabled — no live venue approved'}
+  kill_switch_denial {'code': 'kill_switch', 'reason': 'kill switch engaged — entry blocked'}
+  worker_killed {'account': 'coin', 'pid': 3272167}
+  entry_refused_after_kill {'reason': 'account coin: worker lease dead: previous owner pid 3272167 has terminated — no fallback exists'}
+PASS demo-1440.png (card open)
+PASS demo-390.png card fits 390px without horizontal scroll
+  screenshots_captured {}
+phase 2: engine fixture (kill/restart/reconcile + measurements)

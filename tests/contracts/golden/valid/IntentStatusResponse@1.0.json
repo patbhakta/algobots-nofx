@@ -1,0 +1,29 @@
+{
+  "schema_version": "1.0",
+  "intent_id": "0192dead-0000-4000-8000-000000000001",
+  "idempotency_key": "golden-key-000001",
+  "action": "PLACE_ORDER",
+  "account_id": "acct-main",
+  "payload_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "status": "PARTIALLY_FILLED",
+  "plan_id": "plan-a07-golden",
+  "orders": [
+    {
+      "schema_version": "1.0",
+      "child_id": "child-00",
+      "client_order_id": "A70192dead00004000C000",
+      "broker_order_id": "BRK-000001",
+      "instrument_id": "KXA7.DEMO",
+      "side": "BUY",
+      "state": "PARTIALLY_FILLED",
+      "quantity": "10",
+      "filled_quantity": "4",
+      "average_fill_price": "0.50",
+      "accrued_fees": "0.14",
+      "currency": "USD"
+    }
+  ],
+  "account_frozen": false,
+  "created_at": "2026-10-07T12:00:00Z",
+  "updated_at": "2026-10-07T12:00:30Z"
+}

@@ -9,8 +9,8 @@ A deployment is (strategy x symbol x account), frozen at deploy:
 - `max_order_value` / `max_daily_loss` — the per-deployment risk envelope,
   frozen as decimal strings (money rails never get silent defaults).
 - breaker columns — per-deployment breaker (`closed` | `open`); the fleet
-  breaker lives in `fleet_breakers` (one row per user) and, when open, halts
-  every deployment in that user's scope.
+  breaker lives in `fleet_breakers` (one row per tenant x user) and, when
+  open, halts every deployment in that (tenant, user) scope.
 
 `status` is user intent (`running` | `paused` | `stopped`); halt sources are
 tracked separately so fleet resets only resume fleet-halted deployments.
@@ -99,13 +99,20 @@ class Deployment(Base):
 
 
 class FleetBreaker(Base):
-    """Fleet-level breaker for one user; `open` halts ALL their deployments."""
+    """Fleet-level breaker for one user IN ONE TENANT (ALG-3186): `open` halts
+    that user's deployments whose account belongs to that tenant. The (tenant,
+    user) scoping means a reset under tenant A can never un-halt tenant B —
+    including tenants where the user is a viewer or was revoked."""
 
     __tablename__ = "fleet_breakers"
+    __table_args__ = (
+        Index("uq_fleet_breakers_tenant_user", "tenant_id", "user_id", unique=True),
+    )
 
     id: Mapped[UUID] = mapped_column(Uuid, primary_key=True, default=uuid4)
+    tenant_id: Mapped[UUID] = mapped_column(Uuid, ForeignKey("tenants.id"), nullable=False)
     user_id: Mapped[UUID] = mapped_column(
-        Uuid, ForeignKey("users.id"), unique=True, nullable=False, index=True
+        Uuid, ForeignKey("users.id"), nullable=False, index=True
     )
     state: Mapped[str] = mapped_column(
         String(16), nullable=False, default=BreakerState.CLOSED.value

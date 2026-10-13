@@ -1,0 +1,19 @@
+{
+  "schema_version": "1.0",
+  "decision": "CLAMP",
+  "rule": "max_order_notional",
+  "reason": "order notional 700 clamped to policy cap 500.00",
+  "policy_revision": "risk-a08-golden",
+  "requested_notional": {
+    "amount": "700",
+    "currency": "USD"
+  },
+  "approved_notional": {
+    "amount": "500.00",
+    "currency": "USD"
+  },
+  "required_reservation": {
+    "amount": "500.75",
+    "currency": "USD"
+  }
+}

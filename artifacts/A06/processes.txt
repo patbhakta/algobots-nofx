@@ -1,0 +1,14 @@
+## ps: one OS process per account (children of the API/supervisor)
+
+Historical capture, 2026-10-06 ~22:49Z at commit 761ccf8, before the module
+moved algobots.workers.paper -> algobots.engine.workers.paper (code otherwise
+unchanged). Post-move evidence: smoke-after-move.txt and workers-before-kill.json;
+AC1's four-process proof is demo-run.json plus the fixture tests.
+
+    PID    PPID   RSS     ELAPSED COMMAND
+3871132 3870831 354764      00:16 python -m algobots.workers.paper --account laya --poll 5.0
+3871133 3870831 351160      00:16 python -m algobots.workers.paper --account jev --poll 5.0
+3871134 3870831 353556      00:16 python -m algobots.workers.paper --account coin --poll 5.0
+
+## ledger fills per strategy (/demo/api/state) — must equal worker orders_filled
+{'laya': 164, 'jev': 83, 'coin': 130} intervals 397

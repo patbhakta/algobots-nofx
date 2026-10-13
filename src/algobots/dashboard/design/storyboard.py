@@ -7,9 +7,9 @@ byte-for-byte deterministic. Pages render synthetic fixtures only and every
 page carries the DEMO DATA banner; a fixture UI is not evidence of broker
 integration.
 
-Query parameters (also stored in localStorage by the toggles):
-`?texture=off`, `?motion=off`, and `?audit=1`, which writes a layout-overflow
-report into `#audit` for headless checks.
+Query parameter: `?audit=1`, which writes a layout-overflow report into
+`#audit` for headless checks. There are no texture or motion settings: the
+NoFX design language (ALG-3336) ships no effects to toggle.
 """
 
 from decimal import Decimal
@@ -28,26 +28,7 @@ SCREENS = {
 
 _SCRIPT = """
 (function () {
-  var r = document.documentElement, q = new URLSearchParams(location.search);
-  ["texture", "motion"].forEach(function (k) {
-    var v = q.get(k);
-    if (!v) { try { v = localStorage.getItem("ab-" + k); } catch (err) {} }
-    if (v === "off" || v === "on") r.dataset[k] = v;
-  });
-  document.querySelectorAll("[data-toggle]").forEach(function (b) {
-    var k = b.dataset.toggle;
-    function sync() {
-      var on = r.dataset[k] !== "off";
-      b.setAttribute("aria-pressed", String(on));
-      b.textContent = k.charAt(0).toUpperCase() + k.slice(1) + ": " + (on ? "on" : "off");
-    }
-    sync();
-    b.addEventListener("click", function () {
-      r.dataset[k] = r.dataset[k] === "off" ? "on" : "off";
-      try { localStorage.setItem("ab-" + k, r.dataset[k]); } catch (err) {}
-      sync();
-    });
-  });
+  var q = new URLSearchParams(location.search);
   if (q.get("audit") === "1") {
     var w = window.innerWidth, over = [], clipped = [];
     document.querySelectorAll(".metric, .action, .badge, .status").forEach(function (el) {
@@ -63,10 +44,7 @@ _SCRIPT = """
     pre.id = "audit";
     pre.textContent = JSON.stringify({
       innerWidth: w, scrollWidth: document.documentElement.scrollWidth,
-      overflowing: over.slice(0, 20), clipped: clipped.slice(0, 20),
-      texture: r.dataset.texture, motion: r.dataset.motion,
-      grainDisplay: getComputedStyle(document.body, "::before").display,
-      reducedDuration: getComputedStyle(r).getPropertyValue("--dur-drawer").trim()
+      overflowing: over.slice(0, 20), clipped: clipped.slice(0, 20)
     });
     document.body.appendChild(pre);
   }
@@ -134,7 +112,7 @@ def _nav(screen: str, state: str) -> str:
     )
     return (
         f'<nav class="screens" aria-label="Screens">{screens}<a href="index.html">All pages</a>'
-        f'<span class="spacer"></span>{c.settings()}</nav>'
+        f'<span class="spacer"></span></nav>'
         f'<nav class="screens states" aria-label="Fixture state">'
         f'<span class="meta">fixture:</span>{states}</nav>'
     )
@@ -184,8 +162,6 @@ def _portfolio_strip(f: dict, *, compact: bool = False) -> str:
         ),
     ]
     strip = "".join(cells)
-    if f["feed"]["status"] == "connected":  # a real update arrived; frozen when disconnected
-        strip = strip.replace('class="metric', 'class="metric updated', 1)
     return f'<section class="strip" aria-label="Portfolio metrics" data-financial="true">{strip}</section>'
 
 
@@ -274,11 +250,9 @@ def _orders(f: dict, *, with_actions: bool) -> str:
 def _topology(f: dict) -> str:
     if not f["topology"]:
         return '<p class="empty">No events yet. The trail appears when a strategy evaluates.</p>'
-    frozen = f["feed"]["status"] != "connected"
     out = []
-    for i, t in enumerate(f["topology"]):
-        edge_cls = "edge pulse" if i == 0 and not frozen else "edge"
-        nodes = f' <span class="{edge_cls}" aria-hidden="true">→</span> '.join(
+    for t in f["topology"]:
+        nodes = ' <span class="edge" aria-hidden="true">→</span> '.join(
             f'<span class="node">{c.e(n)}</span>' for n in t["path"]
         )
         tail = " · hold, no execution" if t["outcome"] == "ABSTAIN" else ""
@@ -292,8 +266,7 @@ def _topology(f: dict) -> str:
             f'<p class="meta">Inputs, sources and outcome load from the trace record '
             f"(fixture: reason only).</p></details>"
         )
-    note = '<p class="meta attn">Animation frozen: feed disconnected.</p>' if frozen else ""
-    return note + '<div class="topology">' + "".join(out) + "</div>"
+    return '<div class="topology">' + "".join(out) + "</div>"
 
 
 def _depth(f: dict) -> str:
@@ -673,7 +646,7 @@ def page(screen: str, state: str) -> str:
     f = fixture(state)
     title = f"{SCREENS[screen]} — {state} — AlgoBots {DEMO_LABEL}"
     return (
-        '<!doctype html>\n<html lang="en" data-texture="on" data-motion="on">\n<head>\n'
+        '<!doctype html>\n<html lang="en">\n<head>\n'
         '<meta charset="utf-8">\n<meta name="viewport" content="width=device-width, initial-scale=1">\n'
         f"<title>{c.e(title)}</title>\n<style>\n{stylesheet()}</style>\n</head>\n<body>\n"
         f'<div class="chrome">{_banner(f)}{_header(f)}</div>\n{_nav(screen, state)}\n'
@@ -691,12 +664,12 @@ def index() -> str:
         for s, t in SCREENS.items()
     )
     return (
-        '<!doctype html>\n<html lang="en" data-texture="on" data-motion="on">\n<head>\n'
+        '<!doctype html>\n<html lang="en">\n<head>\n'
         '<meta charset="utf-8">\n<meta name="viewport" content="width=device-width, initial-scale=1">\n'
         f"<title>AlgoBots storyboard — {DEMO_LABEL}</title>\n<style>\n{stylesheet()}</style>\n</head>\n<body>\n"
         f'<div class="chrome"><div class="demo-banner" role="note"><strong>{DEMO_LABEL}</strong>'
         "<span>A09 fixture storyboard · synthetic data only · not broker integration evidence</span></div></div>\n"
-        "<main><h1>AlgoBots warm paper storyboard</h1>"
+        "<main><h1>AlgoBots NoFX storyboard</h1>"
         + c.panel(
             "Pages",
             '<table class="data"><thead><tr><th scope="col">Screen</th>'

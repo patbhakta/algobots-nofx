@@ -1,0 +1,42 @@
+{
+  "dedup_replay": {
+    "requests": 50,
+    "intents": 1,
+    "created_exactly_once": true,
+    "guard_rejections": 3
+  },
+  "accept_timeout": {
+    "trace": [
+      {
+        "step": "committed+planned+staged",
+        "intent": "SUBMITTED",
+        "outbox": "PENDING"
+      },
+      {
+        "step": "submit timed out after broker acceptance",
+        "intent": "UNKNOWN",
+        "child": "UNKNOWN",
+        "outbox": "PENDING (stable identity retained)",
+        "delivered": 0,
+        "ambiguous": 1
+      },
+      {
+        "step": "recovery replay of the SAME command",
+        "broker_outcome": "DUPLICATE (no second order)",
+        "delivered": 1,
+        "broker_orders": 1
+      },
+      {
+        "step": "reconciliation finds the original",
+        "intent": "FILLED",
+        "child": "FILLED",
+        "broker_order_id": "BRK-000001",
+        "filled": "10",
+        "fees": "0.07"
+      }
+    ],
+    "final_status": "FILLED",
+    "broker_orders": 1,
+    "outbox_rows": 1
+  }
+}

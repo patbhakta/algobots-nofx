@@ -31,6 +31,34 @@ EXPECTED_TABLES = {
     "approval_requests",
     "broadcasts",
     "action_ledger",
+    # A07 (ALG-3103): execution ledger — intents, plans, child orders, outbox,
+    # receipts/settlement (append-only via triggers), account freezes
+    "execution_intents",
+    "order_plans",
+    "child_orders",
+    "order_event_receipts",
+    "fill_receipts",
+    "cash_movements",
+    "intent_outbox",
+    "account_freezes",
+    # A08 (ALG-3104): account risk admission — funds/inventory pools with the
+    # CAS epoch, reservation store, operator controls, instrument marks
+    "account_admissions",
+    "account_inventories",
+    "reservations",
+    "account_controls",
+    "instrument_marks",
+    # A03 (ALG-3099): tenants, memberships, hashed invites, sessions, grants
+    "tenants",
+    "tenant_memberships",
+    "tenant_invites",
+    "auth_sessions",
+    "account_grants",
+    # A04 (ALG-3100): broker connections, external account identities,
+    # secret-resolution grants
+    "broker_connections",
+    "external_account_identities",
+    "secret_grants",
 }
 
 

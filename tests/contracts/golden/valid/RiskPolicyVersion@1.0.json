@@ -1,0 +1,67 @@
+{
+  "schema_version": "1.0",
+  "policy_revision": "risk-a08-golden",
+  "account_id": "acct-main",
+  "base_currency": "USD",
+  "timezone": "America/New_York",
+  "permissions": [
+    {
+      "instrument_id": "KXA8.DEMO",
+      "product": null,
+      "permitted": true
+    },
+    {
+      "instrument_id": "BANNED.DEMO",
+      "product": null,
+      "permitted": false
+    }
+  ],
+  "deployment_budgets": [
+    {
+      "deployment_id": "dep-1",
+      "max_gross_notional": {
+        "amount": "5000.00",
+        "currency": "USD"
+      },
+      "max_daily_loss": {
+        "amount": "250.00",
+        "currency": "USD"
+      }
+    }
+  ],
+  "constraints": {
+    "max_order_notional": {
+      "amount": "500.00",
+      "currency": "USD"
+    },
+    "max_gross_exposure": {
+      "amount": "20000.00",
+      "currency": "USD"
+    },
+    "max_concentration": [
+      {
+        "instrument_id": "KXA8.DEMO",
+        "max_percent_of_equity": "10"
+      }
+    ],
+    "max_daily_loss": {
+      "amount": "1000.00",
+      "currency": "USD"
+    },
+    "rate_limits": {
+      "max_orders_per_minute": 10,
+      "max_entries_per_day": 200
+    },
+    "fee_buffer_bps": "10",
+    "slippage_buffer_bps": "5"
+  },
+  "stale_state": {
+    "max_mark_age_seconds": 30,
+    "accepted_mark_qualities": [
+      "REALTIME",
+      "DELAYED"
+    ],
+    "require_connected": true
+  },
+  "created_at": "2026-10-07T12:00:00Z"
+}

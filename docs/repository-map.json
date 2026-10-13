@@ -63,7 +63,29 @@
           "path": "src/algobots/contracts/"
         }
       ],
-      "rule": "locked name@version is immutable; revisions register a new version; a version pinned by a queued packet cannot be removed (registry.check_lock_transition)"
+      "rule": "locked name@version is immutable; revisions register a new version; a version pinned by a queued packet cannot be removed (registry.check_lock_transition)",
+      "carve_outs": [
+        {
+          "repo": "algobots",
+          "path": "src/algobots/contracts/__init__.py",
+          "packet": "A04"
+        },
+        {
+          "repo": "algobots",
+          "path": "src/algobots/contracts/account.py",
+          "packet": "A04"
+        },
+        {
+          "repo": "algobots",
+          "path": "src/algobots/contracts/schema-lock.json",
+          "packet": "A04"
+        },
+        {
+          "repo": "algobots",
+          "path": "src/algobots/contracts/secrets.py",
+          "packet": "A04"
+        }
+      ]
     },
     "dependency-lockfiles": {
       "integration_owner": "A01",
@@ -209,6 +231,350 @@
     {
       "repo": "algobots",
       "path": "tests/test_scaffold.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "src/algobots/demo/__init__.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "src/algobots/demo/accounts.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "tests/demo/test_accounts.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "src/algobots/demo/killswitch.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "src/algobots/demo/blotter.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "src/algobots/demo/decisions.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "src/algobots/demo/ledger.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "src/algobots/demo/page.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "src/algobots/demo/router.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "src/algobots/demo/theme.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "tests/demo/test_decisions.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "tests/demo/test_ledger.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "src/algobots/demo/scope.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "src/algobots/demo/studio.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "src/algobots/demo/studio_page.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "src/algobots/demo/bars.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "tests/demo/test_scope.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "tests/demo/test_studio.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "tests/demo/test_campaigns.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "src/algobots/demo/tickets.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "src/algobots/demo/gate.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "tests/demo/test_tickets.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "src/algobots/demo/quality.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "src/algobots/demo/scope.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "tests/demo/test_quality.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "tests/demo/test_scope.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3145/acceptance.json"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3145/dashboard-element-spec.md"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3145/research-report.md"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3145/screenshots/01-header-hdr-1440.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3145/screenshots/01-header-hdr-390.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3145/screenshots/02-controls-bar-1440.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3145/screenshots/02-controls-bar-390.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3145/screenshots/03-evolution-ring-1440.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3145/screenshots/03-evolution-ring-390.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3145/screenshots/04-fitness-history-1440.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3145/screenshots/04-fitness-history-390.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3145/screenshots/05-gene-pool-mesh-1440.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3145/screenshots/05-gene-pool-mesh-390.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3145/screenshots/06-genome-leader-1440.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3145/screenshots/06-genome-leader-390.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3145/screenshots/06b-genome-inspecting-1440.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3145/screenshots/06b-genome-inspecting-390.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3145/screenshots/07-selection-funnel-1440.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3145/screenshots/07-selection-funnel-390.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3145/screenshots/08-kelly-sizing-1440.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3145/screenshots/08-kelly-sizing-390.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3145/screenshots/09-paper-grid-chart-1440.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3145/screenshots/09-paper-grid-chart-390.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3145/screenshots/10-order-grid-log-1440.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3145/screenshots/10-order-grid-log-390.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3145/screenshots/sets-dashboard-1440-full.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3145/screenshots/sets-dashboard-1440-inspecting.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3145/screenshots/sets-dashboard-390-full.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "docs/adr/0001-nautilus-execution-spine.md"
+    },
+    {
+      "repo": "algobots",
+      "path": "docs/alg-3145-shelpid-sets-evaluation.md"
+    },
+    {
+      "repo": "algobots",
+      "path": "docs/research/sets-machine/desktop-1440-full.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "docs/research/sets-machine/desktop-1440-viewport.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "docs/research/sets-machine/mobile-390-full.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "docs/research/sets-machine/mobile-390-viewport.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "docs/research/sets-machine/mobile-panel-chart.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "docs/research/sets-machine/mobile-panel-fitness.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "docs/research/sets-machine/mobile-panel-genome.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "docs/research/sets-machine/mobile-panel-grid.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "docs/research/sets-machine/mobile-panel-header.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "docs/research/sets-machine/mobile-panel-kelly.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "docs/research/sets-machine/mobile-panel-mesh.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "docs/research/sets-machine/mobile-panel-ring.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "docs/research/sets-machine/mobile-panel-selection.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "docs/research/sets-machine/panel-01-header.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "docs/research/sets-machine/panel-02-controls.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "docs/research/sets-machine/panel-03-evolution-ring.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "docs/research/sets-machine/panel-04-fitness-history.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "docs/research/sets-machine/panel-05-gene-pool-mesh.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "docs/research/sets-machine/panel-06-inspected-node-genome.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "docs/research/sets-machine/panel-06-leader-genome.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "docs/research/sets-machine/panel-07-selection-funnel.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "docs/research/sets-machine/panel-08-kelly-sizing.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "docs/research/sets-machine/panel-09-grid-engine-chart.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "docs/research/sets-machine/panel-10-order-grid-log.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "docs/adr/0001-nautilus-execution-spine.md"
+    },
+    {
+      "repo": "algobots",
+      "path": "src/algobots/demo/orderapi.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "tests/demo/test_order_api.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "docs/research/alg-3309-strategy-sourcing-shortlist.md"
+    },
+    {
+      "repo": "algobots",
+      "path": "tests/api/test_fleet_breaker_tenancy.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "src/algobots/knowledge/__init__.py"
     }
   ],
   "scope_revisions": [
@@ -270,6 +636,16 @@
       ],
       "added": [],
       "reason": "migrations go through the single Alembic tree under the db-migrations lock"
+    },
+    {
+      "packet": "A08",
+      "from_revision": 1,
+      "to_revision": 2,
+      "removed": [],
+      "added": [
+        "src/algobots/api/risk/"
+      ],
+      "reason": "A08 commit 63bd5b9 added the risk API router under api/risk/ without registering it (map drift found by the ALG-3283 A11-4 evidence packet when the A01 repo-map test went red); registered after the fact under the packet that wrote it"
     },
     {
       "packet": "A10",
@@ -360,6 +736,20 @@
         "src/algobots/dashboard/build_activity/"
       ],
       "reason": "hyphenated directory is not a valid Python package name"
+    },
+    {
+      "packet": "A04",
+      "from_revision": 2,
+      "to_revision": 3,
+      "removed": [],
+      "added": [
+        "src/algobots/contracts/__init__.py",
+        "src/algobots/contracts/account.py",
+        "src/algobots/contracts/schema-lock.json",
+        "src/algobots/contracts/secrets.py",
+        "tests/contracts/golden/valid/"
+      ],
+      "reason": "dispatched spec requires registering BrokerAdapterCapabilities + SecretResolver as new schema versions (contracts package + schema-lock.json; goldens are the schema-registry mechanism, A07 precedent e843999); the A04 router mounts in api/main.py and its ORM models register via api/models.py for Alembic 0010; EXPECTED_TABLES lists the migrated tables (A07 precedent); repository-map carries this revision and the packet's contract pins Ownership collisions resolved at integration: main.py/models.py/test_control_plane.py stay solely A03-owned and repository-map.json solely A01-owned (identical entries in two packets are forbidden; A04's edits to them were proposals through those owners, same as the Makefile convention)."
     }
   ],
   "packets": {
@@ -625,7 +1015,7 @@
       "dependencies": [
         "A03"
       ],
-      "revision": 2,
+      "revision": 3,
       "repositories": [
         "algobots"
       ],
@@ -669,6 +1059,31 @@
           "repo": "algobots",
           "path": "docs/accounts.md",
           "status": "real"
+        },
+        {
+          "repo": "algobots",
+          "path": "tests/contracts/golden/valid/",
+          "status": "real"
+        },
+        {
+          "repo": "algobots",
+          "path": "src/algobots/contracts/__init__.py",
+          "status": "real"
+        },
+        {
+          "repo": "algobots",
+          "path": "src/algobots/contracts/account.py",
+          "status": "real"
+        },
+        {
+          "repo": "algobots",
+          "path": "src/algobots/contracts/schema-lock.json",
+          "status": "real"
+        },
+        {
+          "repo": "algobots",
+          "path": "src/algobots/contracts/secrets.py",
+          "status": "proposed"
         }
       ],
       "shared_resources": [
@@ -676,8 +1091,10 @@
       ],
       "contract_pins": {
         "BrokerAccount": "1.0",
+        "BrokerAdapterCapabilities": "1.0",
         "Capabilities": "1.0",
-        "Principal": "1.0"
+        "Principal": "1.0",
+        "SecretResolver": "1.0"
       }
     },
     "A05": {
@@ -823,7 +1240,7 @@
       "dependencies": [
         "A07"
       ],
-      "revision": 1,
+      "revision": 2,
       "repositories": [
         "algobots"
       ],
@@ -831,6 +1248,11 @@
         {
           "repo": "algobots",
           "path": "src/algobots/risk/",
+          "status": "real"
+        },
+        {
+          "repo": "algobots",
+          "path": "src/algobots/api/risk/",
           "status": "real"
         },
         {
@@ -1106,7 +1528,7 @@
       ],
       "write_scope": [
         {
-          "repo": "stock-vaults",
+          "repo": "algobots",
           "path": "pipeline/flows/algobots-ingest.yaml",
           "status": "proposed"
         },

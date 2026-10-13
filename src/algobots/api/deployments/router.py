@@ -11,8 +11,9 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy.orm import Session
 
+from algobots.api.auth.policy import Action
 from algobots.api.database import get_db
-from algobots.api.dependencies import get_current_user
+from algobots.api.dependencies import TenantContext, get_current_user, require
 from algobots.api.deployments.schemas import (
     DailyLossReport,
     DailyLossReportOut,
@@ -27,6 +28,7 @@ from algobots.api.deployments.service import (
     create_deployment,
     deployment_out,
     effective_state,
+    fleet_breaker_for_deployment,
     get_deployment,
     get_fleet_breaker,
     list_deployments,
@@ -54,8 +56,10 @@ def _owned_or_404(db: Session, current_user: User, deployment_id: UUID):
     return deployment
 
 
-def _out(db: Session, current_user: User, deployment) -> DeploymentOut:
-    return deployment_out(deployment, get_fleet_breaker(db, current_user))
+def _out(db: Session, deployment) -> DeploymentOut:
+    """Fold the breaker that GOVERNS the deployment: its own account's tenant
+    and its user — not the caller's active tenant (ALG-3186)."""
+    return deployment_out(deployment, fleet_breaker_for_deployment(db, deployment))
 
 
 @router.post("", response_model=DeploymentOut, status_code=status.HTTP_201_CREATED)
@@ -71,14 +75,14 @@ def create(
     except DeploymentError as exc:
         raise HTTPException(exc.status_code, exc.message) from None
     _audit(response, "deployments", deployment.id)
-    return _out(db, current_user, deployment)
+    return _out(db, deployment)
 
 
 @router.get("", response_model=list[DeploymentOut])
 def list_all(
     current_user: User = Depends(get_current_user), db: Session = Depends(get_db)
 ) -> list[DeploymentOut]:
-    return [_out(db, current_user, dep) for dep in list_deployments(db, current_user)]
+    return [_out(db, dep) for dep in list_deployments(db, current_user)]
 
 
 @router.get("/{deployment_id}", response_model=DeploymentOut)
@@ -87,7 +91,7 @@ def read(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> DeploymentOut:
-    return _out(db, current_user, _owned_or_404(db, current_user, deployment_id))
+    return _out(db, _owned_or_404(db, current_user, deployment_id))
 
 
 @router.patch("/{deployment_id}", response_model=DeploymentOut)
@@ -103,7 +107,7 @@ def update_status(
     deployment.status = payload.status
     db.commit()
     _audit(response, "deployments", deployment.id)
-    return _out(db, current_user, deployment)
+    return _out(db, deployment)
 
 
 @router.delete("/{deployment_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -129,7 +133,7 @@ def daily_loss(
 ) -> DailyLossReportOut:
     """Report signed daily P&L; a breach of the frozen cap trips the breaker."""
     deployment = _owned_or_404(db, current_user, deployment_id)
-    fleet = get_fleet_breaker(db, current_user)
+    fleet = fleet_breaker_for_deployment(db, deployment)
     deployment, tripped = report_daily_loss(db, deployment, payload.daily_pnl, fleet=fleet)
     _audit(response, "deployments", deployment.id)
     state, _halt_source = effective_state(deployment, fleet)
@@ -154,25 +158,31 @@ def breaker_reset(
     deployment = _owned_or_404(db, current_user, deployment_id)
     reset_deployment_breaker(db, deployment)
     _audit(response, "deployments", deployment.id)
-    return _out(db, current_user, deployment)
+    return _out(db, deployment)
 
 
 @router.get("/fleet/breaker", response_model=FleetBreakerOut)
 def fleet_breaker_state(
-    current_user: User = Depends(get_current_user), db: Session = Depends(get_db)
+    ctx: TenantContext = Depends(require(Action.TENANT_READ)),
+    db: Session = Depends(get_db),
 ) -> FleetBreakerOut:
-    """The caller's fleet breaker (closed by default)."""
-    return FleetBreakerOut.model_validate(get_fleet_breaker(db, current_user))
+    """The caller's fleet breaker in the ACTIVE tenant (closed by default)."""
+    return FleetBreakerOut.model_validate(get_fleet_breaker(db, ctx.user, ctx.tenant_id))
 
 
 @router.post("/fleet/breaker", response_model=FleetBreakerOut)
 def fleet_breaker_act(
     payload: FleetBreakerAction,
     response: Response,
-    current_user: User = Depends(get_current_user),
+    ctx: TenantContext = Depends(require(Action.RESOURCE_WRITE)),
     db: Session = Depends(get_db),
 ) -> FleetBreakerOut:
-    """Trip (halts every deployment in scope) or reset the fleet breaker."""
-    fleet, _affected = set_fleet_breaker(db, current_user, payload.action, payload.reason)
+    """Trip or reset the caller's fleet breaker in the ACTIVE tenant: it halts
+    (or resumes) the caller's deployments in THIS tenant only — a reset here
+    never un-halts another tenant, and a viewer (no resource.write) is denied
+    outright (ALG-3186)."""
+    fleet, _affected = set_fleet_breaker(
+        db, ctx.user, ctx.tenant_id, payload.action, payload.reason
+    )
     _audit(response, "deployments", None)
     return FleetBreakerOut.model_validate(fleet)

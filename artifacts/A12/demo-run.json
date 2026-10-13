@@ -1,0 +1,228 @@
+{
+  "packet": "A12",
+  "started_at": 1791414910.4693396,
+  "phase1_app": {
+    "base_url": "http://127.0.0.1:46265"
+  },
+  "phase2_engine": {
+    "files": [
+      "engine/demo-run.json",
+      "engine/measurements.json"
+    ],
+    "killed": "syn2",
+    "phases_seen": [
+      "reconciling",
+      "ready"
+    ],
+    "orders_restored": 14,
+    "states_after_restart": {
+      "syn1": "ready",
+      "syn2": "ready",
+      "syn3": "ready",
+      "syn4": "ready"
+    }
+  },
+  "capabilities": {
+    "C1_multi_account": {
+      "accounts": [
+        "coin",
+        "jev",
+        "laya"
+      ],
+      "scoped_view": "GET /demo/api/decisions?account=jev -> account=jev only"
+    },
+    "C2_multi_strategy": {
+      "strategies": [
+        "coin",
+        "jev",
+        "laya"
+      ],
+      "names": {
+        "laya": "Laya System One",
+        "jev": "Jev zero-shot",
+        "coin": "Coin-flip control"
+      }
+    },
+    "C3_worker_isolation": {
+      "pid_per_account": {
+        "laya": 3272165,
+        "jev": 3272166,
+        "coin": 3272167
+      },
+      "distinct_processes": true,
+      "trader_ids": {
+        "laya": "PAPER-LAYA",
+        "jev": "PAPER-JEV",
+        "coin": "PAPER-COIN"
+      }
+    },
+    "C4_risk_denial": {
+      "live_mode": {
+        "status": 422,
+        "reason": "LIVE disabled \u2014 no live venue approved"
+      },
+      "kill_switch": {
+        "denial_code": "kill_switch",
+        "reason": "kill switch engaged \u2014 entry blocked",
+        "audit_last": {
+          "engaged": true,
+          "ts": 1791414931.025101,
+          "actor": "g1-walkthrough via dashboard (127.0.0.1)"
+        }
+      }
+    },
+    "C5_kill_freeze": {
+      "killed": "coin",
+      "pid": 3272167,
+      "exit_code": -9,
+      "others_state": "ready",
+      "others_heartbeat_advanced": {
+        "laya": true,
+        "jev": true
+      },
+      "refusal": {
+        "status": 503,
+        "code": "worker_unavailable",
+        "reason": "account coin: worker lease dead: previous owner pid 3272167 has terminated \u2014 no fallback exists"
+      },
+      "note": "the app does not auto-restart a killed worker (by design); restart-with-reconciliation is proven at the engine layer in phase 2"
+    }
+  },
+  "trace_ids": [
+    {
+      "kind": "order",
+      "account": "laya",
+      "parent_id": "526477991e2e",
+      "leg_id": "526477991e2e-1",
+      "status": "submitted",
+      "worker_order_id": "O-20261007-231530-LAYA-LAYA-13",
+      "worker_trade_id": "T-dd90caa8731d98f7-001",
+      "trader_id": "PAPER-LAYA",
+      "price": "0.50"
+    },
+    {
+      "kind": "order",
+      "account": "jev",
+      "parent_id": "abfce7bb452c",
+      "leg_id": "abfce7bb452c-1",
+      "status": "submitted",
+      "worker_order_id": "O-20261007-231530-JEV-JEV-13",
+      "worker_trade_id": "T-bddc70f666c9f722-001",
+      "trader_id": "PAPER-JEV",
+      "price": "0.50"
+    },
+    {
+      "kind": "order",
+      "account": "coin",
+      "parent_id": "c019f034cc19",
+      "leg_id": "c019f034cc19-1",
+      "status": "submitted",
+      "worker_order_id": "O-20261007-231530-COIN-COIN-13",
+      "worker_trade_id": "T-342bef27313f225d-001",
+      "trader_id": "PAPER-COIN",
+      "price": "0.50"
+    },
+    {
+      "kind": "denial",
+      "code": "live_disabled",
+      "reason": "LIVE disabled \u2014 no live venue approved"
+    },
+    {
+      "kind": "denial",
+      "code": "kill_switch",
+      "reason": "kill switch engaged \u2014 entry blocked"
+    },
+    {
+      "kind": "denial",
+      "code": "worker_unavailable",
+      "reason": "account coin: worker lease dead: previous owner pid 3272167 has terminated \u2014 no fallback exists"
+    }
+  ],
+  "timeline": [
+    {
+      "t": 1791414915.638,
+      "event": "all_ready",
+      "states": {
+        "laya": "ready",
+        "jev": "ready",
+        "coin": "ready"
+      }
+    },
+    {
+      "t": 1791414915.872,
+      "event": "isolation_verified",
+      "pids": {
+        "laya": 3272165,
+        "jev": 3272166,
+        "coin": 3272167
+      }
+    },
+    {
+      "t": 1791414915.908,
+      "event": "order_placed",
+      "account": "laya",
+      "parent_id": "526477991e2e",
+      "leg_id": "526477991e2e-1"
+    },
+    {
+      "t": 1791414915.919,
+      "event": "order_placed",
+      "account": "jev",
+      "parent_id": "abfce7bb452c",
+      "leg_id": "abfce7bb452c-1"
+    },
+    {
+      "t": 1791414915.93,
+      "event": "order_placed",
+      "account": "coin",
+      "parent_id": "c019f034cc19",
+      "leg_id": "c019f034cc19-1"
+    },
+    {
+      "t": 1791414931.009,
+      "event": "order_filled",
+      "account": "laya",
+      "worker_order_id": "O-20261007-231530-LAYA-LAYA-13"
+    },
+    {
+      "t": 1791414931.013,
+      "event": "order_filled",
+      "account": "jev",
+      "worker_order_id": "O-20261007-231530-JEV-JEV-13"
+    },
+    {
+      "t": 1791414931.016,
+      "event": "order_filled",
+      "account": "coin",
+      "worker_order_id": "O-20261007-231530-COIN-COIN-13"
+    },
+    {
+      "t": 1791414931.023,
+      "event": "live_refused",
+      "status": 422,
+      "reason": "LIVE disabled \u2014 no live venue approved"
+    },
+    {
+      "t": 1791414931.216,
+      "event": "kill_switch_denial",
+      "code": "kill_switch",
+      "reason": "kill switch engaged \u2014 entry blocked"
+    },
+    {
+      "t": 1791414931.399,
+      "event": "worker_killed",
+      "account": "coin",
+      "pid": 3272167
+    },
+    {
+      "t": 1791414948.45,
+      "event": "entry_refused_after_kill",
+      "reason": "account coin: worker lease dead: previous owner pid 3272167 has terminated \u2014 no fallback exists"
+    },
+    {
+      "t": 1791414951.068,
+      "event": "screenshots_captured"
+    }
+  ],
+  "duration_s": 62.7
+}

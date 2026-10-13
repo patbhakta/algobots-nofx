@@ -1,8 +1,7 @@
-"""A09 demo: the design system on fixtures plus failure paths (``make demo-A09``)."""
+"""A09 demo: the NoFX design system on fixtures plus failure paths (``make demo-A09``)."""
 
 from algobots.dashboard.design import components as c
 from algobots.dashboard.design import tokens as t
-from algobots.dashboard.design.grain import tile_sha256
 from algobots.dashboard.design.storyboard import pages
 from algobots.dashboard.fixtures import fixture
 
@@ -10,17 +9,11 @@ built = pages()
 rows = t.contrast_report()
 print(
     f"[ok] storyboard: {len(built) - 1} pages + index, static, DEMO DATA on every page; "
-    f"grain tile sha256 {tile_sha256()[:12]} at {t.GRAIN['opacity']:.0%}"
+    "NoFX: flat dark, mono-first, no effects to toggle"
 )
 print(
     f"[ok] contrast: {sum(r['aa_text'] for r in rows)}/{len(rows)} text/surface pairs >= 4.5:1 "
-    f"(grain on and off); lowest {min(r['ratio'] for r in rows)}:1"
-)
-spec = t.SPEC_COLORS["attention"]
-print(
-    f"[adjusted] spec attention {spec} is {t.contrast(spec, t.COLORS['paper']):.2f}:1 on paper "
-    f"(fails AA); shipped {t.COLORS['attention']} is "
-    f"{t.worst_contrast(t.COLORS['attention'], t.COLORS['paper'], grain=True):.2f}:1 under grain"
+    f"on dark surfaces; lowest {min(r['ratio'] for r in rows)}:1"
 )
 
 try:

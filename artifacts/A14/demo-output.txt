@@ -1,0 +1,36 @@
+A14 — Obsidian ingestion & lineage demo (synthetic vault, offline)
+vault root : /tmp/paperclip-run-alg-3110-2b5106f0-d62-qIu8rH/a14-demo-841jty6y/vault
+store      : /tmp/paperclip-run-alg-3110-2b5106f0-d62-qIu8rH/a14-demo-841jty6y/store
+
+== 1. import =========================================================
+source_id           : src-c6680f6c23d52884
+doc_id              : d-8857df095e884cb4842c6102
+snapshot            : 82d0279637cc9cbfcb613ee0c9509170
+docs / chunks       : 1 / 4
+embeddings paid     : 4 (first import embeds everything)
+processing cost     : 8 ms
+citation            : chunk c-43bd913b276f97… at notes/regime-notes.md#volatility-regimes/bootstrapping (v v-553859fbd15e4d…)
+
+== 2. edit -> new version; edited doc re-embeds, others untouched ====
+doc_id              : d-8857df095e884cb4842c6102 (unchanged — identity survives edits)
+version chain       : 2 versions (v-553859fbd1…, v-c53797015a…)
+embeddings paid     : 5 (chunk ids are version-keyed,
+                      so the edited document re-embeds; other documents reuse)
+processing cost     : 8 ms
+new section cited   : notes/regime-notes.md#execution/cost-analysis (v v-c53797015a…)
+
+== 3. rename -> identity and citations kept, zero embeddings =========
+doc_id              : d-8857df095e884cb4842c6102 (unchanged — identity survives renames)
+current path        : notes/regime-notes-renamed.md
+path history        : 2 entries (first seen in snapshot 82d0279637cc…)
+embeddings paid     : 0 (rename re-embeds nothing)
+processing cost     : 6 ms
+citation stable     : True — chunk c-fb23a61a77fe7d… now at notes/regime-notes-renamed.md
+
+== 4. delete -> exposure ceases, lineage kept ========================
+propagation         : 1 ms (window 60s) — tombstone propagated_at True
+exposure after      : 0 hits, 0 failures
+visible sources     : 0
+lineage kept        : 1 documents, 2 versions remain on record (canon-first)
+
+totals: import 8 ms, edit 8 ms, rename 6 ms, delete 1 ms — all local, zero API spend

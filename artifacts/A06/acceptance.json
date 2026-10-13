@@ -1,0 +1,79 @@
+{
+  "packet": "A06",
+  "slice": "A06 packet (ALG-3102)",
+  "tested_commit": "057a3e2",
+  "command": "make verify-A06",
+  "cases": {
+    "AC1": {
+      "status": "PASS",
+      "case": "GIVEN four paper accounts WHEN started THEN four separate Nautilus processes have unique IDs and account namespaces",
+      "note": "4 tests passed",
+      "tests": {
+        "tests/engine/workers/test_supervisor.py::test_n_accounts_n_processes_kill_one_others_keep_running": "passed",
+        "tests/engine/workers/test_paper.py::test_ids_are_unique_per_account": "passed",
+        "tests/engine/workers/test_fixture.py::test_fixture_declares_four_accounts_eight_unique_deployments": "passed",
+        "tests/engine/workers/test_fixture.py::test_four_nautilus_accounts_kill_one_others_continue": "passed"
+      },
+      "evidence": [
+        "artifacts/A06/test-results/junit.xml",
+        "artifacts/A06/processes.txt",
+        "artifacts/A06/workers-before-kill.json",
+        "artifacts/A06/demo-run.json"
+      ]
+    },
+    "AC2": {
+      "status": "PASS",
+      "case": "GIVEN two authorized humans viewing one account THEN only one execution worker exists",
+      "note": "2 tests passed",
+      "tests": {
+        "tests/engine/workers/test_lease.py::test_two_supervisors_one_account_exactly_one_worker": "passed",
+        "tests/engine/workers/test_lease.py::test_second_start_on_same_supervisor_is_denied_and_keeps_worker": "passed"
+      },
+      "evidence": [
+        "artifacts/A06/test-results/junit.xml"
+      ]
+    },
+    "AC3": {
+      "status": "PASS",
+      "case": "GIVEN one worker crashes THEN other accounts continue and the crashed account cannot submit until recovery completes",
+      "note": "3 tests passed",
+      "tests": {
+        "tests/engine/workers/test_lease.py::test_crash_freezes_only_that_account_until_reconciled": "passed",
+        "tests/engine/workers/test_paper.py::test_crash_restart_is_entry_frozen_until_reconciled": "passed",
+        "tests/engine/workers/test_supervisor.py::test_n_accounts_n_processes_kill_one_others_keep_running": "passed"
+      },
+      "evidence": [
+        "artifacts/A06/test-results/junit.xml"
+      ]
+    },
+    "AC4": {
+      "status": "PASS",
+      "case": "GIVEN an attempted second active worker or unknown old-process status THEN start is denied",
+      "note": "5 tests passed",
+      "tests": {
+        "tests/engine/workers/test_lease.py::test_live_pid_lease_denies_start": "passed",
+        "tests/engine/workers/test_lease.py::test_unknown_owner_denies_start_until_force_release": "passed",
+        "tests/engine/workers/test_lease.py::test_worker_that_loses_the_race_exits_denied": "passed",
+        "tests/engine/workers/test_lease.py::test_start_all_starts_free_accounts_and_reports_denied_ones": "passed",
+        "tests/engine/workers/test_lease.py::test_dead_or_reused_pid_is_taken_over": "passed"
+      },
+      "evidence": [
+        "artifacts/A06/test-results/junit.xml"
+      ]
+    },
+    "AC5": {
+      "status": "PASS",
+      "case": "GIVEN the target workload THEN record measured p95 RSS/CPU; do not infer a fleet capacity without measurements",
+      "note": "2 tests passed",
+      "tests": {
+        "tests/engine/workers/test_fixture.py::test_fixture_is_entry_frozen_until_reconciled_and_reports_metrics": "passed",
+        "tests/packets/A06/test_a06_packet.py::test_measurements_are_committed_and_complete": "passed"
+      },
+      "evidence": [
+        "artifacts/A06/test-results/junit.xml",
+        "artifacts/A06/measurements.json",
+        "deploy/workers/README.md"
+      ]
+    }
+  }
+}

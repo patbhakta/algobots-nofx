@@ -1,0 +1,63 @@
+{
+  "failure_path": {
+    "blocked_record": {
+      "attempts": 2,
+      "epoch": 2,
+      "reason": "budget exhausted: 2/2 attempts"
+    },
+    "budget_attempts": 2,
+    "same_failure_cap": 3,
+    "stopped_on": "budget exhausted: 2/2 attempts",
+    "task": "TIGHT",
+    "worker_loop_rounds": 2
+  },
+  "feature": {
+    "steps": [
+      {
+        "epoch": 1,
+        "owner": "tech-lead",
+        "resources": [],
+        "step": "claim",
+        "task": "ROOT",
+        "worktree": ".wt-root"
+      },
+      {
+        "epoch": 1,
+        "lease_expires_at": 1001200.0,
+        "step": "heartbeat",
+        "task": "ROOT"
+      },
+      {
+        "epoch": 1,
+        "result": "passed",
+        "status": "WAITING_INTEGRATION",
+        "step": "complete",
+        "task": "ROOT"
+      },
+      {
+        "commit": "f4c1e2a",
+        "review_commit": "f4c1e2a",
+        "status": "DONE",
+        "step": "integrate",
+        "task": "ROOT"
+      },
+      {
+        "epoch": 1,
+        "note": "eligible because ROOT integrated (not just passed)",
+        "step": "claim",
+        "task": "A"
+      }
+    ]
+  },
+  "graph_fixture": "tests/packets/A02/fixtures/task-graph.json",
+  "issue": "ALG-3098",
+  "packet": "A02",
+  "queue": {
+    "initial_status": "BACKLOG for all packets",
+    "roots": [
+      "A00"
+    ],
+    "source": "docs/repository-map.json",
+    "tasks": 38
+  }
+}

@@ -6,7 +6,7 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, model_validator
 
 
 class ORMModel(BaseModel):
@@ -19,10 +19,20 @@ class ORMModel(BaseModel):
 
 
 class RegisterRequest(BaseModel):
+    """Invite-only registration: exactly one of a platform invite code (or the
+    bootstrap code) or a tenant invite token. There is no public path."""
+
     email: EmailStr
     password: str = Field(min_length=10, max_length=128)
     display_name: str = Field(min_length=1, max_length=120)
-    invite_code: str = Field(min_length=4, max_length=64)
+    invite_code: str | None = Field(default=None, min_length=4, max_length=64)
+    tenant_invite_token: str | None = Field(default=None, min_length=8, max_length=128)
+
+    @model_validator(mode="after")
+    def _exactly_one_invite(self) -> "RegisterRequest":
+        if (self.invite_code is None) == (self.tenant_invite_token is None):
+            raise ValueError("provide exactly one of invite_code or tenant_invite_token")
+        return self
 
 
 class LoginRequest(BaseModel):
@@ -37,6 +47,10 @@ class UserOut(ORMModel):
     role: str
     is_active: bool
     created_at: datetime
+
+
+class OIDCLoginRequest(BaseModel):
+    id_token: str = Field(min_length=16, max_length=8192)
 
 
 class TokenResponse(BaseModel):
@@ -63,6 +77,7 @@ class AccountCreate(BaseModel):
     # `semi_auto` (S4.3): orders on this account park for human approval
     # instead of routing live — paper-only standing law, no live entitlement.
     mode: str = Field(default="paper", pattern="^(paper|live|semi_auto)$")
+    approval_mode: str = Field(default="auto", pattern="^(auto|semi_auto)$")
     base_currency: str = Field(default="USD", min_length=3, max_length=8)
 
 
@@ -71,6 +86,7 @@ class AccountUpdate(BaseModel):
     mode: str | None = Field(
         default=None, pattern="^(paper|live|semi_auto)$"
     )
+    approval_mode: str | None = Field(default=None, pattern="^(auto|semi_auto)$")
     status: str | None = Field(default=None, pattern="^(active|paused|closed)$")
 
 
@@ -79,6 +95,7 @@ class AccountOut(ORMModel):
     label: str
     broker: str
     mode: str
+    approval_mode: str
     status: str
     base_currency: str
     created_at: datetime
@@ -202,6 +219,7 @@ class ClampEventOut(ORMModel):
 class AuditLogOut(ORMModel):
     id: UUID
     user_id: UUID | None
+    tenant_id: UUID | None = None
     method: str
     path: str
     status_code: int

@@ -1,0 +1,495 @@
+{
+  "killed": "syn2",
+  "timeline": [
+    {
+      "t": 1791392098.643,
+      "event": "started",
+      "accounts": [
+        "syn1",
+        "syn2",
+        "syn3",
+        "syn4"
+      ]
+    },
+    {
+      "t": 1791392103.205,
+      "event": "all_ready",
+      "startup_s": {
+        "syn1": 3.14,
+        "syn2": 3.49,
+        "syn3": 3.48,
+        "syn4": 3.34
+      }
+    },
+    {
+      "t": 1791392223.332,
+      "event": "killed",
+      "account": "syn2",
+      "pid": 16
+    },
+    {
+      "t": 1791392228.438,
+      "event": "after_kill",
+      "states": {
+        "syn1": "ready",
+        "syn2": "exited",
+        "syn3": "ready",
+        "syn4": "ready"
+      },
+      "ticks_delta": {
+        "syn1": 40,
+        "syn2": 0,
+        "syn3": 40,
+        "syn4": 40
+      }
+    },
+    {
+      "t": 1791392231.76,
+      "event": "restarted",
+      "account": "syn2",
+      "pid": 132,
+      "phases_seen": [
+        "reconciling",
+        "ready"
+      ],
+      "orders_restored": 156,
+      "orders_rejected_frozen": 0
+    },
+    {
+      "t": 1791392232.139,
+      "event": "stopped"
+    }
+  ],
+  "before_kill": [
+    {
+      "account": "syn1",
+      "state": "ready",
+      "pid": 15,
+      "exit_code": null,
+      "rss_mb": 341.7,
+      "cpu_s": 2.62,
+      "started_at": 1791392098.6334138,
+      "startup_s": 3.14,
+      "last_heartbeat": 1791392102.7923732,
+      "trader_id": "PAPER-SYN1",
+      "account_id": "PAPER_SYN1-001",
+      "order_id_tag": "SYN1",
+      "intervals": 8,
+      "orders_submitted": 0,
+      "orders_filled": 0,
+      "open_positions": 0,
+      "reconciled": true,
+      "orders_restored": 0,
+      "orders_rejected_frozen": 0,
+      "denied_reason": null,
+      "lease_pid": 15,
+      "uid": 65534
+    },
+    {
+      "account": "syn2",
+      "state": "ready",
+      "pid": 16,
+      "exit_code": null,
+      "rss_mb": 341.5,
+      "cpu_s": 2.69,
+      "started_at": 1791392098.635486,
+      "startup_s": 3.49,
+      "last_heartbeat": 1791392103.1429007,
+      "trader_id": "PAPER-SYN2",
+      "account_id": "PAPER_SYN2-001",
+      "order_id_tag": "SYN2",
+      "intervals": 8,
+      "orders_submitted": 0,
+      "orders_filled": 0,
+      "open_positions": 0,
+      "reconciled": true,
+      "orders_restored": 0,
+      "orders_rejected_frozen": 0,
+      "denied_reason": null,
+      "lease_pid": 16,
+      "uid": 65534
+    },
+    {
+      "account": "syn3",
+      "state": "ready",
+      "pid": 17,
+      "exit_code": null,
+      "rss_mb": 346.1,
+      "cpu_s": 2.63,
+      "started_at": 1791392098.6408603,
+      "startup_s": 3.48,
+      "last_heartbeat": 1791392103.1453698,
+      "trader_id": "PAPER-SYN3",
+      "account_id": "PAPER_SYN3-001",
+      "order_id_tag": "SYN3",
+      "intervals": 8,
+      "orders_submitted": 0,
+      "orders_filled": 0,
+      "open_positions": 0,
+      "reconciled": true,
+      "orders_restored": 0,
+      "orders_rejected_frozen": 0,
+      "denied_reason": null,
+      "lease_pid": 17,
+      "uid": 65534
+    },
+    {
+      "account": "syn4",
+      "state": "ready",
+      "pid": 18,
+      "exit_code": null,
+      "rss_mb": 338.4,
+      "cpu_s": 2.54,
+      "started_at": 1791392098.6425164,
+      "startup_s": 3.34,
+      "last_heartbeat": 1791392102.9998953,
+      "trader_id": "PAPER-SYN4",
+      "account_id": "PAPER_SYN4-001",
+      "order_id_tag": "SYN4",
+      "intervals": 8,
+      "orders_submitted": 0,
+      "orders_filled": 0,
+      "open_positions": 0,
+      "reconciled": true,
+      "orders_restored": 0,
+      "orders_rejected_frozen": 0,
+      "denied_reason": null,
+      "lease_pid": 18,
+      "uid": 65534
+    }
+  ],
+  "after_kill": [
+    {
+      "account": "syn1",
+      "state": "ready",
+      "pid": 15,
+      "exit_code": null,
+      "rss_mb": 343.9,
+      "cpu_s": 3.21,
+      "started_at": 1791392098.6334138,
+      "startup_s": 3.14,
+      "last_heartbeat": 1791392227.9346194,
+      "trader_id": "PAPER-SYN1",
+      "account_id": "PAPER_SYN1-001",
+      "order_id_tag": "SYN1",
+      "intervals": 1008,
+      "orders_submitted": 163,
+      "orders_filled": 163,
+      "open_positions": 2,
+      "reconciled": true,
+      "orders_restored": 0,
+      "orders_rejected_frozen": 0,
+      "denied_reason": null,
+      "lease_pid": 15,
+      "uid": 65534
+    },
+    {
+      "account": "syn2",
+      "state": "exited",
+      "pid": 16,
+      "exit_code": -9,
+      "rss_mb": null,
+      "cpu_s": null,
+      "started_at": 1791392098.635486,
+      "startup_s": 3.49,
+      "last_heartbeat": 1791392223.2393236,
+      "trader_id": "PAPER-SYN2",
+      "account_id": "PAPER_SYN2-001",
+      "order_id_tag": "SYN2",
+      "intervals": 968,
+      "orders_submitted": 156,
+      "orders_filled": 156,
+      "open_positions": 2,
+      "reconciled": true,
+      "orders_restored": 0,
+      "orders_rejected_frozen": 0,
+      "denied_reason": null,
+      "lease_pid": 16,
+      "uid": null
+    },
+    {
+      "account": "syn3",
+      "state": "ready",
+      "pid": 17,
+      "exit_code": null,
+      "rss_mb": 348.4,
+      "cpu_s": 3.21,
+      "started_at": 1791392098.6408603,
+      "startup_s": 3.48,
+      "last_heartbeat": 1791392228.2217886,
+      "trader_id": "PAPER-SYN3",
+      "account_id": "PAPER_SYN3-001",
+      "order_id_tag": "SYN3",
+      "intervals": 1008,
+      "orders_submitted": 163,
+      "orders_filled": 163,
+      "open_positions": 2,
+      "reconciled": true,
+      "orders_restored": 0,
+      "orders_rejected_frozen": 0,
+      "denied_reason": null,
+      "lease_pid": 17,
+      "uid": 65534
+    },
+    {
+      "account": "syn4",
+      "state": "ready",
+      "pid": 18,
+      "exit_code": null,
+      "rss_mb": 340.9,
+      "cpu_s": 3.13,
+      "started_at": 1791392098.6425164,
+      "startup_s": 3.34,
+      "last_heartbeat": 1791392228.0768955,
+      "trader_id": "PAPER-SYN4",
+      "account_id": "PAPER_SYN4-001",
+      "order_id_tag": "SYN4",
+      "intervals": 1008,
+      "orders_submitted": 163,
+      "orders_filled": 163,
+      "open_positions": 2,
+      "reconciled": true,
+      "orders_restored": 0,
+      "orders_rejected_frozen": 0,
+      "denied_reason": null,
+      "lease_pid": 18,
+      "uid": 65534
+    }
+  ],
+  "after_restart": [
+    {
+      "account": "syn1",
+      "state": "ready",
+      "pid": 15,
+      "exit_code": null,
+      "rss_mb": 343.9,
+      "cpu_s": 3.22,
+      "started_at": 1791392098.6334138,
+      "startup_s": 3.14,
+      "last_heartbeat": 1791392230.9648397,
+      "trader_id": "PAPER-SYN1",
+      "account_id": "PAPER_SYN1-001",
+      "order_id_tag": "SYN1",
+      "intervals": 1032,
+      "orders_submitted": 163,
+      "orders_filled": 163,
+      "open_positions": 2,
+      "reconciled": true,
+      "orders_restored": 0,
+      "orders_rejected_frozen": 0,
+      "denied_reason": null,
+      "lease_pid": 15,
+      "uid": 65534
+    },
+    {
+      "account": "syn2",
+      "state": "ready",
+      "pid": 132,
+      "exit_code": null,
+      "rss_mb": 345.0,
+      "cpu_s": 2.55,
+      "started_at": 1791392228.4407961,
+      "startup_s": 2.29,
+      "last_heartbeat": 1791392231.739248,
+      "trader_id": "PAPER-SYN2",
+      "account_id": "PAPER_SYN2-001",
+      "order_id_tag": "SYN2",
+      "intervals": 8,
+      "orders_submitted": 0,
+      "orders_filled": 0,
+      "open_positions": 0,
+      "reconciled": true,
+      "orders_restored": 156,
+      "orders_rejected_frozen": 0,
+      "denied_reason": null,
+      "lease_pid": 132,
+      "uid": 65534
+    },
+    {
+      "account": "syn3",
+      "state": "ready",
+      "pid": 17,
+      "exit_code": null,
+      "rss_mb": 348.6,
+      "cpu_s": 3.22,
+      "started_at": 1791392098.6408603,
+      "startup_s": 3.48,
+      "last_heartbeat": 1791392231.2670681,
+      "trader_id": "PAPER-SYN3",
+      "account_id": "PAPER_SYN3-001",
+      "order_id_tag": "SYN3",
+      "intervals": 1032,
+      "orders_submitted": 163,
+      "orders_filled": 163,
+      "open_positions": 2,
+      "reconciled": true,
+      "orders_restored": 0,
+      "orders_rejected_frozen": 0,
+      "denied_reason": null,
+      "lease_pid": 17,
+      "uid": 65534
+    },
+    {
+      "account": "syn4",
+      "state": "ready",
+      "pid": 18,
+      "exit_code": null,
+      "rss_mb": 340.9,
+      "cpu_s": 3.13,
+      "started_at": 1791392098.6425164,
+      "startup_s": 3.34,
+      "last_heartbeat": 1791392231.1098068,
+      "trader_id": "PAPER-SYN4",
+      "account_id": "PAPER_SYN4-001",
+      "order_id_tag": "SYN4",
+      "intervals": 1032,
+      "orders_submitted": 163,
+      "orders_filled": 163,
+      "open_positions": 2,
+      "reconciled": true,
+      "orders_restored": 0,
+      "orders_rejected_frozen": 0,
+      "denied_reason": null,
+      "lease_pid": 18,
+      "uid": 65534
+    }
+  ],
+  "sandbox": {
+    "syn1": {
+      "account": "syn1",
+      "pid": 15,
+      "at": 1791392098.9564366,
+      "enforced": {
+        "rlimit_as_mb": 4096,
+        "rlimit_nofile": 1024,
+        "rlimit_core": 0,
+        "nice": 10,
+        "uid": 65534,
+        "gid": 65534,
+        "groups": [],
+        "forbidden_paths": {
+          "/root/repos": "absent",
+          "/root/repos/stock-vaults": "absent",
+          "/mnt/funnytree/stock-vaults": "absent",
+          "/opt/stock-vaults": "absent"
+        },
+        "env_keys": [
+          "ALGOBOTS_DEMO_STATE_DIR",
+          "LANG",
+          "PATH",
+          "PYTHONPATH",
+          "PYTHONUNBUFFERED"
+        ]
+      },
+      "asserted": {
+        "cpu": "no CPU-rate cap per worker; nice only (see deploy/workers/README.md)",
+        "network": "shared netns (unshare(CLONE_NEWNET) refused: Operation not permitted); paper-only, no live client in-process",
+        "broker": "paper venue only; the worker builds no live data/exec client"
+      },
+      "failures": [],
+      "ok": true
+    },
+    "syn2": {
+      "account": "syn2",
+      "pid": 132,
+      "at": 1791392228.4954884,
+      "enforced": {
+        "rlimit_as_mb": 4096,
+        "rlimit_nofile": 1024,
+        "rlimit_core": 0,
+        "nice": 10,
+        "uid": 65534,
+        "gid": 65534,
+        "groups": [],
+        "forbidden_paths": {
+          "/root/repos": "absent",
+          "/root/repos/stock-vaults": "absent",
+          "/mnt/funnytree/stock-vaults": "absent",
+          "/opt/stock-vaults": "absent"
+        },
+        "env_keys": [
+          "ALGOBOTS_DEMO_STATE_DIR",
+          "LANG",
+          "PATH",
+          "PYTHONPATH",
+          "PYTHONUNBUFFERED"
+        ]
+      },
+      "asserted": {
+        "cpu": "no CPU-rate cap per worker; nice only (see deploy/workers/README.md)",
+        "network": "shared netns (unshare(CLONE_NEWNET) refused: Operation not permitted); paper-only, no live client in-process",
+        "broker": "paper venue only; the worker builds no live data/exec client"
+      },
+      "failures": [],
+      "ok": true
+    },
+    "syn3": {
+      "account": "syn3",
+      "pid": 17,
+      "at": 1791392098.9585109,
+      "enforced": {
+        "rlimit_as_mb": 4096,
+        "rlimit_nofile": 1024,
+        "rlimit_core": 0,
+        "nice": 10,
+        "uid": 65534,
+        "gid": 65534,
+        "groups": [],
+        "forbidden_paths": {
+          "/root/repos": "absent",
+          "/root/repos/stock-vaults": "absent",
+          "/mnt/funnytree/stock-vaults": "absent",
+          "/opt/stock-vaults": "absent"
+        },
+        "env_keys": [
+          "ALGOBOTS_DEMO_STATE_DIR",
+          "LANG",
+          "PATH",
+          "PYTHONPATH",
+          "PYTHONUNBUFFERED"
+        ]
+      },
+      "asserted": {
+        "cpu": "no CPU-rate cap per worker; nice only (see deploy/workers/README.md)",
+        "network": "shared netns (unshare(CLONE_NEWNET) refused: Operation not permitted); paper-only, no live client in-process",
+        "broker": "paper venue only; the worker builds no live data/exec client"
+      },
+      "failures": [],
+      "ok": true
+    },
+    "syn4": {
+      "account": "syn4",
+      "pid": 18,
+      "at": 1791392098.955057,
+      "enforced": {
+        "rlimit_as_mb": 4096,
+        "rlimit_nofile": 1024,
+        "rlimit_core": 0,
+        "nice": 10,
+        "uid": 65534,
+        "gid": 65534,
+        "groups": [],
+        "forbidden_paths": {
+          "/root/repos": "absent",
+          "/root/repos/stock-vaults": "absent",
+          "/mnt/funnytree/stock-vaults": "absent",
+          "/opt/stock-vaults": "absent"
+        },
+        "env_keys": [
+          "ALGOBOTS_DEMO_STATE_DIR",
+          "LANG",
+          "PATH",
+          "PYTHONPATH",
+          "PYTHONUNBUFFERED"
+        ]
+      },
+      "asserted": {
+        "cpu": "no CPU-rate cap per worker; nice only (see deploy/workers/README.md)",
+        "network": "shared netns (unshare(CLONE_NEWNET) refused: Operation not permitted); paper-only, no live client in-process",
+        "broker": "paper venue only; the worker builds no live data/exec client"
+      },
+      "failures": [],
+      "ok": true
+    }
+  }
+}
