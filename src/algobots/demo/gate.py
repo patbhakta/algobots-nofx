@@ -30,7 +30,7 @@ from algobots.risk import InMemorySink, RiskEnvelope, RiskGate, RiskLimits
 
 MODES = ("PAPER", "LIVE")
 LIVE_DISABLED = "no live venue approved"
-PATHS = ("strategy", "single", "broadcast", "basket", "split", "bracket")
+PATHS = ("strategy", "single", "broadcast", "basket", "split", "bracket", "bridge")
 
 
 @dataclass(frozen=True)
