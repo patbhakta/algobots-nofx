@@ -1,6 +1,12 @@
 # Specification: NoFX Warm-Paper Dashboard Elements (Adapted from SETS MACHINE)
 
-**Document:** `docs/design/shelpid-sets-dashboard-spec.md`  
+> **SUPERSEDED** (Oct 13 2026, board directive [ALG-3336](/ALG/issues/ALG-3336)):
+> the warm-paper/SETS styling in this document no longer governs A09. The
+> shipped design language is **NoFX** — the flat, dark, effects-free vocabulary
+> of `/demo` — recorded in [`docs/design/nofx-redo.md`](nofx-redo.md).
+> Kept for history; do not implement from this file.
+
+**Document:** `docs/design/shelpid-sets-dashboard-spec.md`
 **Target Consumer:** Design Technologist, Product Manager, Front-end Engineers  
 **Source Analysis:** Shelpid/SETS ("SETS MACHINE", ALG-3145)  
 **Design System Compliance:** AlgoBots Warm Paper Design System (A09 / `docs/design/warm-paper-design-system.md`)

@@ -1,6 +1,8 @@
-[ok] storyboard: 20 pages + index, static, DEMO DATA on every page; grain tile sha256 ce5f5c978c43 at 3%
-[ok] contrast: 24/24 text/surface pairs >= 4.5:1 (grain on and off); lowest 4.6:1
-[adjusted] spec attention #946014 is 4.40:1 on paper (fails AA); shipped #895912 is 4.64:1 under grain
+python3 -m algobots.dashboard.design build artifacts/A09
+A09 outputs written to artifacts/A09
+python3 tests/packets/A09/demo.py
+[ok] storyboard: 20 pages + index, static, DEMO DATA on every page; NoFX: flat dark, mono-first, no effects to toggle
+[ok] contrast: 18/18 text/surface pairs >= 4.5:1 on dark surfaces; lowest 4.75:1
 [rejected] action without environment: action 'Buy SPY' needs environment PAPER or LIVE, got None
 [rejected] action with mismatched environment: action 'Buy SPY': environment LIVE != account PAPER
 [paused] stale feed: approve disabled (True); pause stays available (True)

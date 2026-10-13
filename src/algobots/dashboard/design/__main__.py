@@ -10,7 +10,7 @@ import json
 import sys
 from pathlib import Path
 
-from algobots.dashboard.design import components, grain, storyboard, tokens
+from algobots.dashboard.design import components, storyboard, tokens
 from algobots.dashboard.design.css import stylesheet
 from algobots.dashboard.fixtures import all_fixtures
 
@@ -33,12 +33,10 @@ def build(out: Path) -> None:
             "adjustments": {
                 k: {"value": v, "reason": r} for k, (v, r) in tokens.ADJUSTMENTS.items()
             },
-            "grain": dict(tokens.GRAIN) | {"tile_sha256": grain.tile_sha256()},
             "type": dict(tokens.TYPE),
             "space": dict(tokens.SPACE),
             "radius": tokens.RADIUS,
             "rule_width": tokens.RULE_WIDTH,
-            "motion_ms": dict(tokens.MOTION_MS),
         },
     )
     (out / "tokens.css").write_text(stylesheet(), encoding="utf-8")

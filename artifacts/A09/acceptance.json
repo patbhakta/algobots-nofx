@@ -1,96 +1,111 @@
 {
   "packet": "A09",
-  "revision": 1,
-  "issue": "ALG-3105",
+  "revision": 2,
+  "issue": "ALG-3337",
+  "directive": "ALG-3336 (board, user-created Oct 13 2026): warm-paper/SETS styling superseded by NoFX, the flat dark effects-free /demo vocabulary",
   "repository": "algobots",
-  "baseline_commit": "48642df",
-  "branch": "feat/alg-3105-a09-design-system",
-  "implementation_commit": "6dd2106",
-  "make_targets_integration_commit": "178534b",
-  "integrated_commit": "98d9423",
-  "integration_note": "merged to main as 98d9423 (--no-ff of feat/alg-3105-a09-design-system @ c71557a) after independent re-review PASS on ALG-3185",
+  "baseline_commit": "a1a93c9",
+  "branch": "feat/alg-3336-a09-nofx-redo",
+  "implementation_commit": "c334167",
   "environment": {
     "python": "3.12.3",
-    "browser": "Chrome for Testing 153.0.8010.12 (chrome-headless-shell, Playwright cache; nothing installed)",
-    "allowed": [
-      "development",
-      "synthetic-paper"
-    ],
+    "browser": "chrome-headless-shell (Playwright cache 1243; nothing installed)",
+    "allowed": ["development", "synthetic-paper"],
     "fixtures": "synthetic only; no broker, feed, memory service or network contacted"
   },
   "verification": {
-    "command": "make verify-A09",
+    "command": "make verify-A09 PYTHON=python3 (PYTHONPATH=$PWD/src; the A09 targets take it from the environment)",
     "steps": [
       "python -m algobots.dashboard.design build artifacts/A09 (deterministic: unchanged tree stays clean)",
       "python -m pytest tests/packets/A09 -q -p no:cacheprovider -rs --junitxml=artifacts/A09/test-results/junit.xml",
       "sed strips timestamp/hostname/time from junit.xml"
     ],
-    "result": "199 passed, 0 failed, 0 skipped",
-    "full_suite": "python -m pytest -> 567 passed (368 pre-existing + 199 A09)",
-    "regression": "make verify-A01 -> green (schema lock unchanged; every tracked file has an owner)",
-    "lint": "ruff check . -> All checks passed; ruff format --check on A09 paths clean",
-    "screenshots": "make screenshots-A09 -> 38 screenshots; 0 with horizontal overflow or cell clipping (layout-audit.json); PNGs not byte-reproducible",
-    "main_merge": "at 98d9423: make verify-A09 199 passed 0 skipped; python -m pytest 567 passed; make verify-A01 green; ruff clean"
+    "result": "187 passed, 0 failed, 0 skipped (headless lane ran; 36 screenshots, 0 overflow)",
+    "determinism": "build twice -> sha256 of every generated file identical; storyboard committed-copy test green",
+    "full_suite": "1035 tests: 4 failed = 1 pre-existing base red (tests/demo/test_ledger.py::test_positions_and_orders_endpoints, byte-identical at origin/main a1a93c9) + 3 sibling packet write-scope guards (A03/A04/A14, branch-scoped by design); 18 skipped",
+    "full_suite_excluding_sibling_guards": "1032 tests: 1 failed (the same base red), 1013 passed, 18 skipped",
+    "demo_lane": "tests/demo + tests/packets/A10: 117 tests, only the same pre-existing base red fails -> shared-components constraint held (components.py byte-identical)",
+    "lint": "ruff check . -> All checks passed; ruff format --check on A09 paths clean"
   },
   "acceptance_cases": [
     {
       "id": 1,
-      "criterion": "Warm paper theme and compact hierarchy match the uploaded reference direction; no old dark-theme assumption remains.",
-      "result": "PASS (ALG-3185; direction per roadmap text, Pat's eye-check against the MP4 is a non-blocking follow-up)",
+      "criterion": "make verify-A09 PYTHON=python3 green end-to-end.",
+      "result": "PASS",
       "evidence": [
-        "tests/packets/A09/test_a09_tokens.py::test_spec_values_recorded_verbatim, test_surfaces_are_light_paper",
-        "tests/packets/A09/test_a09_tokens.py::test_stylesheet_has_no_dark_theme, test_no_dark_theme_assumption_in_dashboard_sources (whole src/algobots/dashboard/)",
-        "tests/packets/A09/test_a09_tokens.py::test_tabular_figures_for_financial_values, test_grain_opacity_and_type_sizes_follow_spec",
-        "tests/packets/A09/test_a09_headless.py::test_no_horizontal_overflow_at_spec_sizes (4 screens x 5 states x 1920x1114/1440x900/1024x768/390x844)",
-        "artifacts/A09/screenshots/ (38 PNGs) and demo-and-limitations.md observed (per roadmap text) vs proposed table",
-        "tests/packets/A09/test_a09_headless.py::test_grain_is_actually_painted_and_texture_off_removes_it (pixel-level; fails on 262dbd4)"
+        "artifacts/A09/test-results/verify-A09.txt (full transcript)",
+        "artifacts/A09/test-results/junit.xml (187 passed, 0 failed, 0 skipped)",
+        "tests/packets/A09/test_a09_scope.py (write scope incl. ALG-3337 commits; make-targets unchanged)"
       ]
     },
     {
       "id": 2,
-      "criterion": "Text remains legible with grain; texture-off and reduced-motion settings work.",
-      "result": "PASS (ALG-3185; grain visible and legible by eye at 1440/1920, pixel test proves texture-off)",
+      "criterion": "No-effects guard test passes: built CSS has no @keyframes/transition/animation/grain data-URI (and no gradients, shadows, radius, filters); built pages expose no texture/motion toggles.",
+      "result": "PASS",
       "evidence": [
-        "tests/packets/A09/test_a09_headless.py::test_grain_is_actually_painted_and_texture_off_removes_it (grain within 3% of paper on, plain paper off)",
-        "tests/packets/A09/test_a09_tokens.py::test_text_meets_wcag_aa_on_paper (6 text tokens x 2 surfaces x grain on/off, worst-case grain pixel)",
-        "tests/packets/A09/test_a09_tokens.py::test_each_adjustment_is_needed_and_minimal (positive, attention, focus)",
-        "tests/packets/A09/test_a09_grain_motion.py::test_tile_is_small_monochrome_and_deterministic, test_grain_layer_is_stationary_and_below_content",
-        "tests/packets/A09/test_a09_grain_motion.py::test_texture_off_removes_grain, test_reduced_motion_and_motion_off_zero_every_duration, test_all_motion_reaches_the_toggles",
-        "tests/packets/A09/test_a09_headless.py::test_grain_on_by_default_and_texture_off_hides_it, test_motion_off_toggle_and_os_reduced_motion (--force-prefers-reduced-motion)",
-        "artifacts/A09/accessibility-contrast.json (24/24 pairs >= 4.5:1; lowest 4.60:1)"
+        "tests/packets/A09/test_a09_nofx_guard.py::test_built_css_has_no_effects, test_built_css_rules_use_flat_backgrounds",
+        "tests/packets/A09/test_a09_nofx_guard.py::test_built_pages_expose_no_toggles_or_effects, test_audit_script_survives_without_effect_fields, test_design_module_exports_no_grain_or_motion",
+        "tests/packets/A09/test_a09_tokens.py::test_there_are_no_effect_tokens (GRAIN/MOTION_MS/SHADOW gone; RADIUS=0)"
       ]
     },
     {
       "id": 3,
-      "criterion": "Every financial fixture is marked synthetic and each action displays account and environment.",
-      "result": "PASS (ALG-3182, reconfirmed ALG-3185)",
+      "criterion": "WCAG AA >= 4.5:1 measured on dark surfaces for all text tokens.",
+      "result": "PASS (18/18 pairs; tightest muted on raised 4.75:1; ADJUSTMENTS empty — every /demo value already clears AA)",
       "evidence": [
-        "tests/packets/A09/test_a09_fixtures.py::test_every_fixture_is_marked_synthetic, test_amounts_are_decimal_strings_with_currency",
-        "tests/packets/A09/test_a09_storyboard.py::test_demo_banner_and_tags (every page banner; every financial panel tagged; every data-fin value inside a DEMO DATA section)",
-        "tests/packets/A09/test_a09_storyboard.py::test_every_action_shows_account_and_environment (all 20 pages; LIVE actions disabled 'not authorized')",
-        "tests/packets/A09/test_a09_storyboard.py::test_action_component_refuses_missing_context",
-        "tests/packets/A09/test_a09_storyboard.py::test_paused_actions_say_why_and_stop_access_stays_open"
+        "tests/packets/A09/test_a09_tokens.py::test_text_meets_wcag_aa_on_dark (6 text tokens x bg/panel/raised)",
+        "tests/packets/A09/test_a09_tokens.py::test_all_demo_text_values_already_pass_aa_so_nothing_is_adjusted, test_focus_ring_meets_non_text_contrast (worst 7.07:1)",
+        "artifacts/A09/accessibility-contrast.json (18 measured rows)",
+        "docs/design/nofx-redo.md (token table with measured ratios)"
+      ]
+    },
+    {
+      "id": 4,
+      "criterion": "Information content unchanged: DEMO DATA banner on every page, account+environment on actions, accessible statuses — existing storyboard tests remain and pass.",
+      "result": "PASS (tests/packets/A09/test_a09_storyboard.py and test_a09_fixtures.py unchanged and green; fixtures untouched)",
+      "evidence": [
+        "tests/packets/A09/test_a09_storyboard.py::test_demo_banner_and_tags, test_every_action_shows_account_and_environment, test_statuses_are_color_independent",
+        "tests/packets/A09/test_a09_fixtures.py (5 states, synthetic marks, decimal amounts)",
+        "tests/packets/A09/test_a09_headless.py::test_no_horizontal_overflow_at_spec_sizes (4 screens x 5 states x 4 sizes, ran headless)"
+      ]
+    },
+    {
+      "id": 5,
+      "criterion": "Rebuild is byte-identical (determinism).",
+      "result": "PASS",
+      "evidence": [
+        "artifacts/A09/test-results/verify-A09.txt (build-twice sha256 diff empty)",
+        "tests/packets/A09/test_a09_storyboard.py::test_build_is_deterministic_and_committed_copy_is_current"
+      ]
+    },
+    {
+      "id": 6,
+      "criterion": "Full-suite regression per house convention; the tests/demo lane green (shared-components constraint held).",
+      "result": "PASS with documented exceptions (sibling guards A03/A04/A14 excluded as branch-scoped by design; known base red fails identically at origin/main)",
+      "evidence": [
+        "artifacts/A09/test-results/verify-A09.txt (regression counts: 1035 total / 4 failed / 18 skipped; excluded run 1032 / 1 failed)",
+        "tests/packets/A09/test_a09_tokens.py::test_no_hard_coded_colors_outside_tokens keeps token discipline",
+        "components.py byte-identical to previous revision (git show c334167 --stat)"
       ]
     }
   ],
   "blocked_cases": [],
   "required_artifacts": {
-    "implementation_commit": "6dd2106 + bc0183b (+ 178534b make-targets integration); integrated as 98d9423",
-    "independent_review_receipt": "ALG-3182 (11:00Z) at 262dbd4: case 3 PASS, cases 1-2 FAIL on B1 (grain never painted) -> fixed bc0183b. ALG-3185 (11:24Z, comment 29dbc3c7) at c71557a: cases 1, 2, 3 PASS; mutation checks: 262dbd4 storyboard fails the pixel grain test, restored nowrap fails the clipped audit. Overall PASS",
+    "implementation_commit": "c334167",
+    "evidence_commit": "this commit (verify transcript, acceptance.json, demo-and-limitations.md)",
     "acceptance_json": "artifacts/A09/acceptance.json",
-    "test_results": "artifacts/A09/test-results/ (junit.xml, pytest-summary.txt: 199 passed)",
+    "test_results": "artifacts/A09/test-results/ (junit.xml, pytest-summary.txt, verify-A09.txt)",
     "demo_and_limitations": "artifacts/A09/demo-and-limitations.md (+ demo-output.txt)"
   },
   "output_contracts": {
     "design_tokens": "src/algobots/dashboard/design/tokens.py; artifacts/A09/tokens.json, tokens.css",
-    "component_inventory": "src/algobots/dashboard/design/components.py INVENTORY; artifacts/A09/components.json",
-    "screenshots": "artifacts/A09/screenshots/, layout-audit.json",
+    "component_inventory": "src/algobots/dashboard/design/components.py INVENTORY (unchanged); artifacts/A09/components.json",
+    "screenshots": "artifacts/A09/screenshots/ (36 PNGs), layout-audit.json",
     "clickable_fixture_storyboard": "artifacts/A09/storyboard/index.html (static, open from disk)"
   },
-  "fix_commits": [
-    "bc0183b (ALG-3182 B1 grain stacking context + pixel test; N1-N4; metric cell overlap found on re-capture)"
-  ],
+  "fix_commits": [],
   "follow_ups": [
-    "Non-blocking: Pat eye-checks the storyboard against the NoFX MP4 (not in any repo); a divergence becomes an A09 revision, not an A10 hold (ALG-3182 guidance)"
+    "Tech Lead independent review of feat/alg-3336-a09-nofx-redo (integration to main is the TL's separate step; do not merge from A09)",
+    "Pre-existing base red tests/demo/test_ledger.py::test_positions_and_orders_endpoints (missing data-executor on the demo positions page) — outside A09 scope, needs its own issue"
   ]
 }

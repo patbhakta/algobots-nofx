@@ -1,8 +1,8 @@
 """Capture A09 screenshots and the layout audit headless (`make screenshots-A09`).
 
 Writes PNGs to artifacts/A09/screenshots/ and artifacts/A09/layout-audit.json:
-every screen at the four DASHBOARD-SPEC sizes (good fixture), every non-good
-fixture state at 1440x900 (overview also at 390x844), and the texture-off / motion-off variants.
+every screen at the four DASHBOARD-SPEC sizes (good fixture) and every
+non-good fixture state at 1440x900 (overview also at 390x844).
 """
 
 import json
@@ -23,10 +23,6 @@ def plan() -> list[tuple[str, str, dict]]:
     shots = [(f"{s}-good.html", size, {}) for s in SCREENS for size in SIZES]
     shots += [(f"{s}-{st}.html", "1440x900", {}) for s in SCREENS for st in STATES if st != "good"]
     shots += [(f"overview-{st}.html", "390x844", {}) for st in STATES if st != "good"]
-    shots += [
-        ("workspace-good.html", "1440x900", {"texture": "off"}),
-        ("overview-good.html", "390x844", {"motion": "off"}),
-    ]
     return shots
 
 
