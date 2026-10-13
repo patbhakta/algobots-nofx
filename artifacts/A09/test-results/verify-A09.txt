@@ -1,0 +1,57 @@
+$ make verify-A09 PYTHON=python3  (branch feat/alg-3336-a09-nofx-redo off origin/main a1a93c9; PYTHONPATH=$PWD/src, the A09 targets rely on the environment)
+python3 -m algobots.dashboard.design build artifacts/A09
+A09 outputs written to artifacts/A09
+mkdir -p artifacts/A09/test-results
+python3 -m pytest tests/packets/A09 -q -p no:cacheprovider -rs \
+	--junitxml=artifacts/A09/test-results/junit.xml
+........................................................................ [ 38%]
+........................................................................ [ 77%]
+...........................................                              [100%]
+=============================== warnings summary ===============================
+../../../../usr/local/lib/python3.12/dist-packages/fastapi/testclient.py:1
+  /usr/local/lib/python3.12/dist-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+sed -i -E 's/ (timestamp|hostname|time)="[^"]*"//g' artifacts/A09/test-results/junit.xml
+
+$ determinism: build twice, compare bytes of every generated file (screenshots excluded: PNG capture is not byte-reproducible)
+rebuild byte-identical (test_build_is_deterministic_and_committed_copy_is_current also asserts committed copies)
+
+$ make demo-A09 PYTHON=python3
+python3 -m algobots.dashboard.design build artifacts/A09
+A09 outputs written to artifacts/A09
+python3 tests/packets/A09/demo.py
+[ok] storyboard: 20 pages + index, static, DEMO DATA on every page; NoFX: flat dark, mono-first, no effects to toggle
+[ok] contrast: 18/18 text/surface pairs >= 4.5:1 on dark surfaces; lowest 4.75:1
+[rejected] action without environment: action 'Buy SPY' needs environment PAPER or LIVE, got None
+[rejected] action with mismatched environment: action 'Buy SPY': environment LIVE != account PAPER
+[paused] stale feed: approve disabled (True); pause stays available (True)
+[unavailable] unknown valuation renders 'Unavailable', not 0: True
+
+$ make screenshots-A09 PYTHON=python3
+python3 -m algobots.dashboard.design build artifacts/A09
+A09 outputs written to artifacts/A09
+python3 tests/packets/A09/capture.py
+36 screenshots; 0 with horizontal overflow
+
+$ ruff check . && ruff format --check src/algobots/dashboard/design tests/packets/A09
+All checks passed!
+15 files already formatted
+
+$ pytest full regression (no exclusions) at implementation commit c334167
+4 failed (1 known pre-existing base red + 3 sibling packet write-scope guards), 1013 passed, 18 skipped — junit /tmp/full-post.xml:
+<testsuite name="pytest" errors="0" failures="4" skipped="18" tests="1035" time="118.479" timestamp="2026-10-13T09:19:34.991707+00:00" hostname="ip-208-84-102-245">
+FAILED tests/demo/test_ledger.py::test_positions_and_orders_endpoints - asser...
+FAILED tests/packets/A03/test_write_scope.py::test_branch_changes_stay_inside_a03_write_scope
+FAILED tests/packets/A04/test_a04_write_scope.py::test_branch_changes_stay_inside_a04_write_scope
+FAILED tests/packets/A14/test_write_scope.py::test_branch_stays_inside_a14_write_scope
+
+$ pytest full regression — sibling packet write-scope guards (A03/A04/A14) excluded: branch-scoped by design, pass only on their own branch/main
+<testsuite name="pytest" errors="0" failures="1" skipped="18" tests="1032" time="118.691" timestamp="2026-10-13T09:24:02.532843+00:00" hostname="ip-208-84-102-245">
+FAILED tests/demo/test_ledger.py::test_positions_and_orders_endpoints - asser...
+
+NOTE: tests/demo/test_ledger.py::test_positions_and_orders_endpoints fails byte-identically at origin/main a1a93c9 (verified in a detached base worktree this session) — pre-existing, reported for TL follow-up.
+
+$ tests/demo + A10 lane (shared-components proof; components.py is byte-identical): 117 tests, 1 failure = the same pre-existing base red, 4 skipped — junit /tmp/demo-lane-junit.xml
+<testsuite name="pytest" errors="0" failures="1" skipped="4" tests="117" time="13.185" timestamp="2026-10-13T09:12:50.879458+00:00" hostname="ip-208-84-102-245">
