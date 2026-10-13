@@ -8,8 +8,9 @@ Run migrations before serving: `alembic upgrade head`.
 
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from time import perf_counter
 
-from fastapi import FastAPI, Response, status
+from fastapi import FastAPI, Request, Response, status
 from sqlalchemy import text
 
 from algobots.api.accounts.broker_accounts import router as broker_accounts_router
@@ -26,6 +27,7 @@ from algobots.api.routers.auth import users_router
 from algobots.api.routers.resources import router as resources_router
 from algobots.demo import router as demo
 from algobots.demo.router import router as demo_router
+from algobots.engine.workers.bridge import bump_stats
 from algobots.knowledge.ingest.router import register as register_knowledge_router
 
 
@@ -49,6 +51,17 @@ app = FastAPI(
 # X-Request-Id that AccessLogMiddleware (inner) stamps on every response.
 app.add_middleware(AccessLogMiddleware)
 app.add_middleware(AuditMiddleware)
+
+
+@app.middleware("http")
+async def bridge_v1_stats(request: Request, call_next):  # noqa: ANN001, ANN202
+    """Traffic + latency counters for the v1 bridge surface (ALG-3340)."""
+    if not request.url.path.startswith("/demo/api/v1"):
+        return await call_next(request)
+    t0 = perf_counter()
+    response = await call_next(request)
+    bump_stats(request.url.path, (perf_counter() - t0) * 1000.0, response.status_code)
+    return response
 
 app.include_router(auth_router)
 app.include_router(users_router)

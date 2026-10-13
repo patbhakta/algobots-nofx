@@ -316,3 +316,29 @@ def test_trade_book_lists_worker_executed_fills(rig):
     (t,) = rig.client.get("/demo/api/v1/coin/trades").json()["trades"]
     assert Decimal(t["qty"]) == 14 and t["price"] == "0.50"
     assert t["trader_id"] == "PAPER-COIN" and t["trade_id"] and t["venue_account_id"]
+
+
+def test_v1_place_mirrors_intent_and_fill_to_the_bridge_channel(rig, tmp_path, monkeypatch):
+    """ALG-3340: an accepted v1 order appears in intents/ then fills/, from NoFX's view."""
+    import json as _json
+
+    channel = tmp_path / "bridge"
+    monkeypatch.setenv("ALGOBOTS_BRIDGE_DIR", str(channel))
+    rig.up("laya")
+    r = rig.place("laya", notional="10")
+    assert r.status_code == 200, r.text
+    intents = [
+        _json.loads(x) for x in (channel / "intents" / "intents.jsonl").read_text().splitlines()
+    ]
+    assert intents and intents[0]["leg_id"]
+    assert Decimal(intents[0]["notional"]) == Decimal("10")  # parse_money quantizes to cents
+
+    rig.drain()
+    fills = [
+        _json.loads(x) for x in (channel / "fills" / "fills.jsonl").read_text().splitlines()
+    ]
+    api_fills = [f for f in fills if f.get("source") == "api"]
+    assert api_fills, fills
+    assert api_fills[0]["event"] and api_fills[0]["qty"]
+    trades = rig.client.get("/demo/api/v1/laya/trades").json()["trades"]
+    assert any(t["leg_id"] == intents[0]["leg_id"] for t in trades)

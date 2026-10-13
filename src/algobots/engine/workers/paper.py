@@ -75,6 +75,7 @@ from nautilus_trader.trading.strategy import Strategy
 from algobots.demo import blotter as B
 from algobots.demo import killswitch
 from algobots.demo import ledger as L
+from algobots.engine.workers import bridge
 from algobots.engine.workers.execution import (
     EXIT_REFUSED,
     AccountWorkerSpec,
@@ -185,6 +186,7 @@ class DemoPaperStrategy(Strategy):
         self.api_filled = 0
         self.api_rejected = 0
         self.api_sink: Callable | None = None  # worker hook: (OrderFilled, ApiOrder) -> None
+        self.fills_sink: Callable | None = None  # worker hook: every fill dict -> None
 
     @property
     def accepting(self) -> bool:
@@ -232,19 +234,22 @@ class DemoPaperStrategy(Strategy):
 
     def on_order_filled(self, event) -> None:  # noqa: ANN001 — Nautilus OrderFilled
         d = self.decision_for.get(str(event.client_order_id))
-        self.fills.append(
-            {
-                "client_order_id": str(event.client_order_id),
-                "trade_id": str(event.trade_id),
-                "account_id": str(event.account_id),
-                "instrument": str(event.instrument_id),
-                "event": d.event if d else None,
-                "qty": str(event.last_qty),
-                "px": str(event.last_px),
-                "commission": str(event.commission),
-                "ts_event": event.ts_event,
-            }
-        )
+        rec = {
+            "client_order_id": str(event.client_order_id),
+            "trade_id": str(event.trade_id),
+            "account_id": str(event.account_id),
+            "instrument": str(event.instrument_id),
+            "event": d.event if d else None,
+            "qty": str(event.last_qty),
+            "px": str(event.last_px),
+            "commission": str(event.commission),
+            "ts_event": event.ts_event,
+        }
+        self.fills.append(rec)
+        if self.fills_sink is not None:
+            self.fills_sink(
+                {**rec, "source": "api" if isinstance(d, ApiOrder) else "decision"}
+            )
         self.filled += 1
         if isinstance(d, ApiOrder):
             d.done = True
@@ -320,6 +325,7 @@ class PaperWorker:
         )
         self.strategy = DemoPaperStrategy(DemoPaperConfig(**strategy_kwargs(account)))
         self.strategy.api_sink = self._record_api_fill
+        self.strategy.fills_sink = bridge.mirror_fill  # ALG-3340: fills -> bridge channel
         self.engine.add_strategy(self.strategy)
         self.status_path = state_dir / "workers" / f"{account}.json"
 

@@ -110,3 +110,27 @@ def test_crash_restart_is_entry_frozen_until_reconciled(tmp_path):
         assert w.strategy.rejected_frozen == rejected  # no refusals once reconciled
     finally:
         w.close()
+
+
+def test_every_fill_mirrors_to_the_bridge_channel(tmp_path, monkeypatch):
+    """ALG-3340: each Nautilus OrderFilled lands in fills/fills.jsonl, tagged."""
+    import json as _json
+
+
+    channel = tmp_path / "bridge"
+    monkeypatch.setenv("ALGOBOTS_BRIDGE_DIR", str(channel))
+    (tmp_path / "feed.jsonl").write_text("\n".join(_rows(6)) + "\n")
+    w = _worker(tmp_path, "laya")
+    try:
+        restored = w.reconcile()
+        mirrored = [
+            _json.loads(x)
+            for x in (channel / "fills" / "fills.jsonl").read_text().splitlines()
+        ]
+        assert len(mirrored) == restored == 4
+        assert all(m["source"] == "decision" for m in mirrored)
+        assert {m["client_order_id"] for m in mirrored} == {
+            str(o.client_order_id) for o in w.engine.cache.orders()
+        }
+    finally:
+        w.close()

@@ -30,6 +30,7 @@ from pathlib import Path
 
 from algobots.demo import ledger as L
 from algobots.demo import tickets as T
+from algobots.engine.workers import bridge
 from algobots.engine.workers import supervisor as SUP
 from algobots.engine.workers.lease import Lease
 
@@ -118,6 +119,7 @@ def enqueue(
                 fh.write(json.dumps(req) + "\n")
         finally:
             fcntl.flock(lock, fcntl.LOCK_UN)
+    bridge.mirror_intent(req)  # ALG-3340: the bridge channel sees every intent
     return req
 
 
