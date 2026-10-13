@@ -161,6 +161,22 @@ class ApiOrder:
     done: bool = False  # an OrderFilled event landed for it
 
 
+@dataclass
+class BridgeOrder:
+    """An admitted bridge intent (ALG-3340) riding the same queue path.
+
+    The control plane already ran admission (scope, PAPER-only, gate); this
+    worker executes it on its Nautilus engine and mirrors the OrderFilled
+    event back to the bridge channel.
+    """
+
+    intent: dict
+    event: str  # interval id the contract belongs to
+    ts: float
+    qty: int  # whole contracts (admission already clamped the value)
+    sell: bool  # side == sell: exit the contracts at the mid
+
+
 class DemoPaperConfig(StrategyConfig, frozen=True):
     account: str = ""
 
@@ -171,7 +187,7 @@ class DemoPaperStrategy(Strategy):
     def __init__(self, config: DemoPaperConfig) -> None:
         super().__init__(config)
         self.account = config.account
-        self.pending: dict[InstrumentId, list[L.Decision | ApiOrder]] = {}
+        self.pending: dict[InstrumentId, list[L.Decision | ApiOrder | BridgeOrder]] = {}
         self.submitted = 0
         self.filled = 0
         self.restored = 0  # submitted while reconciling, to rebuild venue state
@@ -179,18 +195,22 @@ class DemoPaperStrategy(Strategy):
         self.frozen = True  # no entries until the worker has reconciled
         self.restoring = False
         self.last_order: dict | None = None
-        self.decision_for: dict[str, L.Decision | ApiOrder] = {}  # client_order_id -> order
+        # client_order_id -> the decision / api leg / bridge intent it executes
+        self.decision_for: dict[str, L.Decision | ApiOrder | BridgeOrder] = {}
         self.fills: list[dict] = []  # one per Nautilus OrderFilled event
         self.api_pending: dict[str, ApiOrder] = {}  # client_order_id -> not-yet-filled api leg
         self.api_filled = 0
         self.api_rejected = 0
         self.api_sink: Callable | None = None  # worker hook: (OrderFilled, ApiOrder) -> None
+        self.bridge_pending: dict[str, BridgeOrder] = {}  # client_order_id -> claimed bridge intent
+        self.bridge_filled = 0
+        self.bridge_sink: Callable | None = None  # worker hook: (OrderFilled, BridgeOrder) -> None
 
     @property
     def accepting(self) -> bool:
         return self.restoring or not self.frozen
 
-    def queue(self, inst_id: InstrumentId, order: L.Decision | ApiOrder) -> bool:
+    def queue(self, inst_id: InstrumentId, order: L.Decision | ApiOrder | BridgeOrder) -> bool:
         """Queue an entry for the next quote; refused (and counted) while entry-frozen.
 
         Several orders can ride one instrument (a split's clips all trade the
@@ -205,20 +225,30 @@ class DemoPaperStrategy(Strategy):
 
     def on_quote_tick(self, tick: QuoteTick) -> None:
         for d in self.pending.pop(tick.instrument_id, []):
-            api = isinstance(d, ApiOrder)
-            qty = (
-                d.qty if api and d.qty else int(d.stake / L.FILL_PRICE)
-            )  # whole contracts at 50c, floored
+            if isinstance(d, BridgeOrder):
+                qty, sell = d.qty, d.sell
+                tags = [f"acct:{self.account}", f"event:{d.event}",
+                        f"intent:{d.intent.get('intent_id')}"]
+            elif isinstance(d, ApiOrder):
+                qty = d.qty if d.qty else int(d.stake / L.FILL_PRICE)
+                sell = d.sell
+                tags = [f"acct:{self.account}", f"event:{d.event}", f"api:{d.req['leg_id']}"]
+            else:  # L.Decision: entries size from the stake at the 50c mid
+                qty, sell, tags = int(d.stake / L.FILL_PRICE), False, [
+                    f"acct:{self.account}",
+                    f"event:{d.event}",
+                ]
             order = self.order_factory.market(
                 tick.instrument_id,
-                OrderSide.SELL if api and d.sell else OrderSide.BUY,
+                OrderSide.SELL if sell else OrderSide.BUY,
                 Quantity.from_int(qty),
-                tags=[f"acct:{self.account}", f"event:{d.event}"]
-                + ([f"api:{d.req['leg_id']}"] if api else []),
+                tags=tags,
             )
             self.decision_for[str(order.client_order_id)] = d
-            if api:
+            if isinstance(d, ApiOrder):
                 self.api_pending[str(order.client_order_id)] = d
+            elif isinstance(d, BridgeOrder):
+                self.bridge_pending[str(order.client_order_id)] = d
             self.submit_order(order)
             self.submitted += 1
             self.restored += self.restoring
@@ -226,7 +256,7 @@ class DemoPaperStrategy(Strategy):
                 "client_order_id": str(order.client_order_id),
                 "instrument": str(tick.instrument_id),
                 "qty": qty,
-                "stake": str(d.stake),
+                "stake": None if isinstance(d, BridgeOrder) else str(d.stake),
                 "ts": d.ts,
             }
 
@@ -252,6 +282,11 @@ class DemoPaperStrategy(Strategy):
             self.api_filled += 1
             if self.api_sink is not None:
                 self.api_sink(event, d)
+        elif isinstance(d, BridgeOrder):
+            self.bridge_pending.pop(str(event.client_order_id), None)
+            self.bridge_filled += 1
+            if self.bridge_sink is not None:
+                self.bridge_sink(event, d)
 
 
 def strategy_kwargs(account: str) -> dict[str, str]:
@@ -278,6 +313,7 @@ class PaperWorker:
         start: str,
         refills: list[float],
         spec: AccountWorkerSpec | None = None,
+        bridge_dir: Path | None = None,
     ):
         if account not in L.STRATEGIES:
             raise ValueError(f"unknown demo account {account!r}")
@@ -292,6 +328,7 @@ class PaperWorker:
                 f"{a.infra}"
             )
         self.account, self.feed, self.state_dir, self.refills = account, feed, state_dir, refills
+        self.bridge = bridge_dir  # ALG-3340: shared channel dir, or None (bridge off)
         self.since = datetime.strptime(start, "%Y-%m-%d").replace(tzinfo=UTC).timestamp()
         self.ids = ids(account)
         self.venue = Venue(self.ids["venue"])
@@ -320,6 +357,7 @@ class PaperWorker:
         )
         self.strategy = DemoPaperStrategy(DemoPaperConfig(**strategy_kwargs(account)))
         self.strategy.api_sink = self._record_api_fill
+        self.strategy.bridge_sink = self._record_bridge_fill
         self.engine.add_strategy(self.strategy)
         self.status_path = state_dir / "workers" / f"{account}.json"
 
@@ -391,6 +429,8 @@ class PaperWorker:
             "orders_rejected_frozen": s.rejected_frozen,
             "api_orders_filled": s.api_filled,
             "api_orders_rejected": s.api_rejected,
+            "bridge_fills": s.bridge_filled,
+            "bridge_pending": len(s.bridge_pending),
             "open_positions": len(self.engine.cache.positions_open()),
             "last_order": s.last_order,
             "mode": "paper",
@@ -580,6 +620,122 @@ class PaperWorker:
             self.strategy.api_pending.clear()
         return executed
 
+    # --- bridge (ALG-3340): execute admitted intents on this worker --------------------------
+
+    def _record_bridge_fill(self, event, order: BridgeOrder) -> None:  # noqa: ANN001 — OrderFilled
+        """Mirror the Nautilus OrderFilled to bridge/fills/ and finish the intent."""
+        from algobots.bridge import channel as CH
+
+        qty, px = Decimal(str(event.last_qty)), Decimal(str(event.last_px))
+        ts_utc = (
+            datetime.fromtimestamp(event.ts_event / NS, UTC).isoformat() if event.ts_event else None
+        )
+        fill = {
+            "schema": "bridge-fill/1",
+            "intent_id": order.intent.get("intent_id"),
+            "account": self.account,
+            "symbol": str(event.instrument_id.symbol),
+            "side": order.intent.get("side"),
+            "qty": str(qty),
+            "px": str(px),
+            "notional": str((qty * px).quantize(L.CENT)),
+            "commission": str(event.commission),
+            "client_order_id": str(event.client_order_id),
+            "trade_id": str(event.trade_id),
+            "trader_id": self.ids["trader_id"],
+            "order_id_tag": self.ids["order_id_tag"],
+            "venue": self.ids["venue"],
+            "venue_account_id": str(event.account_id),
+            "ts_event": event.ts_event,
+            "ts_utc": ts_utc,
+            "ts_recorded": time.time(),
+        }
+        CH.append_fill(self.bridge, self.account, fill)
+        CH.finish_intent(
+            self.bridge,
+            self.account,
+            str(order.intent.get("intent_id")),
+            {
+                "status": "filled",
+                "finished_ts": time.time(),
+                "fill": {
+                    "trade_id": fill["trade_id"],
+                    "client_order_id": fill["client_order_id"],
+                    "qty": fill["qty"],
+                    "px": fill["px"],
+                    "ts_utc": fill["ts_utc"],
+                },
+            },
+        )
+
+    def _reject_bridge(self, intent: dict, reason: str) -> None:
+        from algobots.bridge import channel as CH
+
+        CH.finish_intent(
+            self.bridge,
+            self.account,
+            str(intent.get("intent_id")),
+            {"status": "rejected", "reason": reason, "finished_ts": time.time()},
+        )
+
+    def drain_bridge_intents(self) -> list[dict]:
+        """Execute every claimed bridge intent on this worker's Nautilus engine.
+
+        Claims are atomic renames (``intents/`` -> ``processing/<account>/``);
+        a claim that survives a crash is replayed on the next drain
+        (at-least-once — fill records carry ``intent_id`` for dedupe). Every
+        claimed intent reaches a terminal outcome: a fill mirrors its
+        OrderFilled to ``fills/<account>.jsonl``; anything the venue left
+        unfilled is rejected with the venue's own status. Entry-frozen
+        workers leave the channel untouched for after reconcile.
+        """
+        from algobots.bridge import channel as CH
+
+        if self.bridge is None or not self.reconciled:
+            return []
+        intents, malformed = CH.claim_intents(self.bridge, self.account)
+        for path in malformed:
+            CH.reject_malformed(self.bridge, path, "intent file is not a JSON object")
+        if not intents:
+            return []
+        now = time.time()
+        ticks: dict[str, BinaryOption] = {}
+        for it in intents:
+            try:
+                symbol = str(it.get("symbol") or f"{current_event(now)}-YES")
+                event_id, _, outcome = symbol.rpartition("-")
+                qty = int(it["qty"])
+                if not event_id or not outcome or qty < 1:
+                    raise ValueError
+                sell = str(it.get("side", "buy")).lower() == "sell"
+            except (KeyError, TypeError, ValueError):
+                self._reject_bridge(it, "intent fields invalid after admission")
+                continue
+            inst_id = InstrumentId(Symbol(symbol), self.venue)
+            inst = self.engine.cache.instrument(inst_id)
+            if inst is None:
+                inst = instrument(self.venue, event_id, outcome.upper(), event_ts(event_id, now))
+                self.engine.add_instrument(inst)
+            order = BridgeOrder(intent=it, event=event_id, ts=now, qty=qty, sell=sell)
+            if not self.strategy.queue(inst_id, order):
+                raise RuntimeError("reconciled worker refused a bridge entry")  # unreachable
+            ticks[symbol] = inst
+        if ticks:
+            self.engine.add_data([quote(inst, now) for inst in ticks.values()])
+            self.engine.run(streaming=True)
+            self.engine.clear_data()
+            self.ran = True
+            for oid, order in list(self.strategy.bridge_pending.items()):
+                venue_order = self.engine.cache.order(ClientOrderId(oid))
+                why = (
+                    f"venue left it {venue_order.status}"
+                    if venue_order is not None
+                    else "venue order not found"
+                )
+                self._reject_bridge(order.intent, why)
+            self.strategy.bridge_pending.clear()
+        return intents
+
     def close(self) -> None:
         if self.ran:
             self.engine.end()
@@ -596,6 +752,10 @@ def main(argv: list[str] | None = None) -> None:
     ap.add_argument("--once", action="store_true", help="process the feed once and exit")
     ap.add_argument(
         "--execution", help="'sandbox' or 'adapter:<name>' (default: $ALGOBOTS_WORKER_EXECUTION)"
+    )
+    ap.add_argument(
+        "--bridge",
+        help="bridge channel dir to drain intents from (default: $ALGOBOTS_BRIDGE_DIR)",
     )
     a = ap.parse_args(argv)
     spec = (
@@ -615,8 +775,15 @@ def main(argv: list[str] | None = None) -> None:
         print(f"denied: {e}", flush=True)
         raise SystemExit(EXIT_DENIED) from None
     try:
+        bridge = Path(a.bridge) if a.bridge else (Path(s.bridge_dir) if s.bridge_dir else None)
         w = PaperWorker(
-            a.account, Path(s.demo_feed_path), Path(s.demo_state_dir), s.demo_start, refills, spec
+            a.account,
+            Path(s.demo_feed_path),
+            Path(s.demo_state_dir),
+            s.demo_start,
+            refills,
+            spec,
+            bridge_dir=bridge,
         )
     except AdapterNotAuthorized as e:
         lease.release(os.getpid())
@@ -636,6 +803,7 @@ def main(argv: list[str] | None = None) -> None:
         while True:
             w.step()
             w.drain_api_orders()
+            w.drain_bridge_intents()
             w.heartbeat()
             if a.once or stop:
                 break

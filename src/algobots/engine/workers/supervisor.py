@@ -190,6 +190,12 @@ class Supervisor:
         self.denied: dict[str, str] = {}  # account -> why start was refused
         self.reclaimed: dict[str, str] = {}  # account -> why a stale lease was evicted (ALG-3308)
         self.leases = {a: Lease(self.state_dir, a) for a in self.accounts}
+        # ALG-3340: drain the shared bridge channel when the control plane has
+        # one configured (explicit arg — the sandbox env allowlist drops it).
+        from algobots.api.config import get_settings
+
+        bridge = (get_settings().bridge_dir or "").strip()
+        self.bridge_arg = ["--bridge", bridge] if bridge else []
         self._lock = threading.Lock()
 
     def start(self, account: str | None = None) -> None:
@@ -247,6 +253,7 @@ class Supervisor:
                     *self.isolation.argv(acct, self.state_dir),
                     *self.command,
                     *("--account", acct, "--poll", str(self.poll)),
+                    *self.bridge_arg,
                 ],
                 stdout=log.open("ab"),
                 stderr=subprocess.STDOUT,

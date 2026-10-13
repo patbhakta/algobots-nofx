@@ -46,9 +46,14 @@ services:
       ALGOBOTS_DEMO_SLEEVE_REFILLS: ${ALGOBOTS_DEMO_SLEEVE_REFILLS:-}
       # ALG-3255: one Nautilus paper worker process per demo account (~350 MB RSS each).
       ALGOBOTS_DEMO_WORKERS_ENABLED: ${ALGOBOTS_DEMO_WORKERS_ENABLED:-1}
+      # ALG-3340 NoFX<->Nautilus bridge: shared file channel (intents/ + fills/).
+      # Mount the stack's bridge dir via ALGOBOTS_BRIDGE_HOST_DIR; empty
+      # ALGOBOTS_BRIDGE_DIR disables the /bridge endpoints (typed 503).
+      ALGOBOTS_BRIDGE_DIR: ${ALGOBOTS_BRIDGE_DIR:-/bridge}
     volumes:
       - ${LAYA_KALSHI_DIR:-/opt/laya/kalshi}:/feeds/kalshi:ro
       - demostate:/var/lib/algobots-demo
+      - ${ALGOBOTS_BRIDGE_HOST_DIR:-./bridge}:/bridge
     ports:
       - "${API_BIND:-127.0.0.1}:${API_PORT:-8000}:8000"
     depends_on:

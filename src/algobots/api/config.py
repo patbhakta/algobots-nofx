@@ -50,6 +50,10 @@ class Settings(BaseSettings):
     demo_principal_id: str = Field(default="demo-viewer")
     demo_tenant_id: str = Field(default="demo")
     demo_account_grants: str = Field(default="laya,jev,coin")
+    # ALG-3340 NoFX<->Nautilus bridge: the shared file channel directory
+    # (intents/ in, fills/ out). Empty disables the /bridge endpoints (they
+    # answer a typed 503) — the bridge is never an implicit local directory.
+    bridge_dir: str = Field(default="")
     # A03 OIDC seam (development/synthetic-paper only): an HS256 shared secret
     # for a local or fake provider. Empty issuer disables OIDC login. OIDC
     # authenticates existing members only; it never provisions accounts.
