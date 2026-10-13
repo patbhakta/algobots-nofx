@@ -46,9 +46,12 @@ services:
       ALGOBOTS_DEMO_SLEEVE_REFILLS: ${ALGOBOTS_DEMO_SLEEVE_REFILLS:-}
       # ALG-3255: one Nautilus paper worker process per demo account (~350 MB RSS each).
       ALGOBOTS_DEMO_WORKERS_ENABLED: ${ALGOBOTS_DEMO_WORKERS_ENABLED:-1}
+      # ALG-3340: NoFX<->Nautilus file channel shared with the stack on .243.
+      ALGOBOTS_BRIDGE_DIR: /bridge
     volumes:
       - ${LAYA_KALSHI_DIR:-/opt/laya/kalshi}:/feeds/kalshi:ro
       - demostate:/var/lib/algobots-demo
+      - /opt/algobots-stack/bridge:/bridge
     ports:
       - "${API_BIND:-127.0.0.1}:${API_PORT:-8000}:8000"
     depends_on:
