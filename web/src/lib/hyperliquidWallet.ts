@@ -126,7 +126,7 @@ export function getPreferredWalletProvider(): WalletProvider | undefined {
  * Prefer the injected provider that already exposes the expected account.
  * Browsers frequently have several wallet extensions installed, and blindly
  * preferring one brand can connect a different account than the Hyperliquid
- * account already saved in NOFX.
+ * account already saved in AlgoBots.
  */
 export async function getWalletProviderForAddress(
   expectedAddress?: string

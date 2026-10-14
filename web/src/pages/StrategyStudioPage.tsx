@@ -1083,14 +1083,14 @@ export function StrategyStudioPage() {
           min_risk_reward_ratio: 3,
         }),
         custom_prompt:
-          'NOFX Autopilot reads the Claw402.ai direction board each cycle, loads direction history and cost/liquidation structure, and holds each position until its board direction changes.',
+          'AlgoBots Autopilot reads the Claw402.ai direction board each cycle, loads direction history and cost/liquidation structure, and holds each position until its board direction changes.',
         prompt_sections: undefined,
       }
       const created = await api.createStrategy({
         name: text(
           language,
-          'NOFX Claw402 Auto Strategy',
-          'NOFX Claw402 Auto Strategy'
+          'AlgoBots Claw402 Auto Strategy',
+          'AlgoBots Claw402 Auto Strategy'
         ),
         description: text(
           language,
@@ -1196,7 +1196,7 @@ export function StrategyStudioPage() {
         min_risk_reward_ratio: 3,
       }),
       custom_prompt:
-        'Run NOFX Autopilot: use the Claw402.ai direction board as the candidate universe, open in the board direction, and hold until that direction changes, becomes neutral, or disappears.',
+        'Run AlgoBots Autopilot: use the Claw402.ai direction board as the candidate universe, open in the board direction, and hold until that direction changes, becomes neutral, or disappears.',
       prompt_sections: undefined,
     }
     return base
@@ -1240,7 +1240,7 @@ export function StrategyStudioPage() {
       if (outcome.warning) {
         notify.warning(outcome.warning)
       }
-      notify.success('NOFX Autopilot started')
+      notify.success('AlgoBots Autopilot started')
       setHasChanges(false)
       await loadStrategies(selectedStrategy.id)
       navigate(buildDashboardPath(outcome.traderId))
@@ -1389,7 +1389,7 @@ export function StrategyStudioPage() {
         <div className="flex items-center justify-between gap-4">
           <div>
             <h1 className="text-xl font-semibold text-nofx-text">
-              {text(language, 'NOFX Autopilot', 'NOFX Autopilot')}
+              {text(language, 'AlgoBots Autopilot', 'AlgoBots Autopilot')}
             </h1>
             <p className="mt-1 text-sm text-nofx-text-muted">
               {text(
@@ -1940,7 +1940,7 @@ export function StrategyStudioPage() {
                       </>
                     ) : (
                       <div className="rounded-lg border border-[rgba(26,24,19,0.14)] bg-nofx-bg-deeper px-4 py-4 text-sm text-nofx-text-muted">
-                        NOFX Autopilot follows the Claw402 direction board and
+                        AlgoBots Autopilot follows the Claw402 direction board and
                         uses liquidation structure and raw candles as context.
                       </div>
                     )}

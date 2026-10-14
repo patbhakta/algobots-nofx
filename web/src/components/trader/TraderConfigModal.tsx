@@ -37,29 +37,18 @@ function getStrategyAIConfig(strategy: Strategy) {
   )
 }
 
-// Exchange registration link configuration
+// Exchange registration links. Plain signup URLs only: we earn nothing on
+// where you open an account, so no referral codes and no "bonus" badge.
 const EXCHANGE_REGISTRATION_LINKS: Record<
   string,
   { url: string; hasReferral?: boolean }
 > = {
-  binance: {
-    url: 'https://www.binance.com/join?ref=NOFXENG',
-    hasReferral: true,
-  },
-  okx: { url: 'https://www.okx.com/join/1865360', hasReferral: true },
-  bybit: { url: 'https://partner.bybit.com/b/83856', hasReferral: true },
-  hyperliquid: {
-    url: 'https://app.hyperliquid.xyz/join/AITRADING',
-    hasReferral: true,
-  },
-  aster: {
-    url: 'https://www.asterdex.com/en/referral/fdfc0e',
-    hasReferral: true,
-  },
-  lighter: {
-    url: 'https://app.lighter.xyz/?referral=68151432',
-    hasReferral: true,
-  },
+  binance: { url: 'https://www.binance.com/en/register' },
+  okx: { url: 'https://www.okx.com' },
+  bybit: { url: 'https://www.bybit.com/register' },
+  hyperliquid: { url: 'https://app.hyperliquid.xyz' },
+  aster: { url: 'https://www.asterdex.com' },
+  lighter: { url: 'https://app.lighter.xyz' },
 }
 // Internal form state type
 interface FormState {

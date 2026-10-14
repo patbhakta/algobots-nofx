@@ -55,11 +55,11 @@ interface ServerReadyProof {
 }
 
 const STORAGE_KEY = 'nofx.hyperliquid.connection.v6'
-const AGENT_NAME = 'NOFX Agent'
+const AGENT_NAME = 'AlgoBots Agent'
 // Hyperliquid caps agent validity at 180 days and otherwise defaults to ~90 days.
 // The validity is encoded in the agent name as a " valid_until <ms>" suffix
 // (separator is a single space; timestamp in milliseconds). Hyperliquid strips
-// this suffix from the stored/displayed name, so the named slot stays "NOFX Agent".
+// this suffix from the stored/displayed name, so the named slot stays "AlgoBots Agent".
 // A 1-minute buffer keeps clock skew from pushing valid_until past the 180d cap.
 const AGENT_VALIDITY_MS = 180 * 24 * 60 * 60 * 1000 - 60 * 1000
 
@@ -157,8 +157,8 @@ export function HyperliquidWalletConnect({
         'Connect your wallet',
       generateAgent:
         (language as string) === 'zh'
-          ? 'Create a trading key for NOFX'
-          : 'Create a trading key for NOFX',
+          ? 'Create a trading key for AlgoBots'
+          : 'Create a trading key for AlgoBots',
       approveAgent:
         (language as string) === 'zh'
           ? 'Approve it in your wallet (trade-only, cannot withdraw)'
@@ -167,7 +167,7 @@ export function HyperliquidWalletConnect({
         (language as string) === 'zh'
           ? 'Approve the small per-trade builder fee'
           : 'Approve the small per-trade builder fee',
-      save: 'Save to NOFX — done',
+      save: 'Save to AlgoBots — done',
       done:
         (language as string) === 'zh'
           ? 'All set — trading authorized'
@@ -181,8 +181,8 @@ export function HyperliquidWalletConnect({
       refresh: 'Refresh',
       noCustody:
         (language as string) === 'zh'
-          ? 'Funds stay in your Hyperliquid account; NOFX only stores the authorized agent wallet.'
-          : 'Funds stay in your Hyperliquid account; NOFX only stores the authorized agent wallet.',
+          ? 'Funds stay in your Hyperliquid account; AlgoBots only stores the authorized agent wallet.'
+          : 'Funds stay in your Hyperliquid account; AlgoBots only stores the authorized agent wallet.',
       agentExpiry:
         (language as string) === 'zh'
           ? 'Agent authorization expires'
@@ -190,16 +190,16 @@ export function HyperliquidWalletConnect({
       agentExpired: 'Expired',
       agentNoAuth:
         (language as string) === 'zh'
-          ? 'No NOFX agent authorization found'
-          : 'No NOFX agent authorization found',
+          ? 'No AlgoBots agent authorization found'
+          : 'No AlgoBots agent authorization found',
       renewAgent:
         (language as string) === 'zh'
           ? 'Renew agent authorization (+180d)'
           : 'Renew agent authorization (+180d)',
       renewHint:
         (language as string) === 'zh'
-          ? 'Hyperliquid forbids reusing an agent, so renewal creates a new agent approved for 180 days, then updates the stored key in NOFX (sign-in required).'
-          : 'Hyperliquid forbids reusing an agent, so renewal creates a new agent approved for 180 days, then updates the stored key in NOFX (sign-in required).',
+          ? 'Hyperliquid forbids reusing an agent, so renewal creates a new agent approved for 180 days, then updates the stored key in AlgoBots (sign-in required).'
+          : 'Hyperliquid forbids reusing an agent, so renewal creates a new agent approved for 180 days, then updates the stored key in AlgoBots (sign-in required).',
       noWalletTitle:
         'No EVM wallet detected',
       noWalletDetail:
@@ -746,7 +746,7 @@ export function HyperliquidWalletConnect({
         builderApproved: false,
         savedExchangeId: undefined,
       }))
-      toast.success('NOFX agent wallet generated')
+      toast.success('AlgoBots agent wallet generated')
     } catch (err) {
       setError(
         err instanceof Error ? err.message : 'Failed to generate agent wallet'
@@ -886,7 +886,7 @@ export function HyperliquidWalletConnect({
         throw new Error(
           eligible.length > 1
             ? 'Multiple enabled Hyperliquid configs match this wallet. Select the exact saved connection before renewing.'
-            : 'No matching enabled NOFX config was found. Save the connection before renewing its agent.'
+            : 'No matching enabled AlgoBots config was found. Save the connection before renewing its agent.'
         )
       }
       const wallet = await api.generateWallet()
@@ -1059,7 +1059,7 @@ export function HyperliquidWalletConnect({
       }
       setError(
         approvalComplete
-          ? `Wallet authorization succeeded, but NOFX could not save the connection. Use “Save connection” to retry. ${err instanceof Error ? err.message : ''}`
+          ? `Wallet authorization succeeded, but AlgoBots could not save the connection. Use “Save connection” to retry. ${err instanceof Error ? err.message : ''}`
           : getWalletErrorMessage(err, 'Trading authorization failed')
       )
     } finally {
@@ -1125,7 +1125,7 @@ export function HyperliquidWalletConnect({
         )
         toast.success(
           state.agentPrivateKey
-            ? 'Hyperliquid account updated in NOFX'
+            ? 'Hyperliquid account updated in AlgoBots'
             : 'Existing Hyperliquid account authorization updated'
         )
         await refreshAgentInfo(
@@ -1163,7 +1163,7 @@ export function HyperliquidWalletConnect({
             }
           : prev
       )
-      toast.success('Hyperliquid account saved to NOFX')
+      toast.success('Hyperliquid account saved to AlgoBots')
       await refreshAgentInfo(
         walletSnapshot,
         state.agentAddress,
@@ -1271,11 +1271,11 @@ export function HyperliquidWalletConnect({
                 <Shield className="mt-0.5 h-4 w-4 shrink-0 text-nofx-success" />
                 <div>
                   <p className="text-xs font-semibold text-nofx-text">
-                    NOFX receives trade-only access; it can never withdraw your
+                    AlgoBots receives trade-only access; it can never withdraw your
                     funds.
                   </p>
                   <p className="mt-1 text-[11px] leading-5 text-nofx-text-muted">
-                    Two wallet approvals: authorize the NOFX Agent, then approve
+                    Two wallet approvals: authorize the AlgoBots Agent, then approve
                     a maximum 0.05% builder fee. Your main wallet key never
                     leaves your wallet.
                   </p>

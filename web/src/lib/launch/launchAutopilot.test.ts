@@ -110,7 +110,7 @@ describe('launchAutopilot', () => {
   it('updates the existing autopilot instead of creating a duplicate', async () => {
     mocks.runLaunchPreflight.mockResolvedValue(readyPreflight())
     mocks.api.getTraders.mockResolvedValue([
-      { trader_id: 't-old', trader_name: 'NOFX Autopilot', is_running: false },
+      { trader_id: 't-old', trader_name: 'AlgoBots Autopilot', is_running: false },
     ])
     mocks.api.updateTrader.mockResolvedValue({
       trader_id: 't-old',
@@ -132,7 +132,7 @@ describe('launchAutopilot', () => {
   it('treats a racing already-running rejection as success', async () => {
     mocks.runLaunchPreflight.mockResolvedValue(readyPreflight())
     mocks.api.getTraders.mockResolvedValue([
-      { trader_id: 't-1', trader_name: 'NOFX Autopilot', is_running: false },
+      { trader_id: 't-1', trader_name: 'AlgoBots Autopilot', is_running: false },
     ])
     mocks.api.updateTrader.mockResolvedValue({
       trader_id: 't-1',

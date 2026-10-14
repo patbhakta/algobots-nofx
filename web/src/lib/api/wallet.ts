@@ -39,9 +39,9 @@ export interface HyperliquidAgentInfo {
 }
 
 export interface HyperliquidAgentResponse {
-  agent: HyperliquidAgentInfo | null // the NOFX-managed agent, null when none approved
+  agent: HyperliquidAgentInfo | null // the AlgoBots-managed agent, null when none approved
   agents: HyperliquidAgentInfo[] // every approved agent for the wallet
-  builderApproved: boolean // live maxBuilderFee state for the NOFX builder
+  builderApproved: boolean // live maxBuilderFee state for the AlgoBots builder
 }
 
 export const walletApi = {

@@ -56,11 +56,11 @@ export const faqCategories: FAQCategory[] = [
     items: [
       {
         id: 'what-is-nofx',
-        question: 'What is NOFX?',
+        question: 'What is AlgoBots?',
         blocks: [
           {
             type: 'p',
-            text: 'NOFX is an open-source, self-hosted AI trading terminal. Its flagship mode is the NOFX Autopilot: an AI agent that reads the Claw402.ai signal board, verifies candidates with Signal Lab and liquidation structure, confirms timing with raw candles, and executes on Hyperliquid — all on your own machine, with your keys never leaving your server.',
+            text: 'AlgoBots is a self-hosted AI trading terminal. Its flagship mode is AlgoBots Autopilot: an AI agent that reads the Claw402.ai signal board, verifies candidates with Signal Lab and liquidation structure, confirms timing with raw candles, and executes trades on Hyperliquid — all on a server you control, with your keys never leaving it.',
           },
           {
             type: 'p',
@@ -109,7 +109,7 @@ export const faqCategories: FAQCategory[] = [
         blocks: [
           {
             type: 'p',
-            text: 'No API keys are required. NOFX routes inference through Claw402 pay-as-you-go infrastructure: your AI fee wallet pays per call with Base USDC, and the terminal accesses supported models (DeepSeek and other frontier models) on demand.',
+            text: 'No API keys are required. AlgoBots routes inference through Claw402 pay-as-you-go infrastructure: your AI fee wallet pays per call with Base USDC, and the terminal accesses supported models (DeepSeek and other frontier models) on demand.',
           },
           {
             type: 'p',
@@ -131,7 +131,7 @@ export const faqCategories: FAQCategory[] = [
           },
           {
             type: 'note',
-            text: 'Trading involves substantial risk of loss. NOFX is software, not investment advice.',
+            text: 'Trading involves substantial risk of loss. AlgoBots is software, not investment advice.',
           },
         ],
       },
@@ -183,15 +183,15 @@ export const faqCategories: FAQCategory[] = [
         blocks: [
           {
             type: 'p',
-            text: 'NOFX uses Hyperliquid agent wallets, so your main wallet key is never shared. The connect flow has four signed steps:',
+            text: 'AlgoBots uses Hyperliquid agent wallets, so your main wallet key is never shared. The connect flow has four signed steps:',
           },
           {
             type: 'steps',
             items: [
               'Connect your EVM wallet (Rabby, MetaMask, OKX, Coinbase Wallet).',
-              'Approve a freshly generated NOFX agent wallet — valid for 180 days, trading only.',
+              'Approve a freshly generated AlgoBots agent wallet — valid for 180 days, trading only.',
               'Approve the builder fee (a small per-order fee that funds the platform).',
-              'Save the agent key to your NOFX server (stored encrypted).',
+              'Save the agent key to your AlgoBots server (stored encrypted).',
             ],
           },
           {
@@ -229,7 +229,7 @@ export const faqCategories: FAQCategory[] = [
         blocks: [
           {
             type: 'p',
-            text: 'Launching is idempotent. If a NOFX Autopilot already exists, the launcher updates it with the current strategy config and restarts it — it never creates a duplicate. A restart can take up to a minute if the bot is mid-cycle; the UI waits for it.',
+            text: 'Launching is idempotent. If an AlgoBots Autopilot already exists, the launcher updates it with the current strategy config and restarts it — it never creates a duplicate. A restart can take up to a minute if the bot is mid-cycle; the UI waits for it.',
           },
         ],
       },
@@ -398,7 +398,7 @@ export const faqCategories: FAQCategory[] = [
             items: [
               'Stop: use the Stop button on the Config page trader list. Stopping halts the decision loop; open positions remain open and are yours to manage.',
               'Manual close: close any position from the dashboard positions panel — manual closes sync back into the position history.',
-              'Emergencies: you can always manage positions directly on Hyperliquid; NOFX never locks you out of your own account.',
+              'Emergencies: you can always manage positions directly on Hyperliquid; AlgoBots never locks you out of your own account.',
             ],
           },
         ],
@@ -476,18 +476,18 @@ export const faqCategories: FAQCategory[] = [
             items: [
               'All secrets (agent keys, fee wallet key, exchange API keys) are AES-256 encrypted at rest in your own database.',
               'Optional RSA transport encryption protects secrets in flight between browser and server.',
-              'NOFX is self-hosted: nothing is sent to any third-party server. The code is open source and auditable.',
+              'AlgoBots is self-hosted: your secrets stay in your own instance and are not sent to any third-party server.',
             ],
           },
         ],
       },
       {
         id: 'can-nofx-steal-funds',
-        question: 'Can NOFX withdraw or steal my funds?',
+        question: 'Can AlgoBots withdraw or steal my funds?',
         blocks: [
           {
             type: 'p',
-            text: 'No. On Hyperliquid, NOFX only ever holds an agent wallet, which by protocol design can trade but cannot withdraw. Your collateral stays in your own account under your main wallet’s control.',
+            text: 'No. On Hyperliquid, AlgoBots only ever holds an agent wallet, which by protocol design can trade but cannot withdraw. Your collateral stays in your own account under your main wallet’s control.',
           },
           {
             type: 'note',
@@ -511,39 +511,30 @@ export const faqCategories: FAQCategory[] = [
   // ───────────────────────── Self-hosting ─────────────────────────
   {
     id: 'self-hosting',
-    title: 'Self-Hosting & Troubleshooting',
+    title: 'Setup & Troubleshooting',
     icon: Wrench,
     items: [
       {
         id: 'how-to-install',
-        question: 'How do I install NOFX?',
+        question: 'Do I need to install anything?',
         blocks: [
           {
             type: 'p',
-            text: 'One line on Linux/macOS (installs and starts everything via Docker):',
-          },
-          {
-            type: 'list',
-            items: [
-              'Script: `curl -fsSL https://raw.githubusercontent.com/NoFxAiOS/nofx/main/install.sh | bash`',
-              'Docker: download `docker-compose.prod.yml` and run `docker compose -f docker-compose.prod.yml up -d`',
-              'Windows: install Docker Desktop, then use the Docker route above.',
-              'From source: Go 1.21+, Node 18+, TA-Lib (`brew install ta-lib` / `apt-get install libta-lib0-dev`), then `go run .` and `npm --prefix web run dev`.',
-            ],
+            text: 'No. Your instance is already running on its own server — you just open the URL you were given and sign in. There is nothing to install on your laptop or phone, and no app to download.',
           },
           {
             type: 'p',
-            text: 'Then open `http://127.0.0.1:3000` — the web UI is on port 3000, the API on 8080.',
+            text: 'The one thing you do need is a crypto wallet browser extension (Rabby or MetaMask) when you connect Hyperliquid, because only your own wallet can authorize trading.',
           },
         ],
       },
       {
         id: 'how-to-update',
-        question: 'How do I update?',
+        question: 'How do I get updates?',
         blocks: [
           {
             type: 'p',
-            text: 'Re-run the install script, or with Docker: `docker compose -f docker-compose.prod.yml pull && docker compose -f docker-compose.prod.yml up -d`. Your database and keys live in the mounted `data/` directory and survive updates. Running traders are restarted automatically after the backend comes back.',
+            text: 'Updates are applied on the server for you; reload the page to pick up a new version. Your database and keys live on a mounted volume and survive updates, and any running traders are restarted automatically once the backend comes back.',
           },
         ],
       },
@@ -573,112 +564,42 @@ export const faqCategories: FAQCategory[] = [
       },
       {
         id: 'where-are-logs',
-        question: 'Where are the logs?',
-        blocks: [
-          {
-            type: 'list',
-            items: [
-              'Backend: `docker logs nofx-trading` (or the terminal running `go run .`).',
-              'Per-cycle AI reasoning and errors: the dashboard Execution Log.',
-              'Frontend build/runtime issues: browser devtools console.',
-            ],
-          },
-        ],
-      },
-      {
-        id: 'port-conflicts',
-        question: 'Port 3000 or 8080 is already in use.',
+        question: 'Where can I see what the bot has been doing?',
         blocks: [
           {
             type: 'p',
-            text: 'Stop the conflicting service or remap the published ports in your compose file (e.g. `"3100:80"` for the frontend, `"8180:8080"` for the API), then restart the containers.',
+            text: 'The dashboard Execution Log is the place to look: it records every cycle, including the AI reasoning behind each trade and any refusal to trade. Server-side logs are only reachable by whoever runs your instance, so ask them if something needs digging into.',
           },
         ],
       },
     ],
   },
 
-  // ───────────────────────── Contributing ─────────────────────────
+  // ───────────────────────── Getting help ─────────────────────────
   {
-    id: 'contributing',
-    title: 'Contributing',
+    id: 'getting-help',
+    title: 'Getting Help',
     icon: GitBranch,
     items: [
       {
-        id: 'how-to-contribute',
-        question: 'How do I contribute code?',
+        id: 'report-a-problem',
+        question: 'Something looks wrong. How do I report it?',
         blocks: [
           {
-            type: 'links',
-            links: [
-              {
-                label: 'Roadmap',
-                href: 'https://github.com/orgs/NoFxAiOS/projects/3',
-              },
-              {
-                label: 'Task Dashboard',
-                href: 'https://github.com/orgs/NoFxAiOS/projects/5',
-              },
-              {
-                label: 'CONTRIBUTING.md',
-                href: 'https://github.com/NoFxAiOS/nofx/blob/dev/CONTRIBUTING.md',
-              },
-            ],
+            type: 'p',
+            text: 'Tell whoever set up your instance, directly. This is a private deployment shared with a small group, so there is no public issue tracker and no support queue — a message with the details is the fastest path to a fix.',
           },
           {
-            type: 'steps',
+            type: 'list',
             items: [
-              'Pick a task from the boards above (filter by good first issue / help wanted) and comment "assign me".',
-              'Fork the repo and branch from `dev`: `git checkout -b feat/your-topic`.',
-              'Follow Conventional Commits; run `npm --prefix web run lint && npm --prefix web run build` before pushing.',
-              'Open a PR against `NoFxAiOS/nofx:dev`, reference the issue (`Closes #123`), and attach screenshots for UI changes.',
+              'What you were doing, and what you expected instead.',
+              'A screenshot of the screen, including any error text.',
+              'Roughly when it happened, so the logs can be matched up.',
             ],
           },
-        ],
-      },
-      {
-        id: 'bounty-program',
-        question: 'Is there a bounty program?',
-        blocks: [
           {
-            type: 'p',
-            text: 'Yes — selected issues carry cash bounties, plus badges, priority review, and beta access for regular contributors.',
-          },
-          {
-            type: 'links',
-            links: [
-              {
-                label: 'Issues with bounty label',
-                href: 'https://github.com/NoFxAiOS/nofx/labels/bounty',
-              },
-              {
-                label: 'Bounty claim template',
-                href: 'https://github.com/NoFxAiOS/nofx/blob/dev/.github/ISSUE_TEMPLATE/bounty_claim.md',
-              },
-            ],
-          },
-        ],
-      },
-      {
-        id: 'report-bugs',
-        question: 'How do I report a bug?',
-        blocks: [
-          {
-            type: 'p',
-            text: 'Open a GitHub issue with the template: what you did, what happened, backend logs (`docker logs nofx-trading`), and screenshots. For suspected security issues, please follow the responsible-disclosure notes in SECURITY.md instead of a public issue.',
-          },
-          {
-            type: 'links',
-            links: [
-              {
-                label: 'New issue',
-                href: 'https://github.com/NoFxAiOS/nofx/issues/new/choose',
-              },
-              {
-                label: 'SECURITY.md',
-                href: 'https://github.com/NoFxAiOS/nofx/blob/dev/SECURITY.md',
-              },
-            ],
+            type: 'note',
+            text: 'Never share your private keys, seed phrase, or API secrets in a bug report. Nobody needs them to help you.',
           },
         ],
       },
