@@ -77,7 +77,7 @@ export default function HeaderBar({
               border: '1px solid rgba(26,24,19,0.12)',
             }}
           >
-            <img src="/icons/nofx.svg" alt="NOFX Logo" className="w-8 h-8" />
+            <img src="/icons/algobots.svg" alt="AlgoBots Logo" className="w-8 h-8" />
           </span>
           <span className="text-lg font-bold text-nofx-gold tracking-wide">
             NOFX

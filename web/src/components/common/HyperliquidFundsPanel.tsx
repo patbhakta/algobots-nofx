@@ -70,51 +70,6 @@ interface HyperliquidFundsPanelProps {
 }
 
 const TEXT = {
-  zh: {
-    deposit: '充值',
-    transfer: '划转',
-    balances: '余额',
-    spot: '现货(主钱包)',
-    perp: '合约(交易账户)',
-    available: '可用',
-    withdrawable: '可提取',
-    depositHint:
-      '二维码是你的主钱包地址。第一步:通过 Arbitrum One 链把 USDC 转到这个地址(进钱包)。第二步:用下方按钮存入 Hyperliquid,约 1 分钟到账,到账后即可直接用于交易。',
-    hlAccount: 'Hyperliquid 账户',
-    total: '总额',
-    tradable: '可交易',
-    marginInUse: '保证金占用',
-    depositWarn:
-      '入金只认 Arbitrum One 上的原生 USDC。USDT 或其他链的资产需先兑换成 Arbitrum USDC。',
-    bridgeTitle: '存入 Hyperliquid(钱包 → 交易账户)',
-    bridgeAmount: '入金数量 (USDC)',
-    bridgeSubmit: '存入交易账户',
-    bridgeSubmitting: '存入中…',
-    bridgeMin: `最低入金 ${MIN_BRIDGE_DEPOSIT_USDC} USDC,低于此额度会丢失`,
-    bridgeGasHint: '需要钱包里有少量 Arbitrum ETH 作为 gas。',
-    bridgeSubmitted: '入金交易已提交,约 1 分钟后到账合约账户',
-    wallet: '钱包 (Arbitrum)',
-    depositable: '可入金',
-    gas: 'Gas',
-    noGas: 'Arbitrum ETH 为 0,无法支付 gas',
-    copyAddress: '复制地址',
-    addressCopied: '地址已复制',
-    spotToPerp: '现货 → 合约',
-    perpToSpot: '合约 → 现货',
-    amount: '划转数量 (USDC)',
-    max: '全部',
-    submit: '签名并划转',
-    submitting: '划转中…',
-    connectFirst: '连接主钱包以签名划转',
-    connect: '连接钱包',
-    noProvider: '未检测到浏览器钱包插件(如 MetaMask / OKX)',
-    wrongWallet: (want: string, got: string) =>
-      `钱包地址不匹配:需要 ${want},当前连接 ${got}。划转签名必须来自主钱包本身。`,
-    invalidAmount: '请输入有效的划转数量',
-    exceedsBalance: '超出可用余额',
-    success: '划转成功,余额稍后刷新',
-    failed: '划转失败',
-  },
   en: {
     deposit: 'Deposit',
     transfer: 'Transfer',
@@ -168,7 +123,7 @@ export function HyperliquidFundsPanel({
   unifiedAccount = true,
   onTransferred,
 }: HyperliquidFundsPanelProps) {
-  const t = TEXT[language === 'zh' ? 'zh' : 'en']
+  const t = TEXT.en
   const address = normalizeAddress(walletAddress)
   const [tab, setTab] = useState<'deposit' | 'transfer'>('deposit')
   const [account, setAccount] = useState<HyperliquidAccountSummary | null>(null)

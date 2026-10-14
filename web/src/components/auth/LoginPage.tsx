@@ -74,7 +74,7 @@ export function LoginPage() {
 
           {/* Brand mark */}
           <div className="flex items-center gap-3 relative">
-            <img src="/icons/nofx.svg" alt="NOFX" className="w-9 h-9" />
+            <img src="/icons/algobots.svg" alt="AlgoBots" className="w-9 h-9" />
             <div className="font-mono font-bold text-xl tracking-tight text-nofx-text">
               NOFX<span className="text-nofx-gold">.</span>
             </div>
@@ -161,7 +161,7 @@ export function LoginPage() {
           <div className="w-full max-w-sm">
             {/* Mobile brand */}
             <div className="lg:hidden flex flex-col items-center gap-3 mb-10">
-              <img src="/icons/nofx.svg" alt="NOFX" className="w-12 h-12" />
+              <img src="/icons/algobots.svg" alt="AlgoBots" className="w-12 h-12" />
               <div className="font-mono font-bold text-lg tracking-tight text-nofx-text">
                 NOFX<span className="text-nofx-gold">.</span>
               </div>

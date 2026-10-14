@@ -53,11 +53,11 @@ export default [
       // React rules
       'react/react-in-jsx-scope': 'off',
       'react/prop-types': 'off',
-      // 该规则在 TS 项目中经常与 TS 的类型检查重复，关闭以避免误报
+      // Often duplicates TS type-checking in TS projects; disabled to avoid false positives
       'no-undef': 'off',
 
       // TypeScript rules
-      // 放宽以下规则以避免在不改变功能的情况下大面积改动代码
+      // Relaxed below to avoid large no-op code churn
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/explicit-module-boundary-types': 'off',
       '@typescript-eslint/no-unused-vars': 'off',
@@ -69,15 +69,15 @@ export default [
       'no-console': 'off',
       'no-debugger': 'off',
 
-      // 新版 react-hooks 推荐规则在本项目会造成大量误报，关闭以免影响开发体验
+      // New react-hooks recommended rules produce many false positives here; disabled
       'react-hooks/set-state-in-effect': 'off',
       'react-hooks/static-components': 'off',
       'react-hooks/preserve-manual-memoization': 'off',
 
-      // 某些字符串中包含未转义字符用于展示，关闭以避免不必要的修改
+      // Some display strings intentionally contain unescaped characters; disabled
       'react/no-unescaped-entities': 'off',
 
-      // 可视情况关闭依赖数组校验（如需严格可改为 'warn'）
+      // Dependency-array validation can be tightened to 'warn' if needed
       'react-hooks/exhaustive-deps': 'off'
     },
     settings: {

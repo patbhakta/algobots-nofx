@@ -69,8 +69,7 @@ const topNOptions = [5, 6, 7, 8, 9, 10]
 const claw402BoardLimit = 30
 const confidenceOptions = [65, 75, 82]
 
-const text = (language: string, zh: string, en: string) =>
-  language === 'zh' ? zh : en
+const text = (_language: string, _zh: string, en: string) => en
 
 type Profile = 'careful' | 'balanced' | 'active'
 

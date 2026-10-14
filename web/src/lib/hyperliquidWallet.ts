@@ -173,10 +173,10 @@ export async function ensureWalletSigningAccount(provider: WalletProvider, expec
     }
   }
   if (!Array.isArray(accounts) || accounts.length === 0) {
-    throw new Error('No signing account is connected. Unlock your wallet and connect the main account to this site before authorizing. 未连接可签名账户，请先解锁钱包并连接主账户。')
+    throw new Error('No signing account is connected. Unlock your wallet and connect the main account to this site before authorizing.')
   }
   if (!accounts.some((a) => typeof a === 'string' && normalizeAddress(a) === normalizeAddress(expectedAddress))) {
-    throw new Error(`Wrong wallet account. Select the main account ${shortAddress(expectedAddress)} before authorizing. 请切换到正确的主钱包。`)
+    throw new Error(`Wrong wallet account. Select the main account ${shortAddress(expectedAddress)} before authorizing.`)
   }
 }
 

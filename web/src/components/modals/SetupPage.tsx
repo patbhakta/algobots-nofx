@@ -141,8 +141,8 @@ export function SetupPage() {
               <div className="relative">
                 <div className="absolute -inset-4 bg-nofx-gold/20 rounded-full blur-2xl" />
                 <img
-                  src="/icons/nofx.svg"
-                  alt="NOFX"
+                  src="/icons/algobots.svg"
+                  alt="AlgoBots"
                   className="w-14 h-14 relative z-10"
                 />
               </div>

@@ -10,7 +10,6 @@ Welcome to the NOFX community! This section contains everything you need to cont
 
 We're introducing a new PR management system to improve code quality and make contributing easier!
 
-**📖 Read:** [Migration Announcement](MIGRATION_ANNOUNCEMENT.md) | [迁移公告（中文）](MIGRATION_ANNOUNCEMENT.zh-CN.md)
 
 **Timeline:** 4-week gradual rollout starting soon
 
@@ -110,7 +109,6 @@ NOFX offers bounties for valuable contributions:
 
 ### Documentation
 - Tutorial writing
-- Translation (中文, Русский, Українська)
 - FAQ updates
 - Video guides
 

@@ -384,9 +384,9 @@ export function TerminalDashboard({
       <div className="tm-box" style={{ maxWidth: 1280, margin: '0 auto', border: 'none' }}>
         {!on && status?.trading_blocked && (
           <div role="alert" className="tm-mono" style={{ margin: '8px 14px 0', padding: '12px', fontSize: 12, border: '1px solid var(--tm-dn)', color: 'var(--tm-dn)', background: 'rgba(200,60,40,0.06)' }}>
-            <strong>Trading blocked / 交易已阻断</strong>
+            <strong>Trading blocked</strong>
             <div>{status.trading_error}</div>
-            <div>自动开仓、平仓不可用；请用主钱包重新签名授权。修复前不会为此决策轮次调用付费 AI 或数据。</div>
+            <div>Automatic open/close is unavailable. Re-authorize with the main wallet signature. No paid AI or data calls run for this decision round until fixed.</div>
           </div>
         )}
         {/* runtime health banner — AI fee wallet dry / safe mode would otherwise

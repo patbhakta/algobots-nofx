@@ -1,6 +1,5 @@
 # 🚀 Getting Started with NOFX
 
-**Language:** [English](README.md) | [中文](README.zh-CN.md)
 
 This section contains all the documentation you need to get NOFX up and running.
 
@@ -13,7 +12,6 @@ Choose the method that best fits your needs:
 **Best for:** Beginners, quick setup, production deployments
 
 - **English:** [docker-deploy.en.md](docker-deploy.en.md)
-- **中文:** [docker-deploy.zh-CN.md](docker-deploy.zh-CN.md)
 
 **Pros:**
 - ✅ One-command setup
@@ -35,7 +33,6 @@ cp config.json.example config.json
 ### Custom AI Providers
 
 - **English:** [custom-api.en.md](custom-api.en.md)
-- **中文:** [custom-api.md](custom-api.md)
 
 Use custom AI models or third-party OpenAI-compatible APIs:
 - Custom DeepSeek endpoints

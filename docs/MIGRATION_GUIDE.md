@@ -20,7 +20,6 @@ NOFX documentation has been reorganized into a structured `docs/` directory for 
 - `README.zh-CN.md` → `docs/i18n/zh-CN/README.md`
 - `README.ru.md` → `docs/i18n/ru/README.md`
 - `README.uk.md` → `docs/i18n/uk/README.md`
-- `常见问题.md` → `docs/guides/faq.zh-CN.md`
 
 ### Root Directory (Unchanged)
 These stay in the root for GitHub recognition:
@@ -45,7 +44,6 @@ nofx/
 ├── HOW_TO_POST_BOUNTY.md
 ├── INTEGRATION_BOUNTY_HYPERLIQUID.md
 ├── INTEGRATION_BOUNTY_ASTER.md
-├── 常见问题.md
 └── ... (15+ markdown files in root!)
 ```
 
@@ -98,11 +96,9 @@ Files GitHub needs to see:
 **Categories:**
 
 1. **`getting-started/`** - Deployment and setup
-   - Docker deployment (EN/中文)
    - Custom API configuration
 
 2. **`guides/`** - Usage guides and tutorials
-   - FAQ (中文)
    - Troubleshooting (planned)
    - Configuration examples (planned)
 

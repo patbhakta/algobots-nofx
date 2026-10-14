@@ -136,8 +136,8 @@ export function RegisterPage() {
           <div className="flex justify-center mb-6">
             <div className="relative">
               <img
-                src="/icons/nofx.svg"
-                alt="NoFx Logo"
+                src="/icons/algobots.svg"
+                alt="AlgoBots Logo"
                 className="w-16 h-16 object-contain relative z-10 opacity-90"
               />
             </div>

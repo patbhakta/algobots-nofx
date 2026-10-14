@@ -167,7 +167,6 @@ You can configure multiple traders with different AIs for comparison:
 
 ### Issue: Configuration Validation Failed
 
-**Error Message**: `使用自定义API时必须配置custom_api_url` (custom_api_url must be configured when using custom API)
 
 **Solution**: After setting `ai_model: "custom"`, ensure you also configure:
 - `custom_api_url`

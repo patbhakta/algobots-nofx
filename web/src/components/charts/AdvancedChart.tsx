@@ -1158,7 +1158,7 @@ export function AdvancedChart({
           </div>
         )}
 
-        {/* NOFX watermark */}
+        {/* AlgoBots watermark */}
         <div
           style={{
             position: 'absolute',
