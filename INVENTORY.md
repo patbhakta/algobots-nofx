@@ -33,6 +33,34 @@ The live NoFX database is currently the bind-mounted
 to a scratch directory, run `scripts/migrate-nofx-sqlite.sh` against an empty
 test `nofx` database, and retain the generated verification report. The script
 fails unless SQLite integrity passes, `pat@bhakta.us` exists before and after,
-and every migrated table has the same row count. Only then may a separately
-authorized Kestra deployment set NoFX's `DB_TYPE=postgres`; this repository
-does not flip production automatically.
+pgloader logs no errors, and every migrated table has the same row count. Only
+then may a separately authorized Kestra deployment set NoFX's
+`DB_TYPE=postgres`; this repository does not flip production automatically.
+
+NoFX's GORM schema declares its 25 boolean columns as `numeric DEFAULT false`.
+pgloader maps SQLite `numeric` to Postgres `numeric`, where that DEFAULT is
+rejected, so the migration needs `CAST type numeric to boolean` — a bare
+`pgloader sqlite://... postgresql://...` cannot migrate this database. Note
+also that pgloader exits 0 even when it logs `FATAL Failed to create the
+schema`, so its exit status alone is not a success signal.
+
+Rehearsal evidence against a copy of live data (all 18 tables matched, owner
+survived, production untouched) is in
+[`artifacts/ALG-3350/p02-migration-rehearsal.md`](artifacts/ALG-3350/p02-migration-rehearsal.md).
+
+## Nautilus Redis egress (P0.3)
+
+`src/algobots/engine/redis_message_bus.py` is the canonical
+`MessageBusConfig`. Published stream keys are
+`trader-{trader_id}:{streams_prefix}:{topic}`, so the trader prefix comes
+*before* `streams_prefix` and an `algobots*` glob will not match them:
+
+```
+$ redis-cli XREAD COUNT 20 STREAMS \
+    'trader-ALGOBOTS-001:algobots:events.position.EgressDemoStrategy-000' 0
+```
+
+`scripts/phase0_redis_egress.py` is the sandbox node that drives the
+order/position events; `tests/phase0/test_redis_egress_integration.py` runs it
+against a throwaway Redis and asserts the events arrive. Captured output is in
+[`artifacts/ALG-3350/p03-redis-xread-evidence.md`](artifacts/ALG-3350/p03-redis-xread-evidence.md).
