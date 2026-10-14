@@ -10,6 +10,32 @@ import type { LaunchOutcome } from './types'
 
 export const AUTOPILOT_TRADER_NAME = 'AlgoBots Autopilot'
 
+/** Display name given to the single built-in strategy this launcher creates. */
+export const MARKET_DATA_STRATEGY_NAME = 'AlgoBots Market Data Auto Strategy'
+
+/**
+ * Name tokens the built-in strategy has shipped under, as punctuation-free
+ * slugs. `claw402` stays listed: accounts provisioned before the rename still
+ * hold "AlgoBots Claw402 Auto Strategy", and forgetting them is what makes a
+ * relaunch create a duplicate instead of reusing what is already there.
+ */
+const BUILT_IN_STRATEGY_SLUGS = ['marketdata', 'claw402']
+
+const slugify = (value?: string | null): string =>
+  (value || '').toLowerCase().replace(/[^a-z0-9]+/g, '')
+
+/**
+ * Recognises the built-in strategy from a display name. Strategies carry no
+ * stable identifier, so the launcher has to match its own strategy by name;
+ * comparing punctuation-free slugs means "Market Data", "market-data" and
+ * "marketData" all match the one strategy regardless of how it was written.
+ */
+export function isBuiltInStrategyName(name?: string | null): boolean {
+  const slug = slugify(name)
+  if (!slug) return false
+  return BUILT_IN_STRATEGY_SLUGS.some((token) => slug.includes(token))
+}
+
 export interface LaunchAutopilotOptions {
   /**
    * Provides the strategy id to trade. Called only AFTER preflight passes so
@@ -92,7 +118,7 @@ export async function launchAutopilot(
         (trader) => trader.trader_name === AUTOPILOT_TRADER_NAME
       ) ||
       existingTraders.find((trader) =>
-        (trader.strategy_name || '').toLowerCase().includes('marketData')
+        isBuiltInStrategyName(trader.strategy_name)
       ) ||
       null
 
@@ -121,7 +147,10 @@ export async function launchAutopilot(
   } catch (err) {
     // The server re-runs preflight on start; surface its structured result if
     // readiness changed between our check and the start call.
-    if (err instanceof ApiError && err.errorKey === 'trader.start.preflight_failed') {
+    if (
+      err instanceof ApiError &&
+      err.errorKey === 'trader.start.preflight_failed'
+    ) {
       const preflight = err.errorData?.preflight
       if (preflight) {
         return {
@@ -137,7 +166,9 @@ export async function launchAutopilot(
       ok: false,
       kind: 'error',
       message:
-        err instanceof Error ? err.message : 'Failed to launch AlgoBots Autopilot',
+        err instanceof Error
+          ? err.message
+          : 'Failed to launch AlgoBots Autopilot',
     }
   }
 }
@@ -153,10 +184,7 @@ export async function ensureMarketDataStrategy(): Promise<string> {
       (strategy) =>
         strategy.is_active &&
         strategy.config?.ai_config?.coin_source?.source_type === 'vergex_signal'
-    ) ||
-    strategies.find((strategy) =>
-      strategy.name.toLowerCase().includes('marketData')
-    )
+    ) || strategies.find((strategy) => isBuiltInStrategyName(strategy.name))
 
   if (existing) {
     if (!existing.is_active) {
@@ -167,7 +195,7 @@ export async function ensureMarketDataStrategy(): Promise<string> {
 
   const config = await api.getDefaultStrategyConfig()
   const created = await api.createStrategy({
-    name: 'AlgoBots Market Data Auto Strategy',
+    name: MARKET_DATA_STRATEGY_NAME,
     description:
       'Single built-in strategy: cross-market signal board, per-symbol details, raw candles, then execution.',
     config,
@@ -179,7 +207,7 @@ export async function ensureMarketDataStrategy(): Promise<string> {
 
   const refreshed = await api.getStrategies()
   const fallback = refreshed.find((strategy) =>
-    strategy.name.toLowerCase().includes('marketData')
+    isBuiltInStrategyName(strategy.name)
   )
   if (!fallback) throw new Error('Failed to create Market Data strategy')
   await api.activateStrategy(fallback.id)
