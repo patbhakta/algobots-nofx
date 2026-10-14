@@ -8,10 +8,14 @@
 gateway, fills, and the fill is visible in NoFX **within 2 seconds** — and that
 test runs in CI on every merge.
 
-**Status: passing.** Measured 0.081–0.090 s against real Postgres and real
-Redis; the budget is 2.000 s. The measurement is written to
-`artifacts/ALG-3373/g1-latency.json` on every run and uploaded as a CI
-artifact.
+**Status: passing.** Measured **0.072 s in CI** and 0.081–0.090 s on `.243`,
+against real Postgres and real Redis; the budget is 2.000 s — roughly 28x
+headroom. The measurement is written to `artifacts/ALG-3373/g1-latency.json` on
+every run and uploaded as a CI artifact (`gate-g1-latency`).
+
+First green CI run:
+[`gate-g1` @ 38650219676](https://github.com/patbhakta/algobots/actions/runs/38650219676/job/116146874872)
+(commit `36754e1`, PR [#6](https://github.com/patbhakta/algobots/pull/6)).
 
 ## How to run it
 
