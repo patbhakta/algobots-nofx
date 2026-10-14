@@ -8,6 +8,7 @@ throwaway Redis container and reads the streams back, mirroring the
 
 from __future__ import annotations
 
+import importlib.util
 import json
 import shutil
 import socket
@@ -21,10 +22,18 @@ import pytest
 ROOT = Path(__file__).parents[2]
 NODE_SCRIPT = ROOT / "scripts" / "phase0_redis_egress.py"
 
-pytestmark = pytest.mark.skipif(
-    shutil.which("docker") is None,
-    reason="P0.3 egress evidence requires docker to run a throwaway Redis",
-)
+# Needs docker for the throwaway Redis and nautilus_trader to run the node;
+# CI installs only the `dev` extra, so this is evidence-grade local coverage.
+pytestmark = [
+    pytest.mark.skipif(
+        shutil.which("docker") is None,
+        reason="P0.3 egress evidence requires docker to run a throwaway Redis",
+    ),
+    pytest.mark.skipif(
+        importlib.util.find_spec("nautilus_trader") is None,
+        reason="nautilus_trader ships in the `workers` extra, not `dev`",
+    ),
+]
 
 
 def _free_port() -> int:

@@ -1,8 +1,17 @@
+import importlib.util
 from pathlib import Path
 
+import pytest
 import yaml
 
 ROOT = Path(__file__).parents[2]
+
+# CI installs only the `dev` extra, so nautilus_trader is absent there; it
+# ships in the `workers` extra. Config assertions skip rather than fail.
+requires_nautilus = pytest.mark.skipif(
+    importlib.util.find_spec("nautilus_trader") is None,
+    reason="nautilus_trader ships in the `workers` extra, not `dev`",
+)
 
 
 def test_inventory_covers_live_snapshot():
@@ -24,6 +33,7 @@ def test_single_compose_shared_network_and_named_state():
     assert services["nofx"]["environment"]["DB_TYPE"] == "postgres"
 
 
+@requires_nautilus
 def test_message_bus_is_json_and_filters_quotes(monkeypatch):
     monkeypatch.setenv("REDIS_HOST", "redis-test")
     from nautilus_trader.model.data import QuoteTick
