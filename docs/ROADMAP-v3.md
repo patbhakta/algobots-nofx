@@ -210,3 +210,12 @@ Decisions only you can make:
 - [Reddit API limits and pricing](https://octolens.com/blog/reddit-api-pricing)
 - [Docker Compose agent features (InfoQ)](https://www.infoq.com/news/2025/07/docker-compose-agent-gpu-offload)
 - Earlier plans: ROADMAP.md (75 sprints), AlgoBots v2 analysis and handoff bundle (38 packets, 22 September 2026)
+
+---
+
+## Decisions applied (Pat, Oct 14 — supersedes open questions above)
+
+1. **Connector order: prediction markets FIRST, US brokers dead last.** Kalshi and Polymarket US are the priority connectors because strategies are being built on them now. US stock brokers (Alpaca/Schwab/Robinhood/tastytrade/Webull) move to the very end of the connector queue. Phase 4 is elevated to run immediately after G1-G3 gates; Phase 5 deprioritized to last.
+2. **All-Nautilus execution.** Every order path routes through Nautilus (the engine executes with least slippage). NoFX's own auto-trader loop is retired from order execution; its code remains as reference for how NoFX talks to strategies.
+3. **No live trading for a long while.** Paper only until: successful strategies proven + vault (book vaults) and marimo testing loops in place + live-news/other APIs wired. Live keys are a Pat decision per account, much later.
+4. **Data feeds are for research, not truth.** Massive (or any data broker) may have slight discrepancies vs actual broker pricing: broker price is the source of truth for fills/buys/sells. Massive = backtesting + live strategy development only; a single flat plan is fine for that.
