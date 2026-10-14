@@ -697,12 +697,12 @@ export function TerminalDashboard({
         </div>
         <div className="tm-rule" />
 
-        {/* market net inflow (Vergex) · by-symbol history · edge profile — footer */}
+        {/* market net inflow · by-symbol history · edge profile — footer */}
         <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1.2fr) minmax(0,0.9fr) minmax(0,0.9fr)' }}>
           <div style={{ ...sc, borderRight: cellBorder }}>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 8 }}>
               <span className="tm-px" style={{ fontSize: 12 }}>Market net inflow</span>
-              <span className="tm-sc">Market net inflow · {flow?.data?.window || '1h'} · Vergex</span>
+              <span className="tm-sc">Market net inflow · {flow?.data?.window || '1h'}</span>
               <span className="tm-sc" style={{ marginLeft: 'auto' }}>{flowItems.length} markets</span>
             </div>
             <FlowMarkets items={flowItems} window={flow?.data?.window} />

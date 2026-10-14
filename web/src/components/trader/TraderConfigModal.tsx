@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import type {
   AIModel,
+  CoinSourceConfig,
   Exchange,
   CreateTraderRequest,
   Strategy,
@@ -23,6 +24,21 @@ import { NofxSelect } from '../ui/select'
 function getShortName(fullName: string): string {
   const parts = fullName.split('_')
   return parts.length > 1 ? parts[parts.length - 1] : fullName
+}
+
+// Human labels for the saved coin-source modes. The wire values still carry the
+// upstream names (hyper_*, vergex_signal) until the Studio is recontracted onto
+// our own gateway; the labels describe what the mode does for us instead of
+// naming a venue or data vendor we no longer run.
+const COIN_SOURCE_LABELS: Record<CoinSourceConfig['source_type'], string> = {
+  static: 'Fixed US stocks',
+  vergex_signal: 'Signal board',
+  hyper_rank: 'cross-market signal board',
+  hyper_all: 'All venue markets',
+  hyper_main: 'Main venue markets',
+  ai500: 'AI500',
+  oi_top: 'OI Top',
+  oi_low: 'OI Low',
 }
 
 function getStrategyAIConfig(strategy: Strategy) {
@@ -390,40 +406,9 @@ export function TraderConfigModal({
                         <div className="grid grid-cols-2 gap-2 text-xs text-nofx-text-muted">
                           <div>
                             {t('coinSource', language)}:{' '}
-                            {aiConfig.coin_source.source_type === 'static'
-                              ? (language as string) === 'zh'
-                                ? 'Fixed US stocks'
-                                : 'Fixed US stocks'
-                              : aiConfig.coin_source.source_type ===
-                                  'vergex_signal'
-                                ? (language as string) === 'zh'
-                                  ? 'Vergex signal board'
-                                  : 'Vergex signal board'
-                                : aiConfig.coin_source.source_type ===
-                                    'hyper_rank'
-                                  ? (language as string) === 'zh'
-                                    ? 'cross-market signal board'
-                                    : 'cross-market signal board'
-                                  : aiConfig.coin_source.source_type ===
-                                      'hyper_all'
-                                    ? (language as string) === 'zh'
-                                      ? 'Hyperliquid all markets'
-                                      : 'Hyperliquid all markets'
-                                    : aiConfig.coin_source.source_type ===
-                                        'hyper_main'
-                                      ? (language as string) === 'zh'
-                                        ? 'Hyperliquid main markets'
-                                        : 'Hyperliquid main markets'
-                                      : aiConfig.coin_source.source_type ===
-                                          'ai500'
-                                        ? 'AI500'
-                                        : aiConfig.coin_source.source_type ===
-                                            'oi_top'
-                                          ? 'OI Top'
-                                          : aiConfig.coin_source.source_type ===
-                                              'oi_low'
-                                            ? 'OI Low'
-                                            : '-'}
+                            {COIN_SOURCE_LABELS[
+                              aiConfig.coin_source.source_type
+                            ] || '-'}
                           </div>
                           <div>
                             {t('marginLimit', language)}:{' '}

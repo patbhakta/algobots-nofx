@@ -56,7 +56,8 @@ export function FAQLayout() {
                   FAQ
                 </h1>
                 <p className="mt-1 font-mono text-xs uppercase tracking-[0.14em] text-nofx-text-muted">
-                  {totalItems} answers · wallets · launch · trading · self-hosting
+                  {totalItems} answers · accounts · launch · trading ·
+                  self-hosting
                 </p>
               </div>
             </div>

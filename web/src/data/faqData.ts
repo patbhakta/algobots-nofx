@@ -59,7 +59,7 @@ export const faqCategories: FAQCategory[] = [
         blocks: [
           {
             type: 'p',
-            text: 'AlgoBots is a self-hosted AI trading terminal. Its flagship mode is AlgoBots Autopilot: an AI agent that combines Binance market data, Polymarket probabilities, and IBKR brokerage data, verifies candidates with Signal Lab and liquidation structure, confirms timing with raw candles, and executes trades — all on a server you control, with your keys never leaving it.',
+            text: 'AlgoBots is a self-hosted AI trading terminal. Its flagship mode is AlgoBots Autopilot: an AI agent that combines Binance market data, Polymarket probabilities, and IBKR brokerage data, verifies candidates with Signal Lab and liquidation structure, confirms timing with raw candles, and sends the resulting orders to NautilusTrader for execution — all on a server you control, with your keys never leaving it.',
           },
           {
             type: 'p',
@@ -73,18 +73,22 @@ export const faqCategories: FAQCategory[] = [
         blocks: [
           {
             type: 'p',
-            text: 'Two funded accounts — the guided launch on the Config page walks you through both:',
+            text: 'One connected account and one strategy — the guided launch on the Config page walks you through both:',
           },
           {
             type: 'list',
             items: [
-              'An AI fee wallet: a Base-chain USDC wallet that pays for AI model and market-data calls. Minimum `1 USDC` to launch.',
-              'A Hyperliquid account with trading authorization and at least `12 USDC` available as margin.',
+              'A paper or demo trading account you connect with your own credentials — Kalshi or Polymarket US for event contracts, IBKR paper for stocks, Binance for crypto market data.',
+              'A strategy: start from the AlgoBots Autopilot preset, or build your own in Strategy Studio.',
             ],
           },
           {
             type: 'p',
             text: 'The launch button runs a server-side preflight that checks every prerequisite and points you at the exact step that is missing, so you cannot start a half-configured bot.',
+          },
+          {
+            type: 'note',
+            text: 'AlgoBots trades paper and demo accounts only. There is no wallet to fund and no deposit to make; enabling a live account is a separate decision per account, taken much later.',
           },
         ],
       },
@@ -94,11 +98,15 @@ export const faqCategories: FAQCategory[] = [
         blocks: [
           {
             type: 'p',
-            text: 'The Autopilot trades Hyperliquid perpetuals: crypto majors (BTC, ETH, SOL, …) plus the xyz synthetic markets covering US stocks, indices, commodities, and FX — so one account gives the AI a multi-asset universe.',
+            text: 'Prediction markets come first: Kalshi and Polymarket US event contracts are the priority venues, because that is where the strategies are being built today.',
           },
           {
             type: 'p',
-            text: 'Manual traders built in Strategy Studio can also connect Binance, Bybit, OKX, Bitget, KuCoin, Gate, Aster, and Lighter.',
+            text: 'Crypto majors (BTC, ETH, SOL, …) stream from Binance public market data, and IBKR paper covers US stocks, indices and FX. Other US stock brokers sit at the end of the connector queue, behind the prediction-market work.',
+          },
+          {
+            type: 'p',
+            text: 'Whichever venue a strategy targets, the order path is the same: NautilusTrader executes and reconciles every fill.',
           },
         ],
       },
@@ -137,65 +145,46 @@ export const faqCategories: FAQCategory[] = [
     ],
   },
 
-  // ───────────────────────── Launch & wallets ─────────────────────────
+  // ───────────────────────── Launch & accounts ─────────────────────────
   {
-    id: 'launch-wallets',
-    title: 'Launch & Wallets',
+    id: 'launch-accounts',
+    title: 'Launch & Accounts',
     icon: Zap,
     items: [
       {
-        id: 'ai-fee-wallet',
-        question: 'What is the AI fee wallet?',
+        id: 'no-wallet-needed',
+        question: 'Do I need a crypto wallet or a prepaid balance?',
         blocks: [
           {
             type: 'p',
-            text: 'A dedicated EVM wallet on Base that pays for AI model calls and paid market data (x402 micropayments). It is completely separate from your trading collateral — it never touches Hyperliquid.',
+            text: 'No. AI model calls and research data are covered by your AlgoBots subscription, so there is no per-call wallet to create, fund or back up.',
           },
           {
-            type: 'list',
-            items: [
-              'The guided setup creates it for you (or reuses an existing one).',
-              'Deposit only USDC on the Base network to its address.',
-              'Launch requires at least `1 USDC`; the balance display refreshes automatically after a deposit.',
-              'A typical cycle costs a fraction of a cent to a few cents depending on the model.',
-            ],
+            type: 'p',
+            text: 'Earlier builds asked for a prepaid on-chain balance to pay a data broker per call. That broker was dropped, and the prepaid balance went with it — AlgoBots now reads Binance, Polymarket and IBKR directly.',
           },
         ],
       },
       {
-        id: 'fee-wallet-private-key',
-        question: 'Where is the AI fee wallet private key kept?',
+        id: 'account-authorization',
+        question: 'How does connecting an account work? Is it safe?',
         blocks: [
           {
             type: 'p',
-            text: 'The key is generated locally on your server, stored encrypted (AES-256) in your own database, and shown to you once in the onboarding screen. Back it up — it cannot be recovered if you lose your database.',
-          },
-          {
-            type: 'note',
-            text: 'Keep only fee money in this wallet. It exists to pay for AI calls, not to hold savings.',
-          },
-        ],
-      },
-      {
-        id: 'hyperliquid-authorization',
-        question: 'How does the Hyperliquid authorization work? Is it safe?',
-        blocks: [
-          {
-            type: 'p',
-            text: 'AlgoBots uses Hyperliquid agent wallets, so your main wallet key is never shared. The connect flow has four signed steps:',
+            text: 'You connect your own paper or demo account, and AlgoBots keeps only what it needs to trade it:',
           },
           {
             type: 'steps',
             items: [
-              'Connect your EVM wallet (Rabby, MetaMask, OKX, Coinbase Wallet).',
-              'Approve a freshly generated AlgoBots agent wallet — valid for 180 days, trading only.',
-              'Approve the builder fee (a small per-order fee that funds the platform).',
-              'Save the agent key to your AlgoBots server (stored encrypted).',
+              'Create API credentials at the venue with trading permission only — no withdrawal rights.',
+              'Paste them into the guided setup on the Config page; they are encrypted (AES-256) in your own database.',
+              'AlgoBots verifies the account is reachable and shows the balance it can see.',
+              'Orders route through NautilusTrader, which owns the execution path and reconciles every fill.',
             ],
           },
           {
             type: 'p',
-            text: 'The agent wallet can place and close orders, nothing else. It cannot withdraw funds, and your collateral stays inside your own Hyperliquid account at all times.',
+            text: 'Nothing in AlgoBots can move money out of an account: the credentials are trading-scoped, the account stays yours, and every connected account today is paper or demo.',
           },
         ],
       },
@@ -211,9 +200,9 @@ export const faqCategories: FAQCategory[] = [
             type: 'list',
             items: [
               'AI model is enabled and has a credential.',
-              'AI fee wallet key is valid and the Base USDC balance is at least `1 USDC` (queried on-chain).',
-              'Hyperliquid account is authorized (agent + builder fee) and reachable.',
-              'Trading funds: at least `12 USDC` counting equity in open positions.',
+              'The connected account is reachable and its saved credentials are still valid.',
+              'The account is paper or demo — a live account is refused unless it was explicitly approved.',
+              'The strategy config satisfies the hard risk controls (position cap, leverage caps, trade throttle).',
             ],
           },
           {
@@ -233,15 +222,15 @@ export const faqCategories: FAQCategory[] = [
         ],
       },
       {
-        id: 'deposit-not-showing',
-        question: 'I deposited USDC but the balance still shows zero.',
+        id: 'balance-not-showing',
+        question: 'My account balance shows zero or "unknown".',
         blocks: [
           {
             type: 'list',
             items: [
-              'AI fee wallet: make sure you sent USDC on the Base network to the exact address shown. Balances are cached for ~30 seconds, and the setup panel re-checks automatically every few seconds.',
-              'Hyperliquid: deposits land in your own Hyperliquid account; the balance step polls the live account state. Use Refresh in the guided panel if in doubt.',
-              'If the on-chain RPC is temporarily unreachable, the panel marks the balance as unknown instead of zero — retry in a minute.',
+              "Zero: check the venue itself — a paper account that was reset there reports zero until you top it back up in the venue's own dashboard.",
+              'Stale: balances are cached for ~30 seconds and the setup panel re-checks every few seconds. Use Refresh in the guided panel if in doubt.',
+              'Unknown: the venue API did not answer. The panel deliberately shows unknown instead of zero so a strategy never sizes off a bad number — retry in a minute.',
             ],
           },
         ],
@@ -269,7 +258,7 @@ export const faqCategories: FAQCategory[] = [
               'Build the universe — combine Binance, Polymarket, and IBKR feeds and take the top candidates (default 10) across crypto majors and supported traditional markets, each with a direction bias and signal z-score.',
               'Verify each candidate — fetch its Signal Lab deep signal plus the cost/liquidation structure around price: liquidation clusters and cost bases show whether a move has fuel ahead of it or walls against it.',
               'Confirm timing — read the raw 15-minute OHLCV candles (30 bars) to check the entry is riding structure, not chasing an extended move.',
-              'Decide and size — only setups clearing the confidence threshold (default `78/100`) with roughly `3:1` risk/reward get positions at 10x; closes always execute before opens, and both long and short books are considered every cycle.',
+              "Decide and size — only setups clearing the confidence threshold (default `78/100`) with roughly `3:1` risk/reward become orders, sized by the strategy's risk controls and handed to NautilusTrader; closes always execute before opens, and both long and short books are considered every cycle.",
             ],
           },
           {
@@ -287,14 +276,18 @@ export const faqCategories: FAQCategory[] = [
             items: [
               'Connected signal data — the ranking board, per-symbol Signal Lab deep signals, and market net-flow sourced from Binance, Polymarket, and IBKR.',
               'Cost/liquidation heatmaps — aggregated position-cost and liquidation-cluster structure for each market.',
-              'Hyperliquid market data — raw OHLCV candles and the live L2 order book (free public data).',
-              'Your account via the agent wallet — equity, available margin, open positions with PnL.',
+              'Venue market data — raw OHLCV candles and live order-book depth from Binance public endpoints and from the venue a strategy is trading.',
+              'Your connected account — equity, available margin, open positions with PnL, read straight from the venue.',
               'Its own history — closed trades feed win rate, profit factor and drawdown back into the next prompt, so the AI knows its recent form.',
             ],
           },
           {
             type: 'note',
             text: 'The dashboard refreshes slower-changing cross-market signals every few minutes while price and execution panels stay live.',
+          },
+          {
+            type: 'note',
+            text: "Research feeds can disagree slightly with your broker. The broker's price is the source of truth for fills — the feeds exist for ranking, backtesting and strategy development.",
           },
         ],
       },
@@ -334,13 +327,13 @@ export const faqCategories: FAQCategory[] = [
         blocks: [
           {
             type: 'p',
-            text: 'The Autopilot defaults to 10x cross margin. Hard risk controls run outside the AI and cannot be overridden by it:',
+            text: 'Leverage is always set explicitly by the strategy config rather than inherited from a venue default, and event contracts on Kalshi or Polymarket carry none at all. Hard risk controls run outside the AI and cannot be overridden by it:',
           },
           {
             type: 'list',
             items: [
               'Position-count cap from the strategy config — new opens are rejected at the cap.',
-              'Leverage limits per asset class (BTC/ETH vs altcoins).',
+              'Leverage limits per asset class, where the venue offers leverage at all.',
               'A trade throttle blocks churn, e.g. closing a barely-moved position minutes after opening it.',
               'Safe mode (below) protects the book when the AI itself is failing.',
             ],
@@ -353,7 +346,7 @@ export const faqCategories: FAQCategory[] = [
         blocks: [
           {
             type: 'p',
-            text: 'If the AI fails 3 cycles in a row (provider outage, empty fee wallet, bad responses), the trader enters safe mode: no new positions are opened, existing positions keep their protection, and the loop keeps retrying. It exits safe mode automatically on the next successful AI call.',
+            text: 'If the AI fails 3 cycles in a row (provider outage, rate limits, unusable responses), the trader enters safe mode: no new positions are opened, existing positions keep their protection, and the loop keeps retrying. It exits safe mode automatically on the next successful AI call.',
           },
           {
             type: 'p',
@@ -362,12 +355,12 @@ export const faqCategories: FAQCategory[] = [
         ],
       },
       {
-        id: 'fee-wallet-empty-mid-run',
-        question: 'What happens if the AI fee wallet runs out mid-run?',
+        id: 'ai-unavailable-mid-run',
+        question: 'What happens if the AI is unavailable mid-run?',
         blocks: [
           {
             type: 'p',
-            text: 'AI calls start failing with a clear "out of funds" status. The dashboard shows a persistent red banner with the wallet balance, and after three failed cycles the bot enters safe mode. Top up Base USDC to the fee wallet and the trader recovers on its own — no restart needed.',
+            text: 'Calls start failing with a clear status, the dashboard shows a persistent red banner with the reason, and after three failed cycles the trader enters safe mode. Once the provider answers again the trader recovers on its own — no restart needed.',
           },
         ],
       },
@@ -378,8 +371,8 @@ export const faqCategories: FAQCategory[] = [
           {
             type: 'list',
             items: [
-              'Hyperliquid trading fees on every order, plus the approved builder fee.',
-              'AI/data costs paid per call from the fee wallet (cents per cycle).',
+              "Venue trading fees on every order — simulated by Nautilus against the venue's real fee model while you are on paper, so paper P/L is not flattered.",
+              'Nothing else: AI calls and research data are covered by your AlgoBots subscription, and there is no per-order platform fee.',
             ],
           },
           {
@@ -397,7 +390,7 @@ export const faqCategories: FAQCategory[] = [
             items: [
               'Stop: use the Stop button on the Config page trader list. Stopping halts the decision loop; open positions remain open and are yours to manage.',
               'Manual close: close any position from the dashboard positions panel — manual closes sync back into the position history.',
-              'Emergencies: you can always manage positions directly on Hyperliquid; AlgoBots never locks you out of your own account.',
+              'Emergencies: you can always manage positions directly at the venue; AlgoBots never locks you out of your own account.',
             ],
           },
         ],
@@ -473,7 +466,7 @@ export const faqCategories: FAQCategory[] = [
           {
             type: 'list',
             items: [
-              'All secrets (agent keys, fee wallet key, exchange API keys) are AES-256 encrypted at rest in your own database.',
+              'All secrets (venue API keys, tokens, model credentials) are AES-256 encrypted at rest in your own database.',
               'Optional RSA transport encryption protects secrets in flight between browser and server.',
               'AlgoBots is self-hosted: your secrets stay in your own instance and are not sent to any third-party server.',
             ],
@@ -486,11 +479,11 @@ export const faqCategories: FAQCategory[] = [
         blocks: [
           {
             type: 'p',
-            text: 'No. On Hyperliquid, AlgoBots only ever holds an agent wallet, which by protocol design can trade but cannot withdraw. Your collateral stays in your own account under your main wallet’s control.',
+            text: 'No. AlgoBots only ever holds trading-scoped credentials for accounts you connected yourself, and every connected account today is paper or demo. Create each API key with trading permission only — disable withdrawals and set an IP whitelist where the venue supports it.',
           },
           {
             type: 'note',
-            text: 'If you connect a CEX instead, create its API key with trading permission only — disable withdrawals and set an IP whitelist.',
+            text: 'Going live is a separate decision per account, taken deliberately and much later. No strategy, preset or update can flip an account to live on its own.',
           },
         ],
       },
@@ -519,20 +512,21 @@ export const faqCategories: FAQCategory[] = [
         blocks: [
           {
             type: 'p',
-            text: 'Read the message: every preflight failure names its fix and routes you to the right setup step — fund the AI wallet, finish the Hyperliquid authorization, or deposit trading USDC. Balances are re-checked live, so once you fix the item the launch goes through.',
+            text: 'Read the message: every preflight failure names its fix and routes you to the right setup step — enable a model, reconnect the trading account, or resolve a risk-control conflict in the strategy config. The checks re-run against live data, so once you fix the item the launch goes through.',
           },
         ],
       },
       {
         id: 'exchange-unreachable',
-        question: 'The exchange account shows "invalid credentials" or "unavailable".',
+        question:
+          'The trading account shows "invalid credentials" or "unavailable".',
         blocks: [
           {
             type: 'list',
             items: [
-              'Invalid credentials: the agent authorization expired (180 days) or the saved key is stale — reconnect the Hyperliquid wallet; the flow offers a one-click renewal.',
-              'Unavailable: the exchange API did not respond; the account state is cached for 30 seconds, so wait and refresh.',
-              'CEX keys: verify trading permission, IP whitelist, and that futures/perp access is enabled.',
+              'Invalid credentials: the saved API key was rotated, revoked or expired at the venue — create a new trading-only key and reconnect the account in the guided setup.',
+              'Unavailable: the venue API did not respond; the account state is cached for 30 seconds, so wait and refresh.',
+              'Permissions: verify trading permission, the IP whitelist, and that the instrument class your strategy trades is enabled on the account.',
             ],
           },
         ],
