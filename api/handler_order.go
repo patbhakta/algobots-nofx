@@ -312,7 +312,11 @@ func (s *Server) handleTrades(c *gin.Context) {
 func (s *Server) handleOrders(c *gin.Context) {
 	_, traderID, err := s.getTraderFromQuery(c)
 	if err != nil {
-		SafeBadRequest(c, "Invalid trader ID")
+		// getTraderFromQuery resolves strictly against the caller's own
+		// traders, so any failure here (including a trader owned by another
+		// tenant) means "not found for this account" — never leak whether the
+		// trader exists elsewhere.
+		SafeNotFound(c, "Trader")
 		return
 	}
 

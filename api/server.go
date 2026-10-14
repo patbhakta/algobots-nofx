@@ -465,13 +465,31 @@ func (s *Server) handleHealth(c *gin.Context) {
 	})
 }
 
+// registrationEnabledKey is the system_config key that gates public
+// self-registration of new investor tenants. Managed by the operator via
+// the local CLI (`nofx set-registration`), never by an API route.
+const registrationEnabledKey = "registration_enabled"
+
+// registrationOpen reports whether a new tenant may self-register:
+// first-time bootstrap (no users yet) or the operator-enabled toggle.
+// Once the system is initialized the toggle defaults to closed, preserving
+// the historical single-tenant behavior until the operator opts in.
+func (s *Server) registrationOpen(userCount int) bool {
+	if userCount == 0 {
+		return true
+	}
+	v, err := s.store.GetSystemConfig(registrationEnabledKey)
+	return err == nil && v == "true"
+}
+
 // handleGetSystemConfig Get system configuration (configuration that client needs to know)
 func (s *Server) handleGetSystemConfig(c *gin.Context) {
 	userCount, _ := s.store.User().Count()
 	c.JSON(http.StatusOK, gin.H{
-		"initialized":      userCount > 0,
-		"btc_eth_leverage": 10,
-		"altcoin_leverage": 5,
+		"initialized":          userCount > 0,
+		"registration_enabled": s.registrationOpen(userCount),
+		"btc_eth_leverage":     10,
+		"altcoin_leverage":     5,
 	})
 }
 
@@ -681,8 +699,15 @@ func (s *Server) authMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		// Store user information in context
+		// Store user information in context. tenant_id mirrors user_id (each
+		// login = one investor tenant); tokens issued before this field
+		// existed fall back to the user id so old sessions stay valid.
+		tenantID := claims.TenantID
+		if tenantID == "" {
+			tenantID = claims.UserID
+		}
 		c.Set("user_id", claims.UserID)
+		c.Set("tenant_id", tenantID)
 		c.Set("email", claims.Email)
 		c.Next()
 	}
