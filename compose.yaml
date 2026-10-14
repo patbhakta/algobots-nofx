@@ -1,0 +1,92 @@
+name: algobots
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-algobots}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-algobots}
+      NOFX_DB: ${NOFX_DB:-nofx}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./deploy/postgres-init.sh:/docker-entrypoint-initdb.d/10-nofx-db.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    networks: [algobots]
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+    networks: [algobots]
+    restart: unless-stopped
+
+  api:
+    build: .
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-algobots}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-algobots}
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      postgres: {condition: service_healthy}
+      redis: {condition: service_healthy}
+    ports: ["${API_BIND:-127.0.0.1}:${API_PORT:-8000}:8000"]
+    networks: [algobots]
+    restart: unless-stopped
+
+  nofx:
+    image: ghcr.io/nofxaios/nofx/nofx-backend:latest
+    environment:
+      DB_TYPE: postgres
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_USER: ${POSTGRES_USER:-algobots}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_NAME: ${NOFX_DB:-nofx}
+      DB_SSLMODE: disable
+      JWT_SECRET: ${NOFX_JWT_SECRET:?set NOFX_JWT_SECRET}
+    depends_on:
+      postgres: {condition: service_healthy}
+    ports: ["${TAILNET_BIND:-127.0.0.1}:${NOFX_PORT:-8200}:8080"]
+    networks: [algobots]
+    restart: unless-stopped
+
+  nofx-frontend:
+    image: algobots/nofx-frontend:algobots-v6
+    depends_on: [nofx]
+    ports: ["${TAILNET_BIND:-127.0.0.1}:${NOFX_FRONTEND_PORT:-8201}:80"]
+    networks: [algobots]
+    restart: unless-stopped
+
+  nautilus:
+    image: nautilus-marimo:latest
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+    volumes:
+      - ${NAUTILUS_WORK_DIR:-./nautilus}:/home/nautilus/work
+      - nautilus_catalog:/home/nautilus/catalog
+    depends_on:
+      redis: {condition: service_healthy}
+    ports: ["${TAILNET_BIND:-127.0.0.1}:${NAUTILUS_PORT:-8202}:2718"]
+    networks: [algobots]
+    restart: unless-stopped
+
+networks:
+  algobots:
+    name: algobots
+
+volumes:
+  postgres_data:
+  redis_data:
+  nautilus_catalog:
