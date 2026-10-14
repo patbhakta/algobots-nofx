@@ -20,6 +20,7 @@ import (
 	"nofx/trader/indodax"
 	"nofx/trader/kucoin"
 	"nofx/trader/lighter"
+	"nofx/trader/nautilus"
 	"nofx/trader/okx"
 
 	"github.com/gin-gonic/gin"
@@ -184,6 +185,24 @@ func probeExchangeAccountState(exchangeCfg *store.Exchange, userID string) Excha
 		logger.Infof("⚠️ Failed to probe exchange account %s (%s): %v", exchangeCfg.ID, exchangeCfg.ExchangeType, err)
 		return state
 	}
+	if exchangeCfg.ExchangeType == "nautilus" {
+		total, totalOK := balanceInfo["total_equity"].(string)
+		available, availableOK := balanceInfo["available_balance"].(string)
+		asset, _ := balanceInfo["asset"].(string)
+		if !totalOK || !availableOK {
+			state.Status = exchangeAccountStatusUnavailable
+			state.ErrorCode = "BALANCE_NOT_FOUND"
+			state.ErrorMessage = "Gateway returned no decimal-string balance fields"
+			return state
+		}
+		state.Status = exchangeAccountStatusOK
+		state.Asset = asset
+		state.DisplayBalance = total
+		if asset != "" {
+			state.DisplayBalance += " " + asset
+		}
+		return state
+	}
 
 	totalEquity, totalFound := extractFirstNumeric(balanceInfo,
 		"total_equity", "totalEquity", "totalWalletBalance", "wallet_balance", "totalEq", "balance")
@@ -258,6 +277,8 @@ func buildExchangeProbeTrader(exchangeCfg *store.Exchange, userID string) (trade
 			exchangeCfg.LighterAPIKeyIndex,
 			false,
 		)
+	case "nautilus":
+		return nautilus.NewTrader(string(exchangeCfg.APIKey), string(exchangeCfg.SecretKey), string(exchangeCfg.Passphrase)), nil
 	default:
 		return nil, fmt.Errorf("unsupported exchange type: %s", exchangeCfg.ExchangeType)
 	}
