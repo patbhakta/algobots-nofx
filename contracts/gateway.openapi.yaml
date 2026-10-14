@@ -1,0 +1,578 @@
+openapi: 3.1.0
+
+# AlgoBots gateway contract — ROADMAP-v3 Phase 1 (ALG-3349).
+#
+# Roadmap rule 2: the gateway's API lives in THIS file. Change it first, then
+# regenerate the Go client NoFX uses. No Phase 1 sprint may add a route to the
+# server that is absent here.
+#
+# The surface is the existing bridge v0.1 (docs/bridge.md, ALG-3340) promoted to
+# the gateway per the CEO's Oct 14 review: the control plane admits intents and
+# never executes them, a Nautilus ExecutionClient is the only thing that fills
+# (ADR 0001), and the node's event stream is the only source of orders, fills,
+# positions and balances.
+#
+# Laws this contract encodes, enforced by tests/contracts/test_gateway_openapi.py:
+#   - paper only: `mode` has exactly one value, PAPER (roadmap rule 3)
+#   - every order write carries an idempotency key, which becomes the Nautilus
+#     client order id, so the same command twice creates one order (P1.3)
+#   - every failure is the same typed envelope: http status + machine code + reason
+#   - no credential, key, secret or token field exists anywhere in the schemas (P2.5)
+#   - the Nautilus build is pinned and reported by /health (roadmap rule 5)
+
+info:
+  title: AlgoBots Gateway
+  version: 1.0.0-phase1
+  description: |
+    The chokepoint between NoFX (frontend and strategy config) and the
+    NautilusTrader nodes (the only things that execute).
+
+    NoFX never talks to a node, a broker or Redis. It talks here.
+  license:
+    name: Proprietary
+
+servers:
+  - url: http://algobots-gateway:8000/v1
+    description: Stack-internal (compose network, Phase 0 compose.yaml)
+
+tags:
+  - name: system
+  - name: accounts
+  - name: positions
+  - name: orders
+  - name: events
+
+paths:
+  /health:
+    get:
+      tags: [system]
+      operationId: getHealth
+      summary: Liveness, build pins and per-node reachability
+      responses:
+        "200":
+          description: Gateway is up. `status` may still be `degraded`.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Health" }
+
+  /accounts:
+    get:
+      tags: [accounts]
+      operationId: listAccounts
+      summary: Accounts the caller is granted, with their node and balance
+      responses:
+        "200":
+          description: Granted accounts, oldest first. Never another member's.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [accounts]
+                properties:
+                  accounts:
+                    type: array
+                    items: { $ref: "#/components/schemas/Account" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /accounts/{accountId}:
+    parameters:
+      - $ref: "#/components/parameters/AccountId"
+    get:
+      tags: [accounts]
+      operationId: getAccount
+      summary: One account with its balance as its node last reported it
+      responses:
+        "200":
+          description: The account.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Account" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /positions:
+    get:
+      tags: [positions]
+      operationId: listPositions
+      summary: Open positions rebuilt from Postgres, not from a node's memory
+      description: |
+        P1.2 requires this to survive a gateway restart: the rows are projected
+        from the node event stream into Postgres, so restarting the gateway
+        rebuilds the same positions.
+      parameters:
+        - name: account
+          in: query
+          required: false
+          description: Restrict to one account. Omitted means every granted account.
+          schema: { type: string }
+      responses:
+        "200":
+          description: Open positions.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [positions, as_of]
+                properties:
+                  positions:
+                    type: array
+                    items: { $ref: "#/components/schemas/Position" }
+                  as_of:
+                    type: string
+                    format: date-time
+                    description: Event time of the newest event folded into this view.
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /orders:
+    get:
+      tags: [orders]
+      operationId: listOrders
+      summary: Orders and their fills, newest first
+      parameters:
+        - name: account
+          in: query
+          required: false
+          schema: { type: string }
+        - name: status
+          in: query
+          required: false
+          schema: { $ref: "#/components/schemas/OrderStatus" }
+        - name: limit
+          in: query
+          required: false
+          schema: { type: integer, minimum: 1, maximum: 500, default: 100 }
+      responses:
+        "200":
+          description: Orders.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [orders]
+                properties:
+                  orders:
+                    type: array
+                    items: { $ref: "#/components/schemas/Order" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+    post:
+      tags: [orders]
+      operationId: submitOrder
+      summary: Submit an order intent for admission
+      description: |
+        The gateway admits or refuses; it never fills. An admitted intent is
+        written to `algobots:cmd:<node>` and the node's `CommandActor` (P1.3)
+        submits it with `idempotency_key` as the Nautilus client order id.
+
+        Admission order is the bridge's and may not be reordered or skipped:
+        account scope -> request shape -> PAPER-only -> node reconciled and
+        heartbeat-fresh -> `gate.pre_trade`. A refused intent is never written.
+
+        Replaying the same `idempotency_key` returns the original order with
+        `200`, not a second order. A different body under a live key is `409`.
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/OrderRequest" }
+      responses:
+        "200":
+          description: Idempotent replay — this key already created this order.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Order" }
+        "201":
+          description: Admitted and queued for the node. Not yet filled.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Order" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403":
+          description: |
+            Refused by scope, by PAPER-only (`live_disabled`) or by the
+            pre-trade gate (kill switch, sleeve floor, daily-loss envelope,
+            order-value clamp, affordability).
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409":
+          description: The key is in use with a different request body.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "422": { $ref: "#/components/responses/Unprocessable" }
+        "503":
+          description: No node available (`worker_unavailable`). There is no fallback path.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
+  /orders/{clientOrderId}:
+    parameters:
+      - $ref: "#/components/parameters/ClientOrderId"
+    get:
+      tags: [orders]
+      operationId: getOrder
+      summary: One order with its lifecycle and fills
+      responses:
+        "200":
+          description: The order.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Order" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    delete:
+      tags: [orders]
+      operationId: cancelOrder
+      summary: Request cancellation of a working order
+      description: |
+        Also a command through `algobots:cmd:<node>`, so it is idempotent on the
+        same key: cancelling twice cancels once. Cancelling an order that already
+        reached a terminal state is `409`.
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      responses:
+        "202":
+          description: Cancel command accepted. The node confirms it on /events.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Order" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409":
+          description: The order is already filled, cancelled or rejected.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "503":
+          description: No node available (`worker_unavailable`).
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
+  /events:
+    get:
+      tags: [events]
+      operationId: streamEvents
+      summary: WebSocket stream of order, fill, position and balance events
+      description: |
+        A WebSocket upgrade, described here because OpenAPI 3.1 has no transport
+        of its own for it: clients send the upgrade, the gateway replies `101`,
+        and every frame after that is one `Event` as JSON.
+
+        The stream is a tail of the same Postgres projection `/positions` and
+        `/orders` read, so a client that reconnects with `since` loses nothing.
+        Quote ticks are filtered out at the node (P0.3) and never appear here.
+
+        Delivery is at-least-once: a node restart can replay a fill, so consumers
+        dedupe on `(client_order_id, seq)`.
+      parameters:
+        - name: account
+          in: query
+          required: false
+          schema: { type: string }
+        - name: since
+          in: query
+          required: false
+          description: Resume after this `seq`. Omitted means from now.
+          schema: { type: integer, format: int64, minimum: 0 }
+      responses:
+        "101":
+          description: Switching protocols. Frames are `Event` JSON objects.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Event" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+components:
+  parameters:
+    AccountId:
+      name: accountId
+      in: path
+      required: true
+      description: The account's stable id, as NoFX knows it.
+      schema: { type: string, minLength: 1, maxLength: 64 }
+
+    ClientOrderId:
+      name: clientOrderId
+      in: path
+      required: true
+      description: The idempotency key the order was submitted with.
+      schema: { $ref: "#/components/schemas/IdempotencyKeyValue" }
+
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      description: |
+        Caller-generated, stable for the retry. Becomes the Nautilus client
+        order id verbatim, which is what makes "the same command twice creates
+        one order" true at the venue and not only in the gateway.
+      schema: { $ref: "#/components/schemas/IdempotencyKeyValue" }
+
+  responses:
+    Unauthorized:
+      description: No session, or the session expired.
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    Forbidden:
+      description: Authenticated, but this account is not yours.
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    NotFound:
+      description: No such account, order or node.
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    Unprocessable:
+      description: The request's shape is wrong.
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+
+  schemas:
+    Mode:
+      type: string
+      description: |
+        Trading mode. PAPER is the only member, by roadmap rule 3 — adding LIVE
+        here is the one change this contract may not take as a side effect of
+        another sprint.
+      enum: [PAPER]
+
+    IdempotencyKeyValue:
+      type: string
+      description: Printable ASCII, no whitespace; Nautilus client-order-id safe.
+      minLength: 8
+      maxLength: 64
+      pattern: "^[A-Za-z0-9._:-]+$"
+
+    Decimal:
+      type: string
+      description: |
+        A decimal as a string, never a float — money and quantities must not
+        round-trip through binary floating point.
+      pattern: "^-?[0-9]+(\\.[0-9]+)?$"
+
+    Side:
+      type: string
+      enum: [buy, sell]
+
+    OrderType:
+      type: string
+      enum: [market, limit]
+
+    TimeInForce:
+      type: string
+      enum: [gtc, ioc, fok, day]
+
+    OrderStatus:
+      type: string
+      description: The node's lifecycle, flattened to what NoFX renders.
+      enum:
+        - admitted
+        - submitted
+        - accepted
+        - partially_filled
+        - filled
+        - cancelled
+        - rejected
+        - expired
+
+    Health:
+      type: object
+      additionalProperties: false
+      required: [status, version, nautilus_version, nodes]
+      properties:
+        status:
+          type: string
+          enum: [ok, degraded]
+        version:
+          type: string
+          description: Gateway build.
+        nautilus_version:
+          type: string
+          description: |
+            Pinned NautilusTrader build (roadmap rule 5). An upgrade is its own
+            sprint, so a drift between this and the pin is a failed deploy.
+          const: "2.0.0rc6"
+        nodes:
+          type: array
+          description: One entry per registered node, reachable or not.
+          items:
+            type: object
+            additionalProperties: false
+            required: [node, account, reachable]
+            properties:
+              node: { type: string }
+              account: { type: string }
+              reachable: { type: boolean }
+              last_heartbeat:
+                type: [string, "null"]
+                format: date-time
+
+    Account:
+      type: object
+      additionalProperties: false
+      required: [account_id, display_name, mode, venue, node, balances]
+      properties:
+        account_id: { type: string }
+        display_name: { type: string }
+        mode: { $ref: "#/components/schemas/Mode" }
+        venue:
+          type: string
+          description: The Nautilus venue, e.g. PAPER_LAYA.
+        node:
+          type: string
+          description: The node container serving this account.
+        balances:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [currency, total, free]
+            properties:
+              currency: { type: string, minLength: 3, maxLength: 8 }
+              total: { $ref: "#/components/schemas/Decimal" }
+              free: { $ref: "#/components/schemas/Decimal" }
+              locked: { $ref: "#/components/schemas/Decimal" }
+
+    Position:
+      type: object
+      additionalProperties: false
+      required: [account_id, symbol, side, qty, avg_px, opened_at]
+      properties:
+        account_id: { type: string }
+        symbol: { type: string }
+        side: { $ref: "#/components/schemas/Side" }
+        qty: { $ref: "#/components/schemas/Decimal" }
+        avg_px: { $ref: "#/components/schemas/Decimal" }
+        unrealized_pnl: { $ref: "#/components/schemas/Decimal" }
+        realized_pnl: { $ref: "#/components/schemas/Decimal" }
+        opened_at: { type: string, format: date-time }
+
+    OrderRequest:
+      type: object
+      additionalProperties: false
+      required: [account_id, symbol, side, qty, order_type]
+      properties:
+        account_id: { type: string }
+        symbol:
+          type: string
+          description: The instrument as the node's adapter names it.
+          minLength: 1
+        side: { $ref: "#/components/schemas/Side" }
+        qty: { $ref: "#/components/schemas/Decimal" }
+        order_type: { $ref: "#/components/schemas/OrderType" }
+        limit_px:
+          description: Required when `order_type` is `limit`, forbidden otherwise.
+          $ref: "#/components/schemas/Decimal"
+        time_in_force: { $ref: "#/components/schemas/TimeInForce" }
+        reduce_only: { type: boolean, default: false }
+      allOf:
+        - if:
+            properties:
+              order_type: { const: limit }
+            required: [order_type]
+          then:
+            required: [limit_px]
+
+    Fill:
+      type: object
+      additionalProperties: false
+      required: [trade_id, qty, px, ts_event]
+      properties:
+        trade_id: { type: string }
+        qty: { $ref: "#/components/schemas/Decimal" }
+        px: { $ref: "#/components/schemas/Decimal" }
+        commission: { $ref: "#/components/schemas/Decimal" }
+        commission_currency: { type: string }
+        ts_event: { type: string, format: date-time }
+
+    Order:
+      type: object
+      additionalProperties: false
+      required:
+        [client_order_id, account_id, symbol, side, qty, order_type, status, mode, submitted_at]
+      properties:
+        client_order_id:
+          description: Identical to the `Idempotency-Key` it was submitted with.
+          $ref: "#/components/schemas/IdempotencyKeyValue"
+        venue_order_id:
+          type: [string, "null"]
+          description: Null until the venue accepts it.
+        account_id: { type: string }
+        symbol: { type: string }
+        side: { $ref: "#/components/schemas/Side" }
+        qty: { $ref: "#/components/schemas/Decimal" }
+        filled_qty: { $ref: "#/components/schemas/Decimal" }
+        avg_px: { $ref: "#/components/schemas/Decimal" }
+        order_type: { $ref: "#/components/schemas/OrderType" }
+        limit_px: { $ref: "#/components/schemas/Decimal" }
+        time_in_force: { $ref: "#/components/schemas/TimeInForce" }
+        status: { $ref: "#/components/schemas/OrderStatus" }
+        mode: { $ref: "#/components/schemas/Mode" }
+        reason:
+          type: [string, "null"]
+          description: Why it was rejected, shown to the member verbatim.
+        fills:
+          type: array
+          items: { $ref: "#/components/schemas/Fill" }
+        submitted_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    Event:
+      type: object
+      additionalProperties: false
+      required: [seq, type, account_id, ts_event]
+      properties:
+        seq:
+          type: integer
+          format: int64
+          description: Monotonic per gateway. Resume with it; dedupe on it.
+        type:
+          type: string
+          enum: [order, fill, position, balance, heartbeat]
+        account_id: { type: string }
+        ts_event: { type: string, format: date-time }
+        order: { $ref: "#/components/schemas/Order" }
+        fill: { $ref: "#/components/schemas/Fill" }
+        position: { $ref: "#/components/schemas/Position" }
+        account: { $ref: "#/components/schemas/Account" }
+
+    Error:
+      type: object
+      additionalProperties: false
+      required: [code, reason]
+      description: |
+        The bridge's typed failure, unchanged: a machine `code` the frontend
+        switches on and a `reason` it may show the member as written.
+      properties:
+        code:
+          type: string
+          description: |
+            Machine-readable. The admission codes carried over from
+            docs/bridge.md are `live_disabled`, `worker_unavailable`,
+            `bridge_disabled`, `invalid_side`, `invalid_qty`, `invalid_symbol`,
+            `invalid_ts_utc`, plus the pre-trade gate's own codes.
+          pattern: "^[a-z][a-z0-9_]*$"
+        reason:
+          type: string
+          minLength: 1
+        details:
+          type: object
+          description: Optional structured context. Never secrets.
+          additionalProperties: true
