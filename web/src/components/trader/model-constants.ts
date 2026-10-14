@@ -1,4 +1,5 @@
 // Constants for AI model and provider configuration
+import { AI_PROVIDER_API_URL, AI_PROVIDER_ID } from '../../lib/ai-provider'
 
 export interface MarketDataModel {
   id: string
@@ -128,9 +129,9 @@ export const MARKET_DATA_MODELS: MarketDataModel[] = [
 
 // AI Provider configuration - default models and API links
 export const AI_PROVIDER_CONFIG: Record<string, AIProviderConfig> = {
-  marketData: {
+  [AI_PROVIDER_ID]: {
     defaultModel: DEFAULT_MARKET_DATA_MODEL,
-    apiUrl: 'https://marketData.ai',
+    apiUrl: AI_PROVIDER_API_URL,
     apiName: 'Market Data',
   },
 }
