@@ -16,14 +16,24 @@ what the gateway's fold is being tested against.
 Lives in ``src/`` rather than ``tests/`` because P1.5 (GATE G1) needs the same
 fake to drive the end-to-end paper test, and P1.3 needs it to have a consumer
 whose behaviour it must match.
+
+P1.5 uses it through ``sink``: with one, the payloads are published to the
+node's Redis event streams instead of being folded straight into the
+projection, which is what turns this fixture into the node half of a real
+two-process end-to-end test. The payloads themselves are identical either way —
+the gate and the P1.1/P1.2 contract suites exercise the same bytes, so a
+difference between "folded in-process" and "read off a stream" is a failing
+test rather than a surprise on ``.243``.
 """
 
 from __future__ import annotations
 
 import itertools
 import time
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from decimal import Decimal
+from typing import Any
 
 from algobots.gateway import node_events as NE
 from algobots.gateway.node_events import HEARTBEAT
@@ -42,13 +52,21 @@ class FixtureNode:
     node: Node
     registry: NodeRegistry
     projection: Projection
-    bus: InMemoryCommandBus
+    #: Optional since P1.5: the sandbox node's commands arrive through a Redis
+    #: consumer group and reach :meth:`execute` directly, so it has no bus.
+    bus: InMemoryCommandBus | None = None
     clock: float = field(default_factory=time.time)
     currency: str = "USD"
     #: Price the next market fill prints at. The test sets it; the node never
     #: invents one, so no fixture price can be mistaken for a quote.
     fill_px: Decimal = Decimal("1.10005")
     commission: Decimal = Decimal("2.20")
+    #: Where emitted payloads go. ``None`` folds them into ``projection``
+    #: directly (P1.1/P1.2); P1.5 passes
+    #: :meth:`~algobots.node.event_egress.EventEgress.publish` so they travel
+    #: the wire a real node's events travel. A sink returns no contract
+    #: ``Event``, because with one this object no longer owns the projection.
+    sink: Callable[[dict[str, Any]], Any] | None = None
     _ids: itertools.count = field(default_factory=lambda: itertools.count(1))
     _position: str | None = None
 
@@ -59,6 +77,9 @@ class FixtureNode:
         return self.clock
 
     def _emit(self, payload: dict) -> dict | None:
+        if self.sink is not None:
+            self.sink(payload)
+            return None
         return NE.ingest(payload, registry=self.registry, projection=self.projection)
 
     def heartbeat(self, *, reconciled: bool = True) -> dict | None:
@@ -105,12 +126,25 @@ class FixtureNode:
         ``fill=False`` stops after ``OrderAccepted``, which is how a test gets
         a working order to cancel.
         """
+        if self.bus is None:
+            raise RuntimeError("this fixture node has no bus — commands reach execute() directly")
         emitted: list[dict] = []
         for command in self.bus.drain(self.node.node):
-            if command.get("command") == "submit_order":
-                emitted += self._submit(command, fill=fill, accept=accept)
-            elif command.get("command") == "cancel_order":
-                emitted += self._cancel(command)
+            emitted += self.execute(command, fill=fill, accept=accept)
+        return emitted
+
+    def execute(self, command: dict, *, fill: bool = True, accept: bool = True) -> list[dict]:
+        """The node-side events one admitted command causes.
+
+        Split out of :meth:`drain` for P1.5: there, the command does not come
+        off an in-memory bus but out of a Redis consumer group through
+        ``CommandActor``, and the events it causes are the same ones.
+        """
+        emitted: list[dict | None] = []
+        if command.get("command") == "submit_order":
+            emitted += self._submit(command, fill=fill, accept=accept)
+        elif command.get("command") == "cancel_order":
+            emitted += self._cancel(command)
         return [e for e in emitted if e]
 
     def _submit(self, command: dict, *, fill: bool, accept: bool) -> list[dict | None]:
@@ -245,6 +279,26 @@ class FixtureNode:
                 )
             )
         return out
+
+    def deny(self, client_order_id: str, *, reason: str) -> dict | None:
+        """An ``OrderDenied`` — what the engine answers an order it refuses.
+
+        The gateway folds it to ``rejected`` with the reason attached, so a
+        refusal at the venue is visible in NoFX rather than being an order that
+        never changes state.
+        """
+        return self._emit(
+            {
+                "type": "OrderDenied",
+                "trader_id": self.node.node.upper(),
+                "strategy_id": "GatewayCommandActor-000",
+                "client_order_id": client_order_id,
+                "account_id": self.node.nautilus_account_id,
+                "reason": reason,
+                "ts_event": iso(self.tick(0.0)),
+                "ts_init": iso(self.clock),
+            }
+        )
 
     def _cancel(self, command: dict) -> list[dict | None]:
         return [

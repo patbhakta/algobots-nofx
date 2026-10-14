@@ -14,6 +14,8 @@ from nautilus_trader.common.config import DatabaseConfig
 from nautilus_trader.config import MessageBusConfig
 from nautilus_trader.model.data import QuoteTick
 
+from algobots.node.event_egress import STREAMS_PREFIX
+
 
 def redis_message_bus_config() -> MessageBusConfig:
     """JSON streams for durable events, excluding high-volume quote ticks."""
@@ -26,6 +28,8 @@ def redis_message_bus_config() -> MessageBusConfig:
         encoding="json",
         timestamps_as_iso8601=True,
         stream_per_topic=True,
-        streams_prefix="algobots",
+        # One definition, shared with the gateway's reader: the prefix is half
+        # of the key `event_ingest` scans for, so the two may not drift.
+        streams_prefix=STREAMS_PREFIX,
         types_filter=[QuoteTick],
     )

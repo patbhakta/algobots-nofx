@@ -234,3 +234,17 @@ verify-A04:
 
 demo-A04:
 	PYTHONPATH=$(CURDIR)/src $(PYTHON) tests/packets/A04/demo.py
+
+# GATE G1 (ALG-3373, ROADMAP-v3 Phase 1). A market order placed in NoFX fills
+# in the sandbox and the fill is visible within two seconds, measured over the
+# whole path: HTTP -> admission -> Redis command stream -> CommandActor ->
+# venue -> Redis event streams -> projection -> HTTP read.
+#
+# Needs the Phase 0 services (`docker compose up -d postgres redis`) named by
+# ALGOBOTS_GATEWAY_TEST_PG_URL and ALGOBOTS_TEST_REDIS_URL. The script exits
+# non-zero when they are missing, because a gate that skipped has not passed.
+# CI runs this same script in the `gate-g1` job on every merge.
+.PHONY: verify-G1
+
+verify-G1:
+	PYTHONPATH=$(CURDIR)/src $(PYTHON) scripts/verify_g1.py

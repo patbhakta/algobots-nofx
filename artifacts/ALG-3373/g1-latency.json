@@ -1,0 +1,21 @@
+{
+  "gate": "G1",
+  "issue": "ALG-3373",
+  "budget_s": 2.0,
+  "measured_s": 0.1179,
+  "node": "nautilus-g1-98400318",
+  "client_order_id": "g1-98400318-market-1",
+  "venue_order_id": "SIM-1-001",
+  "filled_qty": "100000",
+  "avg_px": "1.10005",
+  "path": [
+    "POST /v1/orders",
+    "algobots:cmd:<node> (redis)",
+    "CommandStream -> CommandActor",
+    "sandbox venue",
+    "trader-*:algobots:events.* (redis)",
+    "NodeEventIngest -> node_events.ingest",
+    "SqlProjection (postgres)",
+    "GET /v1/orders/{clientOrderId}"
+  ]
+}

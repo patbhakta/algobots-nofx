@@ -24,3 +24,60 @@ jobs:
         run: python -m algobots.contracts --check-transition
       - name: Test
         run: pytest
+
+  # GATE G1 (ALG-3373): a market order placed in NoFX fills in the sandbox and
+  # the fill is visible within two seconds. Its own job because it is the only
+  # one that needs services, and because the roadmap hangs Phase 2 and the
+  # P6.2 signal service off its result — a gate folded into `test` would be
+  # harder to read off a failed run.
+  #
+  # `tests/e2e/test_g1_ci_wiring.py` asserts this job keeps existing, with
+  # these services and these variables, so the gate cannot be quietly turned
+  # back into a skip.
+  gate-g1:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: algobots
+          POSTGRES_PASSWORD: g1-ci-postgres
+          POSTGRES_DB: algobots
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U algobots -d algobots"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+      redis:
+        image: redis:7-alpine
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 12
+    env:
+      # Rule 3: secrets come from the environment, never the repo. These two
+      # are not secrets — they are this job's throwaway service containers,
+      # reachable only from the runner, holding nothing but a schema the gate
+      # creates and drops. A deploy credential would be a repository secret.
+      ALGOBOTS_GATEWAY_TEST_PG_URL: postgresql+psycopg://algobots:g1-ci-postgres@127.0.0.1:5432/algobots
+      ALGOBOTS_TEST_REDIS_URL: redis://127.0.0.1:6379/0
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install
+        run: pip install -e ".[dev,postgres]"
+      - name: GATE G1 — end-to-end paper order
+        run: python scripts/verify_g1.py
+      - name: Upload the measurement
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate-g1-latency
+          path: artifacts/ALG-3373/g1-latency.json
+          if-no-files-found: warn

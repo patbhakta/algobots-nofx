@@ -11,19 +11,19 @@ before it reaches a venue), so a double that *allowed* it would let a broken
 loudly on a duplicate instead of quietly counting two orders.
 
 The same objects back the ``CommandStream`` tests through ``FakeRedis``, which
-implements the four stream calls the reader uses with real consumer-group
-semantics — pending list included, because redelivery is the thing being
-tested and a fake that acked eagerly would test nothing.
+since P1.5 lives in ``tests/fakes``: the gateway's event-ingest tests need the
+same stream semantics from the other side of the transport, and two fakes that
+could disagree about redelivery would be worse than one.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any
 
 import pytest
 
 from algobots.node.commands import SubmitOrder
+from tests.fakes import FakeRedis
 
 
 class DuplicateClientOrderId(AssertionError):
@@ -75,69 +75,6 @@ class SandboxVenue:
 
     def cancels_of(self, client_order_id: str) -> int:
         return sum(1 for kind, coid in self.calls if kind == "cancel" and coid == client_order_id)
-
-
-@dataclass
-class FakeRedis:
-    """The four stream commands ``CommandStream`` uses, with pending lists.
-
-    Entry ids are ``"<n>-0"`` so they sort and read like real ones. Only one
-    consumer group is modelled, which is all a node ever has.
-    """
-
-    streams: dict[str, list[tuple[str, dict[str, str]]]] = field(default_factory=dict)
-    groups: dict[tuple[str, str], int] = field(default_factory=dict)
-    #: (stream, group) -> entry ids delivered but not yet acked.
-    pending: dict[tuple[str, str], list[str]] = field(default_factory=dict)
-    _seq: int = 0
-
-    def xadd(self, key: str, fields: dict[str, str]) -> str:
-        self._seq += 1
-        entry_id = f"{self._seq}-0"
-        self.streams.setdefault(key, []).append((entry_id, dict(fields)))
-        return entry_id
-
-    def xgroup_create(self, key: str, group: str, id: str = "0", mkstream: bool = False) -> None:  # noqa: A002 — redis' own kwarg name
-        if (key, group) in self.groups:
-            raise RuntimeError("BUSYGROUP Consumer Group name already exists")
-        if mkstream:
-            self.streams.setdefault(key, [])
-        self.groups[(key, group)] = 0
-        self.pending[(key, group)] = []
-
-    def xreadgroup(
-        self,
-        group: str,
-        consumer: str,
-        streams: dict[str, str],
-        count: int = 10,
-        block: int | None = None,
-    ) -> list[Any]:
-        out = []
-        for key, cursor in streams.items():
-            entries = self.streams.get(key, [])
-            if cursor == ">":
-                start = self.groups.get((key, group), 0)
-                batch = entries[start : start + count]
-                self.groups[(key, group)] = start + len(batch)
-                self.pending.setdefault((key, group), []).extend(eid for eid, _ in batch)
-            else:
-                # The pending list: everything delivered and not acked.
-                owed = set(self.pending.get((key, group), []))
-                batch = [(eid, f) for eid, f in entries if eid in owed][:count]
-            if batch:
-                out.append((key, batch))
-        return out
-
-    def xack(self, key: str, group: str, entry_id: str) -> int:
-        owed = self.pending.setdefault((key, group), [])
-        if entry_id in owed:
-            owed.remove(entry_id)
-            return 1
-        return 0
-
-    def pending_count(self, key: str, group: str) -> int:
-        return len(self.pending.get((key, group), []))
 
 
 @pytest.fixture
