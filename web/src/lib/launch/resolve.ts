@@ -1,11 +1,12 @@
 import { api } from '../api'
 import type { AIModel, Exchange } from '../../types'
+import { AI_PROVIDER_ID } from '../ai-provider'
 
 export function modelHasCredential(model: AIModel) {
   return Boolean(
     model.has_api_key ||
     model.apiKey ||
-    (model.provider === 'marketData' && model.walletAddress)
+    (model.provider === AI_PROVIDER_ID && model.walletAddress)
   )
 }
 
@@ -17,12 +18,12 @@ export function isHyperliquidExchange(exchange: Exchange) {
   return exchange.exchange_type === 'hyperliquid'
 }
 
-/** Prefers the marketData model, falls back to any enabled model with a credential. */
+/** Prefers the built-in model, then falls back to any enabled credentialed model. */
 export function pickTradingModel(models: AIModel[]) {
   return (
     models.find(
       (model) =>
-        model.provider === 'marketData' &&
+        model.provider === AI_PROVIDER_ID &&
         model.enabled &&
         modelHasCredential(model)
     ) ||

@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import useSWR from 'swr'
 import { api } from '../../lib/api'
 import { ApiError } from '../../lib/httpClient'
+import { AI_PROVIDER_ID } from '../../lib/ai-provider'
 import { ROUTES } from '../../router/paths'
 import type {
   TraderInfo,
@@ -637,12 +638,13 @@ export function AITradersPage({ onTraderSelect }: AITradersPageProps) {
 
   const handleOpenMarketDataConfig = () => {
     const configuredMarketData = allModels?.find(
-      (model) => model.provider === 'marketData'
+      (model) => model.provider === AI_PROVIDER_ID
     )
     const supportedMarketData = supportedModels?.find(
-      (model) => model.provider === 'marketData'
+      (model) => model.provider === AI_PROVIDER_ID
     )
-    const modelId = configuredMarketData?.id || supportedMarketData?.id || 'marketData'
+    const modelId =
+      configuredMarketData?.id || supportedMarketData?.id || AI_PROVIDER_ID
 
     setEditingModel(configuredMarketData?.id || null)
     setInitialModelId(modelId)
@@ -689,7 +691,15 @@ export function AITradersPage({ onTraderSelect }: AITradersPageProps) {
     const nextParams = new URLSearchParams(searchParams)
     nextParams.delete('setup')
     setSearchParams(nextParams, { replace: true })
-  }, [allExchanges, allModels, searchParams, setSearchParams, supportedModels, token, user])
+  }, [
+    allExchanges,
+    allModels,
+    searchParams,
+    setSearchParams,
+    supportedModels,
+    token,
+    user,
+  ])
 
   const refreshLaunchState = async () => {
     await Promise.all([loadConfigs(), mutateTraders()])

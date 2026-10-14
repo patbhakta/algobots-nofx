@@ -93,19 +93,19 @@ describe('describeLaunchFailures / failedLaunchChecks', () => {
 describe('pickTradingModel', () => {
   const base: Partial<AIModel> = { enabled: true }
 
-  it('prefers the marketData provider over other enabled models', () => {
+  it('prefers the built-in provider over other enabled models', () => {
     const models = [
       { ...base, id: 'openai', provider: 'openai', has_api_key: true },
-      { ...base, id: 'mdata', provider: 'marketData', has_api_key: true },
+      { ...base, id: 'claw402', provider: 'claw402', has_api_key: true },
     ] as AIModel[]
-    expect(pickTradingModel(models)?.id).toBe('mdata')
+    expect(pickTradingModel(models)?.id).toBe('claw402')
   })
 
-  it('accepts a marketData model with only a wallet address', () => {
+  it('accepts a built-in model with only a wallet address', () => {
     const models = [
-      { ...base, id: 'mdata', provider: 'marketData', walletAddress: '0xabc' },
+      { ...base, id: 'claw402', provider: 'claw402', walletAddress: '0xabc' },
     ] as AIModel[]
-    expect(pickTradingModel(models)?.id).toBe('mdata')
+    expect(pickTradingModel(models)?.id).toBe('claw402')
   })
 
   it('returns null when nothing usable exists', () => {

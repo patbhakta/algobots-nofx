@@ -5,6 +5,7 @@ import type { AIModel } from '../../types'
 import type { Language } from '../../i18n/translations'
 import { t } from '../../i18n/translations'
 import { getModelIcon, getModelColor } from '../common/ModelIcons'
+import { AI_PROVIDER_API_URL, AI_PROVIDER_ID } from '../../lib/ai-provider'
 import { ModelStepIndicator } from './ModelStepIndicator'
 import { ModelCard } from './ModelCard'
 import {
@@ -54,7 +55,9 @@ export function ModelConfigModal({
   // model name, has_api_key); the template from supportedModels only describes
   // the provider. When editing, the configured entry must win — both can share
   // the same id (e.g. "marketData").
-  const configuredModel = configuredModels?.find((m) => m.id === selectedModelId)
+  const configuredModel = configuredModels?.find(
+    (m) => m.id === selectedModelId
+  )
   const templateModel = allModels?.find((m) => m.id === selectedModelId)
   const selectedModel = editingModelId
     ? configuredModel || templateModel
@@ -193,8 +196,8 @@ export function ModelConfigModal({
           {/* Step 1: Configure — Market Data Dedicated UI */}
           {(currentStep === 1 || editingModelId) &&
             selectedModel &&
-            (selectedModel.provider === 'marketData' ||
-              selectedModel.id === 'marketData') && (
+            (selectedModel.provider === AI_PROVIDER_ID ||
+              selectedModel.id === AI_PROVIDER_ID) && (
               <MarketDataConfigForm
                 apiKey={apiKey}
                 modelName={modelName}
@@ -213,8 +216,8 @@ export function ModelConfigModal({
           {/* Step 1: Configure — Standard Providers (non-marketData) */}
           {(currentStep === 1 || editingModelId) &&
             selectedModel &&
-            selectedModel.provider !== 'marketData' &&
-            selectedModel.id !== 'marketData' && (
+            selectedModel.provider !== AI_PROVIDER_ID &&
+            selectedModel.id !== AI_PROVIDER_ID && (
               <StandardProviderConfigForm
                 selectedModel={selectedModel}
                 apiKey={apiKey}
@@ -257,11 +260,13 @@ function ModelSelectionStep({
       </div>
 
       {/* Market Data Featured Card */}
-      {availableModels.some((m) => m.provider === 'marketData') && (
+      {availableModels.some((m) => m.provider === AI_PROVIDER_ID) && (
         <button
           type="button"
           onClick={() => {
-            const claw = availableModels.find((m) => m.provider === 'marketData')
+            const claw = availableModels.find(
+              (m) => m.provider === AI_PROVIDER_ID
+            )
             if (claw) onSelectModel(claw.id)
           }}
           className="w-full p-5 rounded-xl text-left transition-all hover:scale-[1.01]"
@@ -287,7 +292,7 @@ function ModelSelectionStep({
                 >
                   Market Data
                   <a
-                    href="https://marketData.ai"
+                    href={AI_PROVIDER_API_URL}
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={(e) => e.stopPropagation()}
@@ -297,7 +302,7 @@ function ModelSelectionStep({
                       background: 'rgba(224, 72, 59, 0.1)',
                     }}
                   >
-                    ↗ marketData.ai
+                    ↗ claw402.ai
                   </a>
                 </div>
                 <div className="text-xs mt-0.5" style={{ color: '#8A8478' }}>
@@ -307,7 +312,8 @@ function ModelSelectionStep({
             </div>
             <div className="flex items-center gap-2">
               {configuredIds.has(
-                availableModels.find((m) => m.provider === 'marketData')?.id || ''
+                availableModels.find((m) => m.provider === AI_PROVIDER_ID)
+                  ?.id || ''
               ) && (
                 <div
                   className="w-2 h-2 rounded-full"
@@ -344,7 +350,8 @@ function ModelSelectionStep({
         {availableModels
           .filter(
             (m) =>
-              !m.provider?.startsWith('blockrun') && m.provider !== 'marketData'
+              !m.provider?.startsWith('blockrun') &&
+              m.provider !== AI_PROVIDER_ID
           )
           .map((model) => (
             <ModelCard
@@ -425,7 +432,8 @@ function MarketDataConfigForm({
   // Editing with a stored key: allow saving (e.g. switching model) without
   // re-entering the private key, as long as the field is left blank.
   const canSubmit =
-    isKeyValid || (Boolean(editingModelId) && Boolean(hasExistingKey) && !apiKey)
+    isKeyValid ||
+    (Boolean(editingModelId) && Boolean(hasExistingKey) && !apiKey)
 
   // Truncate address for display
 
@@ -465,7 +473,7 @@ function MarketDataConfigForm({
         if (data.valid) {
           setWalletAddress(data.address || '')
           setUsdcBalance(data.balance_usdc || '0.00')
-          setMarketDataStatus(data.marketData_status || 'unknown')
+          setMarketDataStatus(data.claw402_status || 'unknown')
           setKeyError('')
         } else {
           setKeyError(data.error || 'Invalid key')
@@ -493,12 +501,12 @@ function MarketDataConfigForm({
       if (data.valid) {
         setWalletAddress(data.address || '')
         setUsdcBalance(data.balance_usdc || '0.00')
-        setMarketDataStatus(data.marketData_status || 'unknown')
+        setMarketDataStatus(data.claw402_status || 'unknown')
         if (parseFloat(data.balance_usdc || '0') === 0) setShowDeposit(true)
         setTestResult({
-          status: data.marketData_status === 'ok' ? 'ok' : 'error',
+          status: data.claw402_status === 'ok' ? 'ok' : 'error',
           message:
-            data.marketData_status === 'ok'
+            data.claw402_status === 'ok'
               ? t('modelConfig.marketDataConnected', language)
               : t('modelConfig.marketDataUnreachable', language),
         })
@@ -528,10 +536,15 @@ function MarketDataConfigForm({
         }}
       >
         <div className="w-14 h-14 mx-auto rounded-2xl flex items-center justify-center mb-3 overflow-hidden">
-          <img src="/icons/algobots.svg" alt="Market Data" width={56} height={56} />
+          <img
+            src="/icons/algobots.svg"
+            alt="Market Data"
+            width={56}
+            height={56}
+          />
         </div>
         <a
-          href="https://marketData.ai"
+          href={AI_PROVIDER_API_URL}
           target="_blank"
           rel="noopener noreferrer"
           className="text-lg font-bold inline-flex items-center gap-1.5 hover:underline"
@@ -546,20 +559,18 @@ function MarketDataConfigForm({
           {t('modelConfig.allModelsClaw', language)}
         </div>
         <div className="flex items-center justify-center gap-3 mt-3 flex-wrap">
-          {['GPT', 'Claude', 'DeepSeek', 'GLM'].map(
-            (name) => (
-              <span
-                key={name}
-                className="text-[11px] px-2 py-0.5 rounded-full"
-                style={{
-                  background: 'rgba(26,24,19,0.06)',
-                  color: '#8A8478',
-                }}
-              >
-                {name}
-              </span>
-            )
-          )}
+          {['GPT', 'Claude', 'DeepSeek', 'GLM'].map((name) => (
+            <span
+              key={name}
+              className="text-[11px] px-2 py-0.5 rounded-full"
+              style={{
+                background: 'rgba(26,24,19,0.06)',
+                color: '#8A8478',
+              }}
+            >
+              {name}
+            </span>
+          ))}
         </div>
       </div>
 
@@ -1254,7 +1265,9 @@ function StandardProviderConfigForm({
           }}
         >
           Current model key status:{' '}
-          {selectedModel.has_api_key ? 'API Key configured' : 'API Key not configured'}
+          {selectedModel.has_api_key
+            ? 'API Key configured'
+            : 'API Key not configured'}
         </div>
       )}
 
@@ -1300,38 +1313,38 @@ function StandardProviderConfigForm({
 
       {/* Custom Base URL */}
       <div className="space-y-2">
-          <label
-            className="flex items-center gap-2 text-sm font-semibold"
-            style={{ color: '#1A1813' }}
+        <label
+          className="flex items-center gap-2 text-sm font-semibold"
+          style={{ color: '#1A1813' }}
+        >
+          <svg
+            className="w-4 h-4"
+            style={{ color: '#E0483B' }}
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
           >
-            <svg
-              className="w-4 h-4"
-              style={{ color: '#E0483B' }}
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"
-              />
-            </svg>
-            {t('customBaseURL', language)}
-          </label>
-          <input
-            type="url"
-            value={baseUrl}
-            onChange={(e) => onBaseUrlChange(e.target.value)}
-            placeholder={t('customBaseURLPlaceholder', language)}
-            className="w-full px-4 py-3 rounded-xl"
-            style={{
-              background: '#F1ECE2',
-              border: '1px solid rgba(26,24,19,0.14)',
-              color: '#1A1813',
-            }}
-          />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"
+            />
+          </svg>
+          {t('customBaseURL', language)}
+        </label>
+        <input
+          type="url"
+          value={baseUrl}
+          onChange={(e) => onBaseUrlChange(e.target.value)}
+          placeholder={t('customBaseURLPlaceholder', language)}
+          className="w-full px-4 py-3 rounded-xl"
+          style={{
+            background: '#F1ECE2',
+            border: '1px solid rgba(26,24,19,0.14)',
+            color: '#1A1813',
+          }}
+        />
         <div className="text-xs" style={{ color: '#8A8478' }}>
           {t('leaveBlankForDefault', language)}
         </div>
@@ -1339,38 +1352,38 @@ function StandardProviderConfigForm({
 
       {/* Custom Model Name */}
       <div className="space-y-2">
-          <label
-            className="flex items-center gap-2 text-sm font-semibold"
-            style={{ color: '#1A1813' }}
+        <label
+          className="flex items-center gap-2 text-sm font-semibold"
+          style={{ color: '#1A1813' }}
+        >
+          <svg
+            className="w-4 h-4"
+            style={{ color: '#E0483B' }}
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
           >
-            <svg
-              className="w-4 h-4"
-              style={{ color: '#E0483B' }}
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
-              />
-            </svg>
-            {t('customModelName', language)}
-          </label>
-          <input
-            type="text"
-            value={modelName}
-            onChange={(e) => onModelNameChange(e.target.value)}
-            placeholder={t('customModelNamePlaceholder', language)}
-            className="w-full px-4 py-3 rounded-xl"
-            style={{
-              background: '#F1ECE2',
-              border: '1px solid rgba(26,24,19,0.14)',
-              color: '#1A1813',
-            }}
-          />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
+            />
+          </svg>
+          {t('customModelName', language)}
+        </label>
+        <input
+          type="text"
+          value={modelName}
+          onChange={(e) => onModelNameChange(e.target.value)}
+          placeholder={t('customModelNamePlaceholder', language)}
+          className="w-full px-4 py-3 rounded-xl"
+          style={{
+            background: '#F1ECE2',
+            border: '1px solid rgba(26,24,19,0.14)',
+            color: '#1A1813',
+          }}
+        />
         <div className="text-xs" style={{ color: '#8A8478' }}>
           {t('leaveBlankForDefaultModel', language)}
         </div>
@@ -1414,8 +1427,7 @@ function StandardProviderConfigForm({
           type="submit"
           disabled={
             !selectedModel ||
-            (!apiKey.trim() &&
-              !(editingModelId && selectedModel.has_api_key))
+            (!apiKey.trim() && !(editingModelId && selectedModel.has_api_key))
           }
           className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-bold transition-all hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed"
           style={{ background: '#E0483B', color: '#fff' }}

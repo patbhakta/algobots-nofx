@@ -15,6 +15,7 @@ const MODEL_COLORS: Record<string, string> = {
   openai: '#10A37F',
   minimax: '#E45735',
   marketData: '#7C3AED',
+  claw402: '#7C3AED',
   zhipu: '#3859F3',
 }
 
@@ -51,6 +52,7 @@ export const getModelIcon = (modelType: string, props: IconProps = {}) => {
       iconPath = '/icons/minimax.svg'
       break
     case 'marketData':
+    case 'claw402':
       iconPath = '/icons/algobots.svg'
       break
     default:

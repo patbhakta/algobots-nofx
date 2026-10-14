@@ -15,6 +15,7 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { api } from '../../lib/api'
+import { AI_PROVIDER_ID } from '../../lib/ai-provider'
 import { buildDashboardPath, ROUTES } from '../../router/paths'
 import {
   AUTOPILOT_TRADER_NAME,
@@ -99,7 +100,7 @@ export function AutopilotLaunchPanel({
     () =>
       models.find(
         (model) =>
-          model.provider === 'marketData' &&
+          model.provider === AI_PROVIDER_ID &&
           model.enabled &&
           (model.has_api_key || model.apiKey || model.walletAddress)
       ) || null,
@@ -179,26 +180,46 @@ export function AutopilotLaunchPanel({
 
   // A stored builder-approved flag is not proof that this saved signing agent
   // is still approved. A different AlgoBots installation can replace the agent.
-  const [verifiedExchangeId, setVerifiedExchangeId] = useState<string | null>(null)
+  const [verifiedExchangeId, setVerifiedExchangeId] = useState<string | null>(
+    null
+  )
   useEffect(() => {
     setVerifiedExchangeId(null)
-    if (!hyperliquidExchange?.hyperliquidWalletAddr || !hyperliquidExchange.hyperliquidAgentAddress || hyperliquidExchange.testnet) return
+    if (
+      !hyperliquidExchange?.hyperliquidWalletAddr ||
+      !hyperliquidExchange.hyperliquidAgentAddress ||
+      hyperliquidExchange.testnet
+    )
+      return
     let cancelled = false
     const check = async () => {
       try {
-        const proof = await api.getHyperliquidAgent(hyperliquidExchange.hyperliquidWalletAddr!)
-        const approved = proof.builderApproved && proof.agents?.some((agent) =>
-          agent.address.toLowerCase() === hyperliquidExchange.hyperliquidAgentAddress!.toLowerCase() && agent.validUntil > Date.now())
-        if (!cancelled) setVerifiedExchangeId(approved ? hyperliquidExchange.id : null)
+        const proof = await api.getHyperliquidAgent(
+          hyperliquidExchange.hyperliquidWalletAddr!
+        )
+        const approved =
+          proof.builderApproved &&
+          proof.agents?.some(
+            (agent) =>
+              agent.address.toLowerCase() ===
+                hyperliquidExchange.hyperliquidAgentAddress!.toLowerCase() &&
+              agent.validUntil > Date.now()
+          )
+        if (!cancelled)
+          setVerifiedExchangeId(approved ? hyperliquidExchange.id : null)
       } catch {
         if (!cancelled) setVerifiedExchangeId(null)
       }
     }
     void check()
     const timer = setInterval(() => void check(), 30000)
-    return () => { cancelled = true; clearInterval(timer) }
+    return () => {
+      cancelled = true
+      clearInterval(timer)
+    }
   }, [hyperliquidExchange])
-  const hyperliquidConnected = !!hyperliquidExchange && verifiedExchangeId === hyperliquidExchange.id
+  const hyperliquidConnected =
+    !!hyperliquidExchange && verifiedExchangeId === hyperliquidExchange.id
   const exchangeState = hyperliquidExchange
     ? exchangeAccountStates[hyperliquidExchange.id]
     : undefined

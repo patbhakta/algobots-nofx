@@ -676,61 +676,21 @@ export const translations = {
 
     // ===== GETTING STARTED =====
 
-
-
-
-
-
     // ===== INSTALLATION =====
-
-
-
-
-
 
     // ===== CONFIGURATION =====
 
-
-
-
-
-
     // ===== TRADING =====
-
-
-
-
-
-
-
 
     // ===== TECHNICAL ISSUES =====
 
-
-
-
-
-
-
-
     // ===== SECURITY =====
-
-
-
 
     // ===== FEATURES =====
 
-
-
     // ===== AI MODELS =====
 
-
-
-
     // ===== CONTRIBUTING =====
-
-
-
 
     // Web Crypto Environment Check
     environmentCheck: {
@@ -1016,8 +976,7 @@ export const translations = {
       positionClosed: 'Position closed successfully',
       closeFailed: 'Failed to close position',
       closeAll: 'Close All',
-      confirmCloseAllPositions:
-        'Market-close ALL {count} open positions?',
+      confirmCloseAllPositions: 'Market-close ALL {count} open positions?',
       allPositionsClosed: 'All positions closed',
       closeAllPartial: '{failed} of {count} positions failed to close',
       hideAddress: 'Hide address',
@@ -1099,7 +1058,8 @@ export const translations = {
       allModelsUnified:
         'Choose any supported AI model with your AlgoBots subscription.',
       setupWallet: 'Setup Wallet',
-      walletInfo: 'AI access is included with your AlgoBots subscription; no per-call wallet is required.',
+      walletInfo:
+        'AI access is included with your AlgoBots subscription; no per-call wallet is required.',
       exportKey: 'Export private key from MetaMask, Rabby, etc.',
       dedicatedWallet:
         'Recommended: create a dedicated wallet with a small USDC balance',
@@ -1121,8 +1081,8 @@ export const translations = {
       validating: 'Validating...',
       walletAddress: 'Wallet Address',
       usdcBalance: 'Base USDC Balance',
-      marketDataConnected: 'marketData Connected',
-      marketDataUnreachable: 'marketData Unreachable',
+      marketDataConnected: 'Market Data Connected',
+      marketDataUnreachable: 'Market Data Unreachable',
       depositUsdc: 'Deposit USDC to this address on Base chain',
       invalidKeyPrefix: 'Please add 0x at the beginning',
       invalidKeyLength: 'Should be 66 characters, currently',
