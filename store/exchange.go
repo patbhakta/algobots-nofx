@@ -230,6 +230,8 @@ func getExchangeNameAndType(exchangeType string) (name string, typ string) {
 		return "Aster DEX", "dex"
 	case "lighter":
 		return "LIGHTER DEX", "dex"
+	case "nautilus":
+		return "Nautilus Gateway", "gateway"
 	case "indodax":
 		return "Indodax", "cex"
 	default:
