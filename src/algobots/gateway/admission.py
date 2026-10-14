@@ -42,8 +42,8 @@ from algobots.gateway.errors import (
     GatewayError,
 )
 from algobots.gateway.node_events import admitted_order
-from algobots.gateway.nodes import NodeRegistry
-from algobots.gateway.projection import InMemoryProjection, OrderRow
+from algobots.gateway.nodes import PAPER, NodeRegistry
+from algobots.gateway.projection import InMemoryProjection, OrderRow, dec_str
 
 SIDES = ("buy", "sell")
 ORDER_TYPES = ("market", "limit")
@@ -88,20 +88,24 @@ class OrderIntent:
         same command twice create one order *at the venue* and not merely in
         this process.
         """
-        return {
+        command: dict[str, Any] = {
             "command": "submit_order",
             "client_order_id": self.client_order_id,
             "account_id": self.account_id,
             "symbol": self.symbol,
             "side": self.side,
-            "qty": str(self.qty),
+            "qty": dec_str(self.qty),
             "order_type": self.order_type,
-            "limit_px": str(self.limit_px) if self.limit_px is not None else None,
             "time_in_force": self.time_in_force or "gtc",
             "reduce_only": self.reduce_only,
-            "mode": "PAPER",
+            "mode": PAPER,
             "admitted_ts": now,
         }
+        if self.limit_px is not None:
+            # Absent, not null — the contract's SubmitOrderCommand and
+            # OrderRow.contract() agree on one spelling for "no limit price".
+            command["limit_px"] = dec_str(self.limit_px)
+        return command
 
 
 @dataclass(frozen=True)

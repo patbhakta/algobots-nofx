@@ -576,3 +576,95 @@ components:
           type: object
           description: Optional structured context. Never secrets.
           additionalProperties: true
+
+    # --- the gateway -> node seam (P1.3) -------------------------------------
+    #
+    # Everything above is HTTP, which NoFX calls. The schemas below are not
+    # served on any route: they are the JSON the gateway XADDs to
+    # `algobots:cmd:<node>` and the node's `CommandActor` reads back. They live
+    # in this file because roadmap rule 2 makes it the one place the gateway's
+    # API is defined, and P1.3 gives this envelope a second implementation —
+    # a writer in the gateway and a reader in the node. An envelope with two
+    # implementations and no schema is a drift waiting to happen.
+    #
+    # `client_order_id` is `IdempotencyKeyValue` here for the same reason it is
+    # on `Order`: the caller's key travels to the node unchanged and is handed
+    # to Nautilus as the client order id, so "the same command twice creates
+    # one order" is enforced by the venue rather than by the gateway's table.
+
+    CommandName:
+      type: string
+      description: Which command the envelope carries.
+      enum: [submit_order, cancel_order]
+
+    SubmitOrderCommand:
+      type: object
+      additionalProperties: false
+      description: |
+        An admitted order intent, queued for one node. Written only after the
+        full admission chain passed (scope, shape, PAPER-only, node fitness,
+        pre-trade gate) — a refused intent is never published.
+      required:
+        [command, client_order_id, account_id, symbol, side, qty, order_type, mode, admitted_ts]
+      properties:
+        command: { const: submit_order }
+        client_order_id:
+          description: The caller's `Idempotency-Key`, verbatim, as the Nautilus client order id.
+          $ref: "#/components/schemas/IdempotencyKeyValue"
+        account_id: { type: string }
+        symbol:
+          type: string
+          description: The instrument as the node's adapter names it.
+          minLength: 1
+        side: { $ref: "#/components/schemas/Side" }
+        qty:
+          description: Post-gate quantity — a clamp may have shrunk it below what was requested.
+          $ref: "#/components/schemas/Decimal"
+        order_type: { $ref: "#/components/schemas/OrderType" }
+        limit_px:
+          description: |
+            Present when `order_type` is `limit`, absent otherwise — absent, not
+            null, so one representation of "no limit price" serves both the HTTP
+            body and the command stream.
+          $ref: "#/components/schemas/Decimal"
+        time_in_force: { $ref: "#/components/schemas/TimeInForce" }
+        reduce_only: { type: boolean, default: false }
+        mode:
+          description: |
+            PAPER, always. The node refuses any other value rather than
+            trusting the gateway checked — rule 3 is cheap to assert twice.
+          $ref: "#/components/schemas/Mode"
+        admitted_ts:
+          type: number
+          description: Unix seconds at which admission completed.
+
+    CancelOrderCommand:
+      type: object
+      additionalProperties: false
+      description: |
+        A cancellation request for a working order. Idempotent on
+        `idempotency_key`: the node cancels once however often this arrives.
+      required: [command, client_order_id, account_id, idempotency_key, requested_ts]
+      properties:
+        command: { const: cancel_order }
+        client_order_id:
+          description: The order to cancel — the key it was submitted with.
+          $ref: "#/components/schemas/IdempotencyKeyValue"
+        account_id: { type: string }
+        idempotency_key:
+          description: The `Idempotency-Key` of the cancel request itself.
+          $ref: "#/components/schemas/IdempotencyKeyValue"
+        requested_ts:
+          type: number
+          description: Unix seconds at which the gateway accepted the cancel.
+
+    NodeCommand:
+      description: One entry on `algobots:cmd:<node>`, discriminated by `command`.
+      oneOf:
+        - $ref: "#/components/schemas/SubmitOrderCommand"
+        - $ref: "#/components/schemas/CancelOrderCommand"
+      discriminator:
+        propertyName: command
+        mapping:
+          submit_order: "#/components/schemas/SubmitOrderCommand"
+          cancel_order: "#/components/schemas/CancelOrderCommand"

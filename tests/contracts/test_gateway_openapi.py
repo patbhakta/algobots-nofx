@@ -227,3 +227,54 @@ def test_request_bodies_reject_unknown_fields(spec: dict) -> None:
     for name in ("OrderRequest", "Order", "Position", "Account", "Event", "Health", "Fill"):
         schema = spec["components"]["schemas"][name]
         assert schema.get("additionalProperties") is False, f"{name} accepts unknown fields"
+
+
+# --- the gateway -> node seam (P1.3) ----------------------------------------
+
+
+def test_node_command_envelope_is_typed(spec: dict) -> None:
+    """P1.3: ``algobots:cmd:<node>`` has a writer and a reader, so it has a schema.
+
+    Before P1.3 the envelope existed only in prose. A second implementation of
+    an untyped envelope is how a field gets renamed on one side only.
+    """
+    schemas = spec["components"]["schemas"]
+    envelope = schemas["NodeCommand"]
+    variants = {ref for ref in _refs(envelope)}
+    assert variants == {
+        "#/components/schemas/SubmitOrderCommand",
+        "#/components/schemas/CancelOrderCommand",
+    }
+    assert envelope["discriminator"]["propertyName"] == "command"
+
+    for name in ("SubmitOrderCommand", "CancelOrderCommand"):
+        assert schemas[name].get("additionalProperties") is False, (
+            f"{name} accepts unknown fields — the node would ignore a typo'd command field"
+        )
+
+
+def test_command_carries_the_key_as_the_client_order_id(spec: dict) -> None:
+    """The done-when depends on this: the key must reach the node unchanged.
+
+    If the command typed ``client_order_id`` as a plain string, the gateway
+    could hand the node something that is not the caller's key and dedupe
+    would hold only in the gateway's table — which is exactly the failure
+    P1.3 exists to rule out.
+    """
+    schemas = spec["components"]["schemas"]
+    key = "#/components/schemas/IdempotencyKeyValue"
+    for name in ("SubmitOrderCommand", "CancelOrderCommand"):
+        assert schemas[name]["properties"]["client_order_id"]["$ref"] == key, (
+            f"{name}.client_order_id is not the idempotency-key type"
+        )
+        assert "client_order_id" in schemas[name]["required"]
+
+    # The cancel's own key is what makes "cancelling twice cancels once" hold.
+    assert schemas["CancelOrderCommand"]["properties"]["idempotency_key"]["$ref"] == key
+
+
+def test_submitted_command_is_paper_only(spec: dict) -> None:
+    """Rule 3 reaches the node too: the envelope's mode is the one-member enum."""
+    submit = spec["components"]["schemas"]["SubmitOrderCommand"]
+    assert submit["properties"]["mode"]["$ref"] == "#/components/schemas/Mode"
+    assert "mode" in submit["required"], "a command without a mode is a command to guess"
