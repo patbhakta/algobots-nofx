@@ -205,16 +205,16 @@ export function ExchangeConfigModal({
   // Plain signup URLs only. We earn nothing on where you open an account, so
   // these carry no referral codes and show no "bonus" badge.
   const exchangeRegistrationLinks: Record<string, { url: string; hasReferral?: boolean }> = {
-    binance: { url: 'https://www.binance.com/en/register' },
-    okx: { url: 'https://www.okx.com' },
-    bybit: { url: 'https://www.bybit.com/register' },
-    bitget: { url: 'https://www.bitget.com/register' },
-    gate: { url: 'https://www.gate.com/signup' },
-    kucoin: { url: 'https://www.kucoin.com/ucenter/signup' },
-    hyperliquid: { url: 'https://app.hyperliquid.xyz' },
-    aster: { url: 'https://www.asterdex.com' },
-    lighter: { url: 'https://app.lighter.xyz' },
-    indodax: { url: 'https://indodax.com/register' },
+    binance: { url: 'https://www.binance.com/en/register', hasReferral: false },
+    okx: { url: 'https://www.okx.com', hasReferral: false },
+    bybit: { url: 'https://www.bybit.com/register', hasReferral: false },
+    bitget: { url: 'https://www.bitget.com/register', hasReferral: false },
+    gate: { url: 'https://www.gate.com/signup', hasReferral: false },
+    kucoin: { url: 'https://www.kucoin.com/ucenter/signup', hasReferral: false },
+    hyperliquid: { url: 'https://app.hyperliquid.xyz', hasReferral: false },
+    aster: { url: 'https://www.asterdex.com', hasReferral: false },
+    lighter: { url: 'https://app.lighter.xyz', hasReferral: false },
+    indodax: { url: 'https://indodax.com/register', hasReferral: false },
   }
 
   // Initialize form when editing

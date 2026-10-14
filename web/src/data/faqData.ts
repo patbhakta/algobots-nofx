@@ -1,6 +1,5 @@
 import {
   BookOpen,
-  GitBranch,
   Monitor,
   Shield,
   TrendingUp,
@@ -515,30 +514,6 @@ export const faqCategories: FAQCategory[] = [
     icon: Wrench,
     items: [
       {
-        id: 'how-to-install',
-        question: 'Do I need to install anything?',
-        blocks: [
-          {
-            type: 'p',
-            text: 'No. Your instance is already running on its own server — you just open the URL you were given and sign in. There is nothing to install on your laptop or phone, and no app to download.',
-          },
-          {
-            type: 'p',
-            text: 'The one thing you do need is a crypto wallet browser extension (Rabby or MetaMask) when you connect Hyperliquid, because only your own wallet can authorize trading.',
-          },
-        ],
-      },
-      {
-        id: 'how-to-update',
-        question: 'How do I get updates?',
-        blocks: [
-          {
-            type: 'p',
-            text: 'Updates are applied on the server for you; reload the page to pick up a new version. Your database and keys live on a mounted volume and survive updates, and any running traders are restarted automatically once the backend comes back.',
-          },
-        ],
-      },
-      {
         id: 'launch-blocked',
         question: 'Launch is blocked by a failing check — now what?',
         blocks: [
@@ -559,47 +534,6 @@ export const faqCategories: FAQCategory[] = [
               'Unavailable: the exchange API did not respond; the account state is cached for 30 seconds, so wait and refresh.',
               'CEX keys: verify trading permission, IP whitelist, and that futures/perp access is enabled.',
             ],
-          },
-        ],
-      },
-      {
-        id: 'where-are-logs',
-        question: 'Where can I see what the bot has been doing?',
-        blocks: [
-          {
-            type: 'p',
-            text: 'The dashboard Execution Log is the place to look: it records every cycle, including the AI reasoning behind each trade and any refusal to trade. Server-side logs are only reachable by whoever runs your instance, so ask them if something needs digging into.',
-          },
-        ],
-      },
-    ],
-  },
-
-  // ───────────────────────── Getting help ─────────────────────────
-  {
-    id: 'getting-help',
-    title: 'Getting Help',
-    icon: GitBranch,
-    items: [
-      {
-        id: 'report-a-problem',
-        question: 'Something looks wrong. How do I report it?',
-        blocks: [
-          {
-            type: 'p',
-            text: 'Tell whoever set up your instance, directly. This is a private deployment shared with a small group, so there is no public issue tracker and no support queue — a message with the details is the fastest path to a fix.',
-          },
-          {
-            type: 'list',
-            items: [
-              'What you were doing, and what you expected instead.',
-              'A screenshot of the screen, including any error text.',
-              'Roughly when it happened, so the logs can be matched up.',
-            ],
-          },
-          {
-            type: 'note',
-            text: 'Never share your private keys, seed phrase, or API secrets in a bug report. Nobody needs them to help you.',
           },
         ],
       },
