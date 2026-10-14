@@ -19,6 +19,7 @@ import { buildDashboardPath, ROUTES } from '../../router/paths'
 import {
   AUTOPILOT_TRADER_NAME,
   ensureMarketDataStrategy,
+  isBuiltInStrategyName,
   launchAutopilot,
 } from '../../lib/launch/launchAutopilot'
 import { runLaunchPreflight } from '../../lib/launch/preflight'
@@ -179,26 +180,46 @@ export function AutopilotLaunchPanel({
 
   // A stored builder-approved flag is not proof that this saved signing agent
   // is still approved. A different AlgoBots installation can replace the agent.
-  const [verifiedExchangeId, setVerifiedExchangeId] = useState<string | null>(null)
+  const [verifiedExchangeId, setVerifiedExchangeId] = useState<string | null>(
+    null
+  )
   useEffect(() => {
     setVerifiedExchangeId(null)
-    if (!hyperliquidExchange?.hyperliquidWalletAddr || !hyperliquidExchange.hyperliquidAgentAddress || hyperliquidExchange.testnet) return
+    if (
+      !hyperliquidExchange?.hyperliquidWalletAddr ||
+      !hyperliquidExchange.hyperliquidAgentAddress ||
+      hyperliquidExchange.testnet
+    )
+      return
     let cancelled = false
     const check = async () => {
       try {
-        const proof = await api.getHyperliquidAgent(hyperliquidExchange.hyperliquidWalletAddr!)
-        const approved = proof.builderApproved && proof.agents?.some((agent) =>
-          agent.address.toLowerCase() === hyperliquidExchange.hyperliquidAgentAddress!.toLowerCase() && agent.validUntil > Date.now())
-        if (!cancelled) setVerifiedExchangeId(approved ? hyperliquidExchange.id : null)
+        const proof = await api.getHyperliquidAgent(
+          hyperliquidExchange.hyperliquidWalletAddr!
+        )
+        const approved =
+          proof.builderApproved &&
+          proof.agents?.some(
+            (agent) =>
+              agent.address.toLowerCase() ===
+                hyperliquidExchange.hyperliquidAgentAddress!.toLowerCase() &&
+              agent.validUntil > Date.now()
+          )
+        if (!cancelled)
+          setVerifiedExchangeId(approved ? hyperliquidExchange.id : null)
       } catch {
         if (!cancelled) setVerifiedExchangeId(null)
       }
     }
     void check()
     const timer = setInterval(() => void check(), 30000)
-    return () => { cancelled = true; clearInterval(timer) }
+    return () => {
+      cancelled = true
+      clearInterval(timer)
+    }
   }, [hyperliquidExchange])
-  const hyperliquidConnected = !!hyperliquidExchange && verifiedExchangeId === hyperliquidExchange.id
+  const hyperliquidConnected =
+    !!hyperliquidExchange && verifiedExchangeId === hyperliquidExchange.id
   const exchangeState = hyperliquidExchange
     ? exchangeAccountStates[hyperliquidExchange.id]
     : undefined
@@ -217,9 +238,7 @@ export function AutopilotLaunchPanel({
   const autopilotTrader = useMemo(
     () =>
       traders.find((trader) => trader.trader_name === AUTOPILOT_TRADER_NAME) ||
-      traders.find((trader) =>
-        (trader.strategy_name || '').toLowerCase().includes('marketData')
-      ) ||
+      traders.find((trader) => isBuiltInStrategyName(trader.strategy_name)) ||
       null,
     [traders]
   )
