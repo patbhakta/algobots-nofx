@@ -402,8 +402,8 @@ export function TraderConfigModal({
                                 : aiConfig.coin_source.source_type ===
                                     'hyper_rank'
                                   ? (language as string) === 'zh'
-                                    ? 'Claw402 board'
-                                    : 'Claw402 board'
+                                    ? 'cross-market signal board'
+                                    : 'cross-market signal board'
                                   : aiConfig.coin_source.source_type ===
                                       'hyper_all'
                                     ? (language as string) === 'zh'

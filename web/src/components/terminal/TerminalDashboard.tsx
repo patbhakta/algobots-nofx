@@ -188,14 +188,14 @@ export function TerminalDashboard({
   const { data: realFlow } = useSWR(
     traderId ? ['flow-markets', traderId] : null,
     () => api.getFlowMarkets(selectedTrader?.ai_model, 'mainnet', '1h', 50, true),
-    // paid x402 endpoint — poll slowly (5m) to conserve claw402 funds; the
+    // market-data endpoint — poll slowly (5m) to conserve data request load; the
     // topology beam animation is client-side and stays fast regardless
     { refreshInterval: 300000, shouldRetryOnError: false }
   )
   const { data: realSignalRank } = useSWR(
     traderId ? ['signal-rank', traderId] : null,
     () => api.getDirectionChangeLeaderboard(30, true),
-    // paid x402 endpoint — poll slowly (5m) to conserve claw402 funds
+    // market-data endpoint — poll slowly (5m) to conserve data request load
     { refreshInterval: 300000, shouldRetryOnError: false }
   )
 
@@ -389,21 +389,13 @@ export function TerminalDashboard({
             <div>Automatic open/close is unavailable. Re-authorize with the main wallet signature. No paid AI or data calls run for this decision round until fixed.</div>
           </div>
         )}
-        {/* runtime health banner — AI fee wallet dry / safe mode would otherwise
-            only be visible in server logs while the bot silently idles */}
-        {!on && status && (status.safe_mode || status.ai_wallet_status === 'empty' || status.ai_wallet_status === 'low') && (
+        {!on && status?.safe_mode && (
           <div className="tm-mono" style={{ display: 'flex', gap: 10, alignItems: 'center', margin: '8px 14px 0', padding: '8px 12px', fontSize: 11, border: '1px solid var(--tm-down)', color: 'var(--tm-down)', background: 'rgba(200,60,40,0.06)', flexWrap: 'wrap' }}>
             <span style={{ fontWeight: 600 }}>
-              {status.ai_wallet_status === 'empty'
-                ? 'AI fee wallet is out of USDC — decisions are failing.'
-                : status.ai_wallet_status === 'low'
-                  ? `AI fee wallet is low (${(status.ai_wallet_balance_usdc ?? 0).toFixed(2)} USDC) — top up soon.`
-                  : 'Safe mode: AI failed repeatedly, no new positions are being opened.'}
+              Safe mode: AI failed repeatedly, no new positions are being opened.
             </span>
             <span style={{ color: 'var(--tm-ink-2)' }}>
-              {status.ai_wallet_status === 'empty' || status.ai_wallet_status === 'low'
-                ? 'Deposit Base USDC to the Claw402 wallet, the trader recovers automatically.'
-                : status.safe_mode_reason || ''}
+              {status.safe_mode_reason || 'Check the model subscription and data-source connections.'}
             </span>
           </div>
         )}
@@ -423,7 +415,7 @@ export function TerminalDashboard({
           <span><span className="tm-sc">model </span>{(() => {
             const raw = config?.ai_model || status?.ai_model || ''
             if (!raw) return '—'
-            if (/claw402/i.test(raw)) return 'CLAW402'
+            if (/marketData/i.test(raw)) return 'MARKET_DATA'
             return raw.length > 16 ? raw.slice(0, 16).toUpperCase() : raw.toUpperCase()
           })()}</span>
           <span><span className="tm-sc">strategy </span>{config?.strategy_name || selectedTrader?.strategy_name || '—'}</span>
@@ -506,7 +498,7 @@ export function TerminalDashboard({
         </div>
         <div className="tm-rule" />
 
-        {/* ── win-rate matrix (holder cost × win-rate grid, claw402 paid data).
+        {/* ── win-rate matrix (holder cost × win-rate grid, cross-market adapter data).
               Full-width panel under row 1; long/short grids side by side with
               click-to-drill address lists. ── */}
         <div style={sc}>

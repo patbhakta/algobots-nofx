@@ -5,7 +5,7 @@ export function modelHasCredential(model: AIModel) {
   return Boolean(
     model.has_api_key ||
     model.apiKey ||
-    (model.provider === 'claw402' && model.walletAddress)
+    (model.provider === 'marketData' && model.walletAddress)
   )
 }
 
@@ -17,12 +17,12 @@ export function isHyperliquidExchange(exchange: Exchange) {
   return exchange.exchange_type === 'hyperliquid'
 }
 
-/** Prefers the claw402 model, falls back to any enabled model with a credential. */
+/** Prefers the marketData model, falls back to any enabled model with a credential. */
 export function pickTradingModel(models: AIModel[]) {
   return (
     models.find(
       (model) =>
-        model.provider === 'claw402' &&
+        model.provider === 'marketData' &&
         model.enabled &&
         modelHasCredential(model)
     ) ||
@@ -45,9 +45,9 @@ export function pickTradingExchange(exchanges: Exchange[]) {
 }
 
 /**
- * Resolves a launch-capable AI model, auto-provisioning the beginner claw402
+ * Resolves a launch-capable AI model, auto-provisioning the beginner marketData
  * wallet when none is configured yet. Returns null when nothing could be
- * resolved — the caller routes the user into claw402 setup.
+ * resolved — the caller routes the user into marketData setup.
  */
 export async function resolveLaunchModel(): Promise<AIModel | null> {
   let models = await api.getModelConfigs()

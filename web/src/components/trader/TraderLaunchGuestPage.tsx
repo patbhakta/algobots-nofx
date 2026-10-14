@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 import {
   ArrowRight,
   CheckCircle2,
-  CircleDollarSign,
+  Database,
   Download,
   ExternalLink,
   KeyRound,
@@ -22,13 +22,13 @@ const setupSteps = [
     to: ROUTES.register,
   },
   {
-    title: 'Fund the AI fee wallet',
+    title: 'Connect market intelligence',
     detail:
-      'AlgoBots prepares a Base USDC wallet for Claw402.ai data and model calls. This wallet is separate from trading collateral.',
-    icon: CircleDollarSign,
-    action: 'Open deposit QR',
+      'Your subscription includes AI access plus Binance, Polymarket, and IBKR data. No per-call wallet is required.',
+    icon: Database,
+    action: 'Review data sources',
     to: ROUTES.login,
-    returnUrl: `${ROUTES.traders}?setup=claw402`,
+    returnUrl: `${ROUTES.traders}?setup=marketData`,
   },
   {
     title: 'Authorize Hyperliquid',
@@ -50,7 +50,7 @@ const setupSteps = [
 ]
 
 const pipeline = [
-  'Read the live Claw402.ai board, with US stocks prioritized before crypto.',
+  'Read the live Binance, Polymarket, and IBKR board, with US stocks prioritized before crypto.',
   'Load current direction, direction history, and cost/liquidation structure for each candidate.',
   'Confirm with raw OHLCV candles, then trade full-size 10x only when the setup is strong enough.',
 ]
@@ -69,7 +69,7 @@ export function TraderLaunchGuestPage() {
               One strategy. Four setup steps. Then it trades.
             </h1>
             <p className="mt-5 max-w-2xl text-base leading-7 text-nofx-text-muted">
-              AlgoBots runs a single Claw402-driven strategy: board, per-market
+              AlgoBots runs a single cross-market data-driven strategy: board, per-market
               details, liquidation structure, candles, execution. No strategy
               picker, no manual symbol picking required.
             </p>
@@ -79,7 +79,7 @@ export function TraderLaunchGuestPage() {
                 onClick={() =>
                   sessionStorage.setItem(
                     'returnUrl',
-                    `${ROUTES.traders}?setup=claw402`
+                    `${ROUTES.traders}?setup=marketData`
                   )
                 }
                 className="inline-flex items-center justify-center gap-2 rounded-xl bg-nofx-gold px-5 py-3 text-sm font-bold text-white transition hover:bg-nofx-gold/90"

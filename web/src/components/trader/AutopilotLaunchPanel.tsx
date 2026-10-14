@@ -18,7 +18,7 @@ import { api } from '../../lib/api'
 import { buildDashboardPath, ROUTES } from '../../router/paths'
 import {
   AUTOPILOT_TRADER_NAME,
-  ensureClaw402Strategy,
+  ensureMarketDataStrategy,
   launchAutopilot,
 } from '../../lib/launch/launchAutopilot'
 import { runLaunchPreflight } from '../../lib/launch/preflight'
@@ -42,7 +42,7 @@ interface AutopilotLaunchPanelProps {
   isLoggedIn: boolean
   language: string
   onRefresh: () => Promise<void>
-  onOpenClaw402Config?: () => void
+  onOpenMarketDataConfig?: () => void
   onOpenHyperliquidConfig?: () => void
 }
 
@@ -84,7 +84,7 @@ export function AutopilotLaunchPanel({
   traders = [],
   isLoggedIn,
   onRefresh,
-  onOpenClaw402Config,
+  onOpenMarketDataConfig,
   onOpenHyperliquidConfig,
 }: AutopilotLaunchPanelProps) {
   const navigate = useNavigate()
@@ -95,11 +95,11 @@ export function AutopilotLaunchPanel({
   const [launching, setLaunching] = useState(false)
   const [refreshing, setRefreshing] = useState(false)
 
-  const claw402Model = useMemo(
+  const marketDataModel = useMemo(
     () =>
       models.find(
         (model) =>
-          model.provider === 'claw402' &&
+          model.provider === 'marketData' &&
           model.enabled &&
           (model.has_api_key || model.apiKey || model.walletAddress)
       ) || null,
@@ -133,10 +133,10 @@ export function AutopilotLaunchPanel({
   // snapshot cached in the model object. Poll while the panel is visible so
   // deposits show up without a manual refresh.
   const [preflight, setPreflight] = useState<LaunchPreflightResult | null>(null)
-  const claw402ModelId = claw402Model?.id
+  const marketDataModelId = marketDataModel?.id
   const preflightExchangeId = preflightExchange?.id
   useEffect(() => {
-    if (!isLoggedIn || !claw402ModelId || !preflightExchangeId) {
+    if (!isLoggedIn || !marketDataModelId || !preflightExchangeId) {
       setPreflight(null)
       return
     }
@@ -144,7 +144,7 @@ export function AutopilotLaunchPanel({
     const check = async () => {
       try {
         const result = await runLaunchPreflight({
-          ai_model_id: claw402ModelId,
+          ai_model_id: marketDataModelId,
           exchange_id: preflightExchangeId,
         })
         if (!cancelled) setPreflight(result)
@@ -158,20 +158,20 @@ export function AutopilotLaunchPanel({
       cancelled = true
       clearInterval(timer)
     }
-  }, [isLoggedIn, claw402ModelId, preflightExchangeId])
+  }, [isLoggedIn, marketDataModelId, preflightExchangeId])
 
   const preflightCheck = (id: string) =>
     preflight?.checks.find((check) => check.id === id)
 
   const feeWalletAddress =
-    claw402Model?.walletAddress ||
+    marketDataModel?.walletAddress ||
     wallet?.address ||
     preflightCheck('ai_wallet')?.address ||
     ''
   const feeFundsCheck = preflightCheck('ai_wallet_funds')
   const feeWalletBalance =
     feeFundsCheck?.actual ??
-    parseNumber(claw402Model?.balanceUsdc || wallet?.balance_usdc)
+    parseNumber(marketDataModel?.balanceUsdc || wallet?.balance_usdc)
   const minAIFeeUSDC = preflight?.min_ai_fee_usdc ?? MIN_AI_FEE_USDC
   const feeReady = feeFundsCheck
     ? feeFundsCheck.status !== 'failed' && Boolean(feeWalletAddress)
@@ -218,7 +218,7 @@ export function AutopilotLaunchPanel({
     () =>
       traders.find((trader) => trader.trader_name === AUTOPILOT_TRADER_NAME) ||
       traders.find((trader) =>
-        (trader.strategy_name || '').toLowerCase().includes('claw402')
+        (trader.strategy_name || '').toLowerCase().includes('marketData')
       ) ||
       null,
     [traders]
@@ -251,13 +251,13 @@ export function AutopilotLaunchPanel({
   }
 
   const handleLaunch = async () => {
-    if (!claw402Model || !hyperliquidExchange) return
+    if (!marketDataModel || !hyperliquidExchange) return
     setLaunching(true)
     try {
       // Shared launch path (same as Strategy Studio): server preflight with
       // fresh balances first, then strategy provisioning, then create/start.
       const outcome = await launchAutopilot({
-        ensureStrategy: ensureClaw402Strategy,
+        ensureStrategy: ensureMarketDataStrategy,
         scanIntervalMinutes: 5,
       })
 
@@ -267,8 +267,8 @@ export function AutopilotLaunchPanel({
           setPreflight(outcome.preflight)
         }
         if (outcome.kind !== 'error') {
-          if (outcome.setupTarget === 'claw402') {
-            onOpenClaw402Config?.()
+          if (outcome.setupTarget === 'marketData') {
+            onOpenMarketDataConfig?.()
           } else if (outcome.setupTarget === 'hyperliquid') {
             onOpenHyperliquidConfig?.()
           }

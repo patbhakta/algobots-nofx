@@ -37,8 +37,8 @@ export async function launchAutopilot(
         ok: false,
         kind: 'setup',
         message:
-          'No enabled AI model is ready. Create or fund the Claw402 wallet first.',
-        setupTarget: 'claw402',
+          'No enabled AI model is ready. Create or fund the AI subscription first.',
+        setupTarget: 'marketData',
       }
     }
 
@@ -92,7 +92,7 @@ export async function launchAutopilot(
         (trader) => trader.trader_name === AUTOPILOT_TRADER_NAME
       ) ||
       existingTraders.find((trader) =>
-        (trader.strategy_name || '').toLowerCase().includes('claw402')
+        (trader.strategy_name || '').toLowerCase().includes('marketData')
       ) ||
       null
 
@@ -144,9 +144,9 @@ export async function launchAutopilot(
 
 /**
  * Default strategy provisioning for the guided panel: reuse the active
- * Claw402 strategy, otherwise create and activate it.
+ * Market Data strategy, otherwise create and activate it.
  */
-export async function ensureClaw402Strategy(): Promise<string> {
+export async function ensureMarketDataStrategy(): Promise<string> {
   const strategies = await api.getStrategies()
   const existing =
     strategies.find(
@@ -155,7 +155,7 @@ export async function ensureClaw402Strategy(): Promise<string> {
         strategy.config?.ai_config?.coin_source?.source_type === 'vergex_signal'
     ) ||
     strategies.find((strategy) =>
-      strategy.name.toLowerCase().includes('claw402')
+      strategy.name.toLowerCase().includes('marketData')
     )
 
   if (existing) {
@@ -167,9 +167,9 @@ export async function ensureClaw402Strategy(): Promise<string> {
 
   const config = await api.getDefaultStrategyConfig()
   const created = await api.createStrategy({
-    name: 'AlgoBots Claw402 Auto Strategy',
+    name: 'AlgoBots Market Data Auto Strategy',
     description:
-      'Single built-in strategy: Claw402 board, per-symbol details, raw candles, then execution.',
+      'Single built-in strategy: cross-market signal board, per-symbol details, raw candles, then execution.',
     config,
   })
   if (created?.id) {
@@ -179,9 +179,9 @@ export async function ensureClaw402Strategy(): Promise<string> {
 
   const refreshed = await api.getStrategies()
   const fallback = refreshed.find((strategy) =>
-    strategy.name.toLowerCase().includes('claw402')
+    strategy.name.toLowerCase().includes('marketData')
   )
-  if (!fallback) throw new Error('Failed to create Claw402 strategy')
+  if (!fallback) throw new Error('Failed to create Market Data strategy')
   await api.activateStrategy(fallback.id)
   return fallback.id
 }

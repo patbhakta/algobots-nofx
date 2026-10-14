@@ -2,13 +2,13 @@ import { Brain, Landmark, Rocket, Sparkles } from 'lucide-react'
 
 interface BeginnerGuideCardsProps {
   language: string
-  claw402Ready: boolean
+  marketDataReady: boolean
   exchangeReady: boolean
   strategyReady: boolean
   traderReady: boolean
   canCreateTrader: boolean
   walletAddress?: string | null
-  onQuickSetupClaw402: () => void
+  onQuickSetupMarketData: () => void
   onOpenExchange: () => void
   onOpenStrategy: () => void
   onCreateTrader: () => void
@@ -21,13 +21,13 @@ function truncateAddress(address: string) {
 
 export function BeginnerGuideCards({
   language,
-  claw402Ready,
+  marketDataReady,
   exchangeReady,
   strategyReady,
   traderReady,
   canCreateTrader,
   walletAddress,
-  onQuickSetupClaw402,
+  onQuickSetupMarketData,
   onOpenExchange,
   onOpenStrategy,
   onCreateTrader,
@@ -40,25 +40,25 @@ export function BeginnerGuideCards({
       icon: Brain,
       title: isZh ? '1. Fast AI' : '1. Fast AI',
       desc: isZh
-        ? 'Start with Claw402 + DeepSeek. No model picking needed for the first run.'
-        : 'Start with Claw402 + DeepSeek. No model picking needed for the first run.',
+        ? 'Subscription AI uses Binance, Polymarket, and IBKR context by default.'
+        : 'Subscription AI uses Binance, Polymarket, and IBKR context by default.',
       meta: walletAddress
         ? isZh
           ? `Wallet ${truncateAddress(walletAddress)}`
           : `Wallet ${truncateAddress(walletAddress)}`
         : isZh
-          ? 'Pay per call with Base USDC'
-          : 'Pay per call with Base USDC',
-      ready: claw402Ready,
-      actionLabel: claw402Ready
+          ? 'Included with subscription'
+          : 'Included with subscription',
+      ready: marketDataReady,
+      actionLabel: marketDataReady
         ? isZh
           ? 'Configured'
           : 'Configured'
         : isZh
           ? 'One-click setup'
           : 'One-click setup',
-      onAction: onQuickSetupClaw402,
-      disabled: claw402Ready,
+      onAction: onQuickSetupMarketData,
+      disabled: marketDataReady,
     },
     {
       key: 'exchange',

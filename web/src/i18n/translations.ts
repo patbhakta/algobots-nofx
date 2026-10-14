@@ -501,7 +501,7 @@ export const translations = {
     forgotPassword: 'Forgot password?',
     forgotAccount: 'Forgot account?',
     forgotAccountConfirm:
-      '⚠️ This will permanently delete EVERYTHING: users, traders, strategies, AI model API keys, exchange API keys, and your CLAW402 wallet. Export anything you need to keep (especially wallet private keys) BEFORE continuing. Re-registration will NOT restore them. Continue?',
+      '⚠️ This will permanently delete EVERYTHING: users, traders, strategies, AI model API keys, exchange API keys, and your AI subscription. Export anything you need to keep (especially wallet private keys) BEFORE continuing. Re-registration will NOT restore them. Continue?',
     forgotAccountSuccess:
       'Account reset successful! You can now register a new account.',
     rememberMe: 'Remember me',
@@ -1087,19 +1087,19 @@ export const translations = {
       configureApi: 'Configure API',
       configureWallet: 'Configure Wallet',
       chooseProvider: 'Choose Your AI Provider',
-      claw402EntryDesc:
-        'Recommended default path. Use Base USDC pay-per-call instead of managing API keys.',
+      marketDataEntryDesc:
+        'AI access is included with your subscription and uses connected market data.',
       otherApiEntry: 'Other API Providers',
       otherApiEntryDesc:
         'Use your own API key for OpenAI, Claude, Gemini, DeepSeek, and more.',
-      payPerCall: 'Pay-as-you-go USDC · All AI Models · No API Key',
+      payPerCall: 'Subscription access · All AI Models',
       recommended: 'Best',
-      allModelsClaw: 'Pay-as-you-go with USDC — supports all major AI models',
+      allModelsClaw: 'Subscription AI — supports all major models',
       selectAiModel: 'Choose AI Model',
       allModelsUnified:
-        'All models unified via Claw402. Switch anytime after setup.',
+        'Choose any supported AI model with your AlgoBots subscription.',
       setupWallet: 'Setup Wallet',
-      walletInfo: 'Claw402 uses USDC on Base chain. You need an EVM wallet.',
+      walletInfo: 'AI access is included with your AlgoBots subscription; no per-call wallet is required.',
       exportKey: 'Export private key from MetaMask, Rabby, etc.',
       dedicatedWallet:
         'Recommended: create a dedicated wallet with a small USDC balance',
@@ -1121,8 +1121,8 @@ export const translations = {
       validating: 'Validating...',
       walletAddress: 'Wallet Address',
       usdcBalance: 'Base USDC Balance',
-      claw402Connected: 'claw402 Connected',
-      claw402Unreachable: 'claw402 Unreachable',
+      marketDataConnected: 'marketData Connected',
+      marketDataUnreachable: 'marketData Unreachable',
       depositUsdc: 'Deposit USDC to this address on Base chain',
       invalidKeyPrefix: 'Please add 0x at the beginning',
       invalidKeyLength: 'Should be 66 characters, currently',

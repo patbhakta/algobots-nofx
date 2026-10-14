@@ -42,10 +42,10 @@ const API_BASE = import.meta.env.VITE_API_BASE || ''
 
 type Scope =
   'all' | 'crypto' | 'stock' | 'commodity' | 'index' | 'forex' | 'pre_ipo'
-type ListMode = 'claw402' | 'pool'
+type ListMode = 'marketData' | 'pool'
 
 const scopeOptions: Array<{ value: Scope; zh: string; en: string }> = [
-  { value: 'all', zh: 'All Claw402', en: 'All Claw402' },
+  { value: 'all', zh: 'All Market Data', en: 'All Market Data' },
   { value: 'stock', zh: 'US Stocks', en: 'US Stocks' },
   { value: 'crypto', zh: 'Crypto', en: 'Crypto' },
   { value: 'commodity', zh: 'Commodities', en: 'Commodities' },
@@ -66,7 +66,7 @@ const categoryPriority: Record<string, number> = {
 const timeframeOptions = ['5m', '15m', '30m', '1h', '4h', '1d']
 const barCountOptions = [20, 30, 50]
 const topNOptions = [5, 6, 7, 8, 9, 10]
-const claw402BoardLimit = 30
+const marketDataBoardLimit = 30
 const confidenceOptions = [65, 75, 82]
 
 const text = (_language: string, _zh: string, en: string) => en
@@ -103,9 +103,9 @@ const profileOptions: Array<{
     bars: 30,
     margin: 1.0,
     promptZh:
-      'Careful mode: follow the live Claw402 direction board; use direction history, the cost/liquidation heatmap, and raw candles as context only.',
+      'Careful mode: follow the live cross-market signal board; use direction history, the cost/liquidation heatmap, and raw candles as context only.',
     promptEn:
-      'Careful mode: follow the live Claw402 direction board; use direction history, the cost/liquidation heatmap, and raw candles as context only.',
+      'Careful mode: follow the live cross-market signal board; use direction history, the cost/liquidation heatmap, and raw candles as context only.',
   },
   {
     value: 'balanced',
@@ -139,9 +139,9 @@ const profileOptions: Array<{
     bars: 50,
     margin: 1.0,
     promptZh:
-      'Active mode: follow strong Claw402 direction changes quickly and keep positions until the board turns, becomes neutral, or drops the symbol.',
+      'Active mode: follow strong Market Data direction changes quickly and keep positions until the board turns, becomes neutral, or drops the symbol.',
     promptEn:
-      'Active mode: follow strong Claw402 direction changes quickly and keep positions until the board turns, becomes neutral, or drops the symbol.',
+      'Active mode: follow strong Market Data direction changes quickly and keep positions until the board turns, becomes neutral, or drops the symbol.',
   },
 ]
 
@@ -813,7 +813,7 @@ export function StrategyStudioPage() {
   const [detailLoading, setDetailLoading] = useState(false)
   const [detailError, setDetailError] = useState('')
   const [detailLiqBand, setDetailLiqBand] = useState('15')
-  const [listMode, setListMode] = useState<ListMode>('claw402')
+  const [listMode, setListMode] = useState<ListMode>('marketData')
   const [hasChanges, setHasChanges] = useState(false)
 
   const aiConfig = editingConfig?.ai_config || null
@@ -910,12 +910,12 @@ export function StrategyStudioPage() {
     setSignalsError('')
     try {
       const result =
-        await api.getVergexDirectionChangeLeaderboard(claw402BoardLimit)
+        await api.getVergexDirectionChangeLeaderboard(marketDataBoardLimit)
       setSignals(result.items || [])
-      setListMode('claw402')
+      setListMode('marketData')
     } catch (err) {
       setSignalsError(
-        err instanceof Error ? err.message : 'Claw402.ai board unavailable'
+        err instanceof Error ? err.message : 'Binance, Polymarket, and IBKR board unavailable'
       )
     } finally {
       setSignalsLoading(false)
@@ -944,7 +944,7 @@ export function StrategyStudioPage() {
 
       window.requestAnimationFrame(() => {
         document
-          .getElementById('claw402-detail-panel')
+          .getElementById('marketData-detail-panel')
           ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
       })
 
@@ -1083,19 +1083,19 @@ export function StrategyStudioPage() {
           min_risk_reward_ratio: 3,
         }),
         custom_prompt:
-          'AlgoBots Autopilot reads the Claw402.ai direction board each cycle, loads direction history and cost/liquidation structure, and holds each position until its board direction changes.',
+          'AlgoBots Autopilot reads the Binance, Polymarket, and IBKR direction board each cycle, loads direction history and cost/liquidation structure, and holds each position until its board direction changes.',
         prompt_sections: undefined,
       }
       const created = await api.createStrategy({
         name: text(
           language,
-          'AlgoBots Claw402 Auto Strategy',
-          'AlgoBots Claw402 Auto Strategy'
+          'AlgoBots Market Data Auto Strategy',
+          'AlgoBots Market Data Auto Strategy'
         ),
         description: text(
           language,
-          'The single built-in strategy: read the Claw402.ai board, fetch per-symbol details, then trade with raw candles.',
-          'The single built-in strategy: read the Claw402.ai board, fetch per-symbol details, then trade with raw candles.'
+          'The single built-in strategy: read the Binance, Polymarket, and IBKR board, fetch per-symbol details, then trade with raw candles.',
+          'The single built-in strategy: read the Binance, Polymarket, and IBKR board, fetch per-symbol details, then trade with raw candles.'
         ),
         config: defaultConfig,
       })
@@ -1161,7 +1161,7 @@ export function StrategyStudioPage() {
     }
   }
 
-  const buildUnifiedClaw402Config = (): StrategyConfig => {
+  const buildUnifiedMarketDataConfig = (): StrategyConfig => {
     const base = simplifyConfig(editingConfig)
     base.language = language as 'zh' | 'en'
     base.ai_config = {
@@ -1196,13 +1196,13 @@ export function StrategyStudioPage() {
         min_risk_reward_ratio: 3,
       }),
       custom_prompt:
-        'Run AlgoBots Autopilot: use the Claw402.ai direction board as the candidate universe, open in the board direction, and hold until that direction changes, becomes neutral, or disappears.',
+        'Run AlgoBots Autopilot: use the Binance, Polymarket, and IBKR direction board as the candidate universe, open in the board direction, and hold until that direction changes, becomes neutral, or disappears.',
       prompt_sections: undefined,
     }
     return base
   }
 
-  const startUnifiedClaw402Agent = async () => {
+  const startUnifiedMarketDataAgent = async () => {
     if (!selectedStrategy) return
 
     setSaving(true)
@@ -1213,13 +1213,13 @@ export function StrategyStudioPage() {
       const outcome = await launchAutopilot({
         scanIntervalMinutes: 15,
         ensureStrategy: async () => {
-          const config = buildUnifiedClaw402Config()
+          const config = buildUnifiedMarketDataConfig()
           setEditingConfig(config)
           await api.updateStrategy(selectedStrategy.id, {
             name: selectedStrategy.name,
             description:
               selectedStrategy.description ||
-              'Autonomous market selection powered by the live Claw402.ai direction board.',
+              'Autonomous market selection powered by the live Binance, Polymarket, and IBKR direction board.',
             config,
           })
           await api.activateStrategy(selectedStrategy.id)
@@ -1394,14 +1394,14 @@ export function StrategyStudioPage() {
             <p className="mt-1 text-sm text-nofx-text-muted">
               {text(
                 language,
-                'Autonomous market selection powered by the live Claw402.ai direction board.',
-                'Autonomous market selection powered by the live Claw402.ai direction board.'
+                'Autonomous market selection powered by the live Binance, Polymarket, and IBKR direction board.',
+                'Autonomous market selection powered by the live Binance, Polymarket, and IBKR direction board.'
               )}
             </p>
           </div>
           <button
             type="button"
-            onClick={startUnifiedClaw402Agent}
+            onClick={startUnifiedMarketDataAgent}
             disabled={saving || !selectedStrategy}
             className="inline-flex items-center gap-2 rounded-lg bg-nofx-gold px-4 py-2 text-sm font-semibold text-nofx-bg hover:bg-nofx-gold-highlight"
           >
@@ -1564,20 +1564,20 @@ export function StrategyStudioPage() {
                         if (signals.length === 0) {
                           void loadSignals()
                         } else {
-                          setListMode('claw402')
+                          setListMode('marketData')
                         }
                       }}
                       disabled={signalsLoading}
                       className={`hidden items-center gap-2 rounded-lg border px-3 py-2 text-xs disabled:opacity-50 ${
-                        listMode === 'claw402'
+                        listMode === 'marketData'
                           ? 'border-nofx-gold bg-nofx-gold/10 text-nofx-gold'
                           : 'border-[rgba(26,24,19,0.14)] text-nofx-text-muted hover:text-nofx-text'
                       }`}
                     >
                       <Sparkles className="h-3.5 w-3.5" />
                       {signals.length === 0
-                        ? 'Load Claw402 board'
-                        : 'Claw402 board'}
+                        ? 'Load cross-market signal board'
+                        : 'cross-market signal board'}
                     </button>
                     <button
                       type="button"
@@ -1640,7 +1640,7 @@ export function StrategyStudioPage() {
                             (item) => item.category === option.value
                           ).length
                     const count =
-                      listMode === 'claw402' ? signalCount : poolCount
+                      listMode === 'marketData' ? signalCount : poolCount
                     return (
                       <button
                         key={option.value}
@@ -1669,7 +1669,7 @@ export function StrategyStudioPage() {
                         static_coins: [],
                         vergex_market_type: 'all',
                       })
-                      setListMode('claw402')
+                      setListMode('marketData')
                       if (signals.length === 0) {
                         void loadSignals()
                       }
@@ -1682,7 +1682,7 @@ export function StrategyStudioPage() {
                   >
                     <div className="flex items-center justify-between gap-3">
                       <div className="text-sm font-semibold text-nofx-text">
-                        Follow Claw402.ai board dynamically
+                        Follow Binance, Polymarket, and IBKR board dynamically
                       </div>
                       {selectedSymbols.length === 0 ? (
                         <Check className="h-4 w-4 text-nofx-success" />
@@ -1698,7 +1698,7 @@ export function StrategyStudioPage() {
                   <button
                     type="button"
                     onClick={() => {
-                      setListMode('claw402')
+                      setListMode('marketData')
                       if (signals.length === 0) {
                         void loadSignals()
                       }
@@ -1720,7 +1720,7 @@ export function StrategyStudioPage() {
                     <div className="mt-2 text-xs text-nofx-text-muted">
                       {selectedSymbols.length > 0
                         ? `${selectedSymbols.length} symbols fixed; trade only these.`
-                        : 'Autopilot uses the live Claw402 board by default.'}
+                        : 'Autopilot uses the live cross-market signal board by default.'}
                     </div>
                   </button>
                 </div>
@@ -1729,7 +1729,7 @@ export function StrategyStudioPage() {
                   <span className="text-sm text-nofx-text-muted">
                     {selectedSymbols.length > 0
                       ? `${selectedSymbols.length} selected`
-                      : `Without manual picks, runtime uses Claw402.ai Top ${coinSource.vergex_limit || 5} in this range`}
+                      : `Without manual picks, runtime uses Binance, Polymarket, and IBKR Top ${coinSource.vergex_limit || 5} in this range`}
                   </span>
                   {selectedSymbols.length === 0 ? (
                     <select
@@ -1756,7 +1756,7 @@ export function StrategyStudioPage() {
                   </div>
                 ) : null}
 
-                {listMode === 'claw402' &&
+                {listMode === 'marketData' &&
                 signals.length === 0 &&
                 !signalsLoading ? (
                   <button
@@ -1772,7 +1772,7 @@ export function StrategyStudioPage() {
                 ) : null}
 
                 <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                  {listMode === 'claw402' && signals.length > 0
+                  {listMode === 'marketData' && signals.length > 0
                     ? visibleSignalItems.map((item) => {
                         const symbol = normalizeSymbol(item.symbol)
                         const selected = selectedSet.has(symbol)
@@ -1784,7 +1784,7 @@ export function StrategyStudioPage() {
                         const BiasIcon = bias.icon
                         return (
                           <div
-                            key={`claw402-${item.rank || 0}-${symbol}`}
+                            key={`marketData-${item.rank || 0}-${symbol}`}
                             role="button"
                             tabIndex={0}
                             onClick={() => void loadSignalDetail(item)}
@@ -1865,9 +1865,9 @@ export function StrategyStudioPage() {
                       })}
                 </div>
 
-                {listMode === 'claw402' ? (
+                {listMode === 'marketData' ? (
                   <div
-                    id="claw402-detail-panel"
+                    id="marketData-detail-panel"
                     className="mt-4 scroll-mt-28 space-y-4"
                   >
                     {detailSignal ? (
@@ -1940,18 +1940,18 @@ export function StrategyStudioPage() {
                       </>
                     ) : (
                       <div className="rounded-lg border border-[rgba(26,24,19,0.14)] bg-nofx-bg-deeper px-4 py-4 text-sm text-nofx-text-muted">
-                        AlgoBots Autopilot follows the Claw402 direction board and
+                        AlgoBots Autopilot follows the cross-market signal board and
                         uses liquidation structure and raw candles as context.
                       </div>
                     )}
                   </div>
                 ) : null}
 
-                {listMode === 'claw402' &&
+                {listMode === 'marketData' &&
                 signals.length > 0 &&
                 visibleSignalItems.length === 0 ? (
                   <div className="rounded-lg border border-[rgba(26,24,19,0.14)] bg-nofx-bg-deeper px-3 py-3 text-sm text-nofx-text-muted">
-                    No Claw402 markets available.
+                    No Market Data markets available.
                   </div>
                 ) : null}
 

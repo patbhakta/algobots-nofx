@@ -7,13 +7,13 @@ import { demoSeedPrice, demoTick } from '../../lib/demo/demoUniverse'
 const lmRnd = (a: number, b: number) => a + Math.random() * (b - a)
 
 /**
- * LiquidationMap renders the vergex (claw402) cost / liquidation heatmap as a
+ * LiquidationMap renders the vergex cost / liquidation heatmap as a
  * vertical price ladder — position-cost concentration plus liquidation fuel by
  * price level. Long metrics diverge right, short metrics diverge left from the
  * mark price. Cream-themed adaptation of a Bloomberg-style liquidation map.
  *
- * Real paid data only (hip3_perp synthetic markets). Polled at 5 min to spare
- * the claw402 wallet.
+ * Live adapter data (hip3_perp synthetic markets). Polled at 5 min to spare
+ * the data adapter.
  */
 
 const C_LONG_COST = 'var(--tm-up)' // forest green

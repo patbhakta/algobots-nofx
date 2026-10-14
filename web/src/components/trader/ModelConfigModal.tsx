@@ -8,8 +8,8 @@ import { getModelIcon, getModelColor } from '../common/ModelIcons'
 import { ModelStepIndicator } from './ModelStepIndicator'
 import { ModelCard } from './ModelCard'
 import {
-  CLAW402_MODELS,
-  DEFAULT_CLAW402_MODEL,
+  MARKET_DATA_MODELS,
+  DEFAULT_MARKET_DATA_MODEL,
   AI_PROVIDER_CONFIG,
   getShortName,
 } from './model-constants'
@@ -53,7 +53,7 @@ export function ModelConfigModal({
   // The configured entry carries the saved details (wallet address, custom
   // model name, has_api_key); the template from supportedModels only describes
   // the provider. When editing, the configured entry must win — both can share
-  // the same id (e.g. "claw402").
+  // the same id (e.g. "marketData").
   const configuredModel = configuredModels?.find((m) => m.id === selectedModelId)
   const templateModel = allModels?.find((m) => m.id === selectedModelId)
   const selectedModel = editingModelId
@@ -190,12 +190,12 @@ export function ModelConfigModal({
             />
           )}
 
-          {/* Step 1: Configure — Claw402 Dedicated UI */}
+          {/* Step 1: Configure — Market Data Dedicated UI */}
           {(currentStep === 1 || editingModelId) &&
             selectedModel &&
-            (selectedModel.provider === 'claw402' ||
-              selectedModel.id === 'claw402') && (
-              <Claw402ConfigForm
+            (selectedModel.provider === 'marketData' ||
+              selectedModel.id === 'marketData') && (
+              <MarketDataConfigForm
                 apiKey={apiKey}
                 modelName={modelName}
                 editingModelId={editingModelId}
@@ -210,11 +210,11 @@ export function ModelConfigModal({
               />
             )}
 
-          {/* Step 1: Configure — Standard Providers (non-claw402) */}
+          {/* Step 1: Configure — Standard Providers (non-marketData) */}
           {(currentStep === 1 || editingModelId) &&
             selectedModel &&
-            selectedModel.provider !== 'claw402' &&
-            selectedModel.id !== 'claw402' && (
+            selectedModel.provider !== 'marketData' &&
+            selectedModel.id !== 'marketData' && (
               <StandardProviderConfigForm
                 selectedModel={selectedModel}
                 apiKey={apiKey}
@@ -256,12 +256,12 @@ function ModelSelectionStep({
         {t('modelConfig.chooseProvider', language)}
       </div>
 
-      {/* Claw402 Featured Card */}
-      {availableModels.some((m) => m.provider === 'claw402') && (
+      {/* Market Data Featured Card */}
+      {availableModels.some((m) => m.provider === 'marketData') && (
         <button
           type="button"
           onClick={() => {
-            const claw = availableModels.find((m) => m.provider === 'claw402')
+            const claw = availableModels.find((m) => m.provider === 'marketData')
             if (claw) onSelectModel(claw.id)
           }}
           className="w-full p-5 rounded-xl text-left transition-all hover:scale-[1.01]"
@@ -274,8 +274,8 @@ function ModelSelectionStep({
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl flex items-center justify-center overflow-hidden">
                 <img
-                  src="/icons/claw402.png"
-                  alt="Claw402"
+                  src="/icons/algobots.svg"
+                  alt="Market Data"
                   width={40}
                   height={40}
                 />
@@ -285,9 +285,9 @@ function ModelSelectionStep({
                   className="font-bold text-base"
                   style={{ color: '#1A1813' }}
                 >
-                  Claw402
+                  Market Data
                   <a
-                    href="https://claw402.ai"
+                    href="https://marketData.ai"
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={(e) => e.stopPropagation()}
@@ -297,7 +297,7 @@ function ModelSelectionStep({
                       background: 'rgba(224, 72, 59, 0.1)',
                     }}
                   >
-                    ↗ claw402.ai
+                    ↗ marketData.ai
                   </a>
                 </div>
                 <div className="text-xs mt-0.5" style={{ color: '#8A8478' }}>
@@ -307,7 +307,7 @@ function ModelSelectionStep({
             </div>
             <div className="flex items-center gap-2">
               {configuredIds.has(
-                availableModels.find((m) => m.provider === 'claw402')?.id || ''
+                availableModels.find((m) => m.provider === 'marketData')?.id || ''
               ) && (
                 <div
                   className="w-2 h-2 rounded-full"
@@ -344,7 +344,7 @@ function ModelSelectionStep({
         {availableModels
           .filter(
             (m) =>
-              !m.provider?.startsWith('blockrun') && m.provider !== 'claw402'
+              !m.provider?.startsWith('blockrun') && m.provider !== 'marketData'
           )
           .map((model) => (
             <ModelCard
@@ -363,7 +363,7 @@ function ModelSelectionStep({
   )
 }
 
-function Claw402ConfigForm({
+function MarketDataConfigForm({
   apiKey,
   modelName,
   editingModelId,
@@ -398,7 +398,7 @@ function Claw402ConfigForm({
   )
   const [keyError, setKeyError] = useState('')
   const [validating, setValidating] = useState(false)
-  const [claw402Status, setClaw402Status] = useState<string | null>(null)
+  const [marketDataStatus, setMarketDataStatus] = useState<string | null>(null)
   const [testResult, setTestResult] = useState<{
     status: string
     message: string
@@ -431,7 +431,7 @@ function Claw402ConfigForm({
 
   // Debounced validation when apiKey changes
   useEffect(() => {
-    setClaw402Status(null)
+    setMarketDataStatus(null)
     setTestResult(null)
 
     const clientErr = getClientError(apiKey)
@@ -465,7 +465,7 @@ function Claw402ConfigForm({
         if (data.valid) {
           setWalletAddress(data.address || '')
           setUsdcBalance(data.balance_usdc || '0.00')
-          setClaw402Status(data.claw402_status || 'unknown')
+          setMarketDataStatus(data.marketData_status || 'unknown')
           setKeyError('')
         } else {
           setKeyError(data.error || 'Invalid key')
@@ -493,14 +493,14 @@ function Claw402ConfigForm({
       if (data.valid) {
         setWalletAddress(data.address || '')
         setUsdcBalance(data.balance_usdc || '0.00')
-        setClaw402Status(data.claw402_status || 'unknown')
+        setMarketDataStatus(data.marketData_status || 'unknown')
         if (parseFloat(data.balance_usdc || '0') === 0) setShowDeposit(true)
         setTestResult({
-          status: data.claw402_status === 'ok' ? 'ok' : 'error',
+          status: data.marketData_status === 'ok' ? 'ok' : 'error',
           message:
-            data.claw402_status === 'ok'
-              ? t('modelConfig.claw402Connected', language)
-              : t('modelConfig.claw402Unreachable', language),
+            data.marketData_status === 'ok'
+              ? t('modelConfig.marketDataConnected', language)
+              : t('modelConfig.marketDataUnreachable', language),
         })
       } else {
         setTestResult({ status: 'error', message: data.error || 'Invalid key' })
@@ -508,7 +508,7 @@ function Claw402ConfigForm({
     } catch {
       setTestResult({
         status: 'error',
-        message: t('modelConfig.claw402Unreachable', language),
+        message: t('modelConfig.marketDataUnreachable', language),
       })
     } finally {
       setTesting(false)
@@ -519,7 +519,7 @@ function Claw402ConfigForm({
 
   return (
     <form onSubmit={onSubmit} className="space-y-5">
-      {/* Claw402 Hero Header */}
+      {/* Market Data Hero Header */}
       <div
         className="p-5 rounded-xl text-center"
         style={{
@@ -528,16 +528,16 @@ function Claw402ConfigForm({
         }}
       >
         <div className="w-14 h-14 mx-auto rounded-2xl flex items-center justify-center mb-3 overflow-hidden">
-          <img src="/icons/claw402.png" alt="Claw402" width={56} height={56} />
+          <img src="/icons/algobots.svg" alt="Market Data" width={56} height={56} />
         </div>
         <a
-          href="https://claw402.ai"
+          href="https://marketData.ai"
           target="_blank"
           rel="noopener noreferrer"
           className="text-lg font-bold inline-flex items-center gap-1.5 hover:underline"
           style={{ color: '#1A1813' }}
         >
-          Claw402{' '}
+          Market Data{' '}
           <span className="text-xs font-normal" style={{ color: '#E0483B' }}>
             ↗
           </span>
@@ -576,8 +576,8 @@ function Claw402ConfigForm({
           {t('modelConfig.allModelsUnified', language)}
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-          {CLAW402_MODELS.map((m) => {
-            const isSelected = (modelName || DEFAULT_CLAW402_MODEL) === m.id
+          {MARKET_DATA_MODELS.map((m) => {
+            const isSelected = (modelName || DEFAULT_MARKET_DATA_MODEL) === m.id
             return (
               <button
                 key={m.id}
@@ -1035,17 +1035,17 @@ function Claw402ConfigForm({
                     </div>
                   </div>
                 )}
-                {claw402Status && (
+                {marketDataStatus && (
                   <div
                     className="flex items-center gap-2 text-xs"
                     style={{
-                      color: claw402Status === 'ok' ? '#2E8B57' : '#D6433A',
+                      color: marketDataStatus === 'ok' ? '#2E8B57' : '#D6433A',
                     }}
                   >
-                    <span>{claw402Status === 'ok' ? '🟢' : '🔴'}</span>
-                    {claw402Status === 'ok'
-                      ? t('modelConfig.claw402Connected', language)
-                      : t('modelConfig.claw402Unreachable', language)}
+                    <span>{marketDataStatus === 'ok' ? '🟢' : '🔴'}</span>
+                    {marketDataStatus === 'ok'
+                      ? t('modelConfig.marketDataConnected', language)
+                      : t('modelConfig.marketDataUnreachable', language)}
                   </div>
                 )}
               </>

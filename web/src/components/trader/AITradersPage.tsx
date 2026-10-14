@@ -635,16 +635,16 @@ export function AITradersPage({ onTraderSelect }: AITradersPageProps) {
     setShowExchangeModal(true)
   }
 
-  const handleOpenClaw402Config = () => {
-    const configuredClaw402 = allModels?.find(
-      (model) => model.provider === 'claw402'
+  const handleOpenMarketDataConfig = () => {
+    const configuredMarketData = allModels?.find(
+      (model) => model.provider === 'marketData'
     )
-    const supportedClaw402 = supportedModels?.find(
-      (model) => model.provider === 'claw402'
+    const supportedMarketData = supportedModels?.find(
+      (model) => model.provider === 'marketData'
     )
-    const modelId = configuredClaw402?.id || supportedClaw402?.id || 'claw402'
+    const modelId = configuredMarketData?.id || supportedMarketData?.id || 'marketData'
 
-    setEditingModel(configuredClaw402?.id || null)
+    setEditingModel(configuredMarketData?.id || null)
     setInitialModelId(modelId)
     setShowModelModal(true)
   }
@@ -667,7 +667,7 @@ export function AITradersPage({ onTraderSelect }: AITradersPageProps) {
     const setupTarget = searchParams.get('setup')
     if (!setupTarget) return
 
-    if (setupTarget === 'claw402') {
+    if (setupTarget === 'marketData') {
       // The welcome page shows the deposit QR, auto-creates the wallet if
       // needed, and polls the balance — friendlier than the key-config modal.
       navigate(ROUTES.welcome)
@@ -705,7 +705,7 @@ export function AITradersPage({ onTraderSelect }: AITradersPageProps) {
       isLoggedIn={Boolean(user && token)}
       language={language}
       onRefresh={refreshLaunchState}
-      onOpenClaw402Config={handleOpenClaw402Config}
+      onOpenMarketDataConfig={handleOpenMarketDataConfig}
       onOpenHyperliquidConfig={handleOpenHyperliquidConfig}
     />
   )

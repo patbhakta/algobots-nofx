@@ -59,7 +59,7 @@ export const faqCategories: FAQCategory[] = [
         blocks: [
           {
             type: 'p',
-            text: 'AlgoBots is a self-hosted AI trading terminal. Its flagship mode is AlgoBots Autopilot: an AI agent that reads the Claw402.ai signal board, verifies candidates with Signal Lab and liquidation structure, confirms timing with raw candles, and executes trades on Hyperliquid — all on a server you control, with your keys never leaving it.',
+            text: 'AlgoBots is a self-hosted AI trading terminal. Its flagship mode is AlgoBots Autopilot: an AI agent that combines Binance market data, Polymarket probabilities, and IBKR brokerage data, verifies candidates with Signal Lab and liquidation structure, confirms timing with raw candles, and executes trades — all on a server you control, with your keys never leaving it.',
           },
           {
             type: 'p',
@@ -108,7 +108,7 @@ export const faqCategories: FAQCategory[] = [
         blocks: [
           {
             type: 'p',
-            text: 'No API keys are required. AlgoBots routes inference through Claw402 pay-as-you-go infrastructure: your AI fee wallet pays per call with Base USDC, and the terminal accesses supported models (DeepSeek and other frontier models) on demand.',
+            text: 'AI access is included with your AlgoBots subscription. There is no separate per-call wallet to create or fund, and the terminal can access supported models on demand.',
           },
           {
             type: 'p',
@@ -266,7 +266,7 @@ export const faqCategories: FAQCategory[] = [
           {
             type: 'steps',
             items: [
-              'Build the universe — pull the live Claw402.ai ranking and take the top candidates (default 10) across crypto majors and the xyz synthetic markets (US stocks, indices, commodities, FX), each with a direction bias and signal z-score.',
+              'Build the universe — combine Binance, Polymarket, and IBKR feeds and take the top candidates (default 10) across crypto majors and supported traditional markets, each with a direction bias and signal z-score.',
               'Verify each candidate — fetch its Signal Lab deep signal plus the cost/liquidation structure around price: liquidation clusters and cost bases show whether a move has fuel ahead of it or walls against it.',
               'Confirm timing — read the raw 15-minute OHLCV candles (30 bars) to check the entry is riding structure, not chasing an extended move.',
               'Decide and size — only setups clearing the confidence threshold (default `78/100`) with roughly `3:1` risk/reward get positions at 10x; closes always execute before opens, and both long and short books are considered every cycle.',
@@ -285,7 +285,7 @@ export const faqCategories: FAQCategory[] = [
           {
             type: 'list',
             items: [
-              'Claw402.ai signal data — the ranking board, per-symbol Signal Lab deep signals, and market net-flow. These are paid endpoints, billed per call in USDC from your AI fee wallet (x402 micropayments).',
+              'Connected signal data — the ranking board, per-symbol Signal Lab deep signals, and market net-flow sourced from Binance, Polymarket, and IBKR.',
               'Cost/liquidation heatmaps — aggregated position-cost and liquidation-cluster structure for each market.',
               'Hyperliquid market data — raw OHLCV candles and the live L2 order book (free public data).',
               'Your account via the agent wallet — equity, available margin, open positions with PnL.',
@@ -294,7 +294,7 @@ export const faqCategories: FAQCategory[] = [
           },
           {
             type: 'note',
-            text: 'The dashboard polls the paid Claw402 endpoints slowly (every few minutes) to conserve your fee wallet — market-data panels stay live from the free feeds.',
+            text: 'The dashboard refreshes slower-changing cross-market signals every few minutes while price and execution panels stay live.',
           },
         ],
       },
@@ -316,7 +316,7 @@ export const faqCategories: FAQCategory[] = [
             type: 'list',
             items: [
               'Your account: equity, available margin, open positions with PnL.',
-              'The Claw402 ranking board: candidate universe with direction bias.',
+              'The cross-market ranking board: candidate universe with direction bias.',
               'Signal Lab deep signals and cost/liquidation structure per candidate.',
               'Raw OHLCV candles for timing confirmation.',
               'Its own track record: win rate, profit factor, drawdown, recent trades.',

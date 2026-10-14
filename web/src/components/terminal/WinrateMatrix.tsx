@@ -11,15 +11,15 @@ import { winrateQualityWarnings } from '../../lib/vergexWinrateQuality'
 import { demoSeedPrice } from '../../lib/demo/demoUniverse'
 
 /**
- * WinrateMatrix renders the vergex (claw402) holder win-rate matrix — live
+ * WinrateMatrix renders the vergex holder win-rate matrix — live
  * positions bucketed by entry-cost slot × historical win-rate bin, long and
  * short side by side. Rows are absolute entry-cost price bands (near-price
  * banding: 1% steps around the mark, wider further out); columns are win-rate
  * deciles. A dashed line marks the current price (cost = 100%). Clicking a
- * cell drills into the addresses behind it (paid claw402 call, fetched
+ * cell drills into the addresses behind it (cross-market data request, fetched
  * strictly on demand) with pagination.
  *
- * Real paid data only. Polled at 5 min to spare the claw402 wallet.
+ * Live adapter data. Polled at 5 min to spare the data adapter.
  */
 
 // Display grouping — mirrors the upstream panel exactly:
