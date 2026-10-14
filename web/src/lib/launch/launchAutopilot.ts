@@ -92,7 +92,7 @@ export async function launchAutopilot(
         (trader) => trader.trader_name === AUTOPILOT_TRADER_NAME
       ) ||
       existingTraders.find((trader) =>
-        (trader.strategy_name || '').toLowerCase().includes('marketData')
+        (trader.strategy_name || '').toLowerCase().includes('market data')
       ) ||
       null
 
@@ -155,7 +155,7 @@ export async function ensureMarketDataStrategy(): Promise<string> {
         strategy.config?.ai_config?.coin_source?.source_type === 'vergex_signal'
     ) ||
     strategies.find((strategy) =>
-      strategy.name.toLowerCase().includes('marketData')
+      strategy.name.toLowerCase().includes('market data')
     )
 
   if (existing) {
@@ -179,7 +179,7 @@ export async function ensureMarketDataStrategy(): Promise<string> {
 
   const refreshed = await api.getStrategies()
   const fallback = refreshed.find((strategy) =>
-    strategy.name.toLowerCase().includes('marketData')
+    strategy.name.toLowerCase().includes('market data')
   )
   if (!fallback) throw new Error('Failed to create Market Data strategy')
   await api.activateStrategy(fallback.id)
