@@ -575,6 +575,46 @@
     {
       "repo": "algobots",
       "path": "src/algobots/knowledge/__init__.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "docs/bridge.md"
+    },
+    {
+      "repo": "algobots",
+      "path": "docs/nautilus-setup.md"
+    },
+    {
+      "repo": "algobots",
+      "path": "docs/research/openalgo-feature-reference.md"
+    },
+    {
+      "repo": "algobots",
+      "path": "src/algobots/bridge/__init__.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "src/algobots/bridge/admission.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "src/algobots/bridge/channel.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "src/algobots/bridge/router.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "src/algobots/bridge/stats.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "tests/bridge/test_api.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "tests/bridge/test_channel.py"
     }
   ],
   "scope_revisions": [
