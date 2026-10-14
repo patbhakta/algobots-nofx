@@ -24,13 +24,48 @@ def test_inventory_covers_live_snapshot():
         assert f"`{container}`" in text
 
 
+def compose():
+    return yaml.safe_load((ROOT / "compose.yaml").read_text())
+
+
 def test_single_compose_shared_network_and_named_state():
-    model = yaml.safe_load((ROOT / "compose.yaml").read_text())
+    model = compose()
     services = model["services"]
     assert {"postgres", "redis", "api", "nofx", "nofx-frontend", "nautilus"} <= services.keys()
     assert all("algobots" in service["networks"] for service in services.values())
     assert {"postgres_data", "redis_data", "nautilus_catalog"} <= model["volumes"].keys()
-    assert services["nofx"]["environment"]["DB_TYPE"] == "postgres"
+
+
+def test_compose_does_not_flip_nofx_to_postgres_by_default():
+    """The card's acceptance is that `pat@bhakta.us` survives.
+
+    compose.yaml IS the deployment artifact, so a hardcoded `DB_TYPE: postgres`
+    points the live NoFX at the freshly-created empty `nofx` database on the
+    next `up` and the only member can no longer log in. The cutover is an env
+    flip after scripts/migrate-nofx-sqlite.sh reports a verified migration.
+    """
+    nofx = compose()["services"]["nofx"]
+    assert nofx["environment"]["DB_TYPE"] == "${NOFX_DB_TYPE:-sqlite}"
+    mounts = " ".join(nofx["volumes"])
+    assert ":/app/data" in mounts, "the live SQLite database must stay mounted"
+    assert ":/app/bridge" in mounts, "ALG-3340's bridge channel must stay mounted"
+
+
+def test_compose_keeps_the_live_api_and_nautilus_mounts():
+    """INVENTORY.md records what the host runs; compose must not silently drop
+    the bridge, the Kalshi feed or the demo state when it adopts the stack."""
+    services = compose()["services"]
+    api = " ".join(services["api"]["volumes"])
+    assert "/bridge" in api and "/feeds/kalshi" in api and "/var/lib/algobots-demo" in api
+    work = next(m for m in services["nautilus"]["volumes"] if m.endswith("/home/nautilus/work"))
+    assert not work.startswith("./"), "work dir is a host path, not a path in this checkout"
+
+
+def test_env_example_documents_every_required_variable():
+    env = (ROOT / ".env.example").read_text()
+    for required in ("POSTGRES_PASSWORD=", "NOFX_JWT_SECRET=", "NOFX_DB_TYPE=sqlite"):
+        assert required in env
+    assert "POSTGRES_PASSWORD=\n" in env, "no default password may ship in the repo"
 
 
 @requires_nautilus
@@ -66,6 +101,14 @@ def test_migration_does_not_trust_pgloader_exit_status():
     script = (ROOT / "scripts/migrate-nofx-sqlite.sh").read_text()
     assert "PGLOADER_LOG" in script
     assert "grep -qE '(FATAL|ERROR) '" in script
+
+
+def test_migration_row_counts_resolve_the_downcased_relation():
+    """pgloader downcases identifiers: quoting a mixed-case SQLite table name
+    verbatim into Postgres reports a mismatch on a migration that worked."""
+    script = (ROOT / "scripts/migrate-nofx-sqlite.sh").read_text()
+    assert "lower(table_name)=lower('$table')" in script
+    assert 'FROM \\"$pg_table\\"' in script
 
 
 def test_migration_publishes_report_only_after_all_checks_pass():

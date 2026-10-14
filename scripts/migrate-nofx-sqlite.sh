@@ -80,7 +80,17 @@ IFS='
 '
 for table in $TABLES; do
   sqlite_count=$(sqlite3 "$SOURCE" "SELECT count(*) FROM \"$table\";")
-  pg_count=$(psql "$TARGET" -Atqc "SELECT count(*) FROM \"$table\"")
+  # pgloader downcases identifiers, so a mixed-case SQLite table name quoted
+  # verbatim into Postgres raises `relation does not exist` — a false mismatch
+  # on a migration that actually succeeded. Resolve the real relation name.
+  pg_table=$(psql "$TARGET" -Atqc "SELECT table_name FROM information_schema.tables
+    WHERE table_schema='public' AND lower(table_name)=lower('$table')")
+  if [ -z "$pg_table" ]; then
+    echo "table missing in postgres: $table" >&2
+    rm -f "$STAGED"
+    exit 3
+  fi
+  pg_count=$(psql "$TARGET" -Atqc "SELECT count(*) FROM \"$pg_table\"")
   if [ "$sqlite_count" != "$pg_count" ]; then
     echo "row count mismatch: $table sqlite=$sqlite_count postgres=$pg_count" >&2
     rm -f "$STAGED"

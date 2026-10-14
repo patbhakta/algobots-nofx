@@ -37,6 +37,12 @@ pgloader logs no errors, and every migrated table has the same row count. Only
 then may a separately authorized Kestra deployment set NoFX's
 `DB_TYPE=postgres`; this repository does not flip production automatically.
 
+That guard lives in `compose.yaml`, not only in this paragraph: the `nofx`
+service reads `DB_TYPE: ${NOFX_DB_TYPE:-sqlite}` and keeps
+`/opt/algobots-stack/data` mounted, so the cutover is one deliberate env flip
+(`NOFX_DB_TYPE=postgres`, see [`.env.example`](.env.example)) taken after the
+report exists. `tests/phase0/test_phase0.py` fails if that default changes.
+
 NoFX's GORM schema declares its 25 boolean columns as `numeric DEFAULT false`.
 pgloader maps SQLite `numeric` to Postgres `numeric`, where that DEFAULT is
 rejected, so the migration needs `CAST type numeric to boolean` — a bare
