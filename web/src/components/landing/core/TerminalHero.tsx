@@ -1,8 +1,7 @@
 import { motion } from 'framer-motion'
-import { ArrowRight, Shield, Activity, CircuitBoard, Wifi, Globe, Zap, Star, GitFork, Users, MessageCircle } from 'lucide-react'
+import { ArrowRight, Shield, Activity, CircuitBoard, Wifi, Globe, Zap } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useGitHubStats } from '../../../hooks/useGitHubStats'
 import AgentTerminal from '../brand/AgentTerminal'
 
 const tickerLabels: Record<string, string> = {
@@ -182,7 +181,7 @@ export default function TerminalHero() {
                             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-nofx-gold opacity-75"></span>
                             <span className="relative inline-flex rounded-full h-2 w-2 bg-nofx-gold"></span>
                         </span>
-                        <span className="text-xs font-mono text-nofx-gold tracking-widest">NOFX PROFESSIONAL MULTI-ASSET AGENT OS</span>
+                        <span className="text-xs font-mono text-nofx-gold tracking-widest">ALGOBOTS PROFESSIONAL MULTI-ASSET AGENT OS</span>
                     </motion.div>
 
                     {/* Main Title - Massive & Impactful */}
@@ -250,14 +249,8 @@ export default function TerminalHero() {
                         </button>
                     </div>
 
-                    {/* Plain-language promise — the anti-jargon line */}
-                    <p className="mt-5 text-sm text-nofx-text-muted font-mono">
-                        Self-hosted &amp; open source · about $13 is enough to start · guided
-                        setup, no API keys — first trade in minutes
-                    </p>
-
-                    {/* Community Stats Row */}
-                    <CommunityStats />
+                    {/* Self-host / open-source promise and the GitHub community
+                        stats row are gone (ALG-3344): this build is private. */}
 
                 </div>
             </div>
@@ -310,62 +303,5 @@ export default function TerminalHero() {
             </div>
 
         </section >
-    )
-}
-
-import { OFFICIAL_LINKS } from '../../../constants/branding'
-
-function CommunityStats() {
-    const { stars, forks, contributors, isLoading, error } = useGitHubStats('NoFxAiOS', 'nofx')
-
-    const stats = [
-        {
-            label: 'GITHUB STARS',
-            value: isLoading ? '...' : (error ? '10,500+' : stars.toLocaleString()),
-            icon: Star,
-            color: 'text-nofx-gold',
-            href: OFFICIAL_LINKS.github
-        },
-        {
-            label: 'FORKS',
-            value: isLoading ? '...' : (error ? '2,800+' : forks.toLocaleString()),
-            icon: GitFork,
-            color: 'text-nofx-accent',
-            href: `${OFFICIAL_LINKS.github}/fork`
-        },
-        {
-            label: 'CONTRIBUTORS',
-            value: isLoading ? '...' : (contributors > 0 ? contributors : '50+'),
-            icon: Users,
-            color: 'text-nofx-success',
-            href: `${OFFICIAL_LINKS.github}/graphs/contributors`
-        },
-        {
-            label: 'DEV COMMUNITY',
-            value: '6,600+',
-            icon: MessageCircle,
-            color: 'text-nofx-accent',
-            href: OFFICIAL_LINKS.telegram
-        }
-    ]
-
-    return (
-        <div className="mt-12 grid grid-cols-2 md:grid-cols-4 gap-4 w-full max-w-4xl">
-            {stats.map((stat, i) => (
-                <a
-                    key={i}
-                    href={stat.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex flex-col items-center justify-center p-3 rounded bg-nofx-bg-lighter border border-[rgba(26,24,19,0.14)] group hover:border-nofx-gold/30 transition-all cursor-pointer hover:bg-nofx-bg-deeper"
-                >
-                    <div className="flex items-center gap-2 mb-1">
-                        <stat.icon className={`w-4 h-4 ${stat.color}`} />
-                        <span className="text-[10px] font-mono text-nofx-text-muted tracking-wider">{stat.label}</span>
-                    </div>
-                    <span className="text-xl font-bold font-mono text-nofx-text group-hover:text-nofx-gold transition-colors">{stat.value}</span>
-                </a>
-            ))}
-        </div>
     )
 }
