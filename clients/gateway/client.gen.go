@@ -37,11 +37,17 @@ type NodeHealth struct {
 	LastHeartbeat *string `json:"last_heartbeat,omitempty"`
 }
 
+type ProjectionHealth struct {
+	Reachable bool  `json:"reachable"`
+	Head      int64 `json:"head"`
+}
+
 type Health struct {
-	Status          string       `json:"status"`
-	Version         string       `json:"version"`
-	NautilusVersion string       `json:"nautilus_version"`
-	Nodes           []NodeHealth `json:"nodes"`
+	Status          string           `json:"status"`
+	Version         string           `json:"version"`
+	NautilusVersion string           `json:"nautilus_version"`
+	Nodes           []NodeHealth     `json:"nodes"`
+	Projection      ProjectionHealth `json:"projection"`
 }
 
 type Account struct {

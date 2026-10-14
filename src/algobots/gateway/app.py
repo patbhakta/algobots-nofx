@@ -9,8 +9,15 @@ rather than NoFX.
 The one deliberate difference from the bridge it replaces: there is no route
 here that executes anything. ``POST /orders`` admits and publishes a command;
 the node fills. Everything the gateway reports back is a fold of what the node
-then said (``projection``), which is why a restart is P1.2's problem and not a
-correctness question for this sprint.
+then said (``projection``).
+
+Since P1.2 that fold lives in Postgres
+(:class:`~algobots.gateway.store.SqlProjection`), so no route here reads a
+node's memory and a restarted gateway answers ``/orders`` and ``/positions``
+with the same rows. Every route is written against the
+:class:`~algobots.gateway.projection.Projection` protocol rather than a store,
+which is why the P1.1 fixture suite and the P1.2 restart proof exercise the
+same request code.
 """
 
 from __future__ import annotations
@@ -46,13 +53,19 @@ from algobots.gateway.nodes import (
     InMemoryCommandBus,
     NodeRegistry,
 )
-from algobots.gateway.projection import InMemoryProjection, OrderRow, iso
+from algobots.gateway.projection import InMemoryProjection, OrderRow, Projection, iso
 
 #: The contract's server URL ends in ``/v1``; paths in it are relative to that.
 PREFIX = "/v1"
 
-#: How often the ``/events`` tail re-reads the projection. P1.2 swaps the poll
-#: for Postgres ``LISTEN``/``NOTIFY`` — the cursor semantics do not change.
+#: How often the ``/events`` tail re-reads the projection.
+#:
+#: Still a poll after P1.2, deliberately. ``LISTEN``/``NOTIFY`` would tie the
+#: stream to PostgreSQL, and the thing the contract actually promises is the
+#: cursor: every frame a client missed is addressable by ``seq``, so a reader
+#: that is late by one poll interval loses nothing, it only learns late. The
+#: notification would be an optimisation on top of the same query, and it would
+#: cost CI the ability to run this stream at all.
 EVENT_POLL_S = 0.01
 
 GATEWAY_VERSION = "1.0.0-phase1"
@@ -63,7 +76,7 @@ class Gateway:
     """Everything a request needs, assembled once by :func:`build_gateway`."""
 
     registry: NodeRegistry
-    projection: InMemoryProjection
+    projection: Projection
     bus: CommandBus
     gate: PreTradeGate
     sessions: Sessions = field(default_factory=NoSessions)
@@ -97,10 +110,11 @@ router = APIRouter()
 
 @router.get("/health", tags=["system"])
 def get_health(request: Request) -> dict[str, Any]:
-    """Liveness, the Nautilus pin, and per-node reachability.
+    """Liveness, the Nautilus pin, node reachability, and the projection.
 
     Unauthenticated on purpose: it is the stack's liveness probe, and it names
-    no account balance, order or member — only node ids and reachability.
+    no account balance, order or member — only node ids, reachability and the
+    event cursor.
     """
     gw = _gw(request)
     now = time.time()
@@ -115,13 +129,19 @@ def get_health(request: Request) -> dict[str, Any]:
                 "last_heartbeat": iso(node.last_heartbeat) if node.last_heartbeat else None,
             }
         )
+    # P1.2: the reads are served from Postgres, so a healthy fleet over an
+    # unreachable projection is still degraded — the gateway could answer
+    # neither /orders nor /positions.
+    projection = gw.projection.health()
+    healthy = bool(nodes) and all(n["reachable"] for n in nodes) and projection["reachable"]
     return {
-        "status": "ok" if nodes and all(n["reachable"] for n in nodes) else "degraded",
+        "status": "ok" if healthy else "degraded",
         "version": gw.version,
         # Roadmap rule 5: an upgrade is its own sprint, so this is a pin, not
         # a lookup of whatever happens to be installed.
         "nautilus_version": NAUTILUS_PIN,
         "nodes": nodes,
+        "projection": projection,
     }
 
 
@@ -288,7 +308,7 @@ def build_gateway(
     *,
     registry: NodeRegistry,
     gate: PreTradeGate,
-    projection: InMemoryProjection | None = None,
+    projection: Projection | None = None,
     bus: CommandBus | None = None,
     sessions: Sessions | None = None,
     version: str = GATEWAY_VERSION,

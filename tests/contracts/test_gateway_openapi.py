@@ -212,6 +212,24 @@ def test_events_stream_is_resumable_and_deduped(spec: dict) -> None:
     assert event["properties"]["seq"]["type"] == "integer"
 
 
+def test_health_reports_the_projection(spec: dict) -> None:
+    """P1.2: the reads come from Postgres, so the probe must name Postgres.
+
+    Healthy nodes and an unreachable projection is a gateway that can answer
+    neither ``/orders`` nor ``/positions``; if ``/health`` only described
+    ``nodes`` it would call that ``ok``.
+    """
+    health = spec["components"]["schemas"]["Health"]
+    assert "projection" in health["required"]
+    projection = health["properties"]["projection"]
+    assert projection["required"] == ["reachable", "head"]
+    assert projection["properties"]["reachable"]["type"] == "boolean"
+    # The resume cursor has to survive a restart, so it is an absolute seq and
+    # not a count of what this process happens to have seen.
+    assert projection["properties"]["head"]["type"] == "integer"
+    assert projection["properties"]["head"]["minimum"] == 0
+
+
 def test_every_ref_resolves(spec: dict) -> None:
     """A dangling $ref generates a broken client, and only at build time."""
     for ref in _refs(spec):

@@ -395,7 +395,7 @@ components:
     Health:
       type: object
       additionalProperties: false
-      required: [status, version, nautilus_version, nodes]
+      required: [status, version, nautilus_version, nodes, projection]
       properties:
         status:
           type: string
@@ -423,6 +423,31 @@ components:
               last_heartbeat:
                 type: [string, "null"]
                 format: date-time
+        projection:
+          type: object
+          additionalProperties: false
+          description: |
+            P1.2: the gateway serves `/orders` and `/positions` from a Postgres
+            projection of the node event streams, never a node's memory. That
+            makes the database a hard dependency, so the liveness probe has to
+            name it: a gateway whose nodes are all healthy but whose projection
+            is unreachable can answer neither read, and `nodes` alone would
+            report that as `ok`.
+
+            `head` is the newest assigned `seq`. A client reconnecting to
+            `/events` with `since` greater than `head` has seen everything;
+            after a gateway restart `head` continues from the stored log rather
+            than restarting at 0, which is what makes the cursor durable.
+          required: [reachable, head]
+          properties:
+            reachable:
+              type: boolean
+              description: Whether the projection store answered its last read.
+            head:
+              type: integer
+              format: int64
+              minimum: 0
+              description: Newest `seq` in the event log. 0 when empty.
 
     Account:
       type: object

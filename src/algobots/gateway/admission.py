@@ -43,7 +43,7 @@ from algobots.gateway.errors import (
 )
 from algobots.gateway.node_events import admitted_order
 from algobots.gateway.nodes import NodeRegistry
-from algobots.gateway.projection import InMemoryProjection, OrderRow
+from algobots.gateway.projection import OrderRow, Projection
 
 SIDES = ("buy", "sell")
 ORDER_TYPES = ("market", "limit")
@@ -245,7 +245,7 @@ def admit(
     caller: Caller,
     idempotency_key: str | None,
     registry: NodeRegistry,
-    projection: InMemoryProjection,
+    projection: Projection,
     gate: PreTradeGate,
     now: float | None = None,
 ) -> tuple[Admission, OrderIntent | None]:

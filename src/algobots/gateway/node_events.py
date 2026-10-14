@@ -26,9 +26,9 @@ from typing import Any
 from algobots.gateway.nodes import NodeRegistry
 from algobots.gateway.projection import (
     FillRow,
-    InMemoryProjection,
     OrderRow,
     PositionRow,
+    Projection,
     dec_str,
     iso,
 )
@@ -83,7 +83,7 @@ def ingest(
     payload: dict[str, Any],
     *,
     registry: NodeRegistry,
-    projection: InMemoryProjection,
+    projection: Projection,
 ) -> dict[str, Any] | None:
     """Fold one node event into the projection; return the ``Event`` appended.
 
@@ -103,7 +103,7 @@ def ingest(
 
 
 def _heartbeat(
-    payload: dict[str, Any], *, registry: NodeRegistry, projection: InMemoryProjection
+    payload: dict[str, Any], *, registry: NodeRegistry, projection: Projection
 ) -> dict[str, Any] | None:
     node = registry.nodes.get(str(payload.get("node") or ""))
     if node is None:
@@ -117,7 +117,7 @@ def _heartbeat(
 
 
 def _account_state(
-    payload: dict[str, Any], *, registry: NodeRegistry, projection: InMemoryProjection
+    payload: dict[str, Any], *, registry: NodeRegistry, projection: Projection
 ) -> dict[str, Any] | None:
     node = registry.by_nautilus_account(str(payload.get("account_id") or ""))
     if node is None:
@@ -159,7 +159,7 @@ def account_contract(node: Any, balances: list[dict[str, Any]]) -> dict[str, Any
 
 
 def _position(
-    payload: dict[str, Any], *, registry: NodeRegistry, projection: InMemoryProjection
+    payload: dict[str, Any], *, registry: NodeRegistry, projection: Projection
 ) -> dict[str, Any] | None:
     node = registry.by_nautilus_account(str(payload.get("account_id") or ""))
     if node is None:
@@ -207,43 +207,53 @@ def _position(
 
 
 def _order(
-    payload: dict[str, Any], *, registry: NodeRegistry, projection: InMemoryProjection
+    payload: dict[str, Any], *, registry: NodeRegistry, projection: Projection
 ) -> dict[str, Any] | None:
     client_order_id = str(payload.get("client_order_id") or "")
-    current = projection.order(client_order_id)
-    if current is None:
+    if projection.order(client_order_id) is None:
         return None  # rule 2: never materialise an order the gateway did not admit
     ts = iso(payload.get("ts_event") or payload.get("ts_init") or 0.0)
     kind = str(payload["type"])
-    changes: dict[str, Any] = {"status": ORDER_STATUS[kind], "updated_at": ts}
-    if payload.get("venue_order_id"):
-        changes["venue_order_id"] = str(payload["venue_order_id"])
-    if payload.get("reason"):
-        changes["reason"] = str(payload["reason"])
+    venue_order_id = str(payload["venue_order_id"]) if payload.get("venue_order_id") else None
+    reason = str(payload["reason"]) if payload.get("reason") else None
 
     fill: FillRow | None = None
     if kind == "OrderFilled":
-        last_qty = _dec(payload.get("last_qty")) or Decimal(0)
-        last_px = _dec(payload.get("last_px")) or Decimal(0)
         commission, commission_ccy = _money(payload.get("commission"))
         fill = FillRow(
             trade_id=str(payload.get("trade_id") or ""),
-            qty=last_qty,
-            px=last_px,
+            qty=_dec(payload.get("last_qty")) or Decimal(0),
+            px=_dec(payload.get("last_px")) or Decimal(0),
             ts_event=ts,
             commission=commission,
             commission_currency=commission_ccy or payload.get("currency"),
         )
-        filled = current.filled_qty + last_qty
-        notional = sum((f.qty * f.px for f in (*current.fills, fill)), Decimal(0))
-        changes["fills"] = (*current.fills, fill)
-        changes["filled_qty"] = filled
-        changes["avg_px"] = (notional / filled) if filled else None
-        # The node fills in slices; only the last one is terminal.
-        changes["status"] = "filled" if filled >= current.qty else "partially_filled"
+        # The projection owns what a fill does to an order — the running
+        # ``filled_qty``, ``avg_px`` and terminality are all derived from the
+        # full set of executions, never added to what is already stored.
+        order = projection.add_fill(
+            client_order_id,
+            fill,
+            updated_at=ts,
+            venue_order_id=venue_order_id,
+            reason=reason,
+        )
+        if order is None:
+            # A fill this gateway has already folded. Delivery is at-least-once
+            # (docs/bridge.md), so a node restart replaying one is expected;
+            # appending a second event for it would hand NoFX a duplicate the
+            # contract's `seq` could not help it dedupe, because the seq would
+            # genuinely be new.
+            return None
+    else:
+        changes: dict[str, Any] = {"status": ORDER_STATUS[kind], "updated_at": ts}
+        if venue_order_id:
+            changes["venue_order_id"] = venue_order_id
+        if reason:
+            changes["reason"] = reason
+        order = projection.amend_order(client_order_id, **changes)
+        assert order is not None  # the unknown-order case returned above
 
-    order = projection.amend_order(client_order_id, **changes)
-    assert order is not None  # amend only returns None for an unknown order
     event: dict[str, Any] = {
         "type": "fill" if fill is not None else "order",
         "account_id": order.account_id,

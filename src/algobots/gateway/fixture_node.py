@@ -28,7 +28,7 @@ from decimal import Decimal
 from algobots.gateway import node_events as NE
 from algobots.gateway.node_events import HEARTBEAT
 from algobots.gateway.nodes import InMemoryCommandBus, Node, NodeRegistry
-from algobots.gateway.projection import InMemoryProjection, iso
+from algobots.gateway.projection import InMemoryProjection, Projection, iso
 
 
 @dataclass
@@ -41,7 +41,7 @@ class FixtureNode:
 
     node: Node
     registry: NodeRegistry
-    projection: InMemoryProjection
+    projection: Projection
     bus: InMemoryCommandBus
     clock: float = field(default_factory=time.time)
     currency: str = "USD"
@@ -269,8 +269,16 @@ def fixture_stack(
     venue: str = "PAPER_LAYA",
     nautilus_account_id: str = "SIM-001",
     display_name: str = "Laya paper",
-) -> tuple[NodeRegistry, InMemoryProjection, InMemoryCommandBus, FixtureNode]:
-    """A registry, projection, bus and one fixture node, wired together."""
+    projection: Projection | None = None,
+) -> tuple[NodeRegistry, Projection, InMemoryCommandBus, FixtureNode]:
+    """A registry, projection, bus and one fixture node, wired together.
+
+    ``projection`` defaults to the in-memory one. P1.2 passes a
+    :class:`~algobots.gateway.store.SqlProjection` instead, so the same fixture
+    node — the same emitted Nautilus payloads — drives the durable store, and a
+    difference between the two stores shows up as a failing test rather than as
+    a deploy that behaves unlike CI.
+    """
     registry = NodeRegistry()
     node = registry.add(
         Node(
@@ -281,9 +289,9 @@ def fixture_stack(
             nautilus_account_id=nautilus_account_id,
         )
     )
-    projection = InMemoryProjection()
+    store = InMemoryProjection() if projection is None else projection
     bus = InMemoryCommandBus()
-    return registry, projection, bus, FixtureNode(node, registry, projection, bus)
+    return registry, store, bus, FixtureNode(node, registry, store, bus)
 
 
 __all__ = ["FixtureNode", "fixture_stack"]

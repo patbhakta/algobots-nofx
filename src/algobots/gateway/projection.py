@@ -160,7 +160,14 @@ class PositionRow:
 
 
 class Projection(Protocol):
-    """What P1.2's Postgres projection has to be able to do."""
+    """What a projection has to be able to do.
+
+    Both implementations satisfy it — :class:`InMemoryProjection` for the
+    fixture node, :class:`~algobots.gateway.store.SqlProjection` for the
+    deploy — so ``app`` and ``node_events`` are written against this and never
+    against a store. That is what lets the P1.1 conformance suite and the P1.2
+    restart proof drive the same code.
+    """
 
     def order(self, client_order_id: str) -> OrderRow | None: ...
 
@@ -170,16 +177,41 @@ class Projection(Protocol):
 
     def put_order(self, order: OrderRow) -> OrderRow: ...
 
+    def amend_order(self, client_order_id: str, **changes: Any) -> OrderRow | None: ...
+
+    def add_fill(
+        self,
+        client_order_id: str,
+        fill: FillRow,
+        *,
+        updated_at: str,
+        venue_order_id: str | None = None,
+        reason: str | None = None,
+    ) -> OrderRow | None: ...
+
     def positions(self, *, accounts: tuple[str, ...]) -> list[PositionRow]: ...
 
+    def position(self, position_id: str) -> PositionRow | None: ...
+
+    def put_position(self, position: PositionRow) -> PositionRow: ...
+
+    def drop_position(self, position_id: str) -> None: ...
+
     def balances(self, account_id: str) -> list[dict[str, Any]]: ...
+
+    def put_balances(self, account_id: str, balances: list[dict[str, Any]]) -> None: ...
 
     def append_event(self, event: dict[str, Any]) -> dict[str, Any]: ...
 
     def events_since(self, seq: int, *, accounts: tuple[str, ...]) -> list[dict[str, Any]]: ...
 
+    def health(self) -> dict[str, Any]: ...
+
     @property
     def as_of(self) -> str: ...
+
+    @property
+    def head(self) -> int: ...
 
 
 @dataclass
@@ -246,7 +278,56 @@ class InMemoryProjection:
         current = self._orders.get(client_order_id)
         if current is None:
             return None
+        # A restarted node may replay its stream from the beginning. Older
+        # lifecycle events must not move a filled/cancelled order backwards.
+        updated_at = changes.get("updated_at")
+        if updated_at is not None and updated_at < current.updated_at:
+            return current
         return self.put_order(replace(current, **changes))
+
+    def add_fill(
+        self,
+        client_order_id: str,
+        fill: FillRow,
+        *,
+        updated_at: str,
+        venue_order_id: str | None = None,
+        reason: str | None = None,
+    ) -> OrderRow | None:
+        """Record one execution and re-derive the order from all of them.
+
+        ``None`` means nothing changed: either the order was never admitted
+        here, or this ``trade_id`` has already been folded. The dedupe is not
+        only the SQL store's problem — the at-least-once source is the node, so
+        a replayed fill reaches whichever projection is wired up, and the two
+        have to agree about it or the fixture suite would prove the wrong thing.
+        """
+        current = self._orders.get(client_order_id)
+        if current is None:
+            return None
+        if any(f.trade_id == fill.trade_id for f in current.fills):
+            return None
+
+        fills = (*current.fills, fill)
+        filled = sum((f.qty for f in fills), ZERO)
+        notional = sum((f.qty * f.px for f in fills), ZERO)
+        changes: dict[str, Any] = {
+            "fills": fills,
+            "filled_qty": filled,
+            "avg_px": (notional / filled) if filled else None,
+            # The node fills in slices; only the last one is terminal.
+            "status": "filled" if filled >= current.qty else "partially_filled",
+            "updated_at": updated_at,
+        }
+        if venue_order_id:
+            changes["venue_order_id"] = venue_order_id
+        if reason:
+            changes["reason"] = reason
+        return self.put_order(replace(current, **changes))
+
+    def health(self) -> dict[str, Any]:
+        """Always reachable: the store is this process's own memory."""
+        return {"reachable": True, "head": self.head}
 
     def position(self, position_id: str) -> PositionRow | None:
         return self._positions.get(position_id)
