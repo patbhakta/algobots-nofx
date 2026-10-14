@@ -256,7 +256,7 @@ export function SettingsPage() {
     try {
       if (exchangeType === 'hyperliquid') {
         toast.error(
-          language === 'zh'
+          (language as string) === 'zh'
             ? 'Hyperliquid must be connected through wallet authorization, not manual keys.'
             : 'Hyperliquid must be connected through wallet authorization, not manual keys.'
         )

@@ -11,7 +11,7 @@ export function OnboardingModeSelector({
   mode,
   onChange,
 }: OnboardingModeSelectorProps) {
-  const isZh = language === 'zh'
+  const isZh = (language as string) === 'zh'
 
   const options: Array<{
     id: UserMode

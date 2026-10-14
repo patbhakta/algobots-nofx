@@ -19,7 +19,7 @@ export function BeginnerOnboardingPage() {
   const [error, setError] = useState('')
   const [refreshingBalance, setRefreshingBalance] = useState(false)
   const hasRequestedRef = useRef(false)
-  const isZh = language === 'zh'
+  const isZh = (language as string) === 'zh'
 
   const loadOnboarding = async (showLoading: boolean) => {
     if (showLoading) {

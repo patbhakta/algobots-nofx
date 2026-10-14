@@ -82,7 +82,6 @@ export function AutopilotLaunchPanel({
   exchangeAccountStates,
   traders = [],
   isLoggedIn,
-  language,
   onRefresh,
   onOpenClaw402Config,
   onOpenHyperliquidConfig,
@@ -94,7 +93,6 @@ export function AutopilotLaunchPanel({
   const [walletLoading, setWalletLoading] = useState(false)
   const [launching, setLaunching] = useState(false)
   const [refreshing, setRefreshing] = useState(false)
-  const isZh = language === 'zh'
 
   const claw402Model = useMemo(
     () =>
@@ -570,7 +568,7 @@ export function AutopilotLaunchPanel({
             <div>
               <div id="hyperliquid-quick-connect">
                 <HyperliquidWalletConnect
-                  language={isZh ? 'zh' : 'en'}
+                  language="en"
                   isLoggedIn={isLoggedIn}
                   variant="inline"
                   onSaved={refreshEverything}

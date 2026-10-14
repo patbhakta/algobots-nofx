@@ -79,9 +79,9 @@ function copy(text: string, label: string) {
   )
 }
 
-function formatAgentExpiry(validUntil: number, language: Language) {
+function formatAgentExpiry(validUntil: number) {
   const dateStr = new Date(validUntil).toLocaleString(
-    language === 'zh' ? 'zh-CN' : 'en-US',
+    'en-US',
     {
       year: 'numeric',
       month: '2-digit',
@@ -149,66 +149,66 @@ export function HyperliquidWalletConnect({
     useState<ServerReadyProof | null>(null)
   const text = useMemo(
     () => ({
-      title: language === 'zh' ? 'Hyperliquid Wallet' : 'Hyperliquid Wallet',
+      title: 'Hyperliquid Wallet',
       connect:
-        language === 'zh' ? 'Connect Hyperliquid' : 'Connect Hyperliquid',
-      connected: language === 'zh' ? 'Connected' : 'Connected',
+        'Connect Hyperliquid',
+      connected: 'Connected',
       mainWallet:
-        language === 'zh' ? 'Connect your wallet' : 'Connect your wallet',
+        'Connect your wallet',
       generateAgent:
-        language === 'zh'
+        (language as string) === 'zh'
           ? 'Create a trading key for NOFX'
           : 'Create a trading key for NOFX',
       approveAgent:
-        language === 'zh'
+        (language as string) === 'zh'
           ? 'Approve it in your wallet (trade-only, cannot withdraw)'
           : 'Approve it in your wallet (trade-only, cannot withdraw)',
       approveBuilder:
-        language === 'zh'
+        (language as string) === 'zh'
           ? 'Approve the small per-trade builder fee'
           : 'Approve the small per-trade builder fee',
-      save: language === 'zh' ? 'Save to NOFX — done' : 'Save to NOFX — done',
+      save: 'Save to NOFX — done',
       done:
-        language === 'zh'
+        (language as string) === 'zh'
           ? 'All set — trading authorized'
           : 'All set — trading authorized',
       balance:
-        language === 'zh' ? 'Hyperliquid balance' : 'Hyperliquid balance',
-      withdrawable: language === 'zh' ? 'Withdrawable' : 'Withdrawable',
-      equity: language === 'zh' ? 'Equity' : 'Equity',
-      marginUsed: language === 'zh' ? 'Margin used' : 'Margin used',
-      unrealizedPnl: language === 'zh' ? 'Unrealized PnL' : 'Unrealized PnL',
-      refresh: language === 'zh' ? 'Refresh' : 'Refresh',
+        'Hyperliquid balance',
+      withdrawable: 'Withdrawable',
+      equity: 'Equity',
+      marginUsed: 'Margin used',
+      unrealizedPnl: 'Unrealized PnL',
+      refresh: 'Refresh',
       noCustody:
-        language === 'zh'
+        (language as string) === 'zh'
           ? 'Funds stay in your Hyperliquid account; NOFX only stores the authorized agent wallet.'
           : 'Funds stay in your Hyperliquid account; NOFX only stores the authorized agent wallet.',
       agentExpiry:
-        language === 'zh'
+        (language as string) === 'zh'
           ? 'Agent authorization expires'
           : 'Agent authorization expires',
-      agentExpired: language === 'zh' ? 'Expired' : 'Expired',
+      agentExpired: 'Expired',
       agentNoAuth:
-        language === 'zh'
+        (language as string) === 'zh'
           ? 'No NOFX agent authorization found'
           : 'No NOFX agent authorization found',
       renewAgent:
-        language === 'zh'
+        (language as string) === 'zh'
           ? 'Renew agent authorization (+180d)'
           : 'Renew agent authorization (+180d)',
       renewHint:
-        language === 'zh'
+        (language as string) === 'zh'
           ? 'Hyperliquid forbids reusing an agent, so renewal creates a new agent approved for 180 days, then updates the stored key in NOFX (sign-in required).'
           : 'Hyperliquid forbids reusing an agent, so renewal creates a new agent approved for 180 days, then updates the stored key in NOFX (sign-in required).',
       noWalletTitle:
-        language === 'zh' ? 'No EVM wallet detected' : 'No EVM wallet detected',
+        'No EVM wallet detected',
       noWalletDetail:
-        language === 'zh'
+        (language as string) === 'zh'
           ? 'Install Rabby or MetaMask, create or import a wallet, then return here to connect Hyperliquid.'
           : 'Install Rabby or MetaMask, create or import a wallet, then return here to connect Hyperliquid.',
-      installRabby: language === 'zh' ? 'Install Rabby' : 'Install Rabby',
+      installRabby: 'Install Rabby',
       installMetaMask:
-        language === 'zh' ? 'Install MetaMask' : 'Install MetaMask',
+        'Install MetaMask',
     }),
     [language]
   )
@@ -655,7 +655,7 @@ export function HyperliquidWalletConnect({
       (await getWalletProviderForAddress(expectedWallet))
     if (!provider) {
       setError(
-        language === 'zh'
+        (language as string) === 'zh'
           ? 'No EVM wallet detected. Install MetaMask, Rabby, OKX or Coinbase Wallet.'
           : 'No EVM wallet detected. Install MetaMask, Rabby, OKX or Coinbase Wallet.'
       )
@@ -1464,8 +1464,7 @@ export function HyperliquidWalletConnect({
                   ) : agentInfo ? (
                     (() => {
                       const { dateStr, daysLeft } = formatAgentExpiry(
-                        agentInfo.validUntil,
-                        language
+                        agentInfo.validUntil
                       )
                       const expired = daysLeft < 0
                       const soon = daysLeft >= 0 && daysLeft <= 14
@@ -1589,7 +1588,7 @@ export function HyperliquidWalletConnect({
                     onClick={resetTradingAuthorization}
                     className="w-full flex items-center justify-center gap-2 rounded-xl border border-nofx-gold/30 bg-nofx-gold/10 px-4 py-3 text-sm font-bold text-nofx-gold transition hover:bg-nofx-gold/20"
                   >
-                    {language === 'zh'
+                    {(language as string) === 'zh'
                       ? 'Re-authorize trading'
                       : 'Re-authorize trading'}
                   </button>

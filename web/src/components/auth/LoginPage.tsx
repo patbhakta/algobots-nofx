@@ -89,14 +89,14 @@ export function LoginPage() {
               </span>
             </div>
             <h2 className="text-4xl xl:text-5xl font-bold tracking-tight text-nofx-text leading-[1.05]">
-              {language === 'zh' ? (
+              {(language as string) === 'zh' ? (
                 <>
                   AI-Powered<br />
                   <span className="text-nofx-gold">
                     Multi-Market Trading Terminal
                   </span>
                 </>
-              ) : language === 'id' ? (
+              ) : (language as string) === 'id' ? (
                 <>
                   Terminal Trading<br />
                   <span className="text-nofx-gold">
@@ -113,9 +113,9 @@ export function LoginPage() {
               )}
             </h2>
             <p className="mt-5 text-nofx-text-muted text-base leading-relaxed max-w-md">
-              {language === 'zh'
+              {(language as string) === 'zh'
                 ? 'Plug into 10+ exchanges including Hyperliquid, OKX, Aster, and 7 LLM models. Deploy 24/7 automated strategies with natural language.'
-                : language === 'id'
+                : (language as string) === 'id'
                 ? 'Hubungkan ke 10+ bursa termasuk Hyperliquid, OKX, Aster dan 7 model LLM. Terapkan strategi otomatis 24/7 dengan bahasa alami.'
                 : 'Plug into 10+ exchanges including Hyperliquid, OKX, Aster, and 7 LLM models. Deploy 24/7 automated strategies with natural language.'}
             </p>
@@ -126,9 +126,9 @@ export function LoginPage() {
             <Stat
               value="10+"
               label={
-                language === 'zh'
+                (language as string) === 'zh'
                   ? 'Exchanges'
-                  : language === 'id'
+                  : (language as string) === 'id'
                   ? 'Bursa'
                   : 'Exchanges'
               }
@@ -136,9 +136,9 @@ export function LoginPage() {
             <Stat
               value="7"
               label={
-                language === 'zh'
+                (language as string) === 'zh'
                   ? 'AI Models'
-                  : language === 'id'
+                  : (language as string) === 'id'
                   ? 'Model AI'
                   : 'AI Models'
               }
@@ -146,9 +146,9 @@ export function LoginPage() {
             <Stat
               value="24/7"
               label={
-                language === 'zh'
+                (language as string) === 'zh'
                   ? 'Always On'
-                  : language === 'id'
+                  : (language as string) === 'id'
                   ? 'Sepanjang Waktu'
                   : 'Always On'
               }
@@ -173,9 +173,9 @@ export function LoginPage() {
                 {t('signIn', language)}
               </h1>
               <p className="mt-1.5 text-sm text-nofx-text-muted">
-                {language === 'zh'
+                {(language as string) === 'zh'
                   ? 'Continue with your email'
-                  : language === 'id'
+                  : (language as string) === 'id'
                   ? 'Lanjutkan dengan email Anda'
                   : 'Continue with your email'}
               </p>

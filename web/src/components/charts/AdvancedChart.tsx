@@ -75,16 +75,16 @@ const getQuoteUnit = (exchange: string): string => {
 }
 
 // Get base volume unit
-const getBaseUnit = (exchange: string, symbol: string, language: string): string => {
+const getBaseUnit = (exchange: string, symbol: string): string => {
   if (['alpaca'].includes(exchange)) {
-    return t('advancedChart.shares', language as 'en' | 'zh' | 'id')
+    return t('advancedChart.shares', 'en')
   }
   if (['forex', 'metals'].includes(exchange)) {
     return ''
   }
   // Crypto: extract base asset from symbol
   const base = symbol.replace(/USDT$|USD$|BUSD$/, '')
-  return base || t('advancedChart.units', language as 'en' | 'zh' | 'id')
+  return base || t('advancedChart.units', 'en')
 }
 
 // Format large numbers
@@ -106,7 +106,7 @@ export function AdvancedChart({
   void _onSymbolChange // Prevent unused warning
   const { language } = useLanguage()
   const quoteUnit = getQuoteUnit(exchange)
-  const baseUnit = getBaseUnit(exchange, symbol, language)
+  const baseUnit = getBaseUnit(exchange, symbol)
   const chartContainerRef = useRef<HTMLDivElement>(null)
   const chartRef = useRef<IChartApi | null>(null)
   const candlestickSeriesRef = useRef<ISeriesApi<'Candlestick'> | null>(null)
@@ -1112,7 +1112,7 @@ export function AdvancedChart({
             }}
           >
             <div style={{ marginBottom: '6px', color: '#E0483B', fontWeight: 'bold', fontSize: '11px' }}>
-              {new Date((tooltipData.time as number) * 1000).toLocaleString(language === 'zh' ? 'zh-CN' : 'en-US', {
+              {new Date((tooltipData.time as number) * 1000).toLocaleString('en-US', {
                 month: 'short',
                 day: 'numeric',
                 hour: '2-digit',

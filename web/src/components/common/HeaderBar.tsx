@@ -104,9 +104,9 @@ export default function HeaderBar({
                     page: 'data',
                     path: ROUTES.data,
                     label:
-                      language === 'zh'
+                      (language as string) === 'zh'
                         ? 'Data'
-                        : language === 'id'
+                        : (language as string) === 'id'
                           ? 'Data'
                           : 'Data',
                     requiresAuth: false,
@@ -115,9 +115,9 @@ export default function HeaderBar({
                     page: 'strategy-market',
                     path: ROUTES.strategyMarket,
                     label:
-                      language === 'zh'
+                      (language as string) === 'zh'
                         ? 'Market'
-                        : language === 'id'
+                        : (language as string) === 'id'
                           ? 'Pasar'
                           : 'Market',
                     requiresAuth: true,
@@ -387,9 +387,9 @@ export default function HeaderBar({
                       page: 'data',
                       path: ROUTES.data,
                       label:
-                        language === 'zh'
+                        (language as string) === 'zh'
                           ? 'Data'
-                          : language === 'id'
+                          : (language as string) === 'id'
                             ? 'Data'
                             : 'Data',
                       requiresAuth: false,
@@ -398,9 +398,9 @@ export default function HeaderBar({
                       page: 'strategy-market',
                       path: ROUTES.strategyMarket,
                       label:
-                        language === 'zh'
+                        (language as string) === 'zh'
                           ? 'Market'
-                          : language === 'id'
+                          : (language as string) === 'id'
                             ? 'Pasar'
                             : 'Market',
                       requiresAuth: true,

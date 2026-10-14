@@ -32,7 +32,7 @@ export function BeginnerGuideCards({
   onOpenStrategy,
   onCreateTrader,
 }: BeginnerGuideCardsProps) {
-  const isZh = language === 'zh'
+  const isZh = (language as string) === 'zh'
 
   const cards = [
     {

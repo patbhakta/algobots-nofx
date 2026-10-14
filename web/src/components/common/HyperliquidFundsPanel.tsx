@@ -118,7 +118,6 @@ const TEXT = {
 }
 
 export function HyperliquidFundsPanel({
-  language,
   walletAddress,
   unifiedAccount = true,
   onTransferred,

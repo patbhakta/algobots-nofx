@@ -750,7 +750,7 @@ function Claw402ConfigForm({
                   cursor: 'pointer',
                 }}
               >
-                {language === 'zh' ? '🔑 Create Wallet' : '🔑 Create Wallet'}
+                {'🔑 Create Wallet'}
               </button>
             )}
           </div>
@@ -769,12 +769,12 @@ function Claw402ConfigForm({
                 style={{ color: '#D6433A' }}
               >
                 🚨{' '}
-                {language === 'zh'
+                {(language as string) === 'zh'
                   ? 'Important: Backup your private key NOW!'
                   : 'Important: Backup your private key NOW!'}
               </div>
               <div className="text-[11px] mb-2" style={{ color: '#D6433A' }}>
-                {language === 'zh'
+                {(language as string) === 'zh'
                   ? 'This is your wallet private key. If lost, it cannot be recovered and all assets will be permanently lost. Copy and save it securely.'
                   : 'This is your wallet private key. If lost, it cannot be recovered and all assets will be permanently lost. Copy and save it securely.'}
               </div>
@@ -809,19 +809,19 @@ function Claw402ConfigForm({
               >
                 <div>
                   ✅{' '}
-                  {language === 'zh'
+                  {(language as string) === 'zh'
                     ? 'Save to a password manager (1Password / Bitwarden)'
                     : 'Save to a password manager (1Password / Bitwarden)'}
                 </div>
                 <div>
                   ✅{' '}
-                  {language === 'zh'
+                  {(language as string) === 'zh'
                     ? 'Or write it down and store it safely'
                     : 'Or write it down and store it safely'}
                 </div>
                 <div>
                   ❌{' '}
-                  {language === 'zh'
+                  {(language as string) === 'zh'
                     ? 'Do NOT screenshot or share with anyone'
                     : 'Do NOT screenshot or share with anyone'}
                 </div>
@@ -906,7 +906,7 @@ function Claw402ConfigForm({
                     style={{ color: '#E0483B' }}
                   >
                     ⚠️{' '}
-                    {language === 'zh'
+                    {(language as string) === 'zh'
                       ? 'Please confirm this is your wallet address (verify in MetaMask)'
                       : 'Please confirm this is your wallet address (verify in MetaMask)'}
                   </div>
@@ -931,10 +931,10 @@ function Claw402ConfigForm({
                       }}
                     >
                       {showDeposit
-                        ? language === 'zh'
+                        ? (language as string) === 'zh'
                           ? 'Hide'
                           : 'Hide'
-                        : language === 'zh'
+                        : (language as string) === 'zh'
                           ? '💳 Deposit'
                           : '💳 Deposit'}
                     </button>
@@ -953,7 +953,7 @@ function Claw402ConfigForm({
                       style={{ color: '#2E8B57' }}
                     >
                       💳{' '}
-                      {language === 'zh'
+                      {(language as string) === 'zh'
                         ? 'Deposit USDC (Base Chain)'
                         : 'Deposit USDC (Base Chain)'}
                     </div>
@@ -969,7 +969,7 @@ function Claw402ConfigForm({
                           className="text-[11px] mb-1"
                           style={{ color: '#8A8478' }}
                         >
-                          {language === 'zh'
+                          {(language as string) === 'zh'
                             ? 'Scan QR or copy address to transfer'
                             : 'Scan QR or copy address to transfer'}
                         </div>
@@ -1004,18 +1004,18 @@ function Claw402ConfigForm({
                     >
                       <div>
                         📱{' '}
-                        {language === 'zh'
+                        {(language as string) === 'zh'
                           ? 'Scan QR with exchange app to transfer'
                           : 'Scan QR with exchange app to transfer'}
                       </div>
                       <div>
                         •{' '}
-                        {language === 'zh'
+                        {(language as string) === 'zh'
                           ? 'Choose Base network when withdrawing'
                           : 'Choose Base network when withdrawing'}
                       </div>
                       <div>
-                        • {language === 'zh' ? 'Or bridge: ' : 'Or bridge: '}
+                        • {'Or bridge: '}
                         <a
                           href="https://bridge.base.org"
                           target="_blank"
@@ -1028,7 +1028,7 @@ function Claw402ConfigForm({
                       </div>
                       <div>
                         •{' '}
-                        {language === 'zh'
+                        {(language as string) === 'zh'
                           ? 'Min $1 USDC to start'
                           : 'Min $1 USDC to start'}
                       </div>
