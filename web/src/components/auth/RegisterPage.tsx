@@ -32,7 +32,11 @@ export function RegisterPage() {
     getSystemConfig()
       .then((config) => {
         setBetaMode(config.beta_mode || false)
-        setRegistrationEnabled(config.initialized === false)
+        // Registration is backend-controlled: open during first-time setup or
+        // when the operator has enabled it; otherwise show the closed page.
+        setRegistrationEnabled(
+          config.registration_enabled === true || config.initialized === false
+        )
       })
       .catch((err) => {
         console.error('Failed to fetch system config:', err)
@@ -146,7 +150,8 @@ export function RegisterPage() {
             <span className="text-nofx-gold">CREATE</span> YOUR ACCOUNT
           </h1>
           <p className="text-nofx-text-muted text-sm">
-            This account owns your NOFX instance. Next step: a guided launch —
+            This account is your investor tenant — your traders, strategies
+            and exchange keys stay scoped to it. Next step: a guided launch —
             about $13 and five minutes to your first AI trade.
           </p>
         </div>

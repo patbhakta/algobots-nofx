@@ -2,6 +2,8 @@ package main
 
 import (
 	"bufio"
+	"crypto/rand"
+	"encoding/hex"
 	"errors"
 	"flag"
 	"fmt"
@@ -15,6 +17,7 @@ import (
 	"nofx/logger"
 	"nofx/store"
 
+	"github.com/google/uuid"
 	"github.com/joho/godotenv"
 	"golang.org/x/term"
 	"gorm.io/gorm"
@@ -46,6 +49,12 @@ func runCLISubcommand(args []string) bool {
 		return true
 	case "reset-account":
 		runResetAccount(args[1:])
+		return true
+	case "set-registration":
+		runSetRegistration(args[1:])
+		return true
+	case "create-user":
+		runCreateUser(args[1:])
 		return true
 	default:
 		return false
@@ -182,6 +191,126 @@ func runResetAccount(args []string) {
 	}
 
 	fmt.Println("✓ System wiped. Register a fresh account and re-import everything.")
+}
+
+// runSetRegistration toggles public self-registration of new investor
+// tenants. This is the operator-side control behind the backend gate on
+// POST /api/register and the RegistrationDisabled page. Usage:
+//
+//	nofx set-registration --enable
+//	nofx set-registration --disable
+func runSetRegistration(args []string) {
+	fs := flag.NewFlagSet("set-registration", flag.ExitOnError)
+	enable := fs.Bool("enable", false, "open public self-registration")
+	disable := fs.Bool("disable", false, "close public self-registration")
+	dbPath := fs.String("db", "", "override SQLite DB path (defaults to config / DB_PATH)")
+	_ = fs.Parse(args)
+
+	if *enable == *disable {
+		fmt.Fprintln(os.Stderr, "error: pass exactly one of --enable or --disable")
+		fmt.Fprintln(os.Stderr, "usage: nofx set-registration --enable | --disable")
+		os.Exit(2)
+	}
+
+	st, err := openStoreForCLI(*dbPath)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "error: %v\n", err)
+		os.Exit(1)
+	}
+	defer st.Close()
+
+	value := "false"
+	if *enable {
+		value = "true"
+	}
+	if err := st.SetSystemConfig("registration_enabled", value); err != nil {
+		fmt.Fprintf(os.Stderr, "error: failed to update registration setting: %v\n", err)
+		os.Exit(1)
+	}
+
+	if *enable {
+		fmt.Println("✓ Public self-registration is OPEN: new investor tenants can register at /register.")
+	} else {
+		fmt.Println("✓ Public self-registration is CLOSED: /register shows the registration-closed page. Provision tenants with `nofx create-user` instead.")
+	}
+}
+
+// runCreateUser provisions an investor tenant directly from the command
+// line, bypassing the public registration gate (this is deliberate: running
+// it requires shell access to the host, which is operator authority).
+// Default strategies are created lazily the first time the tenant loads the
+// strategy list in the UI. Usage:
+//
+//	nofx create-user --email investor@example.com [--password 'S3cret!23']
+//
+// When --password is omitted a random password is generated and printed once.
+func runCreateUser(args []string) {
+	fs := flag.NewFlagSet("create-user", flag.ExitOnError)
+	email := fs.String("email", "", "email of the tenant admin to create (required)")
+	password := fs.String("password", "", "tenant password (min 8 chars); omit to generate a random one")
+	dbPath := fs.String("db", "", "override SQLite DB path (defaults to config / DB_PATH)")
+	_ = fs.Parse(args)
+
+	addr := strings.TrimSpace(*email)
+	if addr == "" {
+		fmt.Fprintln(os.Stderr, "error: --email is required")
+		fmt.Fprintln(os.Stderr, "usage: nofx create-user --email investor@example.com [--password 'S3cret!23']")
+		os.Exit(2)
+	}
+
+	st, err := openStoreForCLI(*dbPath)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "error: %v\n", err)
+		os.Exit(1)
+	}
+	defer st.Close()
+
+	if _, err := st.User().GetByEmail(addr); err == nil {
+		fmt.Fprintf(os.Stderr, "error: an account already exists for %q\n", addr)
+		os.Exit(1)
+	}
+
+	newPassword := strings.TrimSpace(*password)
+	if newPassword == "" {
+		generated, err := generateRandomPassword()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "error: failed to generate password: %v\n", err)
+			os.Exit(1)
+		}
+		newPassword = generated
+	} else if len(newPassword) < minResetPasswordLen {
+		fmt.Fprintf(os.Stderr, "error: password must be at least %d characters\n", minResetPasswordLen)
+		os.Exit(1)
+	}
+
+	hash, err := auth.HashPassword(newPassword)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "error: failed to hash password: %v\n", err)
+		os.Exit(1)
+	}
+
+	userID := uuid.New().String()
+	if err := st.User().Create(&store.User{
+		ID:           userID,
+		Email:        addr,
+		PasswordHash: hash,
+	}); err != nil {
+		fmt.Fprintf(os.Stderr, "error: failed to create user: %v\n", err)
+		os.Exit(1)
+	}
+
+	fmt.Printf("✓ Investor tenant created.\n  email: %s\n  tenant_id: %s\n  password: %s\n", addr, userID, newPassword)
+	fmt.Println("  The password is shown only once; the tenant can change it under Settings.")
+}
+
+// generateRandomPassword returns a random 24-char hex password (meets the
+// 8-char minimum and the alphanumeric+symbol-free but strong entropy bar).
+func generateRandomPassword() (string, error) {
+	buf := make([]byte, 12)
+	if _, err := rand.Read(buf); err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(buf), nil
 }
 
 // resolveNewPassword returns the new password from the --password flag, or
