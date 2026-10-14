@@ -8,14 +8,40 @@
 gateway, fills, and the fill is visible in NoFX **within 2 seconds** — and that
 test runs in CI on every merge.
 
-**Status: passing.** Measured **0.072 s in CI** and 0.081–0.090 s on `.243`,
-against real Postgres and real Redis; the budget is 2.000 s — roughly 28x
-headroom. The measurement is written to `artifacts/ALG-3373/g1-latency.json` on
-every run and uploaded as a CI artifact (`gate-g1-latency`).
+**Status: passing.** Measured **0.052 s in CI** (0.072 s on the first green
+run) and 0.081–0.090 s on `.243`, against real Postgres and real Redis; the
+budget is 2.000 s — roughly 38x headroom. The measurement is written to
+`artifacts/ALG-3373/g1-latency.json` on every run and uploaded as a CI artifact
+(`gate-g1-latency`).
 
-First green CI run:
-[`gate-g1` @ 38650219676](https://github.com/patbhakta/algobots/actions/runs/38650219676/job/116146874872)
-(commit `36754e1`, PR [#6](https://github.com/patbhakta/algobots/pull/6)).
+Gate evidence:
+[`gate-g1` @ 38652000548](https://github.com/patbhakta/algobots/actions/runs/38652000548/job/116152762806)
+— 9 passed, **0.052 s** against a 2.000 s budget, commit `7d025c6`,
+PR [#6](https://github.com/patbhakta/algobots/pull/6). First green run was
+[38650219676](https://github.com/patbhakta/algobots/actions/runs/38650219676/job/116146874872)
+at commit `36754e1`.
+
+### The rest of the CI run is red, and not from this branch
+
+`gate-g1` is green; the ordinary `test` job is not. As of `7d025c6` it reports
+18 failures, and **every one of them already fails on `main`** — 17 in
+`tests/packets/A09/test_a09_headless.py` (headless `chromium --dump-dom` exits
+1 on the runner) and one in `tests/demo/test_ledger.py`. Compared file by file
+against `main`'s run
+[38468577182](https://github.com/patbhakta/algobots/actions/runs/38468577182),
+this branch introduces **no new failure** and clears one of main's
+(`A01::test_every_tracked_file_has_an_owner`, fixed by the repository-map
+entries this branch adds).
+
+That pre-existing breakage is tracked separately — it is not G1's to fix, and
+G1 does not depend on it. Until it is fixed, the gate's green signal is the
+`gate-g1` job, not the run's overall conclusion.
+
+Three failures *were* this branch's, and are fixed in `7d025c6`: the A03, A04
+and A14 packet write-scope guards each diffed the branch against one packet's
+frozen scope without checking the branch belonged to that packet, so every
+ROADMAP-v3 sprint branch tripped all three. They now skip unless the branch
+carries their packet id, and still fail on their own branches.
 
 ## How to run it
 
