@@ -428,8 +428,14 @@ def test_health_is_degraded_when_the_projection_is_unreachable(engine) -> None:
     node.heartbeat()
     assert get_health(request(app))["status"] == "ok"
 
-    # Point the projection at a database that is not there.
-    broken = SqlProjection(sa.create_engine("postgresql+psycopg://127.0.0.1:1/none"))
+    # Point the projection at a database that is not there. SQLite rather than
+    # a dead Postgres port: `create_engine` resolves the DBAPI eagerly, so a
+    # `postgresql+psycopg://` URL fails to *build* where the `postgres` extra
+    # is not installed (CI installs `dev`) — and that is an ImportError in the
+    # test, not the unreachable database the probe is supposed to survive.
+    # What is under test is `health()` answering instead of raising, and this
+    # path cannot be opened by any driver.
+    broken = SqlProjection(sa.create_engine("sqlite:////nonexistent-dir/none.db"))
     app.state.gateway.projection = broken
 
     health = get_health(request(app))
