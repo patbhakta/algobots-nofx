@@ -4,11 +4,18 @@ Compares `git diff --name-only <merge-base with origin/main>..HEAD` with the
 `packets.A14.write_scope` entries in `docs/repository-map.json` (read-only
 reference). Skips when git or origin/main isn't available, and passes
 trivially once the branch is merged (empty diff).
+
+A14's frozen write scope describes what an *A14 branch* may touch, so the
+guard only runs on one. On any other branch — a ROADMAP-v3 sprint branch, say
+— every path it adds is "outside A14", which says nothing about A14
+discipline (ALG-3373).
 """
 
 from __future__ import annotations
 
 import json
+import os
+import re
 import subprocess
 from pathlib import Path
 
@@ -16,6 +23,7 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[3]
 REPO = "algobots"
+PACKET = "A14"
 
 # Mechanical exception (reported to the TL on the issue per packet law): the
 # frozen scope lists `src/algobots/knowledge/ingest/`, and creating that new
@@ -46,6 +54,23 @@ def _changed_files() -> list[str]:
         pytest.skip("git or origin/main unavailable")
 
 
+def _branch_under_test() -> str:
+    """The branch the diff belongs to: the PR source in CI, else the checkout."""
+    for var in ("GITHUB_HEAD_REF", "GITHUB_REF_NAME"):
+        ref = os.environ.get(var, "").strip()
+        if ref:
+            return ref
+    try:
+        return _git("rev-parse", "--abbrev-ref", "HEAD")
+    except (OSError, subprocess.CalledProcessError):
+        return ""
+
+
+def _is_packet_branch(branch: str) -> bool:
+    """`feat/alg-3110-a14-1-ingest-core` is A14's; `alg-3373-p15-e2e-gate` is not."""
+    return PACKET.lower() in re.split(r"[^a-z0-9]+", branch.lower())
+
+
 def _allowed_paths() -> set[str]:
     repo_map = json.loads((ROOT / "docs" / "repository-map.json").read_text())
     allowed = {
@@ -63,6 +88,9 @@ def _is_within(path: str, allowed_root: str) -> bool:
 
 
 def test_branch_stays_inside_a14_write_scope():
+    branch = _branch_under_test()
+    if not _is_packet_branch(branch):
+        pytest.skip(f"{branch!r} is not an {PACKET} branch; its write scope does not apply")
     changed = _changed_files()
     if not changed:
         pytest.skip("empty diff (merged or fresh branch)")
@@ -77,3 +105,12 @@ def test_branch_stays_inside_a14_write_scope():
         f"files outside the frozen A14 write scope: {violations}; "
         "allowed roots: " + ", ".join(sorted(allowed))
     )
+
+
+def test_packet_branch_detection():
+    assert _is_packet_branch("feat/alg-3110-a14-1-ingest-core")
+    assert _is_packet_branch("merge/alg-3110-A14")
+    assert not _is_packet_branch("alg-3373-p15-e2e-gate")
+    assert not _is_packet_branch("feat/alg-3099-a03-tenant-auth")
+    assert not _is_packet_branch("main")
+    assert not _is_packet_branch("")
