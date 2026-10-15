@@ -92,13 +92,13 @@ export default function DeploymentHub() {
                                 </div>
                                 <div className="text-[10px] font-mono text-nofx-text-muted flex items-center gap-1.5">
                                     <Terminal className="w-3 h-3" />
-                                    root@nofx-os:~
+                                    root@algobots-os:~
                                 </div>
                             </div>
 
                             {/* Terminal Content */}
                             <div className="p-8 font-mono text-sm md:text-base bg-nofx-bg-lighter min-h-[200px] flex flex-col justify-center">
-                                <div className="mb-2 text-nofx-text-muted text-xs tracking-wide"># Initialize NoFX Core Protocol</div>
+                                <div className="mb-2 text-nofx-text-muted text-xs tracking-wide"># Initialize AlgoBots Core Protocol</div>
                                 <div
                                     className="group relative flex items-start gap-3 p-4 rounded-lg bg-nofx-bg-deeper border border-[rgba(26,24,19,0.14)] hover:border-nofx-gold/50 cursor-pointer transition-all hover:bg-nofx-bg"
                                     onClick={handleCopy}
