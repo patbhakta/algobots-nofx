@@ -255,11 +255,7 @@ export function SettingsPage() {
   ) => {
     try {
       if (exchangeType === 'hyperliquid') {
-        toast.error(
-          (language as string) === 'zh'
-            ? 'Hyperliquid must be connected through wallet authorization, not manual keys.'
-            : 'Hyperliquid must be connected through wallet authorization, not manual keys.'
-        )
+        toast.error('This venue is no longer supported.')
         return
       }
       if (exchangeId) {
@@ -552,9 +548,6 @@ export function SettingsPage() {
                               {configBadge('Secret', !!exchange.has_secret_key)}
                               {exchange.has_passphrase
                                 ? configBadge('Passphrase', true)
-                                : null}
-                              {exchange.hyperliquidWalletAddr
-                                ? configBadge('Wallet', true)
                                 : null}
                               {exchange.has_aster_private_key
                                 ? configBadge('Aster Key', true)

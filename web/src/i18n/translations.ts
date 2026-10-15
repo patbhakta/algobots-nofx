@@ -225,22 +225,6 @@ export const translations = {
     enterSigner: 'Enter Signer Address',
     enterSecretKey: 'Enter Secret Key',
     enterPassphrase: 'Enter Passphrase',
-    hyperliquidPrivateKeyDesc:
-      'Hyperliquid uses private key for trading authentication',
-    hyperliquidWalletAddressDesc:
-      'Wallet address corresponding to the private key',
-    // Hyperliquid Agent Wallet (New Security Model)
-    hyperliquidAgentWalletTitle: 'Hyperliquid Agent Wallet Configuration',
-    hyperliquidAgentWalletDesc:
-      'Use Agent Wallet for secure trading: Agent wallet signs transactions (balance ~0), Main wallet holds funds (never expose private key)',
-    hyperliquidAgentPrivateKey: 'Agent Private Key',
-    enterHyperliquidAgentPrivateKey: 'Enter Agent wallet private key',
-    hyperliquidAgentPrivateKeyDesc:
-      'Agent wallet private key for signing transactions (keep balance near 0 for security)',
-    hyperliquidMainWalletAddress: 'Main Wallet Address',
-    enterHyperliquidMainWalletAddress: 'Enter Main wallet address',
-    hyperliquidMainWalletAddressDesc:
-      'Main wallet address that holds your trading funds (never expose its private key)',
     // Aster API Pro Configuration
     asterApiProTitle: 'Aster API Pro Wallet Configuration',
     asterApiProDesc:
@@ -346,7 +330,7 @@ export const translations = {
     clearSelection: 'Clear All',
     confirmSelection: 'Confirm',
     tradingSymbolsDescription:
-      'Empty = use default symbols. Use USDT perps (e.g., BTCUSDT, ETHUSDT) or Hyperliquid XYZ USDC markets (e.g., TSLA-USDC)',
+      'Empty = use default symbols. Use USDT perps (e.g., BTCUSDT, ETHUSDT) (the paper venue lists what it supports)',
     btcEthLeverageValidation: 'BTC/ETH leverage must be between 1-50x',
     altcoinLeverageValidation: 'Altcoin leverage must be between 1-20x',
     invalidSymbolFormat:
@@ -374,7 +358,7 @@ export const translations = {
       'Hansen custom strategy, maximize Sharpe ratio, for professional traders',
     promptDescNof1: '🌐 NoF1 English Framework',
     promptDescNof1Content:
-      'Hyperliquid exchange specialist, English prompts, maximize risk-adjusted returns',
+      'Single-venue specialist, English prompts, maximize risk-adjusted returns',
     promptDescTaroLong: '📈 Taro Long Position Strategy',
     promptDescTaroLongContent:
       'Data-driven decisions, multi-dimensional validation, continuous learning evolution, long position specialist',
@@ -624,7 +608,7 @@ export const translations = {
       'git clone https://github.com/patbhakta/algobots-nofx and switch to dev branch to test new features.',
     step2Title: 'Configure Environment',
     step2Desc:
-      'Frontend setup for exchange APIs (like Binance, Hyperliquid), AI models and custom prompts.',
+      'Frontend setup for exchange APIs (paper and demo accounts), AI models and custom prompts.',
     step3Title: 'Deploy & Run',
     step3Desc:
       'One-click Docker deployment, start AI agents. Note: High-risk market, only test with money you can afford to lose.',

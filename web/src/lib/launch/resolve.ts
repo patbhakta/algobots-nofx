@@ -105,7 +105,7 @@ export async function resolveLaunchExchange(): Promise<
     return {
       exchange: null,
       reason:
-        'No Hyperliquid account is connected. Connect Hyperliquid and authorize the AlgoBots agent first.',
+        'No trading account is connected. Connect a paper account first.',
     }
   }
   if (!hyperliquid.enabled) {
@@ -118,7 +118,7 @@ export async function resolveLaunchExchange(): Promise<
     return {
       exchange: null,
       reason:
-        'The Hyperliquid agent key is missing. Reconnect Hyperliquid and save the agent wallet.',
+        'The trading account is incomplete. Reconnect it first.',
     }
   }
   if (!hyperliquid.hyperliquidBuilderApproved) {
@@ -131,6 +131,6 @@ export async function resolveLaunchExchange(): Promise<
   return {
     exchange: null,
     reason:
-      'The Hyperliquid wallet address is missing. Reconnect Hyperliquid first.',
+      'The trading account is incomplete. Reconnect it first.',
   }
 }

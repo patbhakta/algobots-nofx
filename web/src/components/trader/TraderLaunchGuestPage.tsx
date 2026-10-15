@@ -3,8 +3,6 @@ import {
   ArrowRight,
   CheckCircle2,
   Database,
-  Download,
-  ExternalLink,
   KeyRound,
   ShieldCheck,
   Wallet,
@@ -16,7 +14,7 @@ const setupSteps = [
   {
     title: 'Create your AlgoBots account',
     detail:
-      'Your account keeps the Autopilot configuration, wallet authorization state, and trading dashboard in one place.',
+      'Your account keeps the Autopilot configuration, connected accounts, and trading dashboard in one place.',
     icon: KeyRound,
     action: 'Create account',
     to: ROUTES.register,
@@ -31,21 +29,22 @@ const setupSteps = [
     returnUrl: `${ROUTES.traders}?setup=marketData`,
   },
   {
-    title: 'Authorize Hyperliquid',
+    title: 'Connect a paper account',
     detail:
-      'Connect your trading wallet, approve the AlgoBots Agent, and approve the builder fee. Funds remain in your Hyperliquid account.',
+      'Add a paper or demo account in Config. Orders execute through Nautilus, so nothing touches real funds.',
     icon: Wallet,
-    action: 'Connect exchange',
+    action: 'Connect account',
     to: ROUTES.login,
-    returnUrl: `${ROUTES.traders}?setup=hyperliquid`,
+    returnUrl: ROUTES.traders,
   },
   {
-    title: 'Deposit trading USDC',
+    title: 'Start Autopilot',
     detail:
-      'Add USDC on Hyperliquid, then start AlgoBots Autopilot. The strategy is created and launched automatically.',
+      'Pick a strategy and start. AlgoBots creates and launches it against your paper account automatically.',
     icon: Zap,
-    action: 'Open Hyperliquid',
-    href: 'https://app.hyperliquid.xyz/',
+    action: 'Open Strategy Studio',
+    to: ROUTES.login,
+    returnUrl: ROUTES.strategy,
   },
 ]
 
@@ -119,28 +118,10 @@ export function TraderLaunchGuestPage() {
                   </p>
                   <div className="mt-4 inline-flex items-center gap-2 text-xs font-bold text-nofx-gold transition group-hover:text-nofx-gold/80">
                     {step.action}
-                    {step.href ? (
-                      <ExternalLink className="h-3.5 w-3.5" />
-                    ) : (
-                      <ArrowRight className="h-3.5 w-3.5" />
-                    )}
+                    <ArrowRight className="h-3.5 w-3.5" />
                   </div>
                 </>
               )
-
-              if (step.href) {
-                return (
-                  <a
-                    key={step.title}
-                    href={step.href}
-                    target="_blank"
-                    rel="noreferrer"
-                    className={cardClass}
-                  >
-                    {content}
-                  </a>
-                )
-              }
 
               return (
                 <Link
@@ -160,61 +141,6 @@ export function TraderLaunchGuestPage() {
           </div>
         </section>
 
-        <section className="grid gap-5 rounded-2xl border border-nofx-gold/20 bg-nofx-bg-lighter p-5 md:grid-cols-[0.78fr_1.22fr] md:p-6">
-          <div>
-            <div className="text-sm font-semibold uppercase tracking-[0.18em] text-nofx-gold">
-              No trading wallet yet?
-            </div>
-            <p className="mt-3 text-sm leading-6 text-nofx-text-muted">
-              AlgoBots does not need your main-wallet private key. Install or unlock
-              an EVM wallet, fund Hyperliquid with USDC, then authorize the AlgoBots
-              Agent after sign-in.
-            </p>
-          </div>
-          <div className="grid gap-3 lg:grid-cols-3">
-            <a
-              href="https://rabby.io/"
-              target="_blank"
-              rel="noreferrer"
-              className="group rounded-xl border border-nofx-gold/20 bg-nofx-bg-deeper p-4 transition hover:border-nofx-gold/30 hover:bg-nofx-gold/[0.06]"
-            >
-              <Download className="mb-3 h-4 w-4 text-nofx-gold" />
-              <div className="font-semibold text-nofx-text">Install Rabby</div>
-              <p className="mt-2 text-sm leading-6 text-nofx-text-muted">
-                Create or import an EVM wallet before connecting to Hyperliquid.
-              </p>
-            </a>
-            <a
-              href="https://metamask.io/download/"
-              target="_blank"
-              rel="noreferrer"
-              className="group rounded-xl border border-nofx-gold/20 bg-nofx-bg-deeper p-4 transition hover:border-nofx-gold/30 hover:bg-nofx-gold/[0.06]"
-            >
-              <ExternalLink className="mb-3 h-4 w-4 text-nofx-gold" />
-              <div className="font-semibold text-nofx-text">MetaMask</div>
-              <p className="mt-2 text-sm leading-6 text-nofx-text-muted">
-                Already use MetaMask? Unlock it, then continue setup inside
-                AlgoBots.
-              </p>
-            </a>
-            <a
-              href="https://app.hyperliquid.xyz/"
-              target="_blank"
-              rel="noreferrer"
-              className="group rounded-xl border border-nofx-gold/20 bg-nofx-gold/10 p-4 transition hover:bg-nofx-gold/15"
-            >
-              <ExternalLink className="mb-3 h-4 w-4 text-nofx-gold" />
-              <div className="font-semibold text-nofx-text">
-                Open Hyperliquid
-              </div>
-              <p className="mt-2 text-sm leading-6 text-nofx-text-muted">
-                Deposit USDC there. Trading funds stay in your Hyperliquid
-                account.
-              </p>
-            </a>
-          </div>
-        </section>
-
         <section className="grid gap-4 rounded-2xl border border-nofx-gold/20 bg-nofx-bg-lighter p-5 md:grid-cols-[0.72fr_1.28fr] md:p-6">
           <div>
             <div className="text-sm font-semibold uppercase tracking-[0.18em] text-nofx-gold">
@@ -222,7 +148,7 @@ export function TraderLaunchGuestPage() {
             </div>
             <p className="mt-3 text-sm leading-6 text-nofx-text-muted">
               The same production path runs every cycle. The interface only asks
-              you to fund, authorize, and start.
+              you to connect an account and start.
             </p>
           </div>
           <div className="grid gap-3 lg:grid-cols-3">
