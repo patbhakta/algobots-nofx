@@ -6,16 +6,16 @@ const _b = atob
 const _e = (s: string) => btoa(s)
 
 // Encoded official links - tampering will break functionality
+// Pat, Oct 14 removed the twitter/telegram getters; their encoded values are
+// deleted here too. getVerifiedLink indexes this object with a dynamic key, so
+// a leftover entry is not tree-shaken — it ships base64'd in the bundle, where
+// a plain-text grep for the upstream host will not find it.
 const ENCODED_LINKS = {
-  twitter: 'aHR0cHM6Ly94LmNvbS92ZXJnZXhfYWk=',
-  telegram: 'aHR0cHM6Ly90Lm1lL25vZnhfZGV2X2NvbW11bml0eQ==', // https://t.me/nofx_dev_community
   github: 'aHR0cHM6Ly9naXRodWIuY29tL3BhdGJoYWt0YS9hbGdvYm90cy1ub2Z4', // https://github.com/patbhakta/algobots-nofx (our fork)
 }
 
 // Integrity checksums (simple hash)
 const CHECKSUMS = {
-  twitter: 1847293654,
-  telegram: 2039485761,
   github: 1293847562,
 }
 
