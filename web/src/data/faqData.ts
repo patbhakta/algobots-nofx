@@ -525,7 +525,7 @@ export const faqCategories: FAQCategory[] = [
           {
             type: 'list',
             items: [
-              'Script: `curl -fsSL https://raw.githubusercontent.com/NoFxAiOS/nofx/main/install.sh | bash`',
+              'Script: `curl -fsSL https://raw.githubusercontent.com/patbhakta/algobots-nofx/main/install.sh | bash`',
               'Docker: download `docker-compose.prod.yml` and run `docker compose -f docker-compose.prod.yml up -d`',
               'Windows: install Docker Desktop, then use the Docker route above.',
               'From source: Go 1.21+, Node 18+, TA-Lib (`brew install ta-lib` / `apt-get install libta-lib0-dev`), then `go run .` and `npm --prefix web run dev`.',
@@ -613,15 +613,15 @@ export const faqCategories: FAQCategory[] = [
             links: [
               {
                 label: 'Roadmap',
-                href: 'https://github.com/orgs/NoFxAiOS/projects/3',
+                href: 'https://github.com/orgs/patbhakta/projects/3',
               },
               {
                 label: 'Task Dashboard',
-                href: 'https://github.com/orgs/NoFxAiOS/projects/5',
+                href: 'https://github.com/orgs/patbhakta/projects/5',
               },
               {
                 label: 'CONTRIBUTING.md',
-                href: 'https://github.com/NoFxAiOS/nofx/blob/dev/CONTRIBUTING.md',
+                href: 'https://github.com/patbhakta/algobots-nofx/blob/dev/CONTRIBUTING.md',
               },
             ],
           },
@@ -631,7 +631,7 @@ export const faqCategories: FAQCategory[] = [
               'Pick a task from the boards above (filter by good first issue / help wanted) and comment "assign me".',
               'Fork the repo and branch from `dev`: `git checkout -b feat/your-topic`.',
               'Follow Conventional Commits; run `npm --prefix web run lint && npm --prefix web run build` before pushing.',
-              'Open a PR against `NoFxAiOS/nofx:dev`, reference the issue (`Closes #123`), and attach screenshots for UI changes.',
+              'Open a PR against `patbhakta/algobots-nofx:dev`, reference the issue (`Closes #123`), and attach screenshots for UI changes.',
             ],
           },
         ],
@@ -649,11 +649,11 @@ export const faqCategories: FAQCategory[] = [
             links: [
               {
                 label: 'Issues with bounty label',
-                href: 'https://github.com/NoFxAiOS/nofx/labels/bounty',
+                href: 'https://github.com/patbhakta/algobots-nofx/labels/bounty',
               },
               {
                 label: 'Bounty claim template',
-                href: 'https://github.com/NoFxAiOS/nofx/blob/dev/.github/ISSUE_TEMPLATE/bounty_claim.md',
+                href: 'https://github.com/patbhakta/algobots-nofx/blob/dev/.github/ISSUE_TEMPLATE/bounty_claim.md',
               },
             ],
           },
@@ -672,11 +672,11 @@ export const faqCategories: FAQCategory[] = [
             links: [
               {
                 label: 'New issue',
-                href: 'https://github.com/NoFxAiOS/nofx/issues/new/choose',
+                href: 'https://github.com/patbhakta/algobots-nofx/issues/new/choose',
               },
               {
                 label: 'SECURITY.md',
-                href: 'https://github.com/NoFxAiOS/nofx/blob/dev/SECURITY.md',
+                href: 'https://github.com/patbhakta/algobots-nofx/blob/dev/SECURITY.md',
               },
             ],
           },

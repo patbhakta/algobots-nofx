@@ -316,7 +316,7 @@ export default function TerminalHero() {
 import { OFFICIAL_LINKS } from '../../../constants/branding'
 
 function CommunityStats() {
-    const { stars, forks, contributors, isLoading, error } = useGitHubStats('NoFxAiOS', 'nofx')
+    const { stars, forks, contributors, isLoading, error } = useGitHubStats('patbhakta', 'nofx')
 
     const stats = [
         {
