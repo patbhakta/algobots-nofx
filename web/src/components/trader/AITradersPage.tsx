@@ -757,6 +757,11 @@ export function AITradersPage({ onTraderSelect }: AITradersPageProps) {
               </div>
             </button>
 
+            {/* TELEGRAM_BOT hidden per Pat (Oct 14): invite-only friends/family
+                dashboard; messaging plugin returns later as WhatsApp. Code kept:
+                TelegramConfigModal + showTelegramModal state retained, button
+                gated off. */}
+            {false && (
             <button
               onClick={() => setShowTelegramModal(true)}
               className="px-4 py-2 rounded text-xs font-mono uppercase tracking-wider transition-all border border-nofx-accent/30 bg-nofx-bg-lighter text-nofx-accent hover:text-nofx-gold hover:border-nofx-accent/50 whitespace-nowrap"
@@ -766,6 +771,7 @@ export function AITradersPage({ onTraderSelect }: AITradersPageProps) {
                 <span>TELEGRAM_BOT</span>
               </div>
             </button>
+            )}
 
             <button
               onClick={() => setShowCreateModal(true)}
