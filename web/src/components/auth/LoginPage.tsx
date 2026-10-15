@@ -113,11 +113,9 @@ export function LoginPage() {
               )}
             </h2>
             <p className="mt-5 text-nofx-text-muted text-base leading-relaxed max-w-md">
-              {(language as string) === 'zh'
-                ? 'Plug into 10+ exchanges including Hyperliquid, OKX, Aster, and 7 LLM models. Deploy 24/7 automated strategies with natural language.'
-                : (language as string) === 'id'
-                ? 'Hubungkan ke 10+ bursa termasuk Hyperliquid, OKX, Aster dan 7 model LLM. Terapkan strategi otomatis 24/7 dengan bahasa alami.'
-                : 'Plug into 10+ exchanges including Hyperliquid, OKX, Aster, and 7 LLM models. Deploy 24/7 automated strategies with natural language.'}
+              Paper-trade stocks, prediction markets and crypto with 7 LLM
+              models, every order executed through Nautilus. Deploy 24/7
+              automated strategies with natural language.
             </p>
           </div>
 

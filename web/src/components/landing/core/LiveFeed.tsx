@@ -11,7 +11,7 @@ interface LogEntry {
 
 const generateLog = (id: number): LogEntry => {
     const types = ['EXEC', 'SIGNAL', 'RISK', 'MACRO', 'SYS']
-    const pairs = ['AAPL-USDC', 'NVDA-USDC', 'GOLD-USDC', 'EURUSD-USDC', 'OPENAI-IPO']
+    const pairs = ['AAPL', 'NVDA', 'GOLD', 'EURUSD', 'OPENAI-IPO']
     const actions = ['BUY', 'SELL', 'HEDGE', 'ROTATE']
     const type = types[Math.floor(Math.random() * types.length)]
 
