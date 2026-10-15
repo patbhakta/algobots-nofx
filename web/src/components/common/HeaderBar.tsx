@@ -80,7 +80,7 @@ export default function HeaderBar({
             <img src="/icons/algobots.svg" alt="AlgoBots Logo" className="w-8 h-8" />
           </span>
           <span className="text-lg font-bold text-nofx-gold tracking-wide">
-            NOFX
+            AlgoBots
           </span>
         </div>
 

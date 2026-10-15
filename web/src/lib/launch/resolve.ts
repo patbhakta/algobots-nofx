@@ -105,7 +105,7 @@ export async function resolveLaunchExchange(): Promise<
     return {
       exchange: null,
       reason:
-        'No Hyperliquid account is connected. Connect Hyperliquid and authorize the NOFX agent first.',
+        'No Hyperliquid account is connected. Connect Hyperliquid and authorize the AlgoBots agent first.',
     }
   }
   if (!hyperliquid.enabled) {

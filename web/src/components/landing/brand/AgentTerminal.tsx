@@ -23,7 +23,7 @@ export default function AgentTerminal() {
                     </div>
                     {/* Title */}
                     <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-2">
-                        <span className="text-nofx-text-muted text-xs font-mono">NOFX Trader Terminal</span>
+                        <span className="text-nofx-text-muted text-xs font-mono">AlgoBots Trader Terminal</span>
                     </div>
                     {/* Live indicator */}
                     <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-nofx-success/10 border border-nofx-success/20">

@@ -56,11 +56,11 @@ export const faqCategories: FAQCategory[] = [
     items: [
       {
         id: 'what-is-nofx',
-        question: 'What is NOFX?',
+        question: 'What is AlgoBots?',
         blocks: [
           {
             type: 'p',
-            text: 'NOFX is an open-source, self-hosted AI trading terminal. Its flagship mode is the NOFX Autopilot: an AI agent that reads the Claw402.ai signal board, verifies candidates with Signal Lab and liquidation structure, confirms timing with raw candles, and executes on Hyperliquid — all on your own machine, with your keys never leaving your server.',
+            text: 'AlgoBots is an open-source, self-hosted AI trading terminal. Its flagship mode is the AlgoBots Autopilot: an AI agent that reads the Claw402.ai signal board, verifies candidates with Signal Lab and liquidation structure, confirms timing with raw candles, and executes on Hyperliquid — all on your own machine, with your keys never leaving your server.',
           },
           {
             type: 'p',
@@ -109,7 +109,7 @@ export const faqCategories: FAQCategory[] = [
         blocks: [
           {
             type: 'p',
-            text: 'No API keys are required. NOFX routes inference through Claw402 pay-as-you-go infrastructure: your AI fee wallet pays per call with Base USDC, and the terminal accesses supported models (DeepSeek and other frontier models) on demand.',
+            text: 'No API keys are required. AlgoBots routes inference through Claw402 pay-as-you-go infrastructure: your AI fee wallet pays per call with Base USDC, and the terminal accesses supported models (DeepSeek and other frontier models) on demand.',
           },
           {
             type: 'p',
@@ -131,7 +131,7 @@ export const faqCategories: FAQCategory[] = [
           },
           {
             type: 'note',
-            text: 'Trading involves substantial risk of loss. NOFX is software, not investment advice.',
+            text: 'Trading involves substantial risk of loss. AlgoBots is software, not investment advice.',
           },
         ],
       },
@@ -183,15 +183,15 @@ export const faqCategories: FAQCategory[] = [
         blocks: [
           {
             type: 'p',
-            text: 'NOFX uses Hyperliquid agent wallets, so your main wallet key is never shared. The connect flow has four signed steps:',
+            text: 'AlgoBots uses Hyperliquid agent wallets, so your main wallet key is never shared. The connect flow has four signed steps:',
           },
           {
             type: 'steps',
             items: [
               'Connect your EVM wallet (Rabby, MetaMask, OKX, Coinbase Wallet).',
-              'Approve a freshly generated NOFX agent wallet — valid for 180 days, trading only.',
+              'Approve a freshly generated AlgoBots agent wallet — valid for 180 days, trading only.',
               'Approve the builder fee (a small per-order fee that funds the platform).',
-              'Save the agent key to your NOFX server (stored encrypted).',
+              'Save the agent key to your AlgoBots server (stored encrypted).',
             ],
           },
           {
@@ -229,7 +229,7 @@ export const faqCategories: FAQCategory[] = [
         blocks: [
           {
             type: 'p',
-            text: 'Launching is idempotent. If a NOFX Autopilot already exists, the launcher updates it with the current strategy config and restarts it — it never creates a duplicate. A restart can take up to a minute if the bot is mid-cycle; the UI waits for it.',
+            text: 'Launching is idempotent. If a AlgoBots Autopilot already exists, the launcher updates it with the current strategy config and restarts it — it never creates a duplicate. A restart can take up to a minute if the bot is mid-cycle; the UI waits for it.',
           },
         ],
       },
@@ -398,7 +398,7 @@ export const faqCategories: FAQCategory[] = [
             items: [
               'Stop: use the Stop button on the Config page trader list. Stopping halts the decision loop; open positions remain open and are yours to manage.',
               'Manual close: close any position from the dashboard positions panel — manual closes sync back into the position history.',
-              'Emergencies: you can always manage positions directly on Hyperliquid; NOFX never locks you out of your own account.',
+              'Emergencies: you can always manage positions directly on Hyperliquid; AlgoBots never locks you out of your own account.',
             ],
           },
         ],
@@ -476,18 +476,18 @@ export const faqCategories: FAQCategory[] = [
             items: [
               'All secrets (agent keys, fee wallet key, exchange API keys) are AES-256 encrypted at rest in your own database.',
               'Optional RSA transport encryption protects secrets in flight between browser and server.',
-              'NOFX is self-hosted: nothing is sent to any third-party server. The code is open source and auditable.',
+              'AlgoBots is self-hosted: nothing is sent to any third-party server. The code is open source and auditable.',
             ],
           },
         ],
       },
       {
         id: 'can-nofx-steal-funds',
-        question: 'Can NOFX withdraw or steal my funds?',
+        question: 'Can AlgoBots withdraw or steal my funds?',
         blocks: [
           {
             type: 'p',
-            text: 'No. On Hyperliquid, NOFX only ever holds an agent wallet, which by protocol design can trade but cannot withdraw. Your collateral stays in your own account under your main wallet’s control.',
+            text: 'No. On Hyperliquid, AlgoBots only ever holds an agent wallet, which by protocol design can trade but cannot withdraw. Your collateral stays in your own account under your main wallet’s control.',
           },
           {
             type: 'note',
@@ -516,7 +516,7 @@ export const faqCategories: FAQCategory[] = [
     items: [
       {
         id: 'how-to-install',
-        question: 'How do I install NOFX?',
+        question: 'How do I install AlgoBots?',
         blocks: [
           {
             type: 'p',

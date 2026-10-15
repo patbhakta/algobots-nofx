@@ -182,7 +182,7 @@ export default function TerminalHero() {
                             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-nofx-gold opacity-75"></span>
                             <span className="relative inline-flex rounded-full h-2 w-2 bg-nofx-gold"></span>
                         </span>
-                        <span className="text-xs font-mono text-nofx-gold tracking-widest">NOFX PROFESSIONAL MULTI-ASSET AGENT OS</span>
+                        <span className="text-xs font-mono text-nofx-gold tracking-widest">AlgoBots PROFESSIONAL MULTI-ASSET AGENT OS</span>
                     </motion.div>
 
                     {/* Main Title - Massive & Impactful */}
@@ -316,7 +316,7 @@ export default function TerminalHero() {
 import { OFFICIAL_LINKS } from '../../../constants/branding'
 
 function CommunityStats() {
-    const { stars, forks, contributors, isLoading, error } = useGitHubStats('patbhakta', 'nofx')
+    const { stars, forks, contributors, isLoading, error } = useGitHubStats('patbhakta', 'algobots-nofx')
 
     const stats = [
         {

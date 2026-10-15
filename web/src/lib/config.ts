@@ -4,7 +4,7 @@ export interface SystemConfig {
   /**
    * Backend-controlled registration gate (multi-tenant login). True while the
    * system is uninitialized (first tenant bootstrap) or while the operator has
-   * registration open (`nofx set-registration --enable`). When false the
+   * registration open (`algobots set-registration --enable`). When false the
    * register page shows the registration-closed screen.
    */
   registration_enabled?: boolean

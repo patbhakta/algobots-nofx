@@ -1,4 +1,4 @@
-// NOFX Official Branding Constants
+// AlgoBots Official Branding Constants
 // These values are integrity-checked and should not be modified by forked projects
 
 // Base64 encoded official links (integrity protected)
@@ -55,7 +55,7 @@ export const OFFICIAL_LINKS = {
 
 // Brand watermark component data
 export const BRAND_INFO = {
-  name: 'NOFX',
+  name: 'AlgoBots',
   tagline: 'AI Trading Platform',
   version: '1.0.0',
   // Links embedded in multiple formats for redundancy

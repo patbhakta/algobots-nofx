@@ -196,7 +196,7 @@ export function RegisterPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full bg-nofx-bg border border-[rgba(26,24,19,0.14)] rounded px-4 py-3 text-sm focus:border-nofx-gold focus:ring-1 focus:ring-nofx-gold/50 outline-none transition-all placeholder-nofx-text-muted text-nofx-text font-mono"
-                  placeholder="user@nofx.os"
+                  placeholder="user@algobots.os"
                   required
                 />
               </div>

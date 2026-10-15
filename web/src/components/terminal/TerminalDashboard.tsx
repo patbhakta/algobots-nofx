@@ -419,7 +419,7 @@ export function TerminalDashboard({
         )}
         {/* config / identity strip — first row, flows directly under the global nav */}
         <div className="tm-mono" style={{ display: 'flex', gap: 16, padding: '6px 14px', fontSize: 11, color: 'var(--tm-ink-2)', flexWrap: 'wrap' }}>
-          <span style={{ fontWeight: 500 }}>{selectedTrader?.trader_name ?? 'NOFX'}</span>
+          <span style={{ fontWeight: 500 }}>{selectedTrader?.trader_name ?? 'AlgoBots'}</span>
           <span><span className="tm-sc">model </span>{(() => {
             const raw = config?.ai_model || status?.ai_model || ''
             if (!raw) return '—'

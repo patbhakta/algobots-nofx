@@ -177,7 +177,7 @@ export function AutopilotLaunchPanel({
     : Boolean(feeWalletAddress) && feeWalletBalance >= minAIFeeUSDC
 
   // A stored builder-approved flag is not proof that this saved signing agent
-  // is still approved. A different NOFX installation can replace the agent.
+  // is still approved. A different AlgoBots installation can replace the agent.
   const [verifiedExchangeId, setVerifiedExchangeId] = useState<string | null>(null)
   useEffect(() => {
     setVerifiedExchangeId(null)
@@ -215,7 +215,7 @@ export function AutopilotLaunchPanel({
 
   const autopilotTrader = useMemo(
     () =>
-      traders.find((trader) => trader.trader_name === 'NOFX Autopilot') ||
+      traders.find((trader) => trader.trader_name === 'AlgoBots Autopilot') ||
       traders.find((trader) =>
         (trader.strategy_name || '').toLowerCase().includes('claw402')
       ) ||
@@ -280,7 +280,7 @@ export function AutopilotLaunchPanel({
         toast.warning(outcome.warning)
       }
       await onRefresh()
-      toast.success('NOFX Autopilot is running')
+      toast.success('AlgoBots Autopilot is running')
       navigate(buildDashboardPath(outcome.traderId))
     } finally {
       setLaunching(false)
@@ -337,7 +337,7 @@ export function AutopilotLaunchPanel({
     {
       title: 'Step 2 · Connect Hyperliquid',
       detail:
-        'Approve NOFX once with your crypto wallet (Rabby or MetaMask). This lets the AI place trades for you — it can never withdraw your money.',
+        'Approve AlgoBots once with your crypto wallet (Rabby or MetaMask). This lets the AI place trades for you — it can never withdraw your money.',
       status: hyperliquidConnected ? 'ready' : 'action',
       meta: hyperliquidExchange?.hyperliquidWalletAddr
         ? `${shortAddress(hyperliquidExchange.hyperliquidWalletAddr)} · ${hyperliquidConnected ? 'authorized' : 'authorization not verified — reconnect'} `
@@ -459,7 +459,7 @@ export function AutopilotLaunchPanel({
         ) : (
           <Zap className="h-4 w-4" />
         )}
-        Start NOFX Autopilot
+        Start AlgoBots Autopilot
       </button>
     )
   }
@@ -478,7 +478,7 @@ export function AutopilotLaunchPanel({
                 Guided Launch
               </div>
               <h2 className="text-2xl font-bold tracking-tight text-nofx-text md:text-3xl">
-                Start NOFX Autopilot in minutes
+                Start AlgoBots Autopilot in minutes
               </h2>
               <p className="mt-2 max-w-2xl text-sm leading-6 text-nofx-text-muted">
                 Four small steps, about $13 total. No API keys, no config files
@@ -560,7 +560,7 @@ export function AutopilotLaunchPanel({
                 {shortAddress(hyperliquidExchange?.hyperliquidWalletAddr)}
               </div>
               <p className="mt-3 text-xs leading-5 text-nofx-text-muted">
-                Funds stay in your Hyperliquid account. NOFX only stores the
+                Funds stay in your Hyperliquid account. AlgoBots only stores the
                 authorized Agent key required for automated execution.
               </p>
             </div>
