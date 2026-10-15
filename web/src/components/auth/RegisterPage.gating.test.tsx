@@ -76,7 +76,7 @@ describe('RegisterPage tenant-registration gating', () => {
       screen.getByText(/User registration is currently disabled/i)
     ).toBeTruthy()
     // The registration form must not be offered at all.
-    expect(screen.queryByPlaceholderText('user@nofx.os')).toBeNull()
+    expect(screen.queryByPlaceholderText('user@algobots.os')).toBeNull()
   })
 
   it('shows the registration form when the backend toggle is on', async () => {
@@ -88,7 +88,7 @@ describe('RegisterPage tenant-registration gating', () => {
     renderPage()
 
     expect(
-      await screen.findByPlaceholderText('user@nofx.os')
+      await screen.findByPlaceholderText('user@algobots.os')
     ).toBeTruthy()
     expect(screen.queryByText('Registration Closed')).toBeNull()
   })
@@ -102,7 +102,7 @@ describe('RegisterPage tenant-registration gating', () => {
     renderPage()
 
     expect(
-      await screen.findByPlaceholderText('user@nofx.os')
+      await screen.findByPlaceholderText('user@algobots.os')
     ).toBeTruthy()
   })
 

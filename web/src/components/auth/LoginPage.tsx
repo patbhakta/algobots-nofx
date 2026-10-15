@@ -41,7 +41,7 @@ export function LoginPage() {
   // so we surface the instruction instead of calling an endpoint.
   const handleResetAccount = () => {
     toast(t('resetAccountCliIntro', language), {
-      description: 'nofx reset-account',
+      description: 'algobots reset-account',
       duration: 10000,
     })
   }
