@@ -9,7 +9,7 @@ const _e = (s: string) => btoa(s)
 const ENCODED_LINKS = {
   twitter: 'aHR0cHM6Ly94LmNvbS92ZXJnZXhfYWk=',
   telegram: 'aHR0cHM6Ly90Lm1lL25vZnhfZGV2X2NvbW11bml0eQ==', // https://t.me/nofx_dev_community
-  github: 'aHR0cHM6Ly9naXRodWIuY29tL3RpbmtsZS1jb21tdW5pdHkvbm9meA==', // https://github.com/NoFxAiOS/nofx
+  github: 'aHR0cHM6Ly9naXRodWIuY29tL3BhdGJoYWt0YS9hbGdvYm90cy1ub2Z4', // https://github.com/patbhakta/algobots-nofx (our fork)
 }
 
 // Integrity checksums (simple hash)
@@ -49,8 +49,9 @@ function getVerifiedLink(key: keyof typeof ENCODED_LINKS): string {
 
 // Export verified official links
 export const OFFICIAL_LINKS = {
-  get twitter() { return getVerifiedLink('twitter') },
-  get telegram() { return getVerifiedLink('telegram') },
+  // Pat, Oct 14: this dashboard is invite-only (friends/family). GitHub stays
+  // (points at OUR fork); Twitter and Telegram links removed everywhere —
+  // WhatsApp plugin is planned, Telegram code kept in repo for that swap.
   get github() { return getVerifiedLink('github') },
 } as const
 
@@ -61,8 +62,6 @@ export const BRAND_INFO = {
   version: '1.0.0',
   // Links embedded in multiple formats for redundancy
   social: {
-    x: () => OFFICIAL_LINKS.twitter,
-    tg: () => OFFICIAL_LINKS.telegram,
     gh: () => OFFICIAL_LINKS.github,
   }
 } as const

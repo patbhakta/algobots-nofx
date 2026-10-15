@@ -331,7 +331,8 @@ export function SettingsPage() {
     { key: 'account', label: 'Account', icon: <User size={16} /> },
     { key: 'models', label: 'AI Models', icon: <Cpu size={16} /> },
     { key: 'exchanges', label: 'Exchanges', icon: <Building2 size={16} /> },
-    { key: 'telegram', label: 'Telegram', icon: <MessageCircle size={16} /> },
+    // Telegram tab hidden per Pat (Oct 14): invite-only dashboard, WhatsApp
+    // plugin planned. TelegramConfigModal + state kept for the future swap.
   ]
 
   return (

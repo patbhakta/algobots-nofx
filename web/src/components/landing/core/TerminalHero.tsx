@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { ArrowRight, Shield, Activity, CircuitBoard, Wifi, Globe, Zap, Star, GitFork, Users, MessageCircle } from 'lucide-react'
+import { ArrowRight, Shield, Activity, CircuitBoard, Wifi, Globe, Zap, Star, GitFork, Users } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useGitHubStats } from '../../../hooks/useGitHubStats'
@@ -340,13 +340,6 @@ function CommunityStats() {
             color: 'text-nofx-success',
             href: `${OFFICIAL_LINKS.github}/graphs/contributors`
         },
-        {
-            label: 'DEV COMMUNITY',
-            value: '6,600+',
-            icon: MessageCircle,
-            color: 'text-nofx-accent',
-            href: OFFICIAL_LINKS.telegram
-        }
     ]
 
     return (
