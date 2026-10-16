@@ -1,0 +1,19 @@
+{
+  "index": {
+    "status": 200,
+    "auth": null,
+    "svg": 0,
+    "notRecordedCells": 0,
+    "tableRows": 0,
+    "text": "AlgoBots\n\nStrategy reports — private, friends & family\n\n🪙 Coinflip Baseline — Kalshi BTC 15m\n56 settled predictions · 28 hits (50.0%), the same as a coin · no P&L was recorded — illustrative payoff models inside\nPaper trading only. Not financial advice."
+  },
+  "coinflip.html": {
+    "status": 200,
+    "auth": null,
+    "svg": 1,
+    "notRecordedCells": 57,
+    "tableRows": 67,
+    "text": "Coinflip Baseline\n\nKalshi “Will BTC be up in 15 minutes?” markets, called by a coin. Paper evidence only — no orders were placed and no money moved.\n\n56\nsettled markets\n28\ncoin was right\n50.0%\nhit rate\n28\na fair coin expects\nnone\nrecorded P&L\nThe short version\n\nWe let a coin call 56 bitcoin markets. It was right 28 times — 50.0%, exactly what a coin should do. That is the point of this page: it is"
+  },
+  "externalRequests": []
+}
