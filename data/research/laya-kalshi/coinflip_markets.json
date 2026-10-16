@@ -1,0 +1,205 @@
+[
+ {
+  "event": "KXBTC15M-26SEP181245",
+  "market": "KXBTC15M-26SEP181245-45",
+  "title": "BTC price up in next 15 mins?",
+  "result": "no",
+  "floor_strike": 81005.03
+ },
+ {
+  "event": "KXBTC15M-26SEP181300",
+  "market": "KXBTC15M-26SEP181300-00",
+  "title": "BTC price up in next 15 mins?",
+  "result": "no",
+  "floor_strike": 80966.65
+ },
+ {
+  "event": "KXBTC15M-26SEP181315",
+  "market": "KXBTC15M-26SEP181315-15",
+  "title": "BTC price up in next 15 mins?",
+  "result": "yes",
+  "floor_strike": 80828.52
+ },
+ {
+  "event": "KXBTC15M-26SEP181330",
+  "market": "KXBTC15M-26SEP181330-30",
+  "title": "BTC price up in next 15 mins?",
+  "result": "no",
+  "floor_strike": 80859.94
+ },
+ {
+  "event": "KXBTC15M-26SEP181345",
+  "market": "KXBTC15M-26SEP181345-45",
+  "title": "BTC price up in next 15 mins?",
+  "result": "yes",
+  "floor_strike": 80729.2
+ },
+ {
+  "event": "KXBTC15M-26SEP181400",
+  "market": "KXBTC15M-26SEP181400-00",
+  "title": "BTC price up in next 15 mins?",
+  "result": "yes",
+  "floor_strike": 80746.41
+ },
+ {
+  "event": "KXBTC15M-26SEP181415",
+  "market": "KXBTC15M-26SEP181415-15",
+  "title": "BTC price up in next 15 mins?",
+  "result": "no",
+  "floor_strike": 80984.2
+ },
+ {
+  "event": "KXBTC15M-26SEP181430",
+  "market": "KXBTC15M-26SEP181430-30",
+  "title": "BTC price up in next 15 mins?",
+  "result": "yes",
+  "floor_strike": 80838.11
+ },
+ {
+  "event": "KXBTC15M-26SEP181445",
+  "market": "KXBTC15M-26SEP181445-45",
+  "title": "BTC price up in next 15 mins?",
+  "result": "no",
+  "floor_strike": 80955.52
+ },
+ {
+  "event": "KXBTC15M-26SEP181500",
+  "market": "KXBTC15M-26SEP181500-00",
+  "title": "BTC price up in next 15 mins?",
+  "result": "no",
+  "floor_strike": 80939.12
+ },
+ {
+  "event": "KXBTC15M-26SEP181515",
+  "market": "KXBTC15M-26SEP181515-15",
+  "title": "BTC price up in next 15 mins?",
+  "result": "yes",
+  "floor_strike": 80933.92
+ },
+ {
+  "event": "KXBTC15M-26SEP181530",
+  "market": "KXBTC15M-26SEP181530-30",
+  "title": "BTC price up in next 15 mins?",
+  "result": "yes",
+  "floor_strike": 81164.31
+ },
+ {
+  "event": "KXBTC15M-26SEP181545",
+  "market": "KXBTC15M-26SEP181545-45",
+  "title": "BTC price up in next 15 mins?",
+  "result": "no",
+  "floor_strike": 81249.77
+ },
+ {
+  "event": "KXBTC15M-26SEP181600",
+  "market": "KXBTC15M-26SEP181600-00",
+  "title": "BTC price up in next 15 mins?",
+  "result": "yes",
+  "floor_strike": 81207.75
+ },
+ {
+  "event": "KXBTC15M-26SEP181615",
+  "market": "KXBTC15M-26SEP181615-15",
+  "title": "BTC price up in next 15 mins?",
+  "result": "no",
+  "floor_strike": 81210.88
+ },
+ {
+  "event": "KXBTC15M-26SEP181630",
+  "market": "KXBTC15M-26SEP181630-30",
+  "title": "BTC price up in next 15 mins?",
+  "result": "no",
+  "floor_strike": 81080.01
+ },
+ {
+  "event": "KXBTC15M-26SEP181645",
+  "market": "KXBTC15M-26SEP181645-45",
+  "title": "BTC price up in next 15 mins?",
+  "result": "yes",
+  "floor_strike": 81004.37
+ },
+ {
+  "event": "KXBTC15M-26SEP181700",
+  "market": "KXBTC15M-26SEP181700-00",
+  "title": "BTC price up in next 15 mins?",
+  "result": "no",
+  "floor_strike": 81139.1
+ },
+ {
+  "event": "KXBTC15M-26SEP181715",
+  "market": "KXBTC15M-26SEP181715-15",
+  "title": "BTC price up in next 15 mins?",
+  "result": "yes",
+  "floor_strike": 81077.63
+ },
+ {
+  "event": "KXBTC15M-26SEP181730",
+  "market": "KXBTC15M-26SEP181730-30",
+  "title": "BTC price up in next 15 mins?",
+  "result": "no",
+  "floor_strike": 81260.73
+ },
+ {
+  "event": "KXBTC15M-26SEP181745",
+  "market": "KXBTC15M-26SEP181745-45",
+  "title": "BTC price up in next 15 mins?",
+  "result": "yes",
+  "floor_strike": 81172.16
+ },
+ {
+  "event": "KXBTC15M-26SEP181800",
+  "market": "KXBTC15M-26SEP181800-00",
+  "title": "BTC price up in next 15 mins?",
+  "result": "yes",
+  "floor_strike": 81212.71
+ },
+ {
+  "event": "KXBTC15M-26SEP181830",
+  "market": "KXBTC15M-26SEP181830-30",
+  "title": "BTC price up in next 15 mins?",
+  "result": "yes",
+  "floor_strike": 81232.82
+ },
+ {
+  "event": "KXBTC15M-26SEP181845",
+  "market": "KXBTC15M-26SEP181845-45",
+  "title": "BTC price up in next 15 mins?",
+  "result": "no",
+  "floor_strike": 81244.56
+ },
+ {
+  "event": "KXBTC15M-26SEP181900",
+  "market": "KXBTC15M-26SEP181900-00",
+  "title": "BTC price up in next 15 mins?",
+  "result": "yes",
+  "floor_strike": 81121.66
+ },
+ {
+  "event": "KXBTC15M-26SEP181915",
+  "market": "KXBTC15M-26SEP181915-15",
+  "title": "BTC price up in next 15 mins?",
+  "result": "yes",
+  "floor_strike": 81141.05
+ },
+ {
+  "event": "KXBTC15M-26SEP181930",
+  "market": "KXBTC15M-26SEP181930-30",
+  "title": "BTC price up in next 15 mins?",
+  "result": "no",
+  "floor_strike": 81158.24
+ },
+ {
+  "event": "KXBTC15M-26SEP181945",
+  "market": "KXBTC15M-26SEP181945-45",
+  "title": "BTC price up in next 15 mins?",
+  "result": "no",
+  "floor_strike": 80993.8
+ },
+ {
+  "event": "KXBTC15M-26SEP182000",
+  "market": "KXBTC15M-26SEP182000-00",
+  "title": "BTC price up in next 15 mins?",
+  "result": "no",
+  "floor_strike": 80900.05
+ }
+]
