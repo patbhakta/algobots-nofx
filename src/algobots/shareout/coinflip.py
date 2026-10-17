@@ -208,7 +208,7 @@ def money(x: float) -> str:
 
 
 def equity_svg(rows: list[Row]) -> str:
-    """Two illustrative equity lines with a fair-coin 95% band for Model A."""
+    """Two illustrative equity lines with an approximate pointwise 95% fair-coin band for Model A."""
     curves = {m.key: [0.0] + equity(rows, m) for m in MODELS}
     n = len(rows)
     band = [1.96 * math.sqrt(i) for i in range(n + 1)]
@@ -259,7 +259,7 @@ def equity_svg(rows: list[Row]) -> str:
     out.append(f'<path class="band" d="M{x(0):.1f},{y(0):.1f} {upper} {lower} Z"/>')
     out.append(
         f'<text class="bandlbl" x="{x(n) - 4:.1f}" y="{y(band[-1]) - 6:.1f}" '
-        'text-anchor="end">95% of fair-coin paths (Model A) stay in this band</text>'
+        'text-anchor="end">approx. 95% range at each bet for a fair coin (Model A)</text>'
     )
     for m, cls in ((EVEN_MONEY, "s1"), (FEE_9PCT, "s2")):
         c = curves[m.key]
@@ -378,9 +378,9 @@ def render_report(rows: list[Row], markets: dict[str, dict], source_sha: str) ->
     e = html.escape
     inside = all(abs(v) <= 1.96 * math.sqrt(i) + 1e-9 for i, v in enumerate(eq["even"], 1))
     band_note = (
-        "the coin's Model A line stays inside it the whole way"
+        "The coin's Model A line is inside that range at every one of its bets"
         if inside
-        else "the coin's Model A line leaves it at least once"
+        else "The coin's Model A line is outside that range at one or more bets"
     )
     late = sum(1 for r in rows if (c := close_dt(r.event)) and r.logged > c)
     priced = sum(1 for r in rows if r.event in markets)
@@ -456,7 +456,10 @@ results.</p>
 <span><i class="sw s2"></i>{e(FEE_9PCT.label)}</span></div>
 {equity_svg(rows)}
 <p>Each bet adds the model's win amount on a hit and subtracts $1 on a miss. The grey
-band is where 95% of truly random runs of Model A would sit; {band_note}.
+band is an approximate 95% range <i>at each bet taken on its own</i>: after bet <i>i</i>, a
+fair coin's Model A total lands within ±1.96·√<i>i</i> dollars about 95% of the time (normal
+approximation). It is not a promise that 95% of whole random runs stay inside the band
+from start to finish — over many bets, more than 5% of fair runs poke out somewhere. {band_note}.
 Hover the chart for each bet.</p>
 
 <h2>Which P&amp;L numbers exist, and which don't</h2>

@@ -25,7 +25,9 @@ So the report:
   - Model A, even money with no fee: `+1` per hit, `−1` per miss. 28 − 28 = **$0.00**.
   - Model B, the Oct 14 draft's 9% fee assumption: `+0.91` per hit, `−1` per miss.
     28 × 0.91 − 28 = **−$2.52**. This is not Kalshi's published fee schedule.
-- shows the 95% fair-coin band `±1.96·√i` for Model A after bet *i*.
+- shows an approximate *pointwise* 95% fair-coin band `±1.96·√i` for Model A after
+  bet *i* (normal approximation, each bet taken on its own). It is not a simultaneous
+  band: it does not claim 95% of whole fair-coin paths stay inside it throughout.
 - compares against 50% using an exact two-sided binomial p-value and a Wilson 95%
   interval. It also gives the bet count needed to tell Model B's 52.4% break-even
   from 50% (5% two-sided, 80% power).

@@ -13,7 +13,9 @@ for (const page of ['', 'coinflip.html']) {
   await p.screenshot({ path: `${out}/${page || 'index'}.png`, fullPage: true });
   res[page || 'index'] = { status: r.status(), auth: r.headers()['www-authenticate'] ?? null,
     svg: await p.locator('svg.chart').count(), notRecordedCells: await p.locator('td.na').count(),
-    tableRows: await p.locator('table tr').count(), text: text.slice(0, 400) };
+    tableRows: await p.locator('table tr').count(), text: text.slice(0, 400),
+    bandLabel: await p.locator('svg.chart text.bandlbl').textContent().catch(() => null),
+    bandCaption: (text.match(/The grey\s+band[^]*?every one of its bets\./) || [null])[0] };
 }
 res.externalRequests = external;
 writeFileSync(`${out}/summary.json`, JSON.stringify(res, null, 2));

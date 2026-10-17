@@ -50,6 +50,15 @@ def test_report_never_presents_a_recorded_dollar_figure(tmp_path):
     )
 
 
+def test_band_is_described_as_pointwise_not_a_path_guarantee(tmp_path):
+    # CEO review: ±1.96·√i is an approximate pointwise band, not a simultaneous one.
+    coinflip.build(DATA / "coinflip.jsonl", DATA / "coinflip_markets.json", tmp_path)
+    page = (tmp_path / "coinflip.html").read_text()
+    assert "approx. 95% range at each bet" in page
+    assert "It is not a promise that 95% of whole random runs stay inside" in page
+    assert not re.search(r"95% of (fair-coin paths|truly random runs)[^.]*(stay|sit)", page)
+
+
 def test_hit_flag_must_match_pick_rule(tmp_path):
     bad = _write(
         tmp_path,
