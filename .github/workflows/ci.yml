@@ -17,7 +17,12 @@ jobs:
           python-version: "3.12"
           cache: pip
       - name: Install
-        run: pip install -e ".[dev]"
+        # `workers` brings nautilus-trader. Without it the demo ledger silently
+        # falls back to the reference model (assumed-mid arithmetic), which is
+        # the exact regression ALG-3289 closed — so the tests that assert the
+        # Nautilus executor either skip or fail, and CI proves nothing about
+        # the path the demo actually runs on.
+        run: pip install -e ".[dev,workers]"
       - name: Lint
         run: ruff check .
       - name: Schema lock transition

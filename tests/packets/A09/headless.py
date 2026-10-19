@@ -48,9 +48,19 @@ def _run(args: list[str], timeout: int = 60) -> str:
     if binary is None:
         raise RuntimeError("no headless Chrome/Chromium found (set A09_CHROME)")
     base = [binary, "--no-sandbox", "--disable-gpu", "--hide-scrollbars", "--no-first-run"]
-    return subprocess.run(
-        base + args, capture_output=True, text=True, timeout=timeout, check=True
-    ).stdout
+    # `chrome-headless-shell` is headless by definition and rejects the switch. A
+    # full browser — what a CI runner has on PATH as `/usr/bin/chromium` — is not:
+    # without this it tries to open a window, finds no X server, and exits 1
+    # before `--dump-dom` ever runs.
+    if "headless-shell" not in Path(binary).name:
+        base.insert(1, "--headless=new")
+    done = subprocess.run(base + args, capture_output=True, text=True, timeout=timeout)
+    if done.returncode != 0:
+        raise RuntimeError(
+            f"{Path(binary).name} exited {done.returncode} for {args[-1]}\n"
+            f"{done.stderr.strip()[-2000:]}"
+        )
+    return done.stdout
 
 
 def url(page: str, **query: str) -> str:
