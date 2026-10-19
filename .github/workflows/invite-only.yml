@@ -10,7 +10,7 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
-      - run: go test ./store -run TestInviteLifecycle -count=1
+      - run: go test ./store -run TestInvite -count=1
       - run: go test ./api -run 'TestInviteHTTPRedemption|TestInviteOnlyRegistration|TestTenantSessionClaims|TestTenantIsolation' -count=1
       - uses: actions/setup-node@v4
         with:
