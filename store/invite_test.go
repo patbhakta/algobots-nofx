@@ -70,3 +70,44 @@ func TestInviteLifecycle(t *testing.T) {
 		t.Fatalf("redemption audits: %d", count)
 	}
 }
+
+func TestInviteConcurrentAndRollback(t *testing.T) {
+	st, err := New(filepath.Join(t.TempDir(), "concurrent.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer st.Close()
+	owner := &User{ID: uuid.NewString(), Email: "pat@bhakta.us", PasswordHash: "hash"}
+	if err := st.User().Create(owner); err != nil {
+		t.Fatal(err)
+	}
+	token, err := st.User().IssueInvite(owner.ID, "race@example.com")
+	if err != nil {
+		t.Fatal(err)
+	}
+	results := make(chan error, 2)
+	for i := 0; i < 2; i++ {
+		go func() {
+			results <- st.User().RegisterInvited(&User{ID: uuid.NewString(), Email: "race@example.com", PasswordHash: "hash"}, token)
+		}()
+	}
+	successes := 0
+	for i := 0; i < 2; i++ {
+		if <-results == nil {
+			successes++
+		}
+	}
+	if successes != 1 {
+		t.Fatalf("successful concurrent registrations: %d", successes)
+	}
+	token, err = st.User().IssueInvite(owner.ID, "rollback@example.com")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := st.User().RegisterInvited(&User{ID: owner.ID, Email: "rollback@example.com", PasswordHash: "hash"}, token); err == nil {
+		t.Fatal("expected duplicate ID failure")
+	}
+	if err := st.User().RegisterInvited(&User{ID: uuid.NewString(), Email: "rollback@example.com", PasswordHash: "hash"}, token); err != nil {
+		t.Fatalf("failed creation consumed invite: %v", err)
+	}
+}
