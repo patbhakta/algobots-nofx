@@ -1,0 +1,23 @@
+{
+  "index": {
+    "status": 200,
+    "auth": null,
+    "svg": 0,
+    "notRecordedCells": 0,
+    "tableRows": 0,
+    "text": "AlgoBots\n\nStrategy reports — private, friends & family\n\n🪙 Coinflip Baseline — Kalshi BTC 15m\n56 settled predictions · 28 hits (50.0%), the same as a coin · no P&L was recorded — illustrative payoff models inside\nPaper trading only. Not financial advice.",
+    "bandLabel": null,
+    "bandCaption": null
+  },
+  "coinflip.html": {
+    "status": 200,
+    "auth": null,
+    "svg": 1,
+    "notRecordedCells": 57,
+    "tableRows": 67,
+    "text": "Coinflip Baseline\n\nKalshi “Will BTC be up in 15 minutes?” markets, called by a coin. Paper evidence only — no orders were placed and no money moved.\n\n56\nsettled markets\n28\ncoin was right\n50.0%\nhit rate\n28\na fair coin expects\nnone\nrecorded P&L\nThe short version\n\nWe let a coin call 56 bitcoin markets. It was right 28 times — 50.0%, exactly what a coin should do. That is the point of this page: it is",
+    "bandLabel": "approx. 95% range at each bet for a fair coin (Model A)",
+    "bandCaption": "The grey band is an approximate 95% range at each bet taken on its own: after bet i, a fair coin's Model A total lands within ±1.96·√i dollars about 95% of the time (normal approximation). It is not a promise that 95% of whole random runs stay inside the band from start to finish — over many bets, more than 5% of fair runs poke out somewhere. The coin's Model A line is inside that range at every one of its bets."
+  },
+  "externalRequests": []
+}
