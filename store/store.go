@@ -127,6 +127,9 @@ func (s *Store) initTables() error {
 		return fmt.Errorf("failed to create system_config table: %w", err)
 	}
 
+	if err := s.gdb.AutoMigrate(&TenantInvite{}, &InviteAudit{}); err != nil {
+		return err
+	}
 	// Initialize sub-store tables
 	if err := s.User().initTables(); err != nil {
 		return fmt.Errorf("failed to initialize user tables: %w", err)

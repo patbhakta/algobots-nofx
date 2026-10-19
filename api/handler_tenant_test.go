@@ -8,7 +8,9 @@ import (
 	"net/http/httptest"
 	"path/filepath"
 	"testing"
+	"time"
 
+	"github.com/google/uuid"
 	"nofx/auth"
 	"nofx/manager"
 	"nofx/store"
@@ -74,10 +76,22 @@ type authResponse struct {
 // registerTenant registers a tenant over HTTP and returns its session token.
 func registerTenant(t *testing.T, s *Server, email string) authResponse {
 	t.Helper()
+	owner, err := s.store.User().GetByEmail("pat@bhakta.us")
+	if err != nil {
+		owner = &store.User{ID: uuid.NewString(), Email: "pat@bhakta.us", PasswordHash: "fixture"}
+		if err := s.store.User().Create(owner); err != nil {
+			t.Fatal(err)
+		}
+	}
+	token, err := s.store.User().IssueInvite(owner.ID, email)
+	if err != nil {
+		t.Fatal(err)
+	}
 	w := doJSON(t, s, http.MethodPost, "/api/register", "", map[string]string{
-		"email":    email,
-		"password": "TenantPass123!",
-		"lang":     "en",
+		"invite_token": token,
+		"email":        email,
+		"password":     "TenantPass123!",
+		"lang":         "en",
 	})
 	if w.Code != http.StatusOK {
 		t.Fatalf("register %s: expected 200, got %d: %s", email, w.Code, w.Body.String())
@@ -107,66 +121,74 @@ func getSystemConfig(t *testing.T, s *Server) systemConfigResponse {
 	return cfg
 }
 
-// TestRegistrationToggleEndToEnd proves the backend-controlled registration
-// gate: bootstrap registration allowed, closed once initialized, reopened by
-// the operator setting, and duplicate emails rejected.
-func TestRegistrationToggleEndToEnd(t *testing.T) {
+// TestInviteOnlyRegistration proves the public route stays closed even with the legacy toggle.
+func TestInviteOnlyRegistration(t *testing.T) {
 	s, st := newTenantTestServer(t)
-
-	// Fresh system: registration open for first-tenant bootstrap.
-	if cfg := getSystemConfig(t, s); !cfg.RegistrationEnabled || cfg.Initialized {
-		t.Fatalf("fresh system: expected registration_enabled=true initialized=false, got %+v", cfg)
+	for _, enabled := range []string{"false", "true"} {
+		if err := st.SetSystemConfig("registration_enabled", enabled); err != nil {
+			t.Fatal(err)
+		}
+		for _, token := range []string{"", "bad-token"} {
+			w := doJSON(t, s, "POST", "/api/register", "", map[string]string{"email": "friend@example.com", "password": "TenantPass123!", "invite_token": token})
+			if w.Code != 403 {
+				t.Fatalf("invalid invite: %d", w.Code)
+			}
+		}
 	}
-
-	tenantA := registerTenant(t, s, "tenant-a@algobots.test")
-
-	// Token carries tenant identity; register response mirrors it.
-	if tenantA.TenantID == "" || tenantA.TenantID != tenantA.UserID {
-		t.Fatalf("register response: expected tenant_id == user_id, got user_id=%q tenant_id=%q", tenantA.UserID, tenantA.TenantID)
+	registerTenant(t, s, "friend@example.com")
+	if cfg := getSystemConfig(t, s); cfg.RegistrationEnabled {
+		t.Fatal("public registration advertised")
 	}
+}
 
-	// Once initialized, registration defaults to closed (deployed behavior).
-	if cfg := getSystemConfig(t, s); cfg.RegistrationEnabled || !cfg.Initialized {
-		t.Fatalf("after first tenant: expected registration_enabled=false initialized=true, got %+v", cfg)
+func TestInviteHTTPRedemption(t *testing.T) {
+	s, st := newTenantTestServer(t)
+	owner := &store.User{ID: uuid.NewString(), Email: "pat@bhakta.us", PasswordHash: "fixture"}
+	if err := st.User().Create(owner); err != nil {
+		t.Fatal(err)
 	}
-
-	w := doJSON(t, s, http.MethodPost, "/api/register", "", map[string]string{
-		"email": "tenant-b@algobots.test", "password": "TenantPass123!",
-	})
-	if w.Code != http.StatusForbidden {
-		t.Fatalf("register while closed: expected 403, got %d: %s", w.Code, w.Body.String())
+	ownerJWT, err := auth.GenerateJWT(owner.ID, owner.Email)
+	if err != nil {
+		t.Fatal(err)
 	}
-
-	// Operator reopens registration via the persisted toggle.
-	if err := st.SetSystemConfig("registration_enabled", "true"); err != nil {
-		t.Fatalf("failed to enable registration: %v", err)
+	for _, kind := range []string{"expired", "wrong-email", "valid"} {
+		email := kind + "@example.com"
+		issued := doJSON(t, s, "POST", "/api/invites", ownerJWT, map[string]string{"email": email})
+		if issued.Code != 201 {
+			t.Fatalf("issue: %d %s", issued.Code, issued.Body.String())
+		}
+		var invite struct {
+			Token string `json:"token"`
+		}
+		if err := json.Unmarshal(issued.Body.Bytes(), &invite); err != nil {
+			t.Fatal(err)
+		}
+		if kind == "expired" {
+			if err := st.GormDB().Model(&store.TenantInvite{}).Where("email = ?", email).Update("expires_at", time.Now().Add(-time.Hour)).Error; err != nil {
+				t.Fatal(err)
+			}
+		}
+		if kind == "wrong-email" {
+			email = "someone-else@example.com"
+		}
+		body := map[string]string{"email": email, "password": "TenantPass123!", "invite_token": invite.Token}
+		w := doJSON(t, s, "POST", "/api/register", "", body)
+		if kind != "valid" {
+			if w.Code != 403 {
+				t.Fatalf("%s: %d", kind, w.Code)
+			}
+			continue
+		}
+		if w.Code != 200 {
+			t.Fatalf("valid: %d %s", w.Code, w.Body.String())
+		}
+		w = doJSON(t, s, "POST", "/api/register", "", body)
+		if w.Code == 200 {
+			t.Fatal("accepted used invite")
+		}
 	}
-	if cfg := getSystemConfig(t, s); !cfg.RegistrationEnabled {
-		t.Fatalf("after enabling toggle: expected registration_enabled=true, got %+v", cfg)
-	}
-
-	tenantB := registerTenant(t, s, "tenant-b@algobots.test")
-	if tenantB.UserID == "" || tenantB.UserID == tenantA.UserID {
-		t.Fatalf("expected distinct tenant ids, got A=%q B=%q", tenantA.UserID, tenantB.UserID)
-	}
-
-	// Duplicate email is rejected regardless of the toggle.
-	w = doJSON(t, s, http.MethodPost, "/api/register", "", map[string]string{
-		"email": "tenant-b@algobots.test", "password": "TenantPass123!",
-	})
-	if w.Code != http.StatusConflict {
-		t.Fatalf("duplicate email: expected 409, got %d", w.Code)
-	}
-
-	// Closing the toggle again shuts the door.
-	if err := st.SetSystemConfig("registration_enabled", "false"); err != nil {
-		t.Fatalf("failed to disable registration: %v", err)
-	}
-	w = doJSON(t, s, http.MethodPost, "/api/register", "", map[string]string{
-		"email": "tenant-c@algobots.test", "password": "TenantPass123!",
-	})
-	if w.Code != http.StatusForbidden {
-		t.Fatalf("register after closing toggle: expected 403, got %d", w.Code)
+	if w := doJSON(t, s, "POST", "/api/invites", "", map[string]string{"email": "anonymous@example.com"}); w.Code != 401 {
+		t.Fatalf("anonymous invite: %d", w.Code)
 	}
 }
 

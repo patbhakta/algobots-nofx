@@ -216,8 +216,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       email: string
       password: string
       beta_code?: string
+      invite_token?: string
       lang?: string
-    } = { email, password, lang: language }
+    } = { email, password, lang: language, invite_token: new URLSearchParams(window.location.hash.slice(1)).get('invite') || undefined }
     if (betaCode) {
       requestBody.beta_code = betaCode
     }

@@ -4,17 +4,6 @@ import { MemoryRouter } from 'react-router-dom'
 import { RegisterPage } from './RegisterPage'
 import { getSystemConfig } from '../../lib/config'
 
-/**
- * Multi-tenant registration gating (ALG-3342).
- *
- * The register page must follow the backend-controlled registration toggle
- * (GET /api/config -> registration_enabled):
- * - toggle closed on an initialized system => RegistrationClosed page
- * - toggle open on an initialized system  => registration form
- * - uninitialized system (first tenant bootstrap) => registration form
- * - legacy backend without the field            => closed once initialized
- */
-
 const mockNavigate = vi.fn()
 
 vi.mock('react-router-dom', async () => {
@@ -60,6 +49,7 @@ function renderPage() {
 
 beforeEach(() => {
   vi.clearAllMocks()
+  window.location.hash = ""
 })
 
 describe('RegisterPage tenant-registration gating', () => {
@@ -79,10 +69,11 @@ describe('RegisterPage tenant-registration gating', () => {
     expect(screen.queryByPlaceholderText('user@algobots.os')).toBeNull()
   })
 
-  it('shows the registration form when the backend toggle is on', async () => {
+  it('shows the form from an invite link even with the backend toggle off', async () => {
+    window.location.hash = '#invite=test-token'
     mockedGetSystemConfig.mockResolvedValue({
       initialized: true,
-      registration_enabled: true,
+      registration_enabled: false,
     })
 
     renderPage()
@@ -93,7 +84,7 @@ describe('RegisterPage tenant-registration gating', () => {
     expect(screen.queryByText('Registration Closed')).toBeNull()
   })
 
-  it('shows the registration form on an uninitialized system (first tenant bootstrap)', async () => {
+  it('stays closed on an uninitialized system even with the legacy toggle on', async () => {
     mockedGetSystemConfig.mockResolvedValue({
       initialized: false,
       registration_enabled: true,
@@ -101,9 +92,7 @@ describe('RegisterPage tenant-registration gating', () => {
 
     renderPage()
 
-    expect(
-      await screen.findByPlaceholderText('user@algobots.os')
-    ).toBeTruthy()
+    expect(await screen.findByText('Registration Closed')).toBeTruthy()
   })
 
   it('treats a legacy backend without the field as closed once initialized', async () => {

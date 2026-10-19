@@ -21,7 +21,7 @@ export function RegisterPage() {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [betaCode, setBetaCode] = useState('')
   const [betaMode, setBetaMode] = useState(false)
-  const [registrationEnabled, setRegistrationEnabled] = useState(true)
+  const [registrationEnabled, setRegistrationEnabled] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [passwordValid, setPasswordValid] = useState(false)
@@ -32,10 +32,9 @@ export function RegisterPage() {
     getSystemConfig()
       .then((config) => {
         setBetaMode(config.beta_mode || false)
-        // Registration is backend-controlled: open during first-time setup or
-        // when the operator has enabled it; otherwise show the closed page.
+        // An invite link opens the form; the backend validates and consumes it.
         setRegistrationEnabled(
-          config.registration_enabled === true || config.initialized === false
+          Boolean(new URLSearchParams(window.location.hash.slice(1)).get('invite'))
         )
       })
       .catch((err) => {
