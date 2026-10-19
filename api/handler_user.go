@@ -43,28 +43,13 @@ func (s *Server) handleLogout(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Logged out"})
 }
 
-// handleRegister Handle tenant self-registration request.
-// Registration is backend-gated: allowed while the system is uninitialized
-// (first tenant bootstrap) or while the operator has enabled the
-// registration_enabled system setting (`nofx set-registration --enable`).
-// Every registration provisions a new investor tenant: each login owns its
-// own traders, strategies, exchanges and keys (user_id == tenant scope).
+// handleRegister requires a single-use invite.
 func (s *Server) handleRegister(c *gin.Context) {
-	userCount, err := s.store.User().Count()
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to check user count"})
-		return
-	}
-
-	if !s.registrationOpen(userCount) {
-		c.JSON(http.StatusForbidden, gin.H{"error": "Registration is disabled"})
-		return
-	}
-
 	var req struct {
-		Email    string `json:"email" binding:"required,email"`
-		Password string `json:"password" binding:"required,min=8"`
-		Lang     string `json:"lang"`
+		InviteToken string `json:"invite_token"`
+		Email       string `json:"email" binding:"required,email"`
+		Password    string `json:"password" binding:"required,min=8"`
+		Lang        string `json:"lang"`
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -72,13 +57,18 @@ func (s *Server) handleRegister(c *gin.Context) {
 		return
 	}
 
+	if req.InviteToken == "" {
+		c.JSON(403, gin.H{"error": "Valid unused invite required"})
+		return
+	}
+	req.Email = strings.ToLower(strings.TrimSpace(req.Email))
 	lang := req.Lang
 	if lang != "zh" && lang != "id" {
 		lang = "en"
 	}
 
 	// Check if email already exists
-	_, err = s.store.User().GetByEmail(req.Email)
+	_, err := s.store.User().GetByEmail(req.Email)
 	if err == nil {
 		c.JSON(http.StatusConflict, gin.H{"error": "Email already registered"})
 		return
@@ -99,9 +89,9 @@ func (s *Server) handleRegister(c *gin.Context) {
 		PasswordHash: passwordHash,
 	}
 
-	err = s.store.User().Create(user)
+	err = s.store.User().RegisterInvited(user, req.InviteToken)
 	if err != nil {
-		SafeInternalError(c, "Failed to create user", err)
+		c.JSON(403, gin.H{"error": "Valid unused invite required"})
 		return
 	}
 
@@ -388,4 +378,26 @@ func (s *Server) createDefaultStrategies(userID string, lang string) error {
 		}
 		return nil
 	})
+}
+
+func (s *Server) handleIssueInvite(c *gin.Context) {
+	var req struct {
+		Email string `json:"email" binding:"required,email"`
+	}
+	actor, err := s.store.User().GetByID(c.GetString("user_id"))
+	if err != nil || !strings.EqualFold(actor.Email, "pat@bhakta.us") {
+		c.JSON(403, gin.H{"error": "Owner required"})
+		return
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		SafeBadRequest(c, "Valid email required")
+		return
+	}
+	token, err := s.store.User().IssueInvite(actor.ID, req.Email)
+	if err != nil {
+		c.JSON(500, gin.H{"error": "Unable to issue invite"})
+		return
+	}
+	c.Header("Cache-Control", "no-store")
+	c.JSON(201, gin.H{"token": token, "register_path": "/register#invite=" + token, "expires_in_seconds": 604800})
 }

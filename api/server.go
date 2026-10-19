@@ -197,6 +197,7 @@ func (s *Server) setupRoutes() {
 
 		// Routes requiring authentication
 		protected := api.Group("/", s.authMiddleware())
+		s.route(protected, "POST", "/invites", "Owner issues invite", s.handleIssueInvite)
 		{
 			// Logout (add to blacklist)
 			s.route(protected, "POST", "/logout", "Logout (blacklist token)", s.handleLogout)
@@ -470,16 +471,9 @@ func (s *Server) handleHealth(c *gin.Context) {
 // the local CLI (`nofx set-registration`), never by an API route.
 const registrationEnabledKey = "registration_enabled"
 
-// registrationOpen reports whether a new tenant may self-register:
-// first-time bootstrap (no users yet) or the operator-enabled toggle.
-// Once the system is initialized the toggle defaults to closed, preserving
-// the historical single-tenant behavior until the operator opts in.
+// registrationOpen never advertises public registration; invites are required.
 func (s *Server) registrationOpen(userCount int) bool {
-	if userCount == 0 {
-		return true
-	}
-	v, err := s.store.GetSystemConfig(registrationEnabledKey)
-	return err == nil && v == "true"
+	return false
 }
 
 // handleGetSystemConfig Get system configuration (configuration that client needs to know)
