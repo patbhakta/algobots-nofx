@@ -578,7 +578,55 @@
     },
     {
       "repo": "algobots",
+      "path": ".env.example"
+    },
+    {
+      "repo": "algobots",
+      "path": "INVENTORY.md"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3350/p02-migration-rehearsal.md"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3350/p03-redis-xread-evidence.md"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3373/g1-latency.json"
+    },
+    {
+      "repo": "algobots",
+      "path": "clients/gateway/README.md"
+    },
+    {
+      "repo": "algobots",
+      "path": "clients/gateway/client.gen.go"
+    },
+    {
+      "repo": "algobots",
+      "path": "compose.yaml"
+    },
+    {
+      "repo": "algobots",
+      "path": "contracts/gateway.openapi.yaml"
+    },
+    {
+      "repo": "algobots",
+      "path": "deploy/postgres-init.sh"
+    },
+    {
+      "repo": "algobots",
+      "path": "docs/ROADMAP-v3.md"
+    },
+    {
+      "repo": "algobots",
       "path": "docs/bridge.md"
+    },
+    {
+      "repo": "algobots",
+      "path": "docs/gates/G1-phase1-end-to-end.md"
     },
     {
       "repo": "algobots",
@@ -587,6 +635,18 @@
     {
       "repo": "algobots",
       "path": "docs/research/openalgo-feature-reference.md"
+    },
+    {
+      "repo": "algobots",
+      "path": "scripts/migrate-nofx-sqlite.sh"
+    },
+    {
+      "repo": "algobots",
+      "path": "scripts/phase0_redis_egress.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "scripts/verify_g1.py"
     },
     {
       "repo": "algobots",
@@ -610,11 +670,163 @@
     },
     {
       "repo": "algobots",
+      "path": "src/algobots/gateway/__init__.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "src/algobots/gateway/admission.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "src/algobots/gateway/app.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "src/algobots/gateway/auth.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "src/algobots/gateway/errors.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "src/algobots/gateway/event_ingest.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "src/algobots/gateway/fixture_node.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "src/algobots/gateway/node_events.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "src/algobots/gateway/nodes.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "src/algobots/gateway/projection.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "src/algobots/gateway/store.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "src/algobots/node/__init__.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "src/algobots/node/command_actor.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "src/algobots/node/command_stream.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "src/algobots/node/commands.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "src/algobots/node/event_egress.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "src/algobots/node/nautilus_actor.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "src/algobots/node/sandbox.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "src/algobots/research/__init__.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "src/algobots/research/binance_datafeed.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "src/algobots/research/kalshi_baselines.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "src/algobots/research/massive_datafeed.py"
+    },
+    {
+      "repo": "algobots",
       "path": "tests/bridge/test_api.py"
     },
     {
       "repo": "algobots",
       "path": "tests/bridge/test_channel.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "tests/e2e/__init__.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "tests/e2e/conftest.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "tests/e2e/stack.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "tests/e2e/test_g1_ci_wiring.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "tests/e2e/test_g1_paper_order.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "tests/fakes.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "tests/gateway/test_contract_conformance.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "tests/gateway/test_event_path.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "tests/gateway/test_sql_projection.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "tests/node/__init__.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "tests/node/conftest.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "tests/node/test_command_actor.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "tests/node/test_command_stream.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "tests/node/test_sandbox.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "tests/phase0/test_phase0.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "tests/phase0/test_redis_egress_integration.py"
     }
   ],
   "scope_revisions": [

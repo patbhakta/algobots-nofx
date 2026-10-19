@@ -1,0 +1,120 @@
+name: algobots
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-algobots}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-algobots}
+      NOFX_DB: ${NOFX_DB:-nofx}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./deploy/postgres-init.sh:/docker-entrypoint-initdb.d/10-nofx-db.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    networks: [algobots]
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+    networks: [algobots]
+    restart: unless-stopped
+
+  api:
+    build: .
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-algobots}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-algobots}
+      REDIS_URL: redis://redis:6379/0
+      ALGOBOTS_BRIDGE_DIR: /bridge
+      ALGOBOTS_DEMO_FEED_PATH: /feeds/kalshi/observations.jsonl
+      ALGOBOTS_DEMO_STATE_DIR: /var/lib/algobots-demo
+    volumes:
+      # The three mounts algobots-api-1 runs with today (INVENTORY.md): the
+      # bridge channel, the Laya Kalshi feed, and the demo kill-switch/sleeve
+      # state. Without them the API comes up with the bridge disabled and the
+      # demo state empty.
+      - ${BRIDGE_DIR:-/opt/algobots-stack/bridge}:/bridge
+      - ${KALSHI_FEED_DIR:-/opt/laya/kalshi}:/feeds/kalshi:ro
+      - demo_state:/var/lib/algobots-demo
+    depends_on:
+      postgres: {condition: service_healthy}
+      redis: {condition: service_healthy}
+    ports: ["${API_BIND:-127.0.0.1}:${API_PORT:-8000}:8000"]
+    networks: [algobots]
+    restart: unless-stopped
+
+  nofx:
+    image: ghcr.io/nofxaios/nofx/nofx-backend:latest
+    environment:
+      # sqlite is what the live container runs (INVENTORY.md). The cutover to
+      # postgres is an explicit env flip performed AFTER
+      # scripts/migrate-nofx-sqlite.sh writes its verification report — this
+      # file is the deployment artifact, so defaulting it to postgres would
+      # point NoFX at an empty database and lock pat@bhakta.us out of his own
+      # stack on the next `up`. The card's acceptance is that he survives.
+      DB_TYPE: ${NOFX_DB_TYPE:-sqlite}
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_USER: ${POSTGRES_USER:-algobots}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_NAME: ${NOFX_DB:-nofx}
+      DB_SSLMODE: disable
+      JWT_SECRET: ${NOFX_JWT_SECRET:?set NOFX_JWT_SECRET}
+    volumes:
+      # The live SQLite database, and the ALG-3340 bridge channel that
+      # algobots-api and nautilus share through the same host directory.
+      # Dropping the first abandons every NoFX user; dropping the second
+      # breaks the order-intent bridge.
+      - ${NOFX_DATA_DIR:-/opt/algobots-stack/data}:/app/data
+      - ${NOFX_BRIDGE_DIR:-/opt/algobots-stack/bridge}:/app/bridge
+    depends_on:
+      postgres: {condition: service_healthy}
+    ports: ["${TAILNET_BIND:-127.0.0.1}:${NOFX_PORT:-8200}:8080"]
+    networks: [algobots]
+    restart: unless-stopped
+
+  nofx-frontend:
+    image: algobots/nofx-frontend:algobots-v6
+    depends_on: [nofx]
+    ports: ["${TAILNET_BIND:-127.0.0.1}:${NOFX_FRONTEND_PORT:-8201}:80"]
+    networks: [algobots]
+    restart: unless-stopped
+
+  nautilus:
+    image: nautilus-marimo:latest
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+    volumes:
+      # The host work tree, not a path inside this checkout: `./nautilus` does
+      # not exist in the repo and `docker compose config` resolves it to one.
+      - ${NAUTILUS_WORK_DIR:-/mnt/funnytree/algobots}:/home/nautilus/work
+      - ${BRIDGE_DIR:-/opt/algobots-stack/bridge}:/home/nautilus/work/bridge
+      - nautilus_catalog:/home/nautilus/catalog
+    depends_on:
+      redis: {condition: service_healthy}
+    ports: ["${TAILNET_BIND:-127.0.0.1}:${NAUTILUS_PORT:-8202}:2718"]
+    networks: [algobots]
+    restart: unless-stopped
+
+networks:
+  algobots:
+    name: algobots
+
+volumes:
+  postgres_data:
+  redis_data:
+  nautilus_catalog:
+  demo_state:

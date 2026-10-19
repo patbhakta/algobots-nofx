@@ -30,6 +30,16 @@ dev = [
     "httpx>=0.27",
     "ruff>=0.7",
     "hypothesis>=6",
+    # GATE G1 (tests/e2e) drives both Redis legs of the order path — the
+    # gateway's command stream out and the node's event stream back — against a
+    # real server, so the client is a test dependency rather than a node-only
+    # one. `uvicorn[standard]` already brings the websocket client the gate
+    # reads `/v1/events` with.
+    "redis>=5",
+    # Validates contracts/gateway.openapi.yaml, the one file the gateway's API
+    # lives in (ROADMAP-v3 rule 2) and the input to the generated Go client.
+    "openapi-spec-validator>=0.7",
+    "pyyaml>=6",
 ]
 workers = [
     "nautilus-trader>=1.231",

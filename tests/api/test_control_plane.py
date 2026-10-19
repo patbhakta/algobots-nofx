@@ -59,6 +59,14 @@ EXPECTED_TABLES = {
     "broker_connections",
     "external_account_identities",
     "secret_grants",
+    # P1.2 (ALG-3370): the gateway's durable projection of the node event
+    # stream — orders, their fills, open positions, balances, and the `/events`
+    # cursor. Migration 0011.
+    "gateway_orders",
+    "gateway_fills",
+    "gateway_positions",
+    "gateway_balances",
+    "gateway_events",
 }
 
 
