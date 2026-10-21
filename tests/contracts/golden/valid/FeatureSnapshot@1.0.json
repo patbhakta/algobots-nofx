@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "instrument_id": "COINBASE:spot-crypto:BTC-USD",
+  "feature_set": "sma-close-3",
+  "bar_interval": "60s",
+  "bar_close_time": "2026-10-31T10:02:00Z",
+  "computed_at": "2026-10-31T10:02:01Z",
+  "status": "ready",
+  "warmup_bars_required": 3,
+  "bars_consumed": 3,
+  "gap_count": 0,
+  "values": {
+    "sma-close-3": "61010.1666666666"
+  }
+}

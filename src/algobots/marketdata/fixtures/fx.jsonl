@@ -1,0 +1,3 @@
+{"base": "EUR", "quote": "USD", "event_time": "2026-10-30T10:00:00Z", "available_time": "2026-10-30T10:00:01Z", "rate": "1.0850"}
+{"base": "EUR", "quote": "USD", "event_time": "2026-10-30T16:00:00Z", "available_time": "2026-10-30T16:00:01Z", "rate": "1.0900"}
+{"base": "GBP", "quote": "USD", "event_time": "2026-10-30T10:00:00Z", "available_time": "2026-10-30T10:00:01Z", "rate": "1.2650"}

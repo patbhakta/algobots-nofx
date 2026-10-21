@@ -84,6 +84,16 @@
           "repo": "algobots",
           "path": "src/algobots/contracts/secrets.py",
           "packet": "A04"
+        },
+        {
+          "repo": "algobots",
+          "path": "src/algobots/contracts/instrument.py",
+          "packet": "A05"
+        },
+        {
+          "repo": "algobots",
+          "path": "src/algobots/contracts/marketdata.py",
+          "packet": "A05"
         }
       ]
     },
@@ -1002,6 +1012,20 @@
         "tests/contracts/golden/valid/"
       ],
       "reason": "dispatched spec requires registering BrokerAdapterCapabilities + SecretResolver as new schema versions (contracts package + schema-lock.json; goldens are the schema-registry mechanism, A07 precedent e843999); the A04 router mounts in api/main.py and its ORM models register via api/models.py for Alembic 0010; EXPECTED_TABLES lists the migrated tables (A07 precedent); repository-map carries this revision and the packet's contract pins Ownership collisions resolved at integration: main.py/models.py/test_control_plane.py stay solely A03-owned and repository-map.json solely A01-owned (identical entries in two packets are forbidden; A04's edits to them were proposals through those owners, same as the Makefile convention)."
+    },
+    {
+      "packet": "A05",
+      "from_revision": 1,
+      "to_revision": 2,
+      "removed": [],
+      "added": [
+        "src/algobots/contracts/instrument.py",
+        "src/algobots/contracts/marketdata.py",
+        "tests/contracts/golden/valid/Instrument@1.0.json",
+        "tests/contracts/golden/valid/MarketSnapshot@1.0.json",
+        "tests/contracts/golden/valid/FeatureSnapshot@1.0.json"
+      ],
+      "reason": "dispatched spec (ALG-3101) registers Instrument, MarketSnapshot and FeatureSnapshot as new schema versions with goldens (A04 precedent). Exact files only — dir-level src/algobots/contracts/ stays A01's (identical entries in two packets are forbidden). schema-lock.json (A04-carved) and contracts/__init__.py are additive edits through the schema-registry owner: the lock gains three entries via registry.write_lock() and __init__ re-exports the new modules; both stay proposals through their recorded owners, same as Makefile and api/main.py (router mount, A03/A04 precedent)."
     }
   ],
   "packets": {
@@ -1357,7 +1381,7 @@
         "A01",
         "A04"
       ],
-      "revision": 1,
+      "revision": 2,
       "repositories": [
         "algobots"
       ],
@@ -1386,11 +1410,41 @@
           "repo": "algobots",
           "path": "artifacts/A05/",
           "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "src/algobots/contracts/instrument.py",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "src/algobots/contracts/marketdata.py",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "tests/contracts/golden/valid/Instrument@1.0.json",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "tests/contracts/golden/valid/MarketSnapshot@1.0.json",
+          "status": "proposed"
+        },
+        {
+          "repo": "algobots",
+          "path": "tests/contracts/golden/valid/FeatureSnapshot@1.0.json",
+          "status": "proposed"
         }
       ],
-      "shared_resources": [],
+      "shared_resources": [
+        "schema-registry"
+      ],
       "contract_pins": {
-        "Envelope": "1.0"
+        "Envelope": "1.0",
+        "FeatureSnapshot": "1.0",
+        "Instrument": "1.0",
+        "MarketSnapshot": "1.0"
       }
     },
     "A06": {
