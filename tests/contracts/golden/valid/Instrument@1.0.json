@@ -1,0 +1,19 @@
+{
+  "schema_version": "1.0",
+  "instrument_id": "COINBASE:spot-crypto:BTC-USD",
+  "venue": "COINBASE",
+  "product": "spot-crypto",
+  "symbol": "BTC-USD",
+  "base_asset": "BTC",
+  "quote_currency": "USD",
+  "lot_unit": "BTC",
+  "price_increment": "0.01",
+  "quantity_increment": "0.00000001",
+  "tick_policy": "nearest",
+  "lot_policy": "down",
+  "multiplier": "1",
+  "min_notional": null,
+  "calendar": "24x7",
+  "timezone": "UTC",
+  "metadata_version": 1
+}

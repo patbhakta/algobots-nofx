@@ -248,3 +248,24 @@ demo-A04:
 
 verify-G1:
 	PYTHONPATH=$(CURDIR)/src $(PYTHON) scripts/verify_g1.py
+
+# A05 (proposed by ALG-3101 for the make-targets owner). The contracts
+# transition check guards the three new registrations (Instrument,
+# MarketSnapshot, FeatureSnapshot) against the lock at the merge base with
+# origin/main; the market-data lane proves acceptance cases 1-4 on recorded
+# fixtures; acceptance.py then writes artifacts/A05/acceptance.json.
+# External-environment cases stay BLOCKED, never claimed.
+A05_RESULTS := artifacts/A05/test-results
+
+.PHONY: verify-A05 demo-A05
+
+verify-A05:
+	mkdir -p $(A05_RESULTS)
+	PYTHONPATH=$(CURDIR)/src $(PYTHON) -m algobots.contracts --check-transition $(SCHEMA_BASE)
+	PYTHONPATH=$(CURDIR)/src $(PYTHON) -m pytest tests/marketdata tests/packets/A05 tests/contracts \
+		-q -rs -p no:cacheprovider --junitxml=$(A05_RESULTS)/junit.xml
+	sed -i -E 's/ (timestamp|hostname|time)="[^"]*"//g' $(A05_RESULTS)/junit.xml
+	PYTHONPATH=$(CURDIR)/src $(PYTHON) tests/packets/A05/acceptance.py $(A05_RESULTS)/junit.xml
+
+demo-A05:
+	PYTHONPATH=$(CURDIR)/src $(PYTHON) tests/packets/A05/demo.py

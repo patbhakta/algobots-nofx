@@ -30,14 +30,23 @@
     "ExecutionCommand": {
       "1.0": "433dba5786d7762f6a0fa249b726d0e4908f9be7fafbec35b830386f1383ef2d"
     },
+    "FeatureSnapshot": {
+      "1.0": "70a7478010745ad9d6a283aa41a0613dcb7253847c1a32b9fb24869ebebfd574"
+    },
     "FillEvent": {
       "1.0": "29f0386e51c8364778d6445387d74d7b0f1abf76b0bc54308a31bf03b5c075d9"
+    },
+    "Instrument": {
+      "1.0": "e617c013923873537239b06fb77c8fa33aa565d54f1332f885744851d0bb8020"
     },
     "IntentRequest": {
       "1.0": "17a2647122d720f28481a562a6f0f95155cf008155e25c6edba8434e1ce67b8a"
     },
     "IntentStatusResponse": {
       "1.0": "e0d9298811b98bd370e9906ac6175112b6266905e3946e046ea6025fb41fcdfd"
+    },
+    "MarketSnapshot": {
+      "1.0": "30c74f2fe751bf55b05d08f4e6b03e8d63bd2d66868b3e8048d28c0152b123e6"
     },
     "MemoryRecord": {
       "1.0": "af294b029f2c833430ce63718927bad213070017c575e9b6c939da1058f69aff"
