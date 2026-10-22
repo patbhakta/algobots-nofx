@@ -78,3 +78,35 @@ def test_the_rc6_node_with_fills_is_wired_whatever_the_api_image_runs():
     assert _status(FL.Facts(node_fills=0, **node))["nautilus"] == FL.STUBBED
     wrong = FL.Facts(node_nautilus="1.231.0", node_fills=2)
     assert _status(wrong)["nautilus"] == FL.MISSING
+
+
+def _node_feed(**kw):
+    last = {
+        "_id": "1792650000000-0",
+        "source": "replay:/catalog/data/quote_tick/EURUSD.SIM/part-0.parquet",
+        "instrument": "EUR/USD.SIM",
+        "recorded_ts": "1577898010447000000",
+        "node_ts": "1792650000000000000",
+        "received": "42",
+        **kw,
+    }
+    return dict(
+        node_feed_stream="algobots:feed:nautilus-paper", node_feed_entries=5, node_feed_last=last
+    )
+
+
+def test_a_fresh_replay_feed_on_the_node_is_wired_without_any_worker():
+    """ALG-3406: hop 4 reads what the rc6 node received, not the worker feed file."""
+    fresh = FL.Facts(
+        node_feed_age_s=3.0, feed_path="/feeds/kalshi/observations.jsonl", **_node_feed()
+    )
+    hop = next(h for h in FL.judge(fresh) if h.key == "datafeed")
+    assert hop.status == FL.WIRED
+    assert any("2020-01-01T" in e for e in hop.evidence)  # recorded ts is shown
+    stale = FL.Facts(node_feed_age_s=FL.NODE_FEED_MAX_AGE_S + 1, **_node_feed())
+    assert _status(stale)["datafeed"] == FL.STUBBED
+
+
+def test_synthetic_node_quotes_are_not_market_data():
+    facts = FL.Facts(node_feed_age_s=1.0, **_node_feed(source="synthetic"))
+    assert _status(facts)["datafeed"] == FL.STUBBED

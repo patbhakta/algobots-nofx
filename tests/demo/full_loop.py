@@ -14,7 +14,9 @@ The five hops of the demo, each reported ``wired`` / ``stubbed`` / ``missing``:
 3. ``nautilus`` — the ``nautilus-node`` container runs Nautilus 2.0.0rc6
    (roadmap rule 5) in paper mode and its ``trader-*`` event streams carry fills
    (ALG-3405).
-4. ``datafeed`` — market data reaches the node and is fresh (ALG-3357).
+4. ``datafeed`` — market data reaches the node and is fresh: the rc6 node's
+   ``algobots:feed:<node>`` stream, written per quote its strategy received
+   (replay, ALG-3406; IBKR live, ALG-3357). Falls back to the worker feed file.
 5. ``marimo`` — a marimo notebook on the stack renders that run's evidence
    (fills, PnL, data timestamps).
 
@@ -53,6 +55,9 @@ FILL_STREAMS = "trader-*:algobots:events.order_filled.*"
 NOTEBOOK_DIR = "/mnt/funnytree/algobots/notebooks"
 NAUTILUS_PIN = "2.0.0rc6"
 FEED_MAX_AGE_S = 15 * 60  # a replay or live feed older than this is not reaching the node
+#: algobots.node.replay.FEED_PREFIX; the node signals about once a second while quotes arrive.
+NODE_FEED_STREAMS = "algobots:feed:*"
+NODE_FEED_MAX_AGE_S = 60
 EVIDENCE_MARKER = "ALG-3403 evidence"  # the evidence notebook declares itself with this
 
 WIRED, STUBBED, MISSING = "wired", "stubbed", "missing"
@@ -82,6 +87,10 @@ class Facts:
     studio_versions: int | None = None
     feed_path: str | None = None
     feed_age_s: float | None = None
+    node_feed_stream: str | None = None
+    node_feed_entries: int | None = None
+    node_feed_last: dict[str, str] | None = None
+    node_feed_age_s: float | None = None
     marimo_http: int | None = None
     evidence_notebooks: list[str] | None = None
     errors: list[str] = field(default_factory=list)
@@ -136,6 +145,36 @@ def _version_cmd(container: str) -> str:
     return f"docker exec {container} python -c {shlex.quote(probe)}"
 
 
+def _node_feed(host: str, f: Facts) -> None:
+    """Newest entry of the node's feed-signal stream, aged on Redis' own clock."""
+    rc = f"docker exec {REDIS_CONTAINER} redis-cli"
+    out = _ssh(
+        host,
+        f'echo "#TIME $({rc} TIME | head -1)"; '
+        f"for k in $({rc} --scan --pattern {shlex.quote(NODE_FEED_STREAMS)}); "
+        f'do echo "#STREAM $k $({rc} XLEN "$k")"; {rc} XREVRANGE "$k" + - COUNT 1; done',
+    )
+    if out is None:
+        f.errors.append(f"ssh {host}: node feed probe failed")
+        return
+    now_s: int | None = None
+    for block in out.split("#")[1:]:
+        lines = block.strip().splitlines()
+        head = lines[0].split()
+        if head[0] == "TIME" and len(head) == 2:
+            now_s = int(head[1])
+        elif head[0] == "STREAM" and len(head) == 3 and len(lines) >= 2:
+            entry_id, kv = lines[1], lines[2:]
+            last = dict(zip(kv[::2], kv[1::2], strict=False))
+            # Several nodes: judge the freshest.
+            if f.node_feed_last is None or entry_id > f.node_feed_last.get("_id", ""):
+                last["_id"] = entry_id
+                f.node_feed_stream, f.node_feed_entries = head[1], int(head[2])
+                f.node_feed_last = last
+    if f.node_feed_last is not None and now_s is not None:
+        f.node_feed_age_s = now_s - int(f.node_feed_last["_id"].split("-")[0]) / 1000
+
+
 def collect(host: str = HOST, api: str = API, marimo: str = MARIMO) -> Facts:
     f = Facts()
 
@@ -176,6 +215,8 @@ def collect(host: str = HOST, api: str = API, marimo: str = MARIMO) -> Facts:
     if fills is not None:
         f.node_fills = sum(int(n) for n in fills.split() if n.isdigit())
     f.marimo_nautilus = _ssh(host, _version_cmd(MARIMO_CONTAINER))
+
+    _node_feed(host, f)
 
     f.feed_path = _ssh(host, f"docker exec {API_CONTAINER} printenv ALGOBOTS_DEMO_FEED_PATH")
     if f.feed_path:
@@ -266,8 +307,44 @@ def _nautilus(f: Facts) -> Hop:
     return h
 
 
+def _iso_ns(ns: str | None) -> str:
+    try:
+        return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(int(ns or "") / 1e9))
+    except ValueError:
+        return "?"
+
+
+def _node_datafeed(f: Facts, h: Hop) -> Hop:
+    last = f.node_feed_last or {}
+    src = last.get("source", "")
+    age = f.node_feed_age_s
+    h.evidence.append(
+        f"{f.node_feed_stream}: {f.node_feed_entries} signals, last "
+        + ("age unknown" if age is None else f"{age:.0f}s ago")
+    )
+    h.evidence.append(
+        f"source {src} {last.get('instrument', '')}; quotes received by the node: "
+        f"{last.get('received')}; last bid/ask {last.get('bid')}/{last.get('ask')}"
+    )
+    h.evidence.append(
+        f"recorded ts {_iso_ns(last.get('recorded_ts'))} (row {last.get('row')}, "
+        f"lap {last.get('laps')}) -> node ts {_iso_ns(last.get('node_ts'))}"
+    )
+    if not src or src.startswith("synthetic"):
+        h.status = STUBBED
+        h.evidence.append("node prices are synthetic, not recorded or live market data")
+    elif age is not None and age <= NODE_FEED_MAX_AGE_S:
+        h.status = WIRED
+    else:
+        h.status = STUBBED
+        h.evidence.append(f"node feed is stale (> {NODE_FEED_MAX_AGE_S}s)")
+    return h
+
+
 def _datafeed(f: Facts) -> Hop:
     h = Hop("datafeed", "Market data reaches the node", MISSING)
+    if f.node_feed_last is not None:
+        return _node_datafeed(f, h)
     intervals = sum(int(w.get("intervals") or 0) for w in _workers(f))
     h.evidence.append(f"feed path: {f.feed_path}")
     h.evidence.append(

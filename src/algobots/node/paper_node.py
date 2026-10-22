@@ -21,12 +21,16 @@ nothing here touches the strategy from another thread. The command stream is
 polled from a strategy timer with a *non-blocking* ``XREADGROUP`` instead of
 the blocking loop :meth:`CommandStream.run` uses in the sandbox node.
 
-**Prices.** A sandbox venue only fills against market data, and hop 4
-(ALG-3406, replay feed) has not landed. Until it does, :class:`SyntheticQuotes`
-publishes a two-sided random-walk quote for the one instrument every
-``ALGOBOTS_QUOTE_INTERVAL_S``. It is labelled synthetic in its client id
-(``SYNTHETIC``) so no fill priced off it can be mistaken for market data;
-``types_filter`` keeps its quotes off the Redis egress.
+**Prices.** A sandbox venue only fills against market data. By default
+(``ALGOBOTS_FEED=replay``, ALG-3406) the ``REPLAY`` client replays the recorded
+EUR/USD quotes of the Parquet catalog the image ships (:mod:`algobots.node.replay`)
+on their own clock, until IBKR paper data exists (ALG-3357). Every quote that
+reaches the strategy is counted, and once a second the node writes what it
+received — recorded timestamp, its own receive timestamp, source — to
+``algobots:feed:<node>``; that stream is hop 4's evidence. ``ALGOBOTS_FEED=synthetic``
+keeps the ALG-3405 random walk (client id ``SYNTHETIC``, source ``synthetic``)
+so no fill priced off it can be mistaken for market data. ``types_filter``
+keeps quotes off the Redis event egress either way.
 
 Configuration is environment-only (:func:`settings`), so the image carries code
 and the compose file carries the deployment.
@@ -43,6 +47,7 @@ from dataclasses import dataclass
 from decimal import Decimal
 from typing import Any
 
+from algobots.node import replay
 from algobots.node.command_actor import CommandActor
 from algobots.node.command_stream import CommandStream
 from algobots.node.event_egress import STREAMS_PREFIX, EventEgress
@@ -68,6 +73,11 @@ class Settings:
     poll_ms: int
     quote_interval_s: float
     quote_mid: Decimal
+    feed: str
+    replay_path: str
+    replay_speed: float
+    replay_max_gap_s: float
+    feed_signal_s: float
 
     @property
     def trader_id(self) -> str:
@@ -89,11 +99,16 @@ def settings(env: dict[str, str] | None = None) -> Settings:
         poll_ms=int(e.get("ALGOBOTS_CMD_POLL_MS", "200")),
         quote_interval_s=float(e.get("ALGOBOTS_QUOTE_INTERVAL_S", "1")),
         quote_mid=Decimal(e.get("ALGOBOTS_QUOTE_MID", "1.10000")),
+        feed=e.get("ALGOBOTS_FEED", "replay"),
+        replay_path=e.get("ALGOBOTS_REPLAY_PATH", replay.DEFAULT_PATH),
+        replay_speed=float(e.get("ALGOBOTS_REPLAY_SPEED", "1")),
+        replay_max_gap_s=float(e.get("ALGOBOTS_REPLAY_MAX_GAP_S", "2")),
+        feed_signal_s=float(e.get("ALGOBOTS_FEED_SIGNAL_S", "1")),
     )
 
 
 def _instrument(s: Settings) -> Any:
-    """The node's one instrument. FX on ``SIM`` until hop 4 brings a catalog."""
+    """The node's one instrument; precisions match the replayed catalog (5 / 0)."""
     from nautilus_trader.model import Venue
     from nautilus_trader.testkit.providers import TestInstrumentProvider
 
@@ -101,7 +116,7 @@ def _instrument(s: Settings) -> Any:
     return TestInstrumentProvider.default_fx_ccy(pair, venue=Venue(venue))
 
 
-def _data_client_types() -> tuple[type, type]:
+def _data_client_types() -> tuple[type, type, type]:
     """Built lazily: subclassing rc6's client base needs the engine installed."""
     from nautilus_trader.live.clients import DataClientFactory, MarketDataClient
     from nautilus_trader.model import Price, Quantity, QuoteTick
@@ -145,23 +160,64 @@ def _data_client_types() -> tuple[type, type]:
                 )
                 await asyncio.sleep(self.interval_s)
 
-    class SyntheticQuotesFactory(DataClientFactory):
+    class ReplayQuotes(SyntheticQuotes):
+        """Recorded catalog quotes, paced by their recorded gaps, looped at the end."""
+
+        path: str = replay.DEFAULT_PATH
+        speed: float = 1.0
+        max_gap_s: float = 2.0
+        cursor: replay.ReplayCursor | None = None
+
+        async def _subscribe_quotes(self, command: Any) -> None:
+            self.create_task(self._replay(), "replay-quotes")
+
+        async def _replay(self) -> None:
+            inst, cur = self.instrument, self.cursor
+            assert cur is not None
+            pp, sp = inst.price_precision, inst.size_precision
+            while True:
+                prev: int | None = None
+                for q in replay.read_quotes(self.path):
+                    await asyncio.sleep(replay.pace(prev, q.ts_event, self.speed, self.max_gap_s))
+                    prev = q.ts_event
+                    cur.row, cur.recorded_ts = q.row, q.ts_event
+                    ts = self.clock.timestamp_ns()
+                    self._handle_data(
+                        QuoteTick(
+                            instrument_id=inst.id,
+                            bid_price=Price.from_raw(q.bid_raw, pp),
+                            ask_price=Price.from_raw(q.ask_raw, pp),
+                            bid_size=Quantity.from_raw(q.bid_size_raw, sp),
+                            ask_size=Quantity.from_raw(q.ask_size_raw, sp),
+                            ts_event=ts,
+                            ts_init=ts,
+                        )
+                    )
+                cur.laps += 1
+                log.info("replay lap %d done (%d quotes); restarting", cur.laps, cur.row + 1)
+
+    class QuotesFactory(DataClientFactory):
         settings: Settings | None = None
+        cursor: replay.ReplayCursor | None = None
 
         @staticmethod
         def create(*, name: str, config: Any, cache: Any, clock: Any) -> Any:
-            s = SyntheticQuotesFactory.settings
+            s = QuotesFactory.settings
             assert s is not None
             inst = _instrument(s)
-            client = SyntheticQuotes(
-                name=name, config=config, cache=cache, clock=clock, venue=inst.id.venue
-            )
+            kind = ReplayQuotes if s.feed == "replay" else SyntheticQuotes
+            client = kind(name=name, config=config, cache=cache, clock=clock, venue=inst.id.venue)
             client.instrument = inst
             client.interval_s = s.quote_interval_s
             client.mid = float(s.quote_mid)
+            if isinstance(client, ReplayQuotes):
+                client.path = s.replay_path
+                client.speed = s.replay_speed
+                client.max_gap_s = s.replay_max_gap_s
+                client.cursor = QuotesFactory.cursor
             return client
 
-    return SyntheticQuotes, SyntheticQuotesFactory
+    return SyntheticQuotes, ReplayQuotes, QuotesFactory
 
 
 def _strategy_type() -> type:
@@ -181,12 +237,43 @@ def _strategy_type() -> type:
         redis: Any
         egress: EventEgress
         stream: CommandStream | None = None
+        feed: replay.FeedSignal
+        cursor: replay.ReplayCursor | None = None
 
-        def bind(self, s: Settings, redis_client: Any) -> CommandNode:
+        def bind(
+            self, s: Settings, redis_client: Any, cursor: replay.ReplayCursor | None
+        ) -> CommandNode:
             self.s = s
             self.redis = redis_client
             self.egress = EventEgress(client=redis_client, trader_id=s.trader_id)
+            self.feed = replay.FeedSignal(client=redis_client, node=s.node, every_s=s.feed_signal_s)
+            self.cursor = cursor
             return self
+
+        def on_quote_tick(self, tick: Any) -> None:
+            # Hop 4's evidence: a quote the strategy actually received, with the
+            # recorded time it was replayed from and the node time it arrived.
+            try:
+                wrote = self.feed.on_quote(
+                    ts_init=tick.ts_init,
+                    bid=str(tick.bid_price),
+                    ask=str(tick.ask_price),
+                    cursor=self.cursor,
+                )
+            except Exception as exc:  # a Redis hiccup must not stop the strategy
+                log.warning("feed signal failed: %s", exc)
+                return
+            if wrote and self.feed.written % 60 == 1:  # first, then about once a minute
+                c = self.cursor
+                log.info(
+                    "feed received=%d node_ts=%d recorded_ts=%s row=%s bid=%s ask=%s",
+                    self.feed.received,
+                    tick.ts_init,
+                    c.recorded_ts if c else "synthetic",
+                    c.row if c else "-",
+                    tick.bid_price,
+                    tick.ask_price,
+                )
 
         def on_start(self) -> None:
             from nautilus_trader.model import InstrumentId
@@ -270,8 +357,19 @@ def build(s: Settings) -> Any:
             f"nautilus_trader {nautilus_trader.__version__} != pinned {NAUTILUS_PIN}"
         )
 
-    _quotes, quotes_factory = _data_client_types()
+    if s.feed not in ("replay", "synthetic"):
+        raise ValueError(f"ALGOBOTS_FEED={s.feed!r}: expected replay or synthetic")
+    cursor: replay.ReplayCursor | None = None
+    if s.feed == "replay":
+        meta = replay.catalog_meta(s.replay_path)
+        if meta.get("instrument_id") != s.symbol:
+            raise RuntimeError(
+                f"{s.replay_path} holds {meta.get('instrument_id')}, node trades {s.symbol}"
+            )
+        cursor = replay.ReplayCursor(source=f"replay:{s.replay_path}", instrument=s.symbol)
+    *_clients, quotes_factory = _data_client_types()
     quotes_factory.settings = s
+    quotes_factory.cursor = cursor
 
     builder = LiveNode.builder(s.node, TraderId(s.trader_id), Environment.SANDBOX)
     builder.with_msgbus_config(
@@ -287,7 +385,9 @@ def build(s: Settings) -> Any:
     builder.with_external_msgbus_factory(
         RedisMessageBusFactory(RedisMessageBusConfig(host=s.redis_host, port=s.redis_port))
     )
-    builder.add_data_client("SYNTHETIC", quotes_factory, DataClientConfig())
+    builder.add_data_client(
+        "REPLAY" if s.feed == "replay" else "SYNTHETIC", quotes_factory, DataClientConfig()
+    )
     builder.add_simulated_exec_client(
         s.venue,
         SandboxExecutionClientFactory(),
@@ -303,7 +403,7 @@ def build(s: Settings) -> Any:
     )
     node = builder.build()
     client = redis.Redis(host=s.redis_host, port=s.redis_port)
-    node.add_strategy(_strategy_type()().bind(s, client))
+    node.add_strategy(_strategy_type()().bind(s, client, cursor))
     return node
 
 
@@ -311,12 +411,13 @@ def main() -> None:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(message)s")
     s = settings()
     log.info(
-        "node=%s trader=%s venue=%s account=%s symbol=%s redis=%s:%s",
+        "node=%s trader=%s venue=%s account=%s symbol=%s feed=%s redis=%s:%s",
         s.node,
         s.trader_id,
         s.venue,
         s.nautilus_account_id,
         s.symbol,
+        s.feed if s.feed != "replay" else f"replay:{s.replay_path}@{s.replay_speed}x",
         s.redis_host,
         s.redis_port,
     )

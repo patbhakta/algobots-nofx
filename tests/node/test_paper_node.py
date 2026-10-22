@@ -35,3 +35,12 @@ def test_the_node_reads_the_stream_the_gateway_writes_and_keys_events_by_trader(
     assert s.trader_id == "NAUTILUS-LAYA"
     assert events_glob(s.trader_id) == "trader-NAUTILUS-LAYA:algobots:events.*"
     assert s.redis_port == 6380
+
+
+def test_the_node_replays_the_image_catalog_by_default():
+    """ALG-3406: recorded quotes, not the random walk, unless asked for."""
+    s = paper_node.settings({})
+    assert s.feed == "replay"
+    assert s.replay_path == "/catalog/data/quote_tick/EURUSD.SIM/part-0.parquet"
+    assert (s.replay_speed, s.replay_max_gap_s, s.feed_signal_s) == (1.0, 2.0, 1.0)
+    assert paper_node.settings({"ALGOBOTS_FEED": "synthetic"}).feed == "synthetic"
