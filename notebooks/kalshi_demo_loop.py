@@ -78,6 +78,37 @@ def worker_rows(workers: dict, now: float) -> list[dict]:
     ]
 
 
+@app.function
+def history_rows(orders: dict, limit: int = 20) -> list[dict]:
+    """One row per settled interval: every strategy call, plus running coin P&L.
+
+    ``/demo/api/orders`` journals one record per account per settled interval,
+    so grouping by ``ts`` reconstructs the full run history.
+    """
+    by_ts: dict[float, dict[str, dict]] = {}
+    for o in orders.get("orders", []):
+        if o.get("status") in ("filled", "abstain"):
+            by_ts.setdefault(o.get("ts"), {})[o.get("account")] = o
+    rows: list[dict] = []
+    cum = 0.0
+    for ts in sorted(by_ts):
+        calls = by_ts[ts]
+        row: dict = {"settled (UTC)": utc(ts)}
+        for acct in ("laya", "jev", "coin"):
+            o = calls.get(acct) or {}
+            if o.get("status") == "filled":
+                pnl = o.get("pnl")
+                amt = f"{float(pnl):+.2f}" if pnl is not None else "?"
+                row[acct] = "{} {}".format(o.get("side"), amt)
+            else:
+                row[acct] = "abstain"
+        coin_pnl = (calls.get("coin") or {}).get("pnl")
+        cum += float(coin_pnl) if coin_pnl is not None else 0.0
+        row["coin cum P&L"] = f"{cum:+.2f}"
+        rows.append(row)
+    return rows[-limit:][::-1]
+
+
 @app.cell
 def _():
     import marimo as mo
@@ -117,12 +148,13 @@ def _(api, mo, tick):
         state = fetch(api.value, "/demo/api/state")
         workers = fetch(api.value, "/demo/api/workers")
         quality = fetch(api.value, "/demo/api/quality")
+        orders = fetch(api.value, "/demo/api/orders")
         error = None
     except (OSError, ValueError) as exc:
-        state = workers = quality = None
+        state = workers = quality = orders = None
         error = f"{type(exc).__name__}: {exc}"
     mo.stop(error is not None, mo.callout(mo.md(f"API unreachable: `{error}`"), kind="danger"))
-    return now, quality, state, workers
+    return now, orders, quality, state, workers
 
 
 @app.cell
@@ -172,6 +204,18 @@ def _(mo, now, workers):
         [
             mo.md("## 3. Paper fills (one Nautilus worker per account)"),
             mo.ui.table(worker_rows(workers, now), selection=None),
+        ]
+    )
+    return
+
+
+
+@app.cell
+def _(mo, orders):
+    mo.vstack(
+        [
+            mo.md("## 4. Run history (every settled interval)"),
+            mo.ui.table(history_rows(orders), selection=None),
         ]
     )
     return
