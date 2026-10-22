@@ -51,6 +51,33 @@ def test_daily_loss_envelope_blocks_entries_after_cap():
     assert "daily-loss envelope" in book.decisions[3].reason
 
 
+def test_daily_loss_envelope_resets_next_utc_day():
+    # ALG-3357: the live coin arm tripped the −0 cap mid-day and was blocked
+    # for the rest of that UTC day. The envelope is per-UTC-day: entries must
+    # flow again at 00:00 UTC with daily P&L back to zero.
+    day1 = [_row(i, 0.70, 0) for i in range(5)]  # trips the cap on 2026-10-06
+    day2 = [
+        L.Row(
+            event=f"KXBTC15M-27OCT07{i:04d}",
+            strike=85000.0,
+            outcome=0,
+            ts=1791244800.0 + 86400 + i * 900,  # next UTC day
+            p=0.70,
+            conf=0.1,
+            jev_p=0.6,
+            jev_conf=0.5,
+            jev_choice="up",
+        )
+        for i in range(5)
+    ]
+    book = L.build(day1 + day2).books["laya"]
+    statuses = [d.status for d in book.decisions]
+    assert statuses == ["FILLED"] * 3 + ["BLOCKED"] * 2 + ["FILLED"] * 3 + ["BLOCKED"] * 2
+    assert B.day_pnl(book, "2026-10-06") <= -L.ENVELOPE.max_daily_loss
+    # day 2 buckets only day-2 fills: same losses again, NOT the −93 cumulative
+    assert B.day_pnl(book, "2026-10-07") == B.day_pnl(book, "2026-10-06")
+
+
 def test_sleeve_never_goes_negative():
     # alternate days so the daily-loss cap never trips; every bet loses
     rows = [
