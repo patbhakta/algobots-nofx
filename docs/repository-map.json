@@ -900,6 +900,10 @@
     },
     {
       "repo": "algobots",
+      "path": "docs/research/polymarket-us-feed-feasibility.md"
+    },
+    {
+      "repo": "algobots",
       "path": "tests/demo/test_paper_run_evidence.py"
     }
   ],
