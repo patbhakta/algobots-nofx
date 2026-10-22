@@ -112,7 +112,9 @@ def verdicts(junit: Path) -> dict[str, dict]:
 
 
 def main() -> int:
-    junit = Path(sys.argv[1]) if len(sys.argv) > 1 else ROOT / "artifacts/A05/test-results/junit.xml"
+    junit = (
+        Path(sys.argv[1]) if len(sys.argv) > 1 else ROOT / "artifacts/A05/test-results/junit.xml"
+    )
     report = verdicts(junit)
     OUT.parent.mkdir(parents=True, exist_ok=True)
     summary = {

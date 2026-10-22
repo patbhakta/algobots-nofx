@@ -208,7 +208,7 @@ def money(x: float) -> str:
 
 
 def equity_svg(rows: list[Row]) -> str:
-    """Two illustrative equity lines with an approximate pointwise 95% fair-coin band for Model A."""
+    """Two equity lines and an approximate pointwise 95% fair-coin band for Model A."""
     curves = {m.key: [0.0] + equity(rows, m) for m in MODELS}
     n = len(rows)
     band = [1.96 * math.sqrt(i) for i in range(n + 1)]

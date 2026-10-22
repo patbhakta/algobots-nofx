@@ -48,10 +48,15 @@ class FxRateBook:
         if base == quote:
             return Decimal(1)
         if as_of is None:
-            as_of = self._quotes[-1].available_time if self._quotes else datetime.min.replace(tzinfo=UTC)
+            as_of = (
+                self._quotes[-1].available_time
+                if self._quotes
+                else datetime.min.replace(tzinfo=UTC)
+            )
         cutoff = as_of.astimezone(UTC) if as_of.utcoffset() is not None else as_of
         candidates = [
-            q for q in self._quotes
+            q
+            for q in self._quotes
             if q.base == base and q.quote == quote and q.available_time <= cutoff
         ]
         if not candidates:

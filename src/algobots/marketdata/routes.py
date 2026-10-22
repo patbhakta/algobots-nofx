@@ -55,5 +55,7 @@ def market_data_status(
         unknown = [i for i in requested if i not in registry]
         if unknown:
             raise HTTPException(status_code=404, detail=f"unknown instrument IDs: {unknown}")
-    rows = watchlist_status(instrument_ids=requested, feed=ReplayFeed(load_recording()), as_of=as_of)
+    rows = watchlist_status(
+        instrument_ids=requested, feed=ReplayFeed(load_recording()), as_of=as_of
+    )
     return {"count": len(rows), "statuses": rows}

@@ -28,8 +28,7 @@ from algobots.bridge.router import router as bridge_router
 from algobots.demo import router as demo
 from algobots.demo.router import router as demo_router
 from algobots.knowledge.ingest.router import register as register_knowledge_router
-from algobots.marketdata.routes import instruments_router
-from algobots.marketdata.routes import marketdata_router
+from algobots.marketdata.routes import instruments_router, marketdata_router
 
 
 @asynccontextmanager

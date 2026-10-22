@@ -74,7 +74,6 @@ def test_precedence_fails_closed_on_unknown_sources():
     with pytest.raises(UnknownSourceError):
         precedence.rank("COINBASE", "coinbase-pro")
     # And an unranked source never wins selection even when it is the only one.
-    from algobots.marketdata.recorded import Recording
 
     recording = load_recording()
     ws = [s for s in recording.snapshots(BTC) if s.source == "coinbase-ws"][0]

@@ -25,13 +25,13 @@ class Entitlement:
     reason: str
 
 
-def product_entitled(product_permissions: Iterable[ProductClass], instrument: Instrument) -> Entitlement:
+def product_entitled(
+    product_permissions: Iterable[ProductClass], instrument: Instrument
+) -> Entitlement:
     """Whether an account holding ``product_permissions`` may trade ``instrument``."""
     held = frozenset(product_permissions)
     if not isinstance(instrument.product, ProductClass):
-        return Entitlement(
-            allowed=False, reason=f"identity-only-product:{instrument.product}"
-        )
+        return Entitlement(allowed=False, reason=f"identity-only-product:{instrument.product}")
     if instrument.product not in held:
         return Entitlement(
             allowed=False, reason=f"product-not-permitted:{instrument.product.value}"

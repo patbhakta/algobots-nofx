@@ -12,7 +12,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import UTC, datetime
-from decimal import Decimal, ROUND_HALF_EVEN
+from decimal import ROUND_HALF_EVEN, Decimal
 from typing import Literal
 
 from algobots.contracts.instrument import Instrument
@@ -45,7 +45,9 @@ def _q(value: Decimal) -> Decimal:
 class FeatureEngine:
     """Deterministic indicator evaluation over completed bars."""
 
-    def __init__(self, instrument_id: str, bar_interval: str, specs: tuple[IndicatorSpec, ...]) -> None:
+    def __init__(
+        self, instrument_id: str, bar_interval: str, specs: tuple[IndicatorSpec, ...]
+    ) -> None:
         if not specs:
             raise ValueError("a feature engine needs at least one indicator spec")
         self._instrument_id = instrument_id
@@ -142,7 +144,9 @@ class FeatureFeed:
     def engine(self) -> FeatureEngine:
         return self._engine
 
-    def on_snapshot(self, snap: MarketSnapshot, as_of: datetime) -> tuple[Bar | None, FeatureSnapshot | None]:
+    def on_snapshot(
+        self, snap: MarketSnapshot, as_of: datetime
+    ) -> tuple[Bar | None, FeatureSnapshot | None]:
         """Stale/unentitled input is rejected; otherwise feed bars to the engine.
 
         A snapshot whose *event* time precedes the events already barred is a

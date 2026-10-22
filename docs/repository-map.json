@@ -837,6 +837,50 @@
     {
       "repo": "algobots",
       "path": "tests/phase0/test_redis_egress_integration.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3381/capture.mjs"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3381/coinflip.html.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3381/index.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3381/summary.json"
+    },
+    {
+      "repo": "algobots",
+      "path": "data/research/laya-kalshi/coinflip.jsonl"
+    },
+    {
+      "repo": "algobots",
+      "path": "data/research/laya-kalshi/coinflip_markets.json"
+    },
+    {
+      "repo": "algobots",
+      "path": "docs/shareout/coinflip.md"
+    },
+    {
+      "repo": "algobots",
+      "path": "src/algobots/shareout/__init__.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "src/algobots/shareout/coinflip.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "tests/shareout/__init__.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "tests/shareout/test_coinflip.py"
     }
   ],
   "scope_revisions": [

@@ -64,3 +64,8 @@ src = ["src", "tests"]
 select = ["E", "F", "I", "UP", "B"]
 # B008: FastAPI dependency injection (`Depends(...)` in defaults) is idiomatic.
 ignore = ["B008"]
+
+[tool.ruff.lint.per-file-ignores]
+# Validator source is fingerprinted in schema-lock.json. Preserve the locked
+# MarketSnapshot@1.0 source, including its 101-character loop, without a rewrite.
+"src/algobots/contracts/marketdata.py" = ["E501"]

@@ -20,7 +20,7 @@ from typing import Annotated, Any, ClassVar, Literal
 from pydantic import Field, model_validator
 
 from . import registry
-from .base import ContractModel, DecimalStr, Identifier, Money, VersionedContract
+from .base import DecimalStr, Identifier, Money, VersionedContract
 from .enums import ProductClass
 
 __all__ = [

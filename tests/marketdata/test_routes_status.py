@@ -51,7 +51,10 @@ def test_status_route_two_asset_classes_one_watchlist():
     client = _client()
     response = client.get(
         "/market-data/status",
-        params={"ids": "XNAS:equity:AAPL,COINBASE:spot-crypto:BTC-USD", "as_of": SATURDAY.isoformat()},
+        params={
+            "ids": "XNAS:equity:AAPL,COINBASE:spot-crypto:BTC-USD",
+            "as_of": SATURDAY.isoformat(),
+        },
     )
     assert response.status_code == 200
     rows = {row["instrument_id"]: row for row in response.json()["statuses"]}

@@ -50,7 +50,9 @@ def main() -> int:
     )
 
     saturday_rows = watchlist_status(WATCHLIST, feed, SESSION_AS_OF)
-    friday_rows = watchlist_status(("XNAS:equity:AAPL", "COINBASE:spot-crypto:BTC-USD"), feed, OPEN_AS_OF)
+    friday_rows = watchlist_status(
+        ("XNAS:equity:AAPL", "COINBASE:spot-crypto:BTC-USD"), feed, OPEN_AS_OF
+    )
 
     # Rounding showcase (acceptance case 2 shape) on two precision regimes.
     aapl = registry.get("XNAS:equity:AAPL")
@@ -60,7 +62,10 @@ def main() -> int:
         ("AAPL price 227.755 -> tick 0.01 (nearest)", round_price(aapl, Decimal("227.755"))),
         ("AAPL quantity 10.5 shares -> lot 1 (down)", round_quantity(aapl, Decimal("10.5"))),
         ("BTC price 61000.14 -> tick 0.01 (nearest)", round_price(btc, Decimal("61000.14"))),
-        ("BTC quantity 0.123456789 BTC -> lot 1e-8 (down)", round_quantity(btc, Decimal("0.123456789"))),
+        (
+            "BTC quantity 0.123456789 BTC -> lot 1e-8 (down)",
+            round_quantity(btc, Decimal("0.123456789")),
+        ),
         ("PERP price 61052.15 -> tick 0.1 (nearest)", round_price(perp, Decimal("61052.15"))),
     ]
 
@@ -76,14 +81,14 @@ def main() -> int:
         "",
         "## Demo — two asset classes in one watchlist",
         "",
-        f"As-of **Saturday 2026-10-31 15:00:30 UTC** (weekend): the equity and ETF are",
+        "As-of **Saturday 2026-10-31 15:00:30 UTC** (weekend): the equity and ETF are",
         "closed with explicit weekend reasons, spot crypto and the perpetual are open 24x7,",
         "and each row carries its data timestamps, source/sequence, age and configured precision.",
         "",
         header,
         *[_row_markdown(row) for row in saturday_rows],
         "",
-        f"As-of **Friday 2026-10-30 14:05:30 UTC** (regular equity session): both classes",
+        "As-of **Friday 2026-10-30 14:05:30 UTC** (regular equity session): both classes",
         "open and fresh on their latest prints.",
         "",
         header,
@@ -93,10 +98,7 @@ def main() -> int:
         "",
         "| rounding | value | residual | increments |",
         "|---|---|---|---|",
-        *[
-            f"| {label} | {r.value} | {r.residual} | {r.increments} |"
-            for label, r in roundings
-        ],
+        *[f"| {label} | {r.value} | {r.residual} | {r.increments} |" for label, r in roundings],
         "",
         "## FX conversion snapshots (reporting)",
         "",

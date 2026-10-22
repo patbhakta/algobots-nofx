@@ -47,8 +47,8 @@ def test_identity_triple_roundtrips_and_rejects_unknown():
 
 
 def test_registry_rejects_duplicate_identity_or_triple():
-    from algobots.instruments.registry import InstrumentRegistry, InstrumentRegistryError
     from algobots.contracts import Instrument
+    from algobots.instruments.registry import InstrumentRegistry, InstrumentRegistryError
 
     base = default_registry().get(BTC_SPOT_COINBASE).model_dump()
     twin = Instrument.model_validate(base)

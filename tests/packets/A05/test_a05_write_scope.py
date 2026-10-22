@@ -21,10 +21,21 @@ ROOT = Path(__file__).resolve().parents[3]
 # Edits through shared-resource/integration owners (A04 rev-3 precedent):
 PROPOSED_TO_OWNER = {
     "Makefile": "make-targets owner (A01): verify-A05/demo-A05 proposal",
-    "docs/repository-map.json": "map owner (A01): A05 rev-2 exact-file additions + carve-outs + pins",
-    "src/algobots/contracts/schema-lock.json": "schema-registry owner (A01): additive write_lock() transition",
-    "src/algobots/contracts/__init__.py": "schema-registry owner (A01): re-export the new contract modules",
+    "docs/repository-map.json": (
+        "map owner (A01): A05 rev-2 exact-file additions + carve-outs + pins"
+    ),
+    "src/algobots/contracts/schema-lock.json": (
+        "schema-registry owner (A01): additive write_lock() transition"
+    ),
+    "src/algobots/contracts/__init__.py": (
+        "schema-registry owner (A01): re-export the new contract modules"
+    ),
     "src/algobots/api/main.py": "api owner (A03): mount /instruments + /market-data/status routers",
+    # Integrator-approved lint rollout (ALG-3375, CEO Oct 22): repo-wide ruff
+    # cleanup crosses packet scopes by design; these two paths are recorded here
+    # the same way A04 recorded its shared-surface proposals.
+    "pyproject.toml": "integration owner (A01): ruff per-file-ignores for locked validator source",
+    "src/algobots/shareout/coinflip.py": "shareout owner (ALG-3381): E501 docstring trim only",
 }
 
 
@@ -50,13 +61,13 @@ def _allowed_prefixes() -> list[str]:
     # contracts-package write_scope entries — exact files, never the directory.
     schema_registry = repo_map["shared_resources"]["schema-registry"]
     assert schema_registry["integration_owner"] == "A01"
-    carved = {
-        c["path"] for c in schema_registry["carve_outs"] if c["packet"] == "A05"
-    }
+    carved = {c["path"] for c in schema_registry["carve_outs"] if c["packet"] == "A05"}
     declared = {
         e["path"] for e in packet["write_scope"] if e["path"].startswith("src/algobots/contracts/")
     }
-    assert carved == declared, f"schema-registry carve-outs {carved} != A05 contracts entries {declared}"
+    assert carved == declared, (
+        f"schema-registry carve-outs {carved} != A05 contracts entries {declared}"
+    )
     return prefixes
 
 
