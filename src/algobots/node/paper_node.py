@@ -250,7 +250,7 @@ def _strategy_type() -> type:
             self.cursor = cursor
             return self
 
-        def on_quote_tick(self, tick: Any) -> None:
+        def on_quote(self, tick: Any) -> None:  # rc6 name (1.x: on_quote_tick)
             # Hop 4's evidence: a quote the strategy actually received, with the
             # recorded time it was replayed from and the node time it arrived.
             try:
