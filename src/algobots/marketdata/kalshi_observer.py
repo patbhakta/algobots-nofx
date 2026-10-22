@@ -17,9 +17,13 @@ and keeps one row per 15-minute interval:
 the book's own mid were fed in as ``p``, the ledger would buy at 50c contracts
 the market prices away from 50c, and the gap would show up as profit nobody
 could actually capture (GATE-VERDICT-v2: "a participant cannot monetize the
-mid against itself"). The Laya model that used to supply ``p`` was archived on
-2026-10-16, so ``p`` is the neutral 0.5 (``p_source: "none"``) and ``laya``
-abstains with its own reason. The live quote at decision time is recorded as
+mid against itself"). Since 2026-10-22 ``p`` comes from
+:func:`momentum_signal`: trailing 3x15m log-return momentum of the feed's own
+settled ``settle_value`` chain (contiguous BTC 15-minute closes), in units of
+the trailing 20x15m realised vol, squashed with ``tanh`` to at most +-0.30
+from 0.50 — ``p_source: "mom3x15m/vol20"``. Fewer than 12 contiguous closes →
+the neutral 0.5 (``p_source: "none"``) and ``laya`` abstains with its own
+reason. The live quote at decision time is recorded as
 ``mkt_yes_bid`` / ``mkt_yes_ask`` / ``mkt_mid``, as evidence of how far the
 50c fill assumption was from the book. Jev (a paid external API) is not
 called, so ``jev`` abstains too. ``coin`` trades every interval.
@@ -31,7 +35,9 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import os
+import statistics
 import sys
 import time
 import urllib.request
@@ -77,9 +83,59 @@ def _ts(iso: str | None) -> float | None:
     return datetime.fromisoformat(iso.replace("Z", "+00:00")).timestamp()
 
 
-def neutral_signal(_market: dict) -> tuple[float, float, str]:
+def neutral_signal(_market: dict, _closes: list[float]) -> tuple[float, float, str]:
     """(p, conf, source) when no forecaster is wired: the ledger's laya arm abstains."""
     return 0.5, 0.0, "none"
+
+
+MOMENTUM_STEPS = 3        # 15m log-returns of momentum (45 minutes)
+MOMENTUM_VOL_WINDOW = 20  # trailing 15m returns for the vol estimate
+MOMENTUM_MIN_HISTORY = 12  # contiguous settled closes needed, else neutral
+MOMENTUM_CAP = 0.30       # p stays within 0.5 +- this
+
+
+def contiguous_closes(rows: list[dict]) -> list[float]:
+    """Newest-last settled ``settle_value`` chain with no gap in ``close_ts``.
+
+    Returns are only returns if the closes are consecutive intervals, so the
+    walk back from the newest settled row stops at the first gap or missing
+    value.
+    """
+    settled = sorted(
+        (r for r in rows if r.get("outcome") is not None and r.get("settle_value")),
+        key=lambda r: float(r.get("close_ts") or 0),
+    )
+    chain: list[float] = []
+    prev_close: float | None = None
+    for r in reversed(settled):
+        close_ts = float(r.get("close_ts") or 0)
+        value = float(r["settle_value"])
+        if prev_close is not None and prev_close - close_ts != INTERVAL:
+            break
+        chain.append(value)
+        prev_close = close_ts
+    chain.reverse()
+    return chain
+
+
+def momentum_signal(_market: dict, closes: list[float]) -> tuple[float, float, str]:
+    """(p, conf, source) from trailing BTC 15m closes — never the live book.
+
+    45-minute momentum in units of realised 15m volatility, squashed by tanh
+    so a trending tape moves ``p`` at most ``MOMENTUM_CAP`` from 0.50. Too
+    little contiguous history → the neutral 0.5 and laya abstains.
+    """
+    if len(closes) < MOMENTUM_MIN_HISTORY:
+        return 0.5, 0.0, "none"
+    window = closes[-(MOMENTUM_VOL_WINDOW + 1):]
+    rets = [math.log(window[i] / window[i - 1]) for i in range(1, len(window))]
+    sigma = statistics.stdev(rets)
+    if sigma <= 0:
+        return 0.5, 0.0, "none"
+    z = sum(rets[-MOMENTUM_STEPS:]) / (sigma * math.sqrt(MOMENTUM_STEPS))
+    p = 0.5 + MOMENTUM_CAP * math.tanh(z)
+    source = f"mom{MOMENTUM_STEPS}x15m/vol{MOMENTUM_VOL_WINDOW}"
+    return round(p, 4), round(min(1.0, abs(z) / 1.5), 3), source
 
 
 class Observer:
@@ -87,7 +143,7 @@ class Observer:
         self,
         feed: Path,
         get: Callable[[str], dict] = _get,
-        signal: Callable[[dict], tuple[float, float, str]] = neutral_signal,
+        signal: Callable[[dict, list[float]], tuple[float, float, str]] = momentum_signal,
         decide_window: float = 300.0,
     ):
         self.feed, self.get, self.signal, self.decide_window = feed, get, signal, decide_window
@@ -126,7 +182,7 @@ class Observer:
                 m = self.market(event)
                 strike = (m or {}).get("floor_strike")
                 if m and m.get("status") in ("active", "open") and strike:
-                    p, conf, source = self.signal(m)
+                    p, conf, source = self.signal(m, contiguous_closes(rows))
                     bid, ask = _price(m, "yes_bid"), _price(m, "yes_ask")
                     rows.append(
                         {
