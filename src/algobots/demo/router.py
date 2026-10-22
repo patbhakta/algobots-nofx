@@ -431,6 +431,7 @@ def demo_settlements(
             out.append(
                 {
                     "event": r["event"],
+                    "open_ts": r.get("open_ts"),  # interval-grid key (ALG-3411 join)
                     "strike": r.get("strike"),
                     "outcome": r["outcome"],  # 1 = settled YES (mark at/above strike)
                     "settle_value": r.get("settle_value"),
@@ -440,6 +441,44 @@ def demo_settlements(
             )
     out.sort(key=lambda x: x["settled_ts"] or 0)
     return {"count": len(out), "settlements": out[-limit:][::-1]}
+
+
+@router.get("/demo/api/feeds/polymarket")
+def demo_feed_polymarket(
+    limit: int = Query(200, ge=1, le=5000),
+    scope: Scope = Depends(current_scope),
+) -> dict:
+    """Raw Polymarket observer rows (ALG-3411 feed 2, evidence only).
+
+    Newest first: strike + provenance basis, the book's YES mid at decision
+    time, and the venue's own outcome once the interval settles. Read-only;
+    this feed is NOT wired into any paper worker — it exists so the demo can
+    calibrate the two books against each other on the shared 15-min grid.
+    """
+    path = Path(get_settings().demo_feed2_path)
+    out: list[dict] = []
+    if path.exists():
+        for line in path.read_text().splitlines():
+            try:
+                r = json.loads(line)
+            except ValueError:
+                continue
+            out.append(
+                {
+                    "event": r.get("event"),
+                    "open_ts": r.get("open_ts"),
+                    "close_ts": r.get("close_ts"),
+                    "strike": r.get("strike"),
+                    "strike_basis": r.get("strike_basis"),
+                    "mkt_yes_bid": r.get("mkt_yes_bid"),
+                    "mkt_yes_ask": r.get("mkt_yes_ask"),
+                    "mkt_mid": r.get("mkt_mid"),
+                    "outcome": r.get("outcome"),
+                    "settled_ts": r.get("settled_ts"),
+                }
+            )
+    out.sort(key=lambda x: x.get("open_ts") or 0)
+    return {"count": len(out), "rows": out[-limit:][::-1]}
 
 
 class TicketIn(BaseModel):

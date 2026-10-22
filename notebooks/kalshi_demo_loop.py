@@ -185,12 +185,13 @@ def _(api, mo, tick):
         quality = fetch(api.value, "/demo/api/quality")
         orders = fetch(api.value, "/demo/api/orders")
         settlements = fetch(api.value, "/demo/api/settlements")
+        poly = fetch(api.value, "/demo/api/feeds/polymarket?limit=500")
         error = None
     except (OSError, ValueError) as exc:
-        state = workers = quality = orders = None
+        state = workers = quality = orders = poly = None
         error = f"{type(exc).__name__}: {exc}"
     mo.stop(error is not None, mo.callout(mo.md(f"API unreachable: `{error}`"), kind="danger"))
-    return now, orders, quality, settlements, state, workers
+    return now, orders, poly, quality, settlements, state, workers
 
 
 @app.cell
@@ -407,6 +408,89 @@ def _(mo, orders, settlements):
             ),
             mo.ui.plotly(fig) if n_fills else mo.md("_No settled fills yet._"),
             mo.ui.table(cal["rows"][-15:], selection=None),
+        ]
+    )
+    return
+
+
+@app.function
+def cross_venue(settlements: dict, poly: dict) -> dict:
+    """Kalshi vs Polymarket on the shared 15-min interval grid (ALG-3411).
+
+    Both books price the same BTC up/down window. ``mid spread`` is PM minus
+    Kalshi at decision time - a real two-venue divergence, which is the point
+    of a feed trio. Each book's Brier uses its own venue's settlement; the
+    strikes differ by construction (Kalshi's floor vs our Kraken-open proxy
+    for PM), so the strike-gap column keeps that honest.
+    """
+    k = {s["open_ts"]: s for s in settlements.get("settlements", []) if s.get("open_ts")}
+    p = {r["open_ts"]: r for r in poly.get("rows", []) if r.get("open_ts")}
+    rows: list[dict] = []
+    kb: list[float] = []
+    pb: list[float] = []
+    spreads: list[float] = []
+    agree = both = 0
+    for ts in sorted(set(k) & set(p)):
+        a, b = k[ts], p[ts]
+        km, pm = a.get("mkt_mid"), b.get("mkt_mid")
+        k_set = a.get("outcome") in (0, 1)
+        p_set = b.get("outcome") in (0, 1)
+        if k_set and km is not None:
+            kb.append((float(km) - int(a["outcome"])) ** 2)
+        if p_set and pm is not None:
+            pb.append((float(pm) - int(b["outcome"])) ** 2)
+        if k_set and p_set:
+            both += 1
+            agree += int(a["outcome"]) == int(b["outcome"])
+        if km is not None and pm is not None:
+            spreads.append(float(pm) - float(km))
+        rows.append(
+            {
+                "interval (UTC)": utc(ts),
+                "kalshi mid": "—" if km is None else f"{float(km):.3f}",
+                "pm mid": "—" if pm is None else f"{float(pm):.3f}",
+                "mid spread (PM-K)": (
+                    "—" if km is None or pm is None else f"{float(pm) - float(km):+.3f}"
+                ),
+                "strike gap (K-PM)": f"{float(a['strike']) - float(b['strike']):+.2f}",
+                "kalshi settled": ("YES" if a["outcome"] else "NO") if k_set else "pending",
+                "pm settled": ("YES" if b["outcome"] else "NO") if p_set else "pending",
+            }
+        )
+    return {
+        "joined": len(rows),
+        "rows": rows[::-1],
+        "n_spread": len(spreads),
+        "mean_abs_spread": sum(abs(x) for x in spreads) / len(spreads) if spreads else None,
+        "max_abs_spread": max((abs(x) for x in spreads), default=None),
+        "kalshi_brier": sum(kb) / len(kb) if kb else None,
+        "pm_brier": sum(pb) / len(pb) if pb else None,
+        "agree": agree,
+        "both_settled": both,
+    }
+
+
+@app.cell
+def _(mo, poly, settlements):
+    cv = cross_venue(settlements, poly)
+    kb = f"{cv['kalshi_brier']:.3f}" if cv["kalshi_brier"] is not None else "-"
+    pb = f"{cv['pm_brier']:.3f}" if cv["pm_brier"] is not None else "-"
+    spread = f"{cv['mean_abs_spread']:.3f}" if cv["mean_abs_spread"] is not None else "-"
+    mo.vstack(
+        [
+            mo.md("## 7. Cross-venue calibration (Kalshi vs Polymarket)"),
+            mo.callout(
+                mo.md(
+                    f"Same BTC up/down 15-minute windows, two books. Over **{cv['joined']}** "
+                    f"joined intervals the mean mid divergence is **{spread}** "
+                    "(PM minus Kalshi at decision time); Brier vs each venue's own "
+                    f"settlement: Kalshi **{kb}**, Polymarket **{pb}**. Settlements agree "
+                    f"{cv['agree']}/{cv['both_settled']} where both settled. The PM feed is "
+                    "evidence-only - it never touches the paper workers (ALG-3411)."
+                ),
+                kind="info",
+            ),
+            mo.ui.table(cv["rows"], selection=None, page_size=10),
         ]
     )
     return

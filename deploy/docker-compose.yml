@@ -42,6 +42,8 @@ services:
       REDIS_URL: redis://redis:6379/0
       # ALG-3248 demo: the Laya forward observer writes here every 15 min (read-only).
       ALGOBOTS_DEMO_FEED_PATH: /feeds/kalshi/observations.jsonl
+      # ALG-3411 feed 2 (evidence-only): Polymarket observer rows, ro.
+      ALGOBOTS_DEMO_FEED2_PATH: /feeds/polymarket/observations.jsonl
       ALGOBOTS_DEMO_STATE_DIR: /var/lib/algobots-demo
       ALGOBOTS_DEMO_SLEEVE_REFILLS: ${ALGOBOTS_DEMO_SLEEVE_REFILLS:-}
       # ALG-3255: one Nautilus paper worker process per demo account (~350 MB RSS each).
@@ -52,6 +54,7 @@ services:
       ALGOBOTS_BRIDGE_DIR: ${ALGOBOTS_BRIDGE_DIR:-/bridge}
     volumes:
       - ${LAYA_KALSHI_DIR:-/opt/laya/kalshi}:/feeds/kalshi:ro
+      - ${LAYA_POLYMARKET_DIR:-/opt/laya/polymarket}:/feeds/polymarket:ro
       - demostate:/var/lib/algobots-demo
       - ${ALGOBOTS_BRIDGE_HOST_DIR:-./bridge}:/bridge
     ports:
