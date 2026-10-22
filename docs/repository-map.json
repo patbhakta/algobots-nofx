@@ -881,6 +881,54 @@
     {
       "repo": "algobots",
       "path": "tests/shareout/test_coinflip.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3403/README.md"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3403/full-loop-run-1.md"
+    },
+    {
+      "repo": "algobots",
+      "path": "deploy/compose.nautilus-node.yaml"
+    },
+    {
+      "repo": "algobots",
+      "path": "deploy/nautilus-node.Dockerfile"
+    },
+    {
+      "repo": "algobots",
+      "path": "scripts/rc6_node_smoke.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "src/algobots/node/paper_node.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "tests/demo/full_loop.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "tests/demo/test_full_loop.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "tests/gateway/fixtures/rc6_event_streams.json"
+    },
+    {
+      "repo": "algobots",
+      "path": "tests/gateway/test_rc6_wire.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "tests/node/test_paper_node.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3405/README.md"
     }
   ],
   "scope_revisions": [
