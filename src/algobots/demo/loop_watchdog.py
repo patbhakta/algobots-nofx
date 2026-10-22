@@ -8,6 +8,9 @@ Checks every run (stdlib only, designed for a systemd timer on .243):
                        day (fewer fills than settled intervals) and a coin fill
                        appears on the new UTC day, post the proof ONCE to
                        ALG-3357 (daily-loss envelope resets automatically).
+  4. Reset-missing   - coin gated yesterday + settled intervals today +
+                       zero coin fills today (coin attempts an entry every
+                       interval) -> ALERT that the reset did not lift.
 
 Posting rules (anti-spam): one alert per anomaly episode, one recovery post,
 re-alert at most every REALERT_S while persisting, one reset-proof per UTC day.
@@ -43,6 +46,7 @@ FEED_MAX_AGE_S = 1500          # feed settles every 900s; allow one miss
 HEARTBEAT_MAX_AGE_S = 120
 EXPECTED_ACCOUNTS = ("laya", "jev", "coin")
 REALERT_S = 6 * 3600
+RESET_GRACE_MIN = 45         # reset-missing alert window opens 00:45 UTC
 
 
 def log(state: dict, msg: str) -> None:
@@ -167,6 +171,39 @@ def settled_intervals_by_day() -> dict[str, int]:
     return days
 
 
+def reset_missing_check(now: float | None = None) -> tuple[str | None, str]:
+    """Anomaly when the day-reset should have lifted but coin stays silent.
+
+    Complements ``reset_proof_check``: that posts when the reset WORKS; this
+    speaks up when it silently doesn't. Coin attempts an entry every interval,
+    so once the envelope lifts a fill lands within ~15 min of 00:00 UTC. If
+    yesterday was demonstrably gated, the new day is already settling markets
+    (>= 2, so a late-starting feed can't false-alarm) and coin still has zero
+    fills, something between the gate and the fill broke - make it loud.
+    """
+    now = time.time() if now is None else now
+    utc = datetime.fromtimestamp(now, timezone.utc)
+    if utc.hour == 0 and utc.minute < RESET_GRACE_MIN:
+        return None, ""  # too soon after midnight
+    fills = coin_fills_by_day()
+    intervals = settled_intervals_by_day()
+    today = utc.strftime("%Y-%m-%d")
+    yesterday = (utc - timedelta(days=1)).strftime("%Y-%m-%d")
+    prev_fills = len(fills.get(yesterday, []))
+    prev_intervals = intervals.get(yesterday, 0)
+    if not (prev_intervals > 0 and prev_fills < prev_intervals):
+        return None, ""  # no gating yesterday -> nothing to expect
+    today_fills = len(fills.get(today, []))
+    today_intervals = intervals.get(today, 0)
+    if today_fills or today_intervals < 2:
+        return None, ""
+    detail = (f"coin gated yesterday ({prev_fills} fills / {prev_intervals} settled "
+              f"intervals) but 0 fills across {today_intervals} settled intervals "
+              f"today - daily-loss reset did not visibly lift (or entries blocked "
+              f"another way)")
+    return "envelope_reset_missing", detail
+
+
 def reset_proof_check(state: dict) -> str | None:
     """Body of a proof comment if the day-reset evidence is fresh, else None."""
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
@@ -215,6 +252,10 @@ def main() -> None:
     summary += f" workers[{wsum}]"
     if wkey:
         anomalies[wkey] = wsum
+
+    rkey, rdetail = reset_missing_check()
+    if rkey:
+        anomalies[rkey] = rdetail
 
     # Fire alerts / recoveries.
     for akey, detail in anomalies.items():

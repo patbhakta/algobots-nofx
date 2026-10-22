@@ -80,3 +80,57 @@ def test_feed_check_flags_staleness(tmp_path, monkeypatch):
     _write(feed, [{"ts": time.time() - lw.FEED_MAX_AGE_S - 60}])
     key, _ = lw.feed_check()
     assert key == "feed_stale"
+
+
+def test_reset_missing_fires_when_gated_yesterday_and_silent_today(tmp_path, monkeypatch):
+    feed = tmp_path / "observations.jsonl"
+    dlog = tmp_path / "decision_log.jsonl"
+    monkeypatch.setattr(lw, "FEED", feed)
+    monkeypatch.setattr(lw, "DECISION_LOG", dlog)
+
+    utc = lw.timezone.utc
+    now = lw.datetime(2026, 3, 10, 2, 0, tzinfo=utc).timestamp()
+    yesterday = "2026-03-09"
+    today = "2026-03-10"
+    # Yesterday: 4 settled intervals, 2 fills -> gated. Today: 3 settled
+    # intervals, zero fills -> the reset did not visibly lift.
+    _write(feed, [_settlement(now - 86400 + i * 900) for i in range(4)]
+           + [_settlement(now - 3600 + i * 900) for i in range(3)])
+    _write(dlog, [_coin_fill(yesterday, "01:00:00"), _coin_fill(yesterday, "01:15:00")])
+
+    key, detail = lw.reset_missing_check(now)
+    assert key == "envelope_reset_missing"
+    assert "did not visibly lift" in detail
+
+
+def test_reset_missing_quiet_when_fill_present_or_within_grace(tmp_path, monkeypatch):
+    feed = tmp_path / "observations.jsonl"
+    dlog = tmp_path / "decision_log.jsonl"
+    monkeypatch.setattr(lw, "FEED", feed)
+    monkeypatch.setattr(lw, "DECISION_LOG", dlog)
+
+    utc = lw.timezone.utc
+    now = lw.datetime(2026, 3, 10, 2, 0, tzinfo=utc).timestamp()
+    base = [_settlement(now - 86400 + i * 900) for i in range(4)]
+
+    # A: coin filled today -> healthy, no alert.
+    _write(feed, base + [_settlement(now - 3600 + i * 900) for i in range(3)])
+    _write(dlog, [_coin_fill("2026-03-09", "01:00:00"),
+                  _coin_fill("2026-03-10", "00:15:00")])
+    assert lw.reset_missing_check(now)[0] is None
+
+    # B: no fills yet but only 1 settled interval today -> too early, no alert.
+    _write(feed, base + [_settlement(now - 300)])
+    _write(dlog, [_coin_fill("2026-03-09", "01:00:00")])
+    assert lw.reset_missing_check(now)[0] is None
+
+    # C: 00:20 UTC, inside the grace window -> no alert even if silent.
+    early = lw.datetime(2026, 3, 10, 0, 20, tzinfo=utc).timestamp()
+    _write(feed, base + [_settlement(early - 120)])
+    assert lw.reset_missing_check(early)[0] is None
+
+    # D: yesterday not gated (fills == intervals) -> nothing expected.
+    _write(feed, [_settlement(now - 86400 + i * 900) for i in range(2)])
+    _write(dlog, [_coin_fill("2026-03-09", "01:00:00"),
+                  _coin_fill("2026-03-09", "01:15:00")])
+    assert lw.reset_missing_check(now)[0] is None
