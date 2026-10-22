@@ -881,6 +881,22 @@
     {
       "repo": "algobots",
       "path": "tests/shareout/test_coinflip.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "src/algobots/gateway/serve.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "tests/gateway/test_serve.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "notebooks/paper_run_evidence.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "tests/demo/test_paper_run_evidence.py"
     }
   ],
   "scope_revisions": [

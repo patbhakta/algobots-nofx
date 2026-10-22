@@ -12,6 +12,7 @@ passes trivially once the branch is merged (empty diff).
 """
 
 import json
+import os
 import subprocess
 from pathlib import Path
 
@@ -47,6 +48,12 @@ def _git(*args: str) -> str:
 
 def _changed_files() -> list[str]:
     try:
+        # The scope is A05's (ALG-3101); since A05 merged, every other branch's
+        # diff would be measured against it. PR CI checks out a detached merge
+        # ref, so the branch name comes from GITHUB_HEAD_REF there.
+        branch = os.environ.get("GITHUB_HEAD_REF") or _git("rev-parse", "--abbrev-ref", "HEAD")
+        if "a05" not in branch.lower():
+            pytest.skip(f"{branch} is not an A05 branch")
         base = _git("merge-base", "origin/main", "HEAD")
         return [p for p in _git("diff", "--name-only", f"{base}..HEAD").splitlines() if p]
     except (OSError, subprocess.CalledProcessError):
