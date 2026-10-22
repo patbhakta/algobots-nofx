@@ -198,16 +198,48 @@ def _(mo, state):
     return
 
 
+@app.function
+def blocked_gates(state: dict) -> list[dict]:
+    """Strategies whose latest settled decision was blocked by the risk envelope."""
+    out: list[dict] = []
+    for key, s in (state.get("strategies") or {}).items():
+        d = s.get("last_decision") or {}
+        if d.get("status") == "BLOCKED":
+            out.append(
+                {
+                    "strategy": key,
+                    "reason": d.get("reason") or "",
+                    "net_pnl": s.get("net_pnl"),
+                }
+            )
+    return out
+
+
 @app.cell
-def _(mo, now, workers):
+def _(mo, now, state, workers):
+    gates = blocked_gates(state)
+    secs_to_reset = 86400 - (now % 86400)  # daily-loss envelope resets at 00:00 UTC
+    resume_in = f"{int(secs_to_reset // 3600)}h {int((secs_to_reset % 3600) // 60):02d}m"
+    gate_bits = "; ".join(
+        f"`{g['strategy']}` (net P&L {g['net_pnl']} USD): {g['reason']}" for g in gates
+    )
     mo.vstack(
         [
             mo.md("## 3. Paper fills (one Nautilus worker per account)"),
             mo.ui.table(worker_rows(workers, now), selection=None),
+            mo.callout(
+                mo.md(
+                    f"**Risk gate engaged** — {gate_bits}. "
+                    f"The daily-loss envelope resets at **00:00 UTC** — "
+                    f"fills resume automatically in **{resume_in}**, no manual reset."
+                ),
+                kind="warn",
+            )
+            if gates
+            else mo.md(""),
         ]
     )
     return
-
 
 
 @app.cell
