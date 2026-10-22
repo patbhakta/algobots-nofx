@@ -277,13 +277,22 @@ def _strategy_type() -> type:
 
         def _before_ack(self, outcome: Outcome) -> None:
             """rc6 submit_order queues work; its return is not execution evidence."""
-            if outcome.action not in ("submitted", "duplicate"):
+            if outcome.action == "cancel_sent":
+                raise RuntimeError(f"awaiting engine cancellation: {outcome.client_order_id}")
+            if outcome.action not in ("submitted", "duplicate", "cancel_noop"):
                 return
             from nautilus_trader.model import ClientOrderId
 
             order = self.cache.order(ClientOrderId(outcome.client_order_id))
             status = getattr(order.status, "name", str(order.status)) if order is not None else ""
-            if status in ("", "INITIALIZED", "EMULATED", "RELEASED"):
+            if status in (
+                "",
+                "INITIALIZED",
+                "EMULATED",
+                "RELEASED",
+                "PENDING_CANCEL",
+                "PENDING_UPDATE",
+            ):
                 raise RuntimeError(
                     f"awaiting engine execution: {outcome.client_order_id} ({status})"
                 )

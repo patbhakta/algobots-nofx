@@ -104,3 +104,10 @@ def test_rc6_queued_and_denied_orders_are_not_acked_early(monkeypatch):
     assert published[0]["type"] == "OrderDenied"
     order.status.name = "FILLED"
     strategy._before_ack(Outcome("duplicate", "test"))
+    with pytest.raises(RuntimeError, match="cancellation"):
+        strategy._before_ack(Outcome("cancel_sent", "test"))
+    order.status.name = "PENDING_CANCEL"
+    with pytest.raises(RuntimeError, match="awaiting engine"):
+        strategy._before_ack(Outcome("cancel_noop", "test"))
+    order.status.name = "CANCELED"
+    strategy._before_ack(Outcome("cancel_noop", "test"))
