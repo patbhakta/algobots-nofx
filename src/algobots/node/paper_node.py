@@ -48,7 +48,7 @@ from decimal import Decimal
 from typing import Any
 
 from algobots.node import replay
-from algobots.node.command_actor import CommandActor
+from algobots.node.command_actor import CommandActor, Outcome
 from algobots.node.command_stream import CommandStream
 from algobots.node.event_egress import STREAMS_PREFIX, EventEgress
 from algobots.node.nautilus_actor import NautilusExecution
@@ -275,6 +275,24 @@ def _strategy_type() -> type:
                     tick.ask_price,
                 )
 
+        def _before_ack(self, outcome: Outcome) -> None:
+            """rc6 submit_order queues work; its return is not execution evidence."""
+            if outcome.action not in ("submitted", "duplicate"):
+                return
+            from nautilus_trader.model import ClientOrderId
+
+            order = self.cache.order(ClientOrderId(outcome.client_order_id))
+            status = getattr(order.status, "name", str(order.status)) if order is not None else ""
+            if status in ("", "INITIALIZED", "EMULATED", "RELEASED"):
+                raise RuntimeError(f"awaiting engine execution: {outcome.client_order_id} ({status})")
+            if status == "DENIED":
+                # rc6 risk denials do not reach external message-bus egress.
+                # Retry this write before XACK, including after a Redis failure.
+                event = order.last_event
+                if callable(event):
+                    event = event()
+                self.egress.publish(event.to_dict())
+
         def on_start(self) -> None:
             from nautilus_trader.model import InstrumentId
 
@@ -291,6 +309,7 @@ def _strategy_type() -> type:
                 consumer=self.s.trader_id,
                 block_ms=None,  # type: ignore[arg-type]
                 log=_log_event,
+                before_ack=self._before_ack,
             )
             self.stream.ensure_group()
             self._beat()

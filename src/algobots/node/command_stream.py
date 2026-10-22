@@ -100,6 +100,7 @@ class CommandStream:
     #: without limit; the durable record is the node's event stream, not this.
     recent: list[Outcome] = field(default_factory=list)
     _recent_max: int = 256
+    before_ack: Callable[[Outcome], None] | None = None
 
     @property
     def key(self) -> str:
@@ -146,6 +147,8 @@ class CommandStream:
         downstream can recover.
         """
         outcome = self.actor.handle(decode(fields))
+        if self.before_ack is not None:
+            self.before_ack(outcome)
         self.client.xack(self.key, self.group, entry_id)
         self._remember(outcome)
         return outcome
