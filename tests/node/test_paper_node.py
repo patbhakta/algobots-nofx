@@ -44,3 +44,63 @@ def test_the_node_replays_the_image_catalog_by_default():
     assert s.replay_path == "/catalog/data/quote_tick/EURUSD.SIM/part-0.parquet"
     assert (s.replay_speed, s.replay_max_gap_s, s.feed_signal_s) == (1.0, 2.0, 1.0)
     assert paper_node.settings({"ALGOBOTS_FEED": "synthetic"}).feed == "synthetic"
+
+
+def test_denial_uses_gateway_timestamp_envelope():
+    from types import SimpleNamespace
+
+    event = SimpleNamespace(
+        to_dict=lambda: {
+            "type": "OrderDenied",
+            "client_order_id": "denied",
+            "reason": "minimum",
+            "ts_event": 1_792_658_531_228_002_149,
+            "ts_init": 1_792_658_531_228_002_200,
+        }
+    )
+    payload = paper_node.denial_payload(event)
+    assert payload["ts_event"] == "2026-10-22T08:42:11.228Z"
+    assert payload["reason"] == "minimum"
+
+
+def test_rc6_queued_and_denied_orders_are_not_acked_early(monkeypatch):
+    import sys
+    from types import ModuleType, SimpleNamespace
+
+    import pytest
+
+    from algobots.node.command_actor import Outcome
+
+    trading = ModuleType("nautilus_trader.trading")
+    trading.Strategy = type("Strategy", (), {})
+    model = ModuleType("nautilus_trader.model")
+    model.ClientOrderId = str
+    monkeypatch.setitem(sys.modules, "nautilus_trader.trading", trading)
+    monkeypatch.setitem(sys.modules, "nautilus_trader.model", model)
+    strategy = paper_node._strategy_type()()
+    order = SimpleNamespace(status=SimpleNamespace(name="INITIALIZED"))
+    strategy.cache = SimpleNamespace(order=lambda _: order)
+    outcome = Outcome("submitted", "test")
+    with pytest.raises(RuntimeError, match="awaiting engine"):
+        strategy._before_ack(outcome)
+    order.status.name = "DENIED"
+    order.last_event = SimpleNamespace(
+        to_dict=lambda: {
+            "type": "OrderDenied",
+            "ts_event": 1_792_658_531_228_002_149,
+            "ts_init": 1_792_658_531_228_002_200,
+        }
+    )
+
+    def unavailable(_):
+        raise ConnectionError("egress unavailable")
+
+    strategy.egress = SimpleNamespace(publish=unavailable)
+    with pytest.raises(ConnectionError):
+        strategy._before_ack(Outcome("duplicate", "test"))
+    published = []
+    strategy.egress.publish = published.append
+    strategy._before_ack(Outcome("duplicate", "test"))
+    assert published[0]["type"] == "OrderDenied"
+    order.status.name = "FILLED"
+    strategy._before_ack(Outcome("duplicate", "test"))

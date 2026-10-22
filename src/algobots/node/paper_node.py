@@ -284,14 +284,16 @@ def _strategy_type() -> type:
             order = self.cache.order(ClientOrderId(outcome.client_order_id))
             status = getattr(order.status, "name", str(order.status)) if order is not None else ""
             if status in ("", "INITIALIZED", "EMULATED", "RELEASED"):
-                raise RuntimeError(f"awaiting engine execution: {outcome.client_order_id} ({status})")
+                raise RuntimeError(
+                    f"awaiting engine execution: {outcome.client_order_id} ({status})"
+                )
             if status == "DENIED":
                 # rc6 risk denials do not reach external message-bus egress.
                 # Retry this write before XACK, including after a Redis failure.
                 event = order.last_event
                 if callable(event):
                     event = event()
-                self.egress.publish(event.to_dict())
+                self.egress.publish(denial_payload(event))
 
         def on_start(self) -> None:
             from nautilus_trader.model import InstrumentId
@@ -343,6 +345,16 @@ def _strategy_type() -> type:
                 log.warning("command poll failed: %s", exc)
 
     return CommandNode
+
+
+def denial_payload(event: Any) -> dict[str, Any]:
+    """Use the gateway's ISO timestamp envelope, including on older deployments."""
+    from algobots.gateway.projection import iso
+
+    payload = event.to_dict()
+    for key in ("ts_event", "ts_init"):
+        payload[key] = iso(payload[key] / 1e9)
+    return payload
 
 
 def _log_event(event: str, fields: dict[str, Any]) -> None:
