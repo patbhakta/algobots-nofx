@@ -109,6 +109,41 @@ def history_rows(orders: dict, limit: int = 20) -> list[dict]:
     return rows[-limit:][::-1]
 
 
+@app.function
+def fidelity_rows(orders: dict, settlements: dict) -> dict:
+    """Audit paper-fill verdicts against Kalshi's own settle marks.
+
+    The ledger books win/loss from the feed row's outcome flag; the settlement
+    row carries the exchange's actual settle value. A fill agrees when its P&L
+    sign matches (side == YES) == (settle mark at/above strike).
+    """
+    marks = {s["event"]: s for s in settlements.get("settlements", [])}
+    rows: list[dict] = []
+    agree = total = 0
+    for o in orders.get("orders", []):
+        if o.get("status") != "filled" or o.get("source") != "strategy" or not o.get("side"):
+            continue
+        s = marks.get(o.get("instrument") or o.get("event"))
+        if not s or o.get("pnl") is None:
+            continue
+        total += 1
+        implied_won = (o["side"] == "YES") == (s["outcome"] == 1)
+        ok = implied_won == (float(o["pnl"]) > 0)
+        agree += ok
+        rows.append(
+            {
+                "interval": s["event"],
+                "fill side": o["side"],
+                "strike": s["strike"],
+                "settle mark": s["settle_value"],
+                "kalshi says": "YES" if s["outcome"] == 1 else "NO",
+                "fill P&L": f"{float(o['pnl']):+.2f}",
+                "verdict": "agree" if ok else "MISMATCH",
+            }
+        )
+    return {"agree": agree, "total": total, "rows": rows[::-1]}
+
+
 @app.cell
 def _():
     import marimo as mo
@@ -149,12 +184,13 @@ def _(api, mo, tick):
         workers = fetch(api.value, "/demo/api/workers")
         quality = fetch(api.value, "/demo/api/quality")
         orders = fetch(api.value, "/demo/api/orders")
+        settlements = fetch(api.value, "/demo/api/settlements")
         error = None
     except (OSError, ValueError) as exc:
         state = workers = quality = orders = None
         error = f"{type(exc).__name__}: {exc}"
     mo.stop(error is not None, mo.callout(mo.md(f"API unreachable: `{error}`"), kind="danger"))
-    return now, orders, quality, state, workers
+    return now, orders, quality, settlements, state, workers
 
 
 @app.cell
@@ -248,6 +284,28 @@ def _(mo, orders):
         [
             mo.md("## 4. Run history (every settled interval)"),
             mo.ui.table(history_rows(orders), selection=None),
+        ]
+    )
+    return
+
+
+@app.cell
+def _(mo, orders, settlements):
+    fid = fidelity_rows(orders, settlements)
+    ok = fid["total"] > 0 and fid["agree"] == fid["total"]
+    mo.vstack(
+        [
+            mo.md("## 5. Settlement fidelity (paper verdicts vs Kalshi settle marks)"),
+            mo.callout(
+                mo.md(
+                    f"**{fid['agree']}/{fid['total']} paper fills agree with the exchange's "
+                    "settlement marks** — every win/loss the ledger booked matches what "
+                    "Kalshi actually settled (settle value vs strike). Any MISMATCH "
+                    "here means the feed's outcome flag and the settle mark disagree."
+                ),
+                kind="success" if ok else "danger",
+            ),
+            mo.ui.table(fid["rows"], selection=None),
         ]
     )
     return
