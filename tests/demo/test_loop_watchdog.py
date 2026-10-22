@@ -134,3 +134,63 @@ def test_reset_missing_quiet_when_fill_present_or_within_grace(tmp_path, monkeyp
     _write(dlog, [_coin_fill("2026-03-09", "01:00:00"),
                   _coin_fill("2026-03-09", "01:15:00")])
     assert lw.reset_missing_check(now)[0] is None
+
+
+def test_workers_check_survives_denied_null_heartbeat(monkeypatch):
+    """2026-10-22 incident: denied workers report heartbeat null; the check
+    must flag the anomaly, not crash on float(None)."""
+    import io
+    import urllib.request
+
+    payload = {
+        "workers": [
+            {"account": "laya", "state": "ready",
+             "last_heartbeat": time.time(), "orders_filled": 0},
+            {"account": "jev", "state": "denied",
+             "last_heartbeat": None, "orders_filled": None},
+            {"account": "coin", "state": "denied",
+             "last_heartbeat": None, "orders_filled": None},
+        ]
+    }
+
+    class FakeResp(io.BytesIO):
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *a):
+            return False
+
+    def fake_urlopen(url, timeout=0):  # noqa: ANN001, ANN202
+        return FakeResp(json.dumps(payload).encode())
+
+    monkeypatch.setattr(urllib.request, "urlopen", fake_urlopen)
+    key, summary = lw.workers_check()
+    assert key.startswith("workers_unhealthy:")
+    assert "jev state=denied" in key and "coin state=denied" in key
+    assert "heartbeat missing" in key
+    assert "hb-none" in summary and "MISMATCH" not in summary
+
+
+def test_workers_check_ok_when_all_ready(monkeypatch):
+    import io
+    import urllib.request
+
+    payload = {"workers": [
+        {"account": a, "state": "ready", "last_heartbeat": time.time(), "orders_filled": 0}
+        for a in ("laya", "jev", "coin")
+    ]}
+
+    class FakeResp(io.BytesIO):
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *a):
+            return False
+
+    def fake_urlopen(url, timeout=0):  # noqa: ANN001, ANN202
+        return FakeResp(json.dumps(payload).encode())
+
+    monkeypatch.setattr(urllib.request, "urlopen", fake_urlopen)
+    key, summary = lw.workers_check()
+    assert key == ""
+    assert summary.count("ready") == 3

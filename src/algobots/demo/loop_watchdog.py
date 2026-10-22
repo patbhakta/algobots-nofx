@@ -115,13 +115,19 @@ def workers_check() -> tuple[str, str]:
     problems, bits = [], []
     for w in data.get("workers", []):
         acct = w.get("account", "?")
-        hb_age = time.time() - float(w.get("last_heartbeat", 0))
-        bits.append(f"{acct}={w.get('state')}/hb{int(hb_age)}s/"
+        # denied/not-started workers report heartbeat null — an anomaly to
+        # REPORT, never a crash (the 2026-10-22 deny window crashed this check)
+        hb = w.get("last_heartbeat")
+        hb_age = time.time() - float(hb) if isinstance(hb, (int, float)) else None
+        bits.append(f"{acct}={w.get('state')}/"
+                    f"{f'hb{int(hb_age)}s' if hb_age is not None else 'hb-none'}/"
                     f"fills{w.get('orders_filled')}")
         if acct in EXPECTED_ACCOUNTS:
             if w.get("state") != "ready":
                 problems.append(f"{acct} state={w.get('state')}")
-            if hb_age > HEARTBEAT_MAX_AGE_S:
+            if hb_age is None:
+                problems.append(f"{acct} heartbeat missing (worker not started)")
+            elif hb_age > HEARTBEAT_MAX_AGE_S:
                 problems.append(f"{acct} heartbeat {int(hb_age)}s old")
     missing = [a for a in EXPECTED_ACCOUNTS
                if a not in {w.get("account") for w in data.get("workers", [])}]
