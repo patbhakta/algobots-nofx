@@ -896,6 +896,10 @@
     },
     {
       "repo": "algobots",
+      "path": "notebooks/kalshi_demo_loop.py"
+    },
+    {
+      "repo": "algobots",
       "path": "tests/demo/test_paper_run_evidence.py"
     }
   ],
