@@ -61,6 +61,7 @@ class Row:
     jev_p: float | None
     jev_conf: float | None
     jev_choice: str | None
+    mkt_mid: float | None = None  # Kalshi YES mid at decision time (None = no book)
 
 
 @dataclass
@@ -171,6 +172,11 @@ def load_rows(path: Path, since_ts: float = 0.0) -> list[Row]:
                     jev_p=r.get("jev_p"),
                     jev_conf=r.get("jev_conf"),
                     jev_choice=r.get("jev_choice"),
+                    mkt_mid=(
+                        float(r["mkt_mid"])
+                        if isinstance(r.get("mkt_mid"), int | float)
+                        else None
+                    ),
                 )
             )
         except (ValueError, KeyError, TypeError):

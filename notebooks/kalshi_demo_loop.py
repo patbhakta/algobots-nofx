@@ -185,13 +185,14 @@ def _(api, mo, tick):
         quality = fetch(api.value, "/demo/api/quality")
         orders = fetch(api.value, "/demo/api/orders")
         settlements = fetch(api.value, "/demo/api/settlements")
+        decisions = fetch(api.value, "/demo/api/decisions")
         poly = fetch(api.value, "/demo/api/feeds/polymarket?limit=500")
         error = None
     except (OSError, ValueError) as exc:
         state = workers = quality = orders = poly = None
         error = f"{type(exc).__name__}: {exc}"
     mo.stop(error is not None, mo.callout(mo.md(f"API unreachable: `{error}`"), kind="danger"))
-    return now, orders, poly, quality, settlements, state, workers
+    return decisions, now, orders, poly, quality, settlements, state, workers
 
 
 @app.cell
@@ -468,6 +469,68 @@ def cross_venue(settlements: dict, poly: dict) -> dict:
         "agree": agree,
         "both_settled": both,
     }
+
+
+def scoreboard_rows(decisions: dict) -> list[dict]:
+    """ALG-3357 honest scoreboard: strategy vs the coin arm vs the book itself.
+
+    ``market`` is the Kalshi YES mid's Brier on exactly the events each
+    strategy decided - the like-for-like bar. ``delta`` positive means the
+    strategy was sharper than the venue's own mid on those intervals.
+    """
+    rows: list[dict] = []
+    for name, s in (decisions.get("scores") or {}).items():
+        b = s.get("brier")
+        m = s.get("market_brier")
+        rows.append(
+            {
+                "strategy": name,
+                "settled n": s.get("n"),
+                "hits": s.get("hits"),
+                "hit rate": "-" if s.get("hit_rate") is None else f"{s['hit_rate']:.3f}",
+                "Brier": "-" if b is None else f"{b:.3f}",
+                "Kalshi-mid Brier (same events)": (
+                    "-" if m is None else f"{m:.3f} (n={s.get('market_n')})"
+                ),
+                "Δ vs book": "-" if b is None or m is None else f"{m - b:+.3f}",
+                "verdict": s.get("verdict"),
+            }
+        )
+    return rows
+
+
+@app.cell
+def _(decisions, mo):
+    sc = scoreboard_rows(decisions)
+    best = None
+    for r in sc:
+        if r["Δ vs book"] != "-":
+            d = float(r["Δ vs book"])
+            if best is None or d > best[1]:
+                best = (r["strategy"], d)
+    lead = (
+        f"Sharpest vs the book so far: **{best[0]}** ({best[1]:+.3f} Brier on its own events). "
+        if best
+        else "No strategy has a same-events market comparison yet. "
+    )
+    mo.vstack(
+        [
+            mo.md("## 8. Honest scoreboard (strategy vs coin vs the book)"),
+            mo.callout(
+                mo.md(
+                    lead
+                    + "Every settled decision scores the strategy's P(up) and the "
+                    "Kalshi YES mid from the same interval; Δ > 0 means the "
+                    "strategy carried more information than the venue's own mid. "
+                    "n < 30 stays `no edge proven` - small samples flatter and "
+                    "slander alike."
+                ),
+                kind="info",
+            ),
+            mo.ui.table(sc, selection=None, page_size=10),
+        ]
+    )
+    return
 
 
 @app.cell
