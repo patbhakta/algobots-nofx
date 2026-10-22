@@ -311,5 +311,106 @@ def _(mo, orders, settlements):
     return
 
 
+@app.function
+def calibration_rows(settlements: dict) -> dict:
+    """Score the book's own YES pricing against realized outcomes.
+
+    ``mkt_mid`` is the Kalshi book's mid at decision time, read as the implied
+    YES probability. Brier = mean((mid - outcome)**2): 0.25 is a coin flip,
+    lower means the market carried real information about the window.
+    """
+    ss = sorted(
+        (s for s in settlements.get("settlements", []) if s.get("outcome") in (0, 1)),
+        key=lambda s: s.get("settled_ts") or 0,
+    )
+    rows: list[dict] = []
+    briers: list[float] = []
+    yes = 0
+    mids = 0.0
+    for s in ss:
+        mid = s.get("mkt_mid")
+        if mid is None:
+            continue
+        mid = float(mid)
+        outcome = int(s["outcome"])
+        briers.append((mid - outcome) ** 2)
+        yes += outcome
+        mids += mid
+        rows.append(
+            {
+                "interval": s["event"],
+                "book YES mid": f"{mid:.3f}",
+                "kalshi says": "YES" if outcome else "NO",
+                "brier": f"{(mid - outcome) ** 2:.3f}",
+                "running Brier": f"{sum(briers) / len(briers):.3f}",
+            }
+        )
+    n = len(briers)
+    return {
+        "n": n,
+        "brier": sum(briers) / n if n else None,
+        "yes_rate": yes / n if n else None,
+        "mean_mid": mids / n if n else None,
+        "rows": rows,
+    }
+
+
+@app.function
+def equity_chart(orders: dict):
+    """Cumulative paper P&L over settled strategy fills, oldest first."""
+    import plotly.graph_objects as go
+
+    fills = [
+        o
+        for o in orders.get("orders", [])
+        if o.get("status") == "filled"
+        and o.get("source") == "strategy"
+        and o.get("pnl") is not None
+    ]
+    fills.sort(key=lambda o: o.get("ts") or 0)
+    x: list[str] = []
+    y: list[float] = []
+    cum = 0.0
+    for o in fills:
+        cum += float(o["pnl"])
+        x.append(utc(o.get("ts")))
+        y.append(round(cum, 2))
+    fig = go.Figure(go.Scatter(x=x, y=y, mode="lines+markers", name="cum P&L"))
+    fig.update_layout(
+        height=280,
+        margin=dict(l=8, r=8, t=36, b=8),
+        xaxis_title="fill settled (UTC)",
+        yaxis_title="cumulative P&L (USD)",
+        showlegend=False,
+    )
+    return fig, len(fills)
+
+
+@app.cell
+def _(mo, orders, settlements):
+    cal = calibration_rows(settlements)
+    fig, n_fills = equity_chart(orders)
+    brier = f"{cal['brier']:.3f}" if cal["brier"] is not None else "-"
+    yes_rate = f"{cal['yes_rate']:.0%}" if cal["yes_rate"] is not None else "-"
+    mean_mid = f"{cal['mean_mid']:.3f}" if cal["mean_mid"] is not None else "-"
+    mo.vstack(
+        [
+            mo.md("## 6. Book calibration & paper equity"),
+            mo.callout(
+                mo.md(
+                    f"Over **{cal['n']}** settled intervals the Kalshi book priced YES "
+                    f"at **{mean_mid}** mid on average; YES actually hit **{yes_rate}**. "
+                    f"Running **Brier {brier}** (0.25 = coin flip - lower means the "
+                    "book's price carried real information about the next 15 minutes)."
+                ),
+                kind="info",
+            ),
+            mo.ui.plotly(fig) if n_fills else mo.md("_No settled fills yet._"),
+            mo.ui.table(cal["rows"][-15:], selection=None),
+        ]
+    )
+    return
+
+
 if __name__ == "__main__":
     app.run()
