@@ -81,3 +81,36 @@ def test_command_streams_created_idempotently() -> None:
     fresh = FakeRedis()
     ensure_command_streams(fresh, reg)
     assert fresh.groups == {("algobots:cmd:nautilus-paper-1", GROUP)}
+
+
+class IdleRedis(FakeRedis):
+    """Enough of a client for create_app: no event streams exist yet."""
+
+    def scan_iter(self, match: str):  # noqa: ANN201
+        return iter(())
+
+    def xread(self, *args, **kwargs):  # noqa: ANN002, ANN003, ANN201
+        return []
+
+
+def test_create_app_boots_and_serves_health(monkeypatch: pytest.MonkeyPatch, tmp_path) -> None:  # noqa: ANN001
+    import redis
+    import sqlalchemy as sa
+    from fastapi.testclient import TestClient
+
+    from algobots.gateway.serve import create_app
+    from algobots.gateway.store import METADATA
+
+    db = f"sqlite:///{tmp_path / 'gw.db'}"
+    METADATA.create_all(sa.create_engine(db))
+    client = IdleRedis()
+    monkeypatch.setattr(redis.Redis, "from_url", staticmethod(lambda url: client))
+    app = create_app(
+        {"DATABASE_URL": db, "REDIS_URL": "redis://x", "ALGOBOTS_GATEWAY_NODES": json.dumps([NODE])}
+    )
+    assert client.groups == {("algobots:cmd:nautilus-paper-1", GROUP)}
+    with TestClient(app) as http:
+        body = http.get("/v1/health").json()
+        assert body["nodes"][0]["node"] == "nautilus-paper-1"
+        assert body["status"] == "degraded"  # no heartbeat yet
+        assert http.post("/v1/orders", json={}).status_code == 401  # no sessions configured

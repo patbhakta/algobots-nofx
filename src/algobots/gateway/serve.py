@@ -158,12 +158,10 @@ def create_app(env: Mapping[str, str] | None = None) -> FastAPI:
         bus=RedisCommandBus(client=client),
         sessions=sessions_from(env.get("ALGOBOTS_GATEWAY_SESSIONS")),
     )
+    # Started here rather than in a startup hook: uvicorn calls the factory once,
+    # in the serving process, and this FastAPI has no add_event_handler.
     ingest = NodeEventIngest(client=client, registry=registry, projection=projection)
-
-    def _start_ingest() -> None:
-        threading.Thread(target=_ingest_forever, args=(ingest,), daemon=True).start()
-
-    app.add_event_handler("startup", _start_ingest)
+    threading.Thread(target=_ingest_forever, args=(ingest,), daemon=True).start()
     return app
 
 
