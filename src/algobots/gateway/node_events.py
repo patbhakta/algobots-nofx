@@ -16,6 +16,15 @@ Two rules this module exists to keep:
    (P1.3), so an unknown one means a command this gateway did not write.
    Materialising it would make a refused intent indistinguishable from an
    admitted one.
+
+Nautilus 2.0.0rc6 writes the same events in a different envelope from the
+1.231 capture (ALG-3405, ``artifacts/ALG-3405/rc6-wire-shapes.md``):
+order and position events arrive wrapped in their enum variant
+(``{"Filled": {...}}``, ``{"PositionOpened": {...}}``), ``AccountState`` and
+position events carry no ``type`` field (it is only on the stream entry), and
+every ``ts_*`` is integer nanoseconds even with ``timestamps_as_iso8601``.
+:func:`normalize` turns either generation into the flat shape below, so the
+fold itself has one input format.
 """
 
 from __future__ import annotations
@@ -77,6 +86,38 @@ def _dec(raw: Any) -> Decimal | None:
         return Decimal(str(raw))
     except ArithmeticError:
         return None
+
+
+#: Integer timestamps above this are nanoseconds (rc6), not epoch seconds.
+_NS_FLOOR = 10**17
+
+
+def normalize(payload: dict[str, Any], entry_type: str = "") -> dict[str, Any]:
+    """Either engine generation's event as one flat dict with a ``type``.
+
+    ``entry_type`` is the stream entry's own ``type`` field, which rc6 fills
+    (``AccountState``, ``OrderEventAny``) and our heartbeat leaves empty. A
+    1.231 payload already has ``type`` and passes through unchanged apart from
+    the timestamp rule, which is a no-op for ISO strings and epoch seconds.
+    """
+    flat = payload
+    variant = ""
+    if len(payload) == 1:
+        ((name, inner),) = payload.items()
+        if isinstance(inner, dict) and name[:1].isupper():
+            flat, variant = dict(inner), name
+    if not flat.get("type"):
+        # Position variants are the event name; order variants carry their own
+        # ``type`` inside. Anything else takes the stream entry's type.
+        kind = variant if variant.startswith("Position") else entry_type
+        if kind:
+            flat = {**flat, "type": kind}
+    stamps = {
+        key: value / 1e9
+        for key, value in flat.items()
+        if key.startswith("ts_") and isinstance(value, int) and value > _NS_FLOOR
+    }
+    return {**flat, **stamps} if stamps else flat
 
 
 def ingest(
@@ -310,4 +351,5 @@ __all__ = [
     "account_contract",
     "admitted_order",
     "ingest",
+    "normalize",
 ]

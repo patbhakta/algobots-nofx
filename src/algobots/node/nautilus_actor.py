@@ -24,9 +24,11 @@ costs nothing and ``algobots.node.command_actor`` stays importable — and
 testable — in the API process and in CI, where ``nautilus_trader`` is absent
 (it lives in the ``workers`` extra; CI installs ``dev``).
 
-Pinned to ``2.0.0rc6`` (roadmap rule 5). The API this module touches is small
+Pinned to ``2.0.0rc6`` (roadmap rule 5) and exercised on it by
+:mod:`algobots.node.paper_node` (ALG-3405). The API this module touches is small
 and deliberately so: ``order_factory.market``/``limit``, ``submit_order``,
-``cancel_order`` and ``cache.order``/``cache.instrument``.
+``cancel_order`` and ``cache.order``/``cache.instrument``. rc6 moved every
+model type to ``nautilus_trader.model`` and cancels by ``ClientOrderId``.
 """
 
 from __future__ import annotations
@@ -60,7 +62,7 @@ class NautilusExecution:
 
     def status(self, client_order_id: str) -> str | None:
         """The engine's own answer, as an ``OrderStatus`` name."""
-        from nautilus_trader.model.identifiers import ClientOrderId
+        from nautilus_trader.model import ClientOrderId
 
         order = self.strategy.cache.order(ClientOrderId(client_order_id))
         if order is None:
@@ -71,8 +73,7 @@ class NautilusExecution:
         return getattr(status, "name", str(status))
 
     def submit(self, order: SubmitOrder) -> None:
-        from nautilus_trader.model.enums import OrderSide, TimeInForce
-        from nautilus_trader.model.identifiers import ClientOrderId, InstrumentId
+        from nautilus_trader.model import ClientOrderId, InstrumentId, OrderSide, TimeInForce
 
         instrument_id = InstrumentId.from_str(order.symbol)
         instrument = self.strategy.cache.instrument(instrument_id)
@@ -89,7 +90,8 @@ class NautilusExecution:
             # The caller's idempotency key, verbatim. This is the line the
             # whole sprint is about.
             "client_order_id": ClientOrderId(order.client_order_id),
-            "time_in_force": TimeInForce[order.time_in_force.upper()],
+            # rc6's enums are pyo3 classes: attribute lookup, not ``Enum[name]``.
+            "time_in_force": getattr(TimeInForce, order.time_in_force.upper()),
         }
         if order.reduce_only:
             common["reduce_only"] = True
@@ -108,7 +110,7 @@ class NautilusExecution:
         self.strategy.submit_order(built)
 
     def cancel(self, client_order_id: str) -> None:
-        from nautilus_trader.model.identifiers import ClientOrderId
+        from nautilus_trader.model import ClientOrderId
 
         order = self.strategy.cache.order(ClientOrderId(client_order_id))
         if order is None:
@@ -116,7 +118,8 @@ class NautilusExecution:
             # order left the cache between the two calls). Raising lets the
             # entry be redelivered rather than silently dropping a cancel.
             raise RuntimeError(f"order {client_order_id} vanished from the cache before cancel")
-        self.strategy.cancel_order(order)
+        # rc6 cancels by id, not by order object (1.x took the order).
+        self.strategy.cancel_order(order.client_order_id)
 
 
 __all__ = ["InstrumentNotLoaded", "NautilusExecution"]

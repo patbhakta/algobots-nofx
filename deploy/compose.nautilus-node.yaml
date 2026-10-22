@@ -1,0 +1,38 @@
+# The rc6 paper node (ALG-3405, DEMO hop 3) — one Nautilus 2.0.0rc6 LiveNode on
+# the sandbox venue, reading algobots:cmd:<node> and publishing trader-* streams.
+#
+# Its own project so deploying it never recreates the API, Postgres or Redis.
+# It joins the main stack's network to reach `redis` (the same server the
+# gateway writes commands to and reads events from):
+#
+#   docker compose -f deploy/compose.nautilus-node.yaml up -d --build
+#
+# Paper only: the venue is the engine's SandboxExecutionClient; there is no
+# adapter, no credential and no external order route in this service.
+name: algobots-node
+
+services:
+  nautilus-node:
+    build:
+      context: ..
+      dockerfile: deploy/nautilus-node.Dockerfile
+    image: algobots/nautilus-node:rc6
+    container_name: nautilus-node
+    environment:
+      # Must match the gateway's NodeRegistry entry: commands are XADDed to
+      # algobots:cmd:<ALGOBOTS_NODE>, heartbeats are matched by this name, and
+      # fills/positions/balances by ALGOBOTS_NODE_ACCOUNT.
+      ALGOBOTS_NODE: ${ALGOBOTS_NODE:-nautilus-paper}
+      ALGOBOTS_NODE_VENUE: ${ALGOBOTS_NODE_VENUE:-SIM}
+      ALGOBOTS_NODE_ACCOUNT: ${ALGOBOTS_NODE_ACCOUNT:-SIM-001}
+      ALGOBOTS_NODE_SYMBOL: ${ALGOBOTS_NODE_SYMBOL:-EUR/USD.SIM}
+      ALGOBOTS_NODE_BALANCE: ${ALGOBOTS_NODE_BALANCE:-100000}
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+    networks: [stack]
+    restart: unless-stopped
+
+networks:
+  stack:
+    external: true
+    name: ${ALGOBOTS_NETWORK:-algobots_default}
