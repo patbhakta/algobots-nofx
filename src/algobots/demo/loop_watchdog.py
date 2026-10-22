@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
-"""Demo-loop watchdog (ALG-3357): guards the Kalshi paper demo end-to-end.
+"""Demo-loop watchdog (ALG-3357, now ALG-3411): guards the Kalshi paper demo end-to-end.
 
 Checks every run (stdlib only, designed for a systemd timer on .243):
-  1. Feed freshness  - newest observations.jsonl row younger than FEED_MAX_AGE_S.
+  1. Feed freshness  - newest observations.jsonl row younger than FEED_MAX_AGE_S,
+                       for the Kalshi feed and (when set) the Polymarket feed #2.
   2. Worker health   - /demo/api/workers: every account ready, heartbeat fresh.
   3. Day-reset proof - after 00:00 UTC, if coin was envelope-gated the previous
                        day (fewer fills than settled intervals) and a coin fill
                        appears on the new UTC day, post the proof ONCE to
-                       ALG-3357 (daily-loss envelope resets automatically).
+                       ALG-3411 (daily-loss envelope resets automatically).
   4. Reset-missing   - coin gated yesterday + settled intervals today +
                        zero coin fills today (coin attempts an entry every
                        interval) -> ALERT that the reset did not lift.
@@ -16,7 +17,7 @@ Posting rules (anti-spam): one alert per anomaly episode, one recovery post,
 re-alert at most every REALERT_S while persisting, one reset-proof per UTC day.
 Everything is logged; the process always exits 0 so the timer stays healthy.
 
-Env overrides: ALGOBOTS_FEED, ALGOBOTS_DECISION_LOG, ALGOBOTS_WORKERS_URL,
+Env overrides: ALGOBOTS_FEED, ALGOBOTS_PM_FEED (empty disables), ALGOBOTS_DECISION_LOG, ALGOBOTS_WORKERS_URL,
 WATCHDOG_STATE, WATCHDOG_LOG, PAPERCLIP_URL, PAPERCLIP_TOKEN_FILE, ISSUE.
 """
 
@@ -31,6 +32,8 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 FEED = Path(os.environ.get("ALGOBOTS_FEED", "/opt/laya/kalshi/observations.jsonl"))
+_PM_FEED = os.environ.get("ALGOBOTS_PM_FEED", "/opt/laya/polymarket/observations.jsonl")
+PM_FEED = Path(_PM_FEED) if _PM_FEED else None
 DECISION_LOG = Path(os.environ.get(
     "ALGOBOTS_DECISION_LOG",
     "/var/lib/docker/volumes/algobots_demostate/_data/decision_log.jsonl"))
@@ -40,7 +43,9 @@ STATE_FILE = Path(os.environ.get("WATCHDOG_STATE", "/opt/laya/kalshi/loop-watchd
 LOG_FILE = Path(os.environ.get("WATCHDOG_LOG", "/opt/laya/kalshi/loop-watchdog.log"))
 PAPERCLIP_URL = os.environ.get("PAPERCLIP_URL", "http://100.101.235.117:3100")
 TOKEN_FILE = Path(os.environ.get("PAPERCLIP_TOKEN_FILE", "/root/.paperclip/jarvis-cli-token"))
-ISSUE = os.environ.get("ISSUE", "ALG-3357")
+# Demo-loop alerts and day-reset proofs land on the dedicated loop card;
+# ALG-3357 stays blocked on the IBKR datafeed and must not be reopened.
+ISSUE = os.environ.get("ISSUE", "ALG-3411")
 
 FEED_MAX_AGE_S = 1500          # feed settles every 900s; allow one miss
 HEARTBEAT_MAX_AGE_S = 120
@@ -88,11 +93,12 @@ def post_comment(body: str) -> str | None:
         return str(exc)[:200]
 
 
-def feed_check() -> tuple[str, int]:
-    """Return (anomaly_key_or_empty, newest_row_age_s)."""
+def feed_check(path: Path | None = None, prefix: str = "feed") -> tuple[str, int]:
+    """Return (anomaly_key_or_empty, newest_row_age_s) for one observer feed."""
+    path = FEED if path is None else path
     newest = 0.0
     try:
-        with FEED.open() as fh:
+        with path.open() as fh:
             for line in fh:
                 try:
                     row = json.loads(line)
@@ -100,9 +106,9 @@ def feed_check() -> tuple[str, int]:
                 except (ValueError, TypeError):
                     continue
     except OSError:
-        return "feed_unreadable", 10**9
+        return f"{prefix}_unreadable", 10**9
     age = time.time() - newest
-    return ("" if age <= FEED_MAX_AGE_S else "feed_stale", int(age))
+    return ("" if age <= FEED_MAX_AGE_S else f"{prefix}_stale", int(age))
 
 
 def workers_check() -> tuple[str, str]:
@@ -253,6 +259,13 @@ def main() -> None:
     summary = f"feed_age={age}s"
     if key:
         anomalies[key] = f"feed newest row is {age}s old (limit {FEED_MAX_AGE_S}s)"
+
+    if PM_FEED is not None:
+        pkey, page = feed_check(PM_FEED, "pm_feed")
+        summary += f" pm_feed_age={page}s"
+        if pkey:
+            anomalies[pkey] = (f"Polymarket feed {PM_FEED} newest row is {page}s old "
+                               f"(limit {FEED_MAX_AGE_S}s)")
 
     wkey, wsum = workers_check()
     summary += f" workers[{wsum}]"

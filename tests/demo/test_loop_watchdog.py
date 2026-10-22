@@ -82,6 +82,21 @@ def test_feed_check_flags_staleness(tmp_path, monkeypatch):
     assert key == "feed_stale"
 
 
+def test_pm_feed_check_uses_own_path_and_key(tmp_path, monkeypatch):
+    kalshi = tmp_path / "kalshi.jsonl"
+    pm = tmp_path / "pm.jsonl"
+    monkeypatch.setattr(lw, "FEED", kalshi)
+    _write(kalshi, [{"ts": time.time() - 10}])
+    _write(pm, [{"ts": time.time() - lw.FEED_MAX_AGE_S - 60}])
+    assert lw.feed_check()[0] == ""
+    assert lw.feed_check(pm, "pm_feed")[0] == "pm_feed_stale"
+    assert lw.feed_check(tmp_path / "missing.jsonl", "pm_feed")[0] == "pm_feed_unreadable"
+
+
+def test_alerts_target_demo_loop_card_not_ibkr_parent():
+    assert lw.ISSUE == "ALG-3411"
+
+
 def test_reset_missing_fires_when_gated_yesterday_and_silent_today(tmp_path, monkeypatch):
     feed = tmp_path / "observations.jsonl"
     dlog = tmp_path / "decision_log.jsonl"

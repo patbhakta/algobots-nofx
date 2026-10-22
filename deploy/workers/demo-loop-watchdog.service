@@ -1,6 +1,6 @@
 # Demo-loop watchdog (ALG-3357): guards the Kalshi paper demo end-to-end.
-# Feed freshness + worker health every 5 min; auto-posts the daily-loss
-# envelope day-reset fill proof to ALG-3357 after 00:00 UTC. Anti-spam:
+# Kalshi + Polymarket feed freshness and worker health every 5 min; auto-posts the daily-loss
+# envelope day-reset fill proof to ALG-3411 after 00:00 UTC. Anti-spam:
 # one alert per anomaly episode, re-alert at 6h, one proof per UTC day.
 # Install on .243:
 #   cp /opt/algobots/repo/deploy/workers/demo-loop-watchdog.* /etc/systemd/system/
