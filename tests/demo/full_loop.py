@@ -11,8 +11,9 @@ The five hops of the demo, each reported ``wired`` / ``stubbed`` / ``missing``:
    (``POST /api/studio/strategies``, docs/design/strategy-studio-nautilus-bridge.md).
 2. ``gateway`` — the gateway is deployed, healthy, and has a node command stream
    (``algobots:cmd:<node>``) to dispatch to.
-3. ``nautilus`` — the node runs Nautilus 2.0.0rc6 (roadmap rule 5) in paper mode
-   and has filled orders.
+3. ``nautilus`` — the ``nautilus-node`` container runs Nautilus 2.0.0rc6
+   (roadmap rule 5) in paper mode and its ``trader-*`` event streams carry fills
+   (ALG-3405).
 4. ``datafeed`` — market data reaches the node and is fresh (ALG-3357).
 5. ``marimo`` — a marimo notebook on the stack renders that run's evidence
    (fills, PnL, data timestamps).
@@ -45,6 +46,10 @@ MARIMO = f"http://{HOST}:8202"
 API_CONTAINER = "algobots-api-1"
 MARIMO_CONTAINER = "nautilus-marimo"
 REDIS_CONTAINER = "algobots-redis-1"
+NODE_CONTAINER = "nautilus-node"  # deploy/compose.nautilus-node.yaml (ALG-3405)
+#: rc6 republishes every OrderFilled on this per-type topic, so the sum of
+#: these streams' lengths is the node's fill count.
+FILL_STREAMS = "trader-*:algobots:events.order_filled.*"
 NOTEBOOK_DIR = "/mnt/funnytree/algobots/notebooks"
 NAUTILUS_PIN = "2.0.0rc6"
 FEED_MAX_AGE_S = 15 * 60  # a replay or live feed older than this is not reaching the node
@@ -70,6 +75,8 @@ class Facts:
     redis_cmd_streams: list[str] | None = None
     redis_trader_streams: list[str] | None = None
     api_nautilus: str | None = None
+    node_nautilus: str | None = None
+    node_fills: int | None = None
     marimo_nautilus: str | None = None
     workers: dict[str, Any] | None = None
     studio_versions: int | None = None
@@ -159,6 +166,15 @@ def collect(host: str = HOST, api: str = API, marimo: str = MARIMO) -> Facts:
         f.redis_trader_streams = [k for k in keys if k.startswith("trader-")]
 
     f.api_nautilus = _ssh(host, _version_cmd(API_CONTAINER))
+    f.node_nautilus = _ssh(host, _version_cmd(NODE_CONTAINER))
+    fills = _ssh(
+        host,
+        f"for k in $(docker exec {REDIS_CONTAINER} redis-cli --scan --pattern "
+        f"{shlex.quote(FILL_STREAMS)}); "
+        f'do docker exec {REDIS_CONTAINER} redis-cli XLEN "$k"; done',
+    )
+    if fills is not None:
+        f.node_fills = sum(int(n) for n in fills.split() if n.isdigit())
     f.marimo_nautilus = _ssh(host, _version_cmd(MARIMO_CONTAINER))
 
     f.feed_path = _ssh(host, f"docker exec {API_CONTAINER} printenv ALGOBOTS_DEMO_FEED_PATH")
@@ -221,11 +237,22 @@ def _workers(f: Facts) -> list[dict[str, Any]]:
 
 def _nautilus(f: Facts) -> Hop:
     h = Hop("nautilus", f"Nautilus {NAUTILUS_PIN} paper run fills orders", MISSING)
+    h.evidence.append(
+        f"{NODE_CONTAINER} nautilus_trader: {f.node_nautilus} (pin {NAUTILUS_PIN}); "
+        f"fills on {FILL_STREAMS}: {f.node_fills}"
+    )
+    if f.node_nautilus == NAUTILUS_PIN and (f.node_fills or 0) > 0:
+        h.status = WIRED
+        return h
     ready = [w for w in _workers(f) if w.get("state") == "ready"]
     filled = sum(int(w.get("orders_filled") or 0) for w in ready)
-    h.evidence.append(f"node nautilus_trader: {f.api_nautilus} (pin {NAUTILUS_PIN})")
+    h.evidence.append(f"API nautilus_trader: {f.api_nautilus}")
     h.evidence.append(f"marimo nautilus_trader: {f.marimo_nautilus}")
     h.evidence.append(f"paper workers ready: {len(ready)}, orders filled: {filled}")
+    if f.node_nautilus == NAUTILUS_PIN:
+        h.status = STUBBED
+        h.evidence.append("rc6 node is up but has no fills on its event streams yet")
+        return h
     if not ready:
         return h
     if f.api_nautilus == NAUTILUS_PIN and filled > 0:

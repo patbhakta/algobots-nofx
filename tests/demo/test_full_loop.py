@@ -54,7 +54,8 @@ def test_every_hop_wired_passes():
         api_paths=["/api/studio/strategies"],
         gateway_health=200,
         redis_cmd_streams=["algobots:cmd:node-laya"],
-        api_nautilus=FL.NAUTILUS_PIN,
+        node_nautilus=FL.NAUTILUS_PIN,
+        node_fills=1,
         workers={"workers": [_worker(orders_filled=1, intervals=4)]},
         feed_age_s=60.0,
         marimo_http=200,
@@ -68,3 +69,12 @@ def test_wrong_nautilus_or_stale_feed_is_not_wired():
     assert _status(FL.Facts(api_nautilus="1.231.0", **base))["nautilus"] == FL.STUBBED
     stale = FL.Facts(feed_age_s=FL.FEED_MAX_AGE_S + 1, **base)
     assert _status(stale)["datafeed"] == FL.STUBBED
+
+
+def test_the_rc6_node_with_fills_is_wired_whatever_the_api_image_runs():
+    """ALG-3405: the hop is the node container, not the API's 1.x workers."""
+    node = dict(api_nautilus="1.231.0", node_nautilus=FL.NAUTILUS_PIN)
+    assert _status(FL.Facts(node_fills=2, **node))["nautilus"] == FL.WIRED
+    assert _status(FL.Facts(node_fills=0, **node))["nautilus"] == FL.STUBBED
+    wrong = FL.Facts(node_nautilus="1.231.0", node_fills=2)
+    assert _status(wrong)["nautilus"] == FL.MISSING

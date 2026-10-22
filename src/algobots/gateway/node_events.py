@@ -18,7 +18,7 @@ Two rules this module exists to keep:
    admitted one.
 
 Nautilus 2.0.0rc6 writes the same events in a different envelope from the
-1.231 capture (ALG-3405, ``artifacts/ALG-3405/rc6-wire-shapes.md``):
+1.231 capture (ALG-3405, ``artifacts/ALG-3405/README.md``):
 order and position events arrive wrapped in their enum variant
 (``{"Filled": {...}}``, ``{"PositionOpened": {...}}``), ``AccountState`` and
 position events carry no ``type`` field (it is only on the stream entry), and
