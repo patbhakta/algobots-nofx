@@ -928,6 +928,22 @@
     },
     {
       "repo": "algobots",
+      "path": "artifacts/ALG-3406/README.md"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3406/verifier-243.txt"
+    },
+    {
+      "repo": "algobots",
+      "path": "src/algobots/node/replay.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "tests/node/test_replay.py"
+    },
+    {
+      "repo": "algobots",
       "path": "artifacts/ALG-3405/README.md"
     }
   ],

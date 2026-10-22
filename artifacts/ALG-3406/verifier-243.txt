@@ -1,0 +1,9 @@
+| # | Hop | Status | Evidence |
+| --- | --- | --- | --- |
+| 1 | Studio config saved for a strategy | **stubbed** | no /api/studio/strategies (Studio->gateway draft contract, ALG-3352); demo-only studio serves 6 built-in template versions (/demo/studio); NoFX Studio does not save through the gateway |
+| 2 | Gateway accepts and dispatches | **stubbed** | GET /health -> 404 (gateway contract health route); redis algobots:cmd:* streams: 1 |
+| 3 | Nautilus 2.0.0rc6 paper run fills orders | **wired** | nautilus-node nautilus_trader: 2.0.0rc6 (pin 2.0.0rc6); fills on trader-*:algobots:events.order_filled.*: 3 |
+| 4 | Market data reaches the node | **wired** | algobots:feed:nautilus-paper: 32 signals, last 1s ago; source replay:/catalog/data/quote_tick/EURUSD.SIM/part-0.parquet EUR/USD.SIM; quotes received by the node: 65; last bid/ask 1.12125/1.12151; recorded ts 2020-01-01T17:04:19Z (row 64, lap 0) -> node ts 2026-10-22T06:46:37Z |
+| 5 | marimo renders evidence from the run | **wired** | marimo HTTP: 303; notebooks marked 'ALG-3403 evidence': ['/mnt/funnytree/algobots/notebooks/paper_run_evidence.py'] |
+
+full loop: FAIL (3/5 hops wired)

@@ -150,19 +150,19 @@ def _node_feed(host: str, f: Facts) -> None:
     rc = f"docker exec {REDIS_CONTAINER} redis-cli"
     out = _ssh(
         host,
-        f'echo "#TIME $({rc} TIME | head -1)"; '
+        f'echo "#TIME $({rc} TIME | tr "\\n" " ")"; '
         f"for k in $({rc} --scan --pattern {shlex.quote(NODE_FEED_STREAMS)}); "
         f'do echo "#STREAM $k $({rc} XLEN "$k")"; {rc} XREVRANGE "$k" + - COUNT 1; done',
     )
     if out is None:
         f.errors.append(f"ssh {host}: node feed probe failed")
         return
-    now_s: int | None = None
+    now_s: float | None = None
     for block in out.split("#")[1:]:
         lines = block.strip().splitlines()
         head = lines[0].split()
-        if head[0] == "TIME" and len(head) == 2:
-            now_s = int(head[1])
+        if head[0] == "TIME" and len(head) == 3:  # seconds, microseconds
+            now_s = int(head[1]) + int(head[2]) / 1e6
         elif head[0] == "STREAM" and len(head) == 3 and len(lines) >= 2:
             entry_id, kv = lines[1], lines[2:]
             last = dict(zip(kv[::2], kv[1::2], strict=False))
