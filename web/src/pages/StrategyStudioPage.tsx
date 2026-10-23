@@ -1314,10 +1314,18 @@ export function StrategyStudioPage() {
         </div>
       </div>
 
-      <div className="grid min-h-[calc(100vh-137px)] grid-cols-1">
-        <aside className="hidden border-r border-[rgba(26,24,19,0.14)] bg-nofx-bg-deeper p-3">
-          <div className="mb-2 px-2 text-xs font-medium uppercase tracking-wide text-nofx-text-muted">
-            {text(language, 'My strategies', 'My strategies')}
+      <div className="grid min-h-[calc(100vh-137px)] grid-cols-1 lg:grid-cols-[260px_1fr]">
+        <aside className="hidden border-r border-[rgba(26,24,19,0.14)] bg-nofx-bg-deeper p-3 lg:block">
+          <div className="mb-2 flex items-center justify-between px-2 text-xs font-medium uppercase tracking-wide text-nofx-text-muted">
+            {text(language, 'My strategy configs', 'My strategy configs')}
+            <button
+              type="button"
+              onClick={createStrategy}
+              title={text(language, 'New strategy config', 'New strategy config')}
+              className="rounded p-1 text-nofx-gold hover:bg-nofx-gold/10"
+            >
+              <Plus className="h-3.5 w-3.5" />
+            </button>
           </div>
           <div className="space-y-2">
             {strategies.map((strategy) => (
@@ -1361,7 +1369,7 @@ export function StrategyStudioPage() {
           </div>
           {selectedStrategy && aiConfig && coinSource && indicators && risk ? (
             <div className="mx-auto max-w-7xl space-y-4">
-              <section className="hidden rounded-lg border border-[rgba(26,24,19,0.14)] bg-nofx-bg-lighter p-4">
+              <section className="rounded-lg border border-[rgba(26,24,19,0.14)] bg-nofx-bg-lighter p-4">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div className="min-w-0 flex-1">
                     <input
@@ -1397,7 +1405,7 @@ export function StrategyStudioPage() {
                       </div>
                     ) : null}
                   </div>
-                  <div className="hidden flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-2">
                     <button
                       type="button"
                       onClick={() => saveStrategy(true)}
@@ -1448,7 +1456,9 @@ export function StrategyStudioPage() {
                 </div>
               </section>
 
-              <section className="rounded-lg border border-[rgba(26,24,19,0.14)] bg-nofx-bg-lighter p-4">
+              {/* ALG-3414: the Vergex signal board came from the retired NoFX Go
+                  backend; live market data is the Kalshi feed in the paper loop. */}
+              <section className="hidden rounded-lg border border-[rgba(26,24,19,0.14)] bg-nofx-bg-lighter p-4">
                 <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
                   <div>
                     <div className="flex items-center gap-2 text-sm font-semibold text-nofx-text">
@@ -1866,7 +1876,7 @@ export function StrategyStudioPage() {
                 ) : null}
               </section>
 
-              <details className="hidden rounded-lg border border-[rgba(26,24,19,0.14)] bg-nofx-bg-deeper p-4">
+              <details className="rounded-lg border border-[rgba(26,24,19,0.14)] bg-nofx-bg-deeper p-4">
                 <summary className="cursor-pointer text-sm font-semibold text-nofx-text">
                   {text(language, 'Advanced settings', 'Advanced settings')}
                 </summary>
