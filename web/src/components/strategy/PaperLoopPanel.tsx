@@ -133,7 +133,9 @@ function EvidenceCard() {
   // Host-relative: works on any tailnet address, no hardcoded host in the repo.
   const host = window.location.hostname
   const exportUrl = `http://${host}:8203/kalshi_demo_loop_latest.html`
-  const notebookUrl = `http://${host}:8202`
+  // marimo runs with --token-password on the stack (tailnet-only, paper
+  // demo); the access_token param authenticates the funder session in-browser.
+  const notebookUrl = `http://${host}:8202/?access_token=algobots-studio`
   const link =
     'text-nofx-text underline decoration-nofx-gold underline-offset-2 hover:text-nofx-gold'
   return (
