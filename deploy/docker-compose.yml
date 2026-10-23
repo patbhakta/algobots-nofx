@@ -63,6 +63,40 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
+  # ALG-3404: the ROADMAP-v3 Phase 1 gateway (contracts/gateway.openapi.yaml,
+  # served under /v1). Same image as the API; the API's `alembic upgrade head`
+  # owns the projection tables (0011), so the gateway waits for it to be healthy.
+  # Paper only. Nodes, session tokens and limits come from .env:
+  #   ALGOBOTS_GATEWAY_NODES     JSON list of Node fields (node, account_id, ...)
+  #   ALGOBOTS_GATEWAY_SESSIONS  JSON {token: {principal, accounts}}; unset = all 401
+  #   ALGOBOTS_GATEWAY_MAX_QTY / ALGOBOTS_GATEWAY_KILL  pre-trade limits
+  gateway:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    command: ["uvicorn", "algobots.gateway.serve:create_app", "--factory", "--host", "0.0.0.0", "--port", "8000"]
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      # Built from POSTGRES_*, as for the API (never the host shell's DATABASE_URL).
+      DATABASE_URL: postgresql://${POSTGRES_USER:-algobots}:${POSTGRES_PASSWORD:-algobots}@postgres:5432/${POSTGRES_DB:-algobots}
+      REDIS_URL: redis://redis:6379/0
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/v1/health', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      start_period: 10s
+      retries: 5
+    ports:
+      - "${API_BIND:-127.0.0.1}:${GATEWAY_PORT:-8210}:8000"
+    depends_on:
+      api:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
 volumes:
   pgdata:
   redisdata:
