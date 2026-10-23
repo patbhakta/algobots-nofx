@@ -452,6 +452,10 @@
     },
     {
       "repo": "algobots",
+      "path": "docs/research/openbb-architecture-decision-2026-10-23.md"
+    },
+    {
+      "repo": "algobots",
       "path": "docs/research/openalgo-feature-reference.md"
     },
     {
