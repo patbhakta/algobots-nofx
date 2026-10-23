@@ -904,6 +904,10 @@
     },
     {
       "repo": "algobots",
+      "path": "scripts/rc6_gateway_deploy_smoke.py"
+    },
+    {
+      "repo": "algobots",
       "path": "src/algobots/node/paper_node.py"
     },
     {
