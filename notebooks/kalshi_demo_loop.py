@@ -471,6 +471,7 @@ def cross_venue(settlements: dict, poly: dict) -> dict:
     }
 
 
+@app.function
 def scoreboard_rows(decisions: dict) -> list[dict]:
     """ALG-3357 honest scoreboard: strategy vs the coin arm vs the book itself.
 
