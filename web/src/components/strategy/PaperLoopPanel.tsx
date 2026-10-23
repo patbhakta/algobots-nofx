@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Copy, KeyRound, Loader2, RefreshCw, ShieldOff } from 'lucide-react'
+import { Copy, ExternalLink, KeyRound, Loader2, RefreshCw, ShieldOff } from 'lucide-react'
 import { notify } from '../../lib/notify'
 import {
   paperLoopApi,
@@ -125,6 +125,44 @@ function ReceiptCell({ d }: { d: LoopDecision }) {
     <span className="font-mono text-xs" data-testid="receipt">
       {r.client_order_id} · {r.trade_id} · {r.qty} @ {r.px}
     </span>
+  )
+}
+
+function EvidenceCard() {
+  // ALG-3352: link the loop's own evidence exports from the funder surface.
+  // Host-relative: works on any tailnet address, no hardcoded host in the repo.
+  const host = window.location.hostname
+  const exportUrl = `http://${host}:8203/kalshi_demo_loop_latest.html`
+  const notebookUrl = `http://${host}:8202`
+  const link =
+    'text-nofx-text underline decoration-nofx-gold underline-offset-2 hover:text-nofx-gold'
+  return (
+    <div className={CARD} data-testid="evidence-card">
+      <div className="mb-2 text-sm font-semibold text-nofx-text">Evidence</div>
+      <ul className="space-y-1 text-sm text-nofx-text">
+        <li>
+          <a className={link} href={exportUrl} target="_blank" rel="noreferrer">
+            Evidence export{' '}
+            <ExternalLink className="inline h-3 w-3" aria-hidden />
+          </a>
+          <span className="text-xs text-nofx-text-muted">
+            {' '}
+            &mdash; auto-refreshing page with calibration and settled-call
+            scoring; refetches live data when opened
+          </span>
+        </li>
+        <li>
+          <a className={link} href={notebookUrl} target="_blank" rel="noreferrer">
+            Interactive notebook (marimo){' '}
+            <ExternalLink className="inline h-3 w-3" aria-hidden />
+          </a>
+          <span className="text-xs text-nofx-text-muted">
+            {' '}
+            &mdash; run and filter the demo analysis yourself
+          </span>
+        </li>
+      </ul>
+    </div>
   )
 }
 
@@ -442,6 +480,7 @@ export function PaperLoopPanel() {
           </div>
         </>
       ) : null}
+      <EvidenceCard />
       {me?.can_mint_invites ? <InvitesCard /> : null}
     </section>
   )
