@@ -1331,9 +1331,10 @@ export function StrategyStudioPage() {
         </aside>
 
         <main className="overflow-y-auto p-5">
-          <div className="mx-auto mb-6 max-w-7xl">
+          <details className="mx-auto mb-6 max-w-7xl rounded-lg border p-4">
+            <summary className="cursor-pointer font-semibold">Live paper-loop receipts</summary>
             <PaperLoopPanel />
-          </div>
+          </details>
           {selectedStrategy && aiConfig && coinSource && indicators && risk ? (
             <div className="mx-auto max-w-7xl space-y-4">
               <section className="rounded-lg border border-[rgba(26,24,19,0.14)] bg-nofx-bg-lighter p-4">
@@ -1843,9 +1844,9 @@ export function StrategyStudioPage() {
                 ) : null}
               </section>
 
-              <details className="rounded-lg border border-[rgba(26,24,19,0.14)] bg-nofx-bg-deeper p-4">
+              <details open className="rounded-lg border border-[rgba(26,24,19,0.14)] bg-nofx-bg-deeper p-4">
                 <summary className="cursor-pointer text-sm font-semibold text-nofx-text">
-                  {text(language, 'Advanced settings', 'Advanced settings')}
+                  {text(language, 'Strategy configuration', 'Strategy configuration')}
                 </summary>
                 <div className="mt-4 rounded-lg border border-[rgba(26,24,19,0.14)] bg-nofx-bg-lighter p-4">
                   <div className="mb-3 text-sm font-semibold text-nofx-text">
