@@ -231,19 +231,19 @@ function defaultIndicators(
 
 function defaultRisk(risk?: Partial<RiskControlConfig>): RiskControlConfig {
   const leverage =
-    risk?.altcoin_max_leverage || risk?.btc_eth_max_leverage || 10
+    risk?.altcoin_max_leverage ?? risk?.btc_eth_max_leverage ?? 10
   return {
-    max_positions: risk?.max_positions || 8,
-    btc_eth_max_leverage: leverage,
-    altcoin_max_leverage: leverage,
+    max_positions: risk?.max_positions ?? 8,
+    btc_eth_max_leverage: risk?.btc_eth_max_leverage ?? leverage,
+    altcoin_max_leverage: risk?.altcoin_max_leverage ?? leverage,
     btc_eth_max_position_value_ratio:
-      risk?.btc_eth_max_position_value_ratio || 5,
+      risk?.btc_eth_max_position_value_ratio ?? 5,
     altcoin_max_position_value_ratio:
-      risk?.altcoin_max_position_value_ratio || 5,
-    max_margin_usage: risk?.max_margin_usage || 1.0,
-    min_position_size: risk?.min_position_size || 12,
-    min_risk_reward_ratio: risk?.min_risk_reward_ratio || 3,
-    min_confidence: risk?.min_confidence || 78,
+      risk?.altcoin_max_position_value_ratio ?? 5,
+    max_margin_usage: risk?.max_margin_usage ?? 1.0,
+    min_position_size: risk?.min_position_size ?? 12,
+    min_risk_reward_ratio: risk?.min_risk_reward_ratio ?? 3,
+    min_confidence: risk?.min_confidence ?? 78,
   }
 }
 
@@ -1107,24 +1107,11 @@ export function StrategyStudioPage() {
     try {
       const config = simplifyConfig(overrideConfig || editingConfig)
       config.language = language as 'zh' | 'en'
-      const response = await fetch(
-        `${API_BASE}/api/strategies/${selectedStrategy.id}`,
-        {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            name: selectedStrategy.name,
-            description: selectedStrategy.description,
-            config,
-            is_public: selectedStrategy.is_public,
-            config_visible: selectedStrategy.config_visible,
-          }),
-        }
-      )
-      if (!response.ok) throw new Error('Failed to save strategy')
+      await api.updateStrategy(selectedStrategy.id, {
+        name: selectedStrategy.name,
+        description: selectedStrategy.description,
+        config,
+      })
       if (activateAfter) {
         await api.activateStrategy(selectedStrategy.id)
       }
@@ -1381,6 +1368,7 @@ export function StrategyStudioPage() {
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div className="min-w-0 flex-1">
                     <input
+                      aria-label="Strategy name"
                       value={selectedStrategy.name}
                       onChange={(event) => {
                         setSelectedStrategy({
@@ -1392,6 +1380,7 @@ export function StrategyStudioPage() {
                       className="w-full bg-transparent text-lg font-semibold text-nofx-text outline-none"
                     />
                     <input
+                      aria-label="Strategy description"
                       value={selectedStrategy.description || ''}
                       onChange={(event) => {
                         setSelectedStrategy({
@@ -2021,6 +2010,7 @@ export function StrategyStudioPage() {
                           )}
                         </span>
                         <select
+                          aria-label="Entry confidence"
                           value={risk.min_confidence}
                           onChange={(event) =>
                             patchRisk({
@@ -2029,7 +2019,7 @@ export function StrategyStudioPage() {
                           }
                           className="w-full rounded-lg border border-[rgba(26,24,19,0.14)] bg-nofx-bg px-3 py-2 text-sm text-nofx-text"
                         >
-                          {confidenceOptions.map((value) => (
+                          {Array.from(new Set([risk.min_confidence, ...confidenceOptions])).sort((a, b) => a - b).map((value) => (
                             <option key={value} value={value}>
                               {value}%
                             </option>
