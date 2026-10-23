@@ -67,12 +67,23 @@ def main() -> None:
             time.sleep(0.2)
         assert order["status"] == expected, order
         results[label] = order
-    results["pending"] = docker("exec", "algobots-redis-1", "redis-cli", "--raw", "XPENDING", "algobots:cmd:nautilus-paper", "algobots-node")
-    results["redis_events"] = docker("exec", "algobots-redis-1", "redis-cli", "--raw", "XREVRANGE", "trader-NAUTILUS-PAPER:algobots:events.order.CommandNode-000", "+", "-", "COUNT", "12")
+    results["pending"] = docker(
+        "exec", "algobots-redis-1", "redis-cli", "--raw", "XPENDING",
+        "algobots:cmd:nautilus-paper", "algobots-node",
+    )
+    results["redis_events"] = docker(
+        "exec", "algobots-redis-1", "redis-cli", "--raw", "XREVRANGE",
+        "trader-NAUTILUS-PAPER:algobots:events.order.CommandNode-000",
+        "+", "-", "COUNT", "12",
+    )
     docker("restart", "algobots-gateway-1")
     for _ in range(100):
         try:
-            persisted = {label: request("/orders/" + order["client_order_id"]) for label, order in results.items() if label in ("filled", "denied")}
+            persisted = {
+                label: request("/orders/" + order["client_order_id"])
+                for label, order in results.items()
+                if label in ("filled", "denied")
+            }
             break
         except Exception:
             time.sleep(0.2)
@@ -83,7 +94,13 @@ def main() -> None:
     after = json.loads(docker("inspect", "algobots-gateway-1"))[0]
     oldenv = dict(e.split("=", 1) for e in before["Config"]["Env"])
     newenv = dict(e.split("=", 1) for e in after["Config"]["Env"])
-    checks = {k: oldenv.get(k) == newenv.get(k) for k in ("DATABASE_URL", "REDIS_URL", "ALGOBOTS_GATEWAY_SESSIONS", "ALGOBOTS_GATEWAY_NODES")}
+    checks = {
+        k: oldenv.get(k) == newenv.get(k)
+        for k in (
+            "DATABASE_URL", "REDIS_URL",
+            "ALGOBOTS_GATEWAY_SESSIONS", "ALGOBOTS_GATEWAY_NODES",
+        )
+    }
     assert all(checks.values()), checks
     results["configuration_preserved"] = checks
     print(json.dumps(results), flush=True)
