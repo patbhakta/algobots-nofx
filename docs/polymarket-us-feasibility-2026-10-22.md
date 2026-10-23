@@ -54,3 +54,45 @@ GREEN as data feed #2. A `polymarket_observer.py` would be ~the same shape
 as `kalshi_observer.py` (~150 LOC, stdlib only, 20 s poll, atomic rewrite).
 Execution there is a separate, later conversation (venue diversification
 after the Kalshi demo loop proves out end-to-end).
+
+---
+
+## ADDENDUM 2026-10-23 — the US-regulated venue itself is LIVE (polymarket.us)
+
+The note above covered the GLOBAL site (polymarket.com) reachable from US IPs.
+Today the actual US venue went from "unverifiable" to probeable — material update:
+
+1. **polymarket.us is live and lists `btc-updown-15m` itself.** Operated by
+   QCX LLC d/b/a Polymarket US — a CFTC-regulated Designated Contract Market.
+   Homepage features the crypto up/down family: 15m, 1h, 1d series
+   (event slugs `btc-updown-15m-YYYY-MM-DD-HHMMz`, market slugs
+   `cpc-btc-updown-15m-YYYY-MM-DD-HHMMz`). Plus Above/Below ladders,
+   Price Range, One-Touch families (docs/faqs/crypto-faqs.md).
+2. **Key-free public data API** (this replaces the PolyBolt licensed-stream
+   dead-end noted on ALG-3411): `https://gateway.polymarket.us` — no API key.
+   Verified from .243 at 08:15Z (77 ms):
+   - `GET /v1/events?slug=btc-updown-15m-...-HHMMz` → event + market metadata
+   - `GET /v1/markets/{market_slug}/bbo` → live BBO + stats (live interval:
+     best bid 0.99, 219,676 shares traded, OI 41,236 — real liquidity)
+   - `GET /v1/markets/{market_slug}/settlement` → clean binary settlement
+     (`{"settlement": 0|1}`) — settlement truth over HTTP, no Chain forensics
+   - `GET /v1/price-history?symbol=...` (display-price series; params TBD)
+   - WSS streams: `wss://api.polymarket.us/v1/ws/markets` (book + trades)
+   - Rate limit 25 req/s public — a 15 s poll observer uses ~0.07% of it.
+   Caveat: BBO/book return 404 for markets outside their live window —
+   poll the OPEN interval (status MARKET_STATUS_OPEN), not future ones.
+3. **Third settlement basis: CF Benchmarks BRTI.** Market description: settle
+   Up if avg of 60 one-second BRTI prints before close ≥ same at open
+   (regulated benchmark; spot exchanges irrelevant). So the venue trio has
+   THREE bases: Kalshi mark, .com Chainlink TWAP, .us CF BRTI. Cross-venue
+   disagreement is itself signal — worth a marimo panel later.
+4. **Trading API exists** (`api.polymarket.us`, API-key auth, orders/
+   portfolio/accounts) — GREEN for a future execution leg, but that requires
+   a KYC'd US account and is a Pat decision; demo stays paper-only.
+
+### Verdict update
+Feed-2 feasibility upgrades from "GREEN via global site" to "GREEN on the
+actual US-regulated venue with a first-class public API". A PM-US observer
+would be the same ~150-LOC stdlib shape as kalshi_observer.py; settlement
+verification is a single HTTP GET instead of Chainlink CTF forensics.
+Repo evidence: `tools/pmus_public_probe.py` (run it, no deps).
