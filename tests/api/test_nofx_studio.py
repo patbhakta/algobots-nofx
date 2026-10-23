@@ -333,7 +333,31 @@ def test_leaderboard_uses_scoped_decision_scores(client, funder, monkeypatch):
         )
 
     monkeypatch.setattr(demo_router, "_quality", quality)
+    from decimal import Decimal
+
+    monkeypatch.setattr(
+        demo_router,
+        "_ledger",
+        lambda: (
+            SimpleNamespace(
+                books={
+                    "laya": SimpleNamespace(
+                        curve=[(123.0, Decimal("240.13")), (124.0, Decimal("245.09"))]
+                    ),
+                    "not-granted": SimpleNamespace(curve=[(123.0, Decimal("99999"))]),
+                }
+            ),
+            "2026-10-23",
+        ),
+    )
     result = client.get("/api/leaderboard", headers=_h(funder["token"])).json()
     assert result["accounts"][0]["hit_rate"] == 0.6
     assert result["accounts"][0]["brier"] == 0.23
     assert result["settled"] == 40
+    assert result["equity_curves"] == {
+        "laya": [
+            {"ts": 123.0, "equity": "240.13"},
+            {"ts": 124.0, "equity": "245.09"},
+        ]
+    }
+    assert "replay" in result["equity_source"]

@@ -732,11 +732,23 @@ def leaderboard(ctx: AuthContext = Depends(get_auth_context)) -> dict:
     from algobots.demo import router as demo_router
 
     try:
-        q = demo_router._quality(_demo_scope(ctx))
+        scope = _demo_scope(ctx)
+        q = demo_router._quality(scope)
+        ledger, _ = demo_router._ledger()
     except Exception as exc:
         return {"accounts": [], "error": f"Scores unavailable: {type(exc).__name__}"}
     return {
         "accounts": [asdict(score) for score in q.scores.values()],
+        "equity_curves": {
+            account: [
+                {"ts": ts, "equity": str(equity)} for ts, equity in ledger.books[account].curve
+            ]
+            for account in scope.accounts
+            if account in ledger.books
+        },
+        "equity_source": (
+            "decision-ledger replay; includes sleeve refills; not worker cash balances"
+        ),
         "logged": q.logged,
         "settled": len(q.settled),
         "error": None,
