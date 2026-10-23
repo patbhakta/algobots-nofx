@@ -1061,6 +1061,26 @@
     {
       "repo": "algobots",
       "path": "tools/pmus_public_probe.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3418/alg3418-studio-backtest-walkthrough.mjs"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3418/walkthrough/01-before-backtest.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3418/walkthrough/02-backtest-result.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3418/walkthrough/03-result-after-reload.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3418/walkthrough/summary.json"
     }
   ],
   "scope_revisions": [
