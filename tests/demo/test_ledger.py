@@ -362,3 +362,87 @@ def test_nautilus_sleeve_execution_and_rendering():
     ref_refill_lg = L.build(rows, refills=[refill_at])
     for acct in L.STRATEGIES:
         assert refill_lg.books[acct].equity == ref_refill_lg.books[acct].equity
+
+
+def _qrow(i: int, p: float, outcome: int, yes_bid: float, yes_ask: float) -> L.Row:
+    """A row that captured a Kalshi book at decision time."""
+    return L.Row(
+        event=f"KXBTC15M-26OCT06{i:04d}",
+        strike=85000.0,
+        outcome=outcome,
+        ts=1791244800.0 + i * 900,
+        p=p,
+        conf=0.1,
+        jev_p=0.6,
+        jev_conf=0.5,
+        jev_choice="up",
+        mkt_mid=(yes_bid + yes_ask) / 2,
+        mkt_yes_bid=yes_bid,
+        mkt_yes_ask=yes_ask,
+    )
+
+
+def test_yes_fill_pays_the_recorded_ask():
+    rows = [_qrow(0, 0.90, 1, 0.55, 0.58)]  # laya YES, outcome up
+    d = L.build(rows).books["laya"].decisions[0]
+    assert d.status == "FILLED" and d.side == "YES"
+    assert d.px_source == "kalshi_yes_ask"
+    assert d.price == Decimal("0.58")
+    assert d.qty == 25  # floor(clamped 15 / 0.58)
+    assert d.stake == Decimal("14.50")  # actual cost, not the approved notional
+    assert d.fee == Decimal("0.43")  # 0.07 * 25 * 0.58 * 0.42, ceiled
+    assert d.pnl == Decimal("10.07")  # 25 * (1 - 0.58) - fee
+
+
+def test_no_fill_pays_one_minus_the_recorded_bid():
+    rows = [_qrow(0, 0.10, 0, 0.55, 0.58)]  # laya NO, outcome down -> win
+    d = L.build(rows).books["laya"].decisions[0]
+    assert d.status == "FILLED" and d.side == "NO"
+    assert d.px_source == "kalshi_no_ask"
+    assert d.price == Decimal("0.45")  # 1 - bid: the NO side crosses its own spread
+    assert d.qty == 33  # floor(15 / 0.45)
+    assert d.stake == Decimal("14.85")
+    assert d.pnl == Decimal("17.57")  # 33 * 0.55 - fee(0.58)
+
+
+def test_fill_falls_back_to_the_assumed_mid_without_a_book():
+    rows = [_row(0, 0.70, 1)]  # no mkt_* fields captured
+    d = L.build(rows).books["laya"].decisions[0]
+    assert d.status == "FILLED"
+    assert d.px_source == L.PX_ASSUMED
+    assert d.price == L.FILL_PRICE
+    # the old 50c math is unchanged for quote-less rows
+    assert d.pnl == Decimal("15") - L.fee_for(Decimal("15"))
+
+
+def test_open_position_marks_at_the_recorded_mid():
+    # a fill whose interval has not settled marks at the decision-time mid
+    rows = [_qrow(0, 0.90, 1, 0.55, 0.58)]
+    lg = L.build(rows)
+    pos = B.positions(lg, now=rows[0].ts - 60)[0]
+    assert pos["account"] == "laya"
+    assert pos["mark"] == "0.57"  # (bid + ask) / 2, not the assumed 50c
+    # YES bought at 0.58 against a 0.57 mid: unrealized is the spread + fee
+    assert pos["unrealized_pnl"] == "-0.68"
+
+
+def test_nautilus_sleeve_agrees_at_book_prices():
+    pytest.importorskip("nautilus_trader")
+    from algobots.engine.sleeve import EXECUTOR, NautilusSleeve
+
+    rows = [_qrow(i, 0.70, i % 2, 0.52 + 0.01 * i, 0.55 + 0.01 * i) for i in range(4)]
+    ref_lg = L.build(rows)
+    nautilus_lg = L.build(rows, executor=NautilusSleeve, executor_name=EXECUTOR)
+    for acct in L.STRATEGIES:
+        rb, nb = ref_lg.books[acct], nautilus_lg.books[acct]
+        assert nb.pnl == rb.pnl, acct
+        assert nb.equity == rb.equity, acct
+        for rd, nd in zip(rb.decisions, nb.decisions, strict=True):
+            if nd.status == "FILLED":
+                assert (nd.qty, nd.price, nd.stake, nd.fee, nd.pnl) == (
+                    rd.qty,
+                    rd.price,
+                    rd.stake,
+                    rd.fee,
+                    rd.pnl,
+                ), acct

@@ -125,11 +125,11 @@ def instrument(venue: Venue, event: str, outcome: str, ts: float) -> BinaryOptio
     )
 
 
-def quote(inst: BinaryOption, ts: float) -> QuoteTick:
-    # The PoC feed has no order book: quote the assumed 50c mid both sides,
-    # with ample size so a sleeve-capped order always fills in full.
-    px, sz, ts_ns = Price.from_str(str(L.FILL_PRICE)), Quantity.from_int(10_000), int(ts * NS)
-    return QuoteTick(inst.id, px, px, sz, sz, ts_ns, ts_ns)
+def quote(inst: BinaryOption, ts: float, px: Decimal = L.FILL_PRICE) -> QuoteTick:
+    # Quote the decision's executable price both sides (the ledger fills at
+    # the recorded book ask), with ample size so the order fills in full.
+    q, sz, ts_ns = Price.from_str(str(px)), Quantity.from_int(10_000), int(ts * NS)
+    return QuoteTick(inst.id, q, q, sz, sz, ts_ns, ts_ns)
 
 
 def current_event(now: float) -> str:
@@ -233,8 +233,8 @@ class DemoPaperStrategy(Strategy):
                 qty = d.qty if d.qty else int(d.stake / L.FILL_PRICE)
                 sell = d.sell
                 tags = [f"acct:{self.account}", f"event:{d.event}", f"api:{d.req['leg_id']}"]
-            else:  # L.Decision: entries size from the stake at the 50c mid
-                qty, sell, tags = int(d.stake / L.FILL_PRICE), False, [
+            else:  # L.Decision: the ledger already sized qty at its fill price
+                qty, sell, tags = d.qty or int(d.stake / L.FILL_PRICE), False, [
                     f"acct:{self.account}",
                     f"event:{d.event}",
                 ]
@@ -397,7 +397,9 @@ class PaperWorker:
             if not self.strategy.queue(inst.id, d):
                 continue
             self.done_events.add(d.event)
-            ticks.append(quote(inst, d.ts))
+            ticks.append(
+                quote(inst, d.ts, d.price if d.price > 0 else L.FILL_PRICE)
+            )
         if ticks:
             self.engine.add_data(ticks)
             self.engine.run(streaming=True)

@@ -157,8 +157,8 @@ def _(mo):
     # Kalshi demo loop ({EVIDENCE_MARKER})
 
     Live KXBTC15M feed, then strategy calls, then Nautilus paper fills. Read-only GETs against
-    the AlgoBots API; paper only. Fills are at the ledger's assumed 50c, and the observer
-    records the real quote beside each row.
+    the AlgoBots API; paper only. Fills cross the recorded book (YES at the ask, NO at
+    1-bid); rows that captured no quote fill at an assumed 50c and say so.
     """)
     return
 

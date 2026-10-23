@@ -95,7 +95,13 @@ def record(d: L.Decision, row: L.Row) -> dict:
         "p_up": p,
         "inputs": inputs,
         "reason": d.reason,
-        "execution": {"status": d.status, "stake": str(d.stake)},
+        "execution": {
+            "status": d.status,
+            "stake": str(d.stake),
+            "qty": d.qty,
+            "fill_px": str(d.price),
+            "px_source": d.px_source or None,
+        },
     }
 
 
