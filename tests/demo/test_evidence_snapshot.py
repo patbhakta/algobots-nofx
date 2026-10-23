@@ -49,3 +49,64 @@ def test_publish_is_atomic_replace_and_failure_keeps_old(tmp_path):
     mod.publish(snap, published)
     assert published.read_bytes().endswith(b"</html>")
     assert not snap.exists()  # replaced, not copied
+import urllib.request
+
+
+# --- share-out publish + HTTP reachability (ALG-3357) ---
+
+def test_publish_web_copies_atomically_and_keeps_source(tmp_path):
+    source = tmp_path / "notebooks" / "latest.html"
+    source.parent.mkdir()
+    source.write_bytes(_big_html(tmp_path).read_bytes())
+    web_dir = tmp_path / "share-out"
+    target = web_dir / "latest.html"
+    target.parent.mkdir()
+    target.write_bytes(b"old web evidence")
+
+    mod.publish_web(source, target)
+
+    assert target.read_bytes() == source.read_bytes()  # new content live
+    assert source.exists()  # container copy untouched
+    assert not (web_dir / ".kalshi_demo_loop.web.html").exists()  # no tmp litter
+
+
+def test_verify_http_accepts_200_big_body(monkeypatch):
+    class _Resp:
+        def __init__(self, body):
+            self._body = body
+        def read(self):
+            return self._body
+        def __enter__(self):
+            return self
+        def __exit__(self, *exc):
+            return False
+
+    monkeypatch.setattr(mod, "SHARE_URL", "http://x/latest.html")
+    monkeypatch.setattr(mod, "MIN_BYTES", 100)
+    monkeypatch.setattr(urllib.request, "urlopen", lambda req, timeout=None: _Resp(b"z" * 500))
+    ok, reason = mod.verify_http()
+    assert ok, reason
+
+
+def test_verify_http_rejects_transport_error_and_short_body(monkeypatch):
+    monkeypatch.setattr(mod, "SHARE_URL", "http://x/latest.html")
+    monkeypatch.setattr(mod, "MIN_BYTES", 100)
+
+    def _boom(req, timeout=None):
+        raise OSError("connection refused")
+
+    monkeypatch.setattr(urllib.request, "urlopen", _boom)
+    ok, reason = mod.verify_http()
+    assert not ok and "unreachable" in reason
+
+    class _Resp:
+        def read(self):
+            return b"z" * 10
+        def __enter__(self):
+            return self
+        def __exit__(self, *exc):
+            return False
+
+    monkeypatch.setattr(urllib.request, "urlopen", lambda req, timeout=None: _Resp())
+    ok, reason = mod.verify_http()
+    assert not ok and "short body" in reason
