@@ -1064,19 +1064,19 @@ export function StrategyStudioPage() {
           min_risk_reward_ratio: 3,
         }),
         custom_prompt:
-          'AlgoBots Autopilot reads the Binance, Polymarket, and IBKR direction board each cycle, loads direction history and cost/liquidation structure, and holds each position until its board direction changes.',
+          'Studio configuration draft. Saved to AlgoBots only; it does not place orders. Execution is the Nautilus paper loop shown above.',
         prompt_sections: undefined,
       }
       const created = await api.createStrategy({
         name: text(
           language,
-          'AlgoBots Market Data Auto Strategy',
-          'AlgoBots Market Data Auto Strategy'
+          'Studio strategy config',
+          'Studio strategy config'
         ),
         description: text(
           language,
-          'The single built-in strategy: read the Binance, Polymarket, and IBKR board, fetch per-symbol details, then trade with raw candles.',
-          'The single built-in strategy: read the Binance, Polymarket, and IBKR board, fetch per-symbol details, then trade with raw candles.'
+          'Config-only draft saved to AlgoBots (paper; no orders are placed from this config).',
+          'Config-only draft saved to AlgoBots (paper; no orders are placed from this config).'
         ),
         config: defaultConfig,
       })
@@ -2047,7 +2047,11 @@ export function StrategyStudioPage() {
                 className="inline-flex items-center gap-2 rounded-lg bg-nofx-gold px-4 py-2 text-sm font-semibold text-nofx-bg hover:bg-nofx-gold-highlight"
               >
                 <Plus className="h-4 w-4" />
-                {text(language, 'Initialize Autopilot', 'Initialize Autopilot')}
+                {text(
+                  language,
+                  'Create a strategy config',
+                  'Create a strategy config'
+                )}
               </button>
             </div>
           )}

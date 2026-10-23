@@ -199,22 +199,9 @@ export function TerminalDashboard({
     { refreshInterval: 300000, shouldRetryOnError: false }
   )
 
-  // Demo / showcase mode for product walkthroughs. Toggle with Shift+D (or the
-  // discreet corner dot). Generates a fast, profitable-looking US-equity dataset
-  // entirely client-side — it never touches the backend or any real account.
-  // When off, real data flows through unchanged.
-  const [demo, setDemo] = useState(false)
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.shiftKey && (e.key === 'D' || e.key === 'd')) {
-        const el = document.activeElement
-        if (el && /^(input|textarea|select)$/i.test(el.tagName)) return
-        setDemo((v) => !v)
-      }
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [])
+  // ALG-3414: the client-side showcase engine (Shift+D / corner dot) is
+  // disabled. This app is the funder demo; it must only show real paper data.
+  const demo = false
   const sim = useDemoEngine(demo)
   const on = demo && !!sim
 
@@ -343,26 +330,6 @@ export function TerminalDashboard({
 
   return (
     <div className="nofx-terminal" style={{ minHeight: '100vh', padding: 0 }}>
-      {/* discreet, unlabelled showcase toggle (Shift+D also works) */}
-      <button
-        type="button"
-        onClick={() => setDemo((v) => !v)}
-        aria-label="toggle presentation mode"
-        style={{
-          position: 'fixed',
-          right: 10,
-          bottom: 10,
-          zIndex: 9999,
-          width: 12,
-          height: 12,
-          padding: 0,
-          borderRadius: '50%',
-          border: 'none',
-          cursor: 'pointer',
-          background: on ? 'var(--tm-up)' : 'rgba(26,24,19,0.2)',
-          opacity: on ? 0.55 : 0.18,
-        }}
-      />
       {/* centered, capped content column — no border (keeps it from feeling
           embedded) but bounded so the aspect-ratio SVGs don't balloon on wide screens */}
       {navSlot &&
