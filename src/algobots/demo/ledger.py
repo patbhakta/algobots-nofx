@@ -35,7 +35,7 @@ from algobots.demo import gate
 from algobots.risk import RiskEnvelope
 
 CENT = Decimal("0.01")
-FILL_PRICE = Decimal("0.50")  # PoC records no quotes: assumed mid
+FILL_PRICE = Decimal("0.50")  # fallback fill price when a row captured no book
 KALSHI_FEE_RATE = Decimal("0.07")  # taker fee = ceil(0.07 * C * P * (1-P)) to the cent
 MIN_STAKE = Decimal("5")
 SLEEVE = Decimal("100")  # starting paper capital per strategy
@@ -61,6 +61,9 @@ class Row:
     jev_p: float | None
     jev_conf: float | None
     jev_choice: str | None
+    mkt_mid: float | None = None  # Kalshi YES mid at decision time (None = no book)
+    mkt_yes_bid: float | None = None  # Kalshi YES bid at decision time
+    mkt_yes_ask: float | None = None  # Kalshi YES ask at decision time
 
 
 @dataclass
@@ -80,6 +83,7 @@ class Decision:
     qty: int = 0  # contracts filled
     price: Decimal = Decimal(0)  # average fill price
     order_id: str | None = None  # executor's client order ID
+    px_source: str = ""  # where d.price came from: book ask, or assumed 50c mid
 
 
 @dataclass
@@ -171,6 +175,21 @@ def load_rows(path: Path, since_ts: float = 0.0) -> list[Row]:
                     jev_p=r.get("jev_p"),
                     jev_conf=r.get("jev_conf"),
                     jev_choice=r.get("jev_choice"),
+                    mkt_mid=(
+                        float(r["mkt_mid"])
+                        if isinstance(r.get("mkt_mid"), int | float)
+                        else None
+                    ),
+                    mkt_yes_bid=(
+                        float(r["mkt_yes_bid"])
+                        if isinstance(r.get("mkt_yes_bid"), int | float)
+                        else None
+                    ),
+                    mkt_yes_ask=(
+                        float(r["mkt_yes_ask"])
+                        if isinstance(r.get("mkt_yes_ask"), int | float)
+                        else None
+                    ),
                 )
             )
         except (ValueError, KeyError, TypeError):
@@ -247,7 +266,9 @@ class Sleeve(Protocol):
 
     def top_up(self, amount: Decimal) -> None: ...
 
-    def execute(self, event: str, side: str, ts: float, won: bool, qty: int): ...  # noqa: ANN201
+    def execute(  # noqa: ANN201
+        self, event: str, side: str, ts: float, won: bool, qty: int, px: Decimal = FILL_PRICE
+    ): ...
 
     def close(self) -> None: ...
 
@@ -255,6 +276,24 @@ class Sleeve(Protocol):
 def contracts(stake: Decimal, price: Decimal = FILL_PRICE) -> int:
     """Whole contracts a stake buys at ``price`` (Kalshi trades whole contracts)."""
     return math.floor(stake / price)
+
+
+PX_ASSUMED = "assumed_mid"
+
+
+def exec_px(row: Row, side: str) -> tuple[Decimal, str]:
+    """Executable price for ``side``: cross the recorded spread, never the mid.
+
+    YES pays the ask; NO pays 1 - bid (the NO ask). GATE-VERDICT-v2: a
+    participant cannot monetize the mid against itself. Rows that captured
+    no book fill at the assumed 50c mid, labelled ``PX_ASSUMED``.
+    """
+    bid, ask = row.mkt_yes_bid, row.mkt_yes_ask
+    if side == "YES" and ask is not None and 0.0 < ask < 1.0:
+        return _money(ask), "kalshi_yes_ask"
+    if side == "NO" and bid is not None and 0.0 < bid < 1.0:
+        return _money(1 - bid), "kalshi_no_ask"
+    return FILL_PRICE, PX_ASSUMED
 
 
 def build(
@@ -338,15 +377,25 @@ def _replay(
             else:
                 d.stake, d.clamped = g.approved, g.clamped
                 d.won = (side == "YES") == (row.outcome == 1)
+                px, px_source = exec_px(row, side)
                 if sleeve is not None:
-                    x = sleeve.execute(row.event, side, row.ts, d.won, contracts(d.stake))
+                    x = sleeve.execute(
+                        row.event, side, row.ts, d.won, contracts(d.stake, px), px
+                    )
                     d.qty, d.price, d.order_id = x.qty, x.price, x.client_order_id
                     d.stake, d.fee, d.pnl = x.cost, x.fee, x.pnl
                 else:
-                    d.qty, d.price = contracts(d.stake), FILL_PRICE
-                    d.fee = fee_for(d.stake)
-                    # binary at 50c: win pays stake (contracts * $1 - cost), loss forfeits it
-                    d.pnl = (d.stake if d.won else -d.stake) - d.fee
+                    d.qty = contracts(d.stake, px)
+                    d.price = px
+                    d.stake = (Decimal(d.qty) * px).quantize(
+                        CENT, rounding=ROUND_HALF_UP
+                    )
+                    d.fee = fee_for(d.stake, px)
+                    # binary at px: win pays qty * (1 - px), loss forfeits the cost
+                    d.pnl = (
+                        Decimal(d.qty) * (Decimal(1) - px) if d.won else -d.stake
+                    ) - d.fee
+                d.px_source = px_source
                 d.status = "FILLED"
                 if d.clamped:
                     d.reason += f"; {g.reason}"

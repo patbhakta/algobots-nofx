@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from datetime import UTC, datetime
-from decimal import Decimal
+from decimal import ROUND_HALF_UP, Decimal
 
 from algobots.demo import ledger as L
 from algobots.demo import studio as S
@@ -66,10 +66,21 @@ def positions(lg: L.Ledger, now: float, account: str = ALL) -> list[dict]:
     normally empty; the pane says so rather than inventing exposure.
     """
     out = []
+    mids = {r.event: r.mkt_mid for r in lg.rows if r.mkt_mid is not None}
     for b in books(lg, account):
         for d in b.fills:
             if d.ts <= now:
                 continue
+            mid = mids.get(d.event)
+            mark = (
+                Decimal(str(mid)).quantize(L.CENT, rounding=ROUND_HALF_UP)
+                if mid is not None
+                else d.price
+            )
+            value = Decimal(1) - mark if d.side == "NO" else mark
+            unreal = (Decimal(d.qty) * (value - d.price) - d.fee).quantize(
+                L.CENT, rounding=ROUND_HALF_UP
+            )
             out.append(
                 {
                     "id": f"{b.key}:{d.event}",
@@ -78,8 +89,8 @@ def positions(lg: L.Ledger, now: float, account: str = ALL) -> list[dict]:
                     "side": d.side,
                     "qty": d.qty,
                     "avg_price": str(d.price),
-                    "mark": str(L.FILL_PRICE),  # no quotes captured: mark at the assumed mid
-                    "unrealized_pnl": str(-d.fee),
+                    "mark": str(mark),  # decision-time mid
+                    "unrealized_pnl": str(unreal),
                     "expiry_ts": d.ts,
                     "expires_in_s": int(d.ts - now),
                 }

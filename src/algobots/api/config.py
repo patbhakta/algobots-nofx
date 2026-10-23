@@ -35,6 +35,9 @@ class Settings(BaseSettings):
     # ALG-3248 live paper demo: Laya forward-observer feed, kill-switch state
     # dir, and the UTC date the paper account opened.
     demo_feed_path: str = Field(default="/opt/laya/kalshi/observations.jsonl")
+    # ALG-3411 feed 2: the Polymarket btc-updown-15m observer writes this;
+    # evidence-only (cross-venue calibration) — never wired into a paper worker.
+    demo_feed2_path: str = Field(default="/opt/laya/polymarket/observations.jsonl")
     demo_state_dir: str = Field(default="./.demo-state")
     demo_start: str = Field(default="2026-10-03")
     # Comma-separated UTC timestamps (YYYY-MM-DDTHH:MM) at which every demo

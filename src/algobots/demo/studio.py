@@ -165,7 +165,7 @@ DEFINITIONS: dict[str, Definition] = {
 LIVE_PARAMS: dict[str, dict] = {
     k: {
         "instrument": "KXBTC15M",
-        "fill_price": str(L.FILL_PRICE),
+        "fill_price": "book ask (YES ask / NO 1-bid); fallback 50c",
         "min_stake": str(L.MIN_STAKE),
         "max_order_value": str(L.ENVELOPE.max_order_value),
         "max_daily_loss": str(L.ENVELOPE.max_daily_loss),

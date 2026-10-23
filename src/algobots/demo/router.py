@@ -61,8 +61,9 @@ def start_workers() -> None:
         for denial in getattr(e, "denials", [e]):
             logging.getLogger("algobots.demo").error(
                 "paper worker start DENIED for %s: %s (state stays 'denied' on "
-                "/demo/api/workers; stale-generation leases reclaim automatically "
-                "only when provably dead)",
+                "/demo/api/workers; the sync loop re-attempts denied accounts "
+                "every poll, so a stale-generation lease reclaims automatically "
+                "once heartbeat silence proves the holder dead)",
                 denial.account,
                 denial.reason,
             )
@@ -95,9 +96,39 @@ def _sync_loop(every: float) -> None:
     while not _STOP.is_set():
         try:
             sync_templates()
+            retry_denied_workers()
         except Exception as exc:  # noqa: BLE001 — keep supervising; the page shows states
             print(f"template sync failed: {exc!r}", file=sys.stderr, flush=True)
         _STOP.wait(min(every, 5.0))
+
+
+def retry_denied_workers(sup: Supervisor | None = None) -> list[str]:
+    """Re-attempt every denied demo account (ALG-3308 follow-up).
+
+    Recreating the API container hands its workers' leases to a generation the
+    new container cannot probe; at startup those heartbeats are seconds old,
+    so the (correct) answer is "denied". Without a retry the demo then ran
+    with zero engines until the next manual restart. The sync loop calls this
+    every poll: the lease layer still refuses while the old generation's
+    heartbeat is fresh (rolling overlap stays safe) and reclaims exactly when
+    the silence window proves the holder gone. Returns recovered accounts.
+    """
+    sup = sup or SUPERVISOR
+    if sup is None or not sup.denied:
+        return []
+    recovered: list[str] = []
+    for acct in list(sup.denied):
+        try:
+            sup.start(acct)
+        except LeaseDenied:
+            continue  # still owned (or provably not yet stale): try again next poll
+        recovered.append(acct)
+        logging.getLogger("algobots.demo").warning(
+            "paper worker %s recovered on retry (%s)",
+            acct,
+            sup.reclaimed.get(acct, "lease became available"),
+        )
+    return recovered
 
 
 def sync_templates() -> list[dict]:
@@ -373,6 +404,81 @@ def demo_orders(
             if key == B.ALL or any(x.account == key for x in p.legs)
         ],
     }
+
+
+@router.get("/demo/api/settlements")
+def demo_settlements(
+    limit: int = Query(200, ge=1, le=5000),
+    scope: Scope = Depends(current_scope),
+) -> dict:
+    """Kalshi ground-truth settlement marks for the demo feed (ALG-3357 evidence).
+
+    Raw observer rows, newest first: what the exchange actually settled each
+    KXBTC15M interval at (strike, YES/NO outcome, settle mark), so paper-fill
+    verdicts can be audited against Kalshi's own marks. Read-only; intervals
+    that have not settled yet are omitted.
+    """
+    feed = Path(get_settings().demo_feed_path)
+    out: list[dict] = []
+    if feed.exists():
+        for line in feed.read_text().splitlines():
+            try:
+                r = json.loads(line)
+            except ValueError:
+                continue
+            if r.get("outcome") is None or r.get("settle_value") is None:
+                continue  # interval still open
+            out.append(
+                {
+                    "event": r["event"],
+                    "open_ts": r.get("open_ts"),  # interval-grid key (ALG-3411 join)
+                    "strike": r.get("strike"),
+                    "outcome": r["outcome"],  # 1 = settled YES (mark at/above strike)
+                    "settle_value": r.get("settle_value"),
+                    "settled_ts": r.get("settled_ts"),
+                    "mkt_mid": r.get("mkt_mid"),
+                }
+            )
+    out.sort(key=lambda x: x["settled_ts"] or 0)
+    return {"count": len(out), "settlements": out[-limit:][::-1]}
+
+
+@router.get("/demo/api/feeds/polymarket")
+def demo_feed_polymarket(
+    limit: int = Query(200, ge=1, le=5000),
+    scope: Scope = Depends(current_scope),
+) -> dict:
+    """Raw Polymarket observer rows (ALG-3411 feed 2, evidence only).
+
+    Newest first: strike + provenance basis, the book's YES mid at decision
+    time, and the venue's own outcome once the interval settles. Read-only;
+    this feed is NOT wired into any paper worker — it exists so the demo can
+    calibrate the two books against each other on the shared 15-min grid.
+    """
+    path = Path(get_settings().demo_feed2_path)
+    out: list[dict] = []
+    if path.exists():
+        for line in path.read_text().splitlines():
+            try:
+                r = json.loads(line)
+            except ValueError:
+                continue
+            out.append(
+                {
+                    "event": r.get("event"),
+                    "open_ts": r.get("open_ts"),
+                    "close_ts": r.get("close_ts"),
+                    "strike": r.get("strike"),
+                    "strike_basis": r.get("strike_basis"),
+                    "mkt_yes_bid": r.get("mkt_yes_bid"),
+                    "mkt_yes_ask": r.get("mkt_yes_ask"),
+                    "mkt_mid": r.get("mkt_mid"),
+                    "outcome": r.get("outcome"),
+                    "settled_ts": r.get("settled_ts"),
+                }
+            )
+    out.sort(key=lambda x: x.get("open_ts") or 0)
+    return {"count": len(out), "rows": out[-limit:][::-1]}
 
 
 class TicketIn(BaseModel):
