@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import importlib.util
 import sys
+import urllib.request
 from pathlib import Path
 
 _spec = importlib.util.spec_from_file_location(
@@ -49,8 +50,6 @@ def test_publish_is_atomic_replace_and_failure_keeps_old(tmp_path):
     mod.publish(snap, published)
     assert published.read_bytes().endswith(b"</html>")
     assert not snap.exists()  # replaced, not copied
-import urllib.request
-
 
 # --- share-out publish + HTTP reachability (ALG-3357) ---
 

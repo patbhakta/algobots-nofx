@@ -23,7 +23,9 @@ from test_supervisor import _supervisor, _wait  # noqa: E402
 from algobots.demo.router import retry_denied_workers  # noqa: E402
 
 
-def _plant_old_generation(tmp_path, account: str, *, acquired_ago: float, heartbeat_ago: float | None):
+def _plant_old_generation(
+    tmp_path, account: str, *, acquired_ago: float, heartbeat_ago: float | None
+):
     ls = Lease(tmp_path, account)
     ls.path.parent.mkdir(parents=True, exist_ok=True)
     ls.path.write_text(json.dumps(

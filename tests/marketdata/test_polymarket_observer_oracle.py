@@ -6,7 +6,7 @@ path here too — no package imports needed.
 import importlib.util
 from pathlib import Path
 
-SRC = Path(__file__).resolve().parents[2] / "src" / "algobots" / "marketdata" / "polymarket_observer.py"
+SRC = Path(__file__).resolve().parents[2] / "src/algobots/marketdata/polymarket_observer.py"
 spec = importlib.util.spec_from_file_location("pm", SRC)
 pm = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(pm)
@@ -30,7 +30,8 @@ def test_decode_and_query_shape():
         return "0x5b92000" if m == "eth_blockNumber" else [REAL_LOG]
     pm._rpc = fake_rpc
     got = pm.onchain_payout(COND)
-    assert got == {"tx": REAL_LOG["transactionHash"], "block": int("0x5b91126", 16), "payouts": [1, 0]}, got
+    want = {"tx": REAL_LOG["transactionHash"], "block": int("0x5b91126", 16), "payouts": [1, 0]}
+    assert got == want, got
     args = calls[1][1][0]
     assert args["topics"] == [pm.CONDITION_RESOLUTION_TOPIC, COND]
     assert args["address"] == pm.CTF_ADDRESS

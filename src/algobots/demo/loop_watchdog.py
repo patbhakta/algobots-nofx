@@ -17,7 +17,8 @@ Posting rules (anti-spam): one alert per anomaly episode, one recovery post,
 re-alert at most every REALERT_S while persisting, one reset-proof per UTC day.
 Everything is logged; the process always exits 0 so the timer stays healthy.
 
-Env overrides: ALGOBOTS_FEED, ALGOBOTS_PM_FEED (empty disables), ALGOBOTS_DECISION_LOG, ALGOBOTS_WORKERS_URL, ALGOBOTS_DECISIONS_URL,
+Env overrides: ALGOBOTS_FEED, ALGOBOTS_PM_FEED (empty disables), ALGOBOTS_DECISION_LOG,
+ALGOBOTS_WORKERS_URL, ALGOBOTS_DECISIONS_URL,
 WATCHDOG_STATE, WATCHDOG_LOG, PAPERCLIP_URL, PAPERCLIP_TOKEN_FILE, ISSUE.
 """
 
@@ -27,9 +28,9 @@ import json
 import os
 import sys
 import time
-import urllib.request
 import urllib.parse
-from datetime import datetime, timedelta, timezone
+import urllib.request
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 FEED = Path(os.environ.get("ALGOBOTS_FEED", "/opt/laya/kalshi/observations.jsonl"))
@@ -59,7 +60,7 @@ RESET_GRACE_MIN = 45         # reset-missing alert window opens 00:45 UTC
 
 
 def log(state: dict, msg: str) -> None:
-    line = f"{datetime.now(timezone.utc).isoformat(timespec='seconds')} {msg}"
+    line = f"{datetime.now(UTC).isoformat(timespec='seconds')} {msg}"
     LOG_FILE.parent.mkdir(parents=True, exist_ok=True)
     with LOG_FILE.open("a") as fh:
         fh.write(line + "\n")
@@ -192,7 +193,7 @@ def settled_intervals_by_day() -> dict[str, int]:
                 if row.get("settled_ts") is None:
                     continue
                 day = datetime.fromtimestamp(
-                    float(row["settled_ts"]), tz=timezone.utc).strftime("%Y-%m-%d")
+                    float(row["settled_ts"]), tz=UTC).strftime("%Y-%m-%d")
                 days[day] = days.get(day, 0) + 1
     except OSError:
         pass
@@ -210,7 +211,7 @@ def reset_missing_check(now: float | None = None) -> tuple[str | None, str]:
     fills, something between the gate and the fill broke - make it loud.
     """
     now = time.time() if now is None else now
-    utc = datetime.fromtimestamp(now, timezone.utc)
+    utc = datetime.fromtimestamp(now, UTC)
     if utc.hour == 0 and utc.minute < RESET_GRACE_MIN:
         return None, ""  # too soon after midnight
     fills = coin_fills_by_day()
@@ -234,14 +235,14 @@ def reset_missing_check(now: float | None = None) -> tuple[str | None, str]:
 
 def reset_proof_check(state: dict) -> str | None:
     """Body of a proof comment if the day-reset evidence is fresh, else None."""
-    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    today = datetime.now(UTC).strftime("%Y-%m-%d")
     if state.get("reset_proof_date") == today:
         return None
     fills = coin_fills_by_day()
     today_fills = fills.get(today, [])
     if not today_fills:
         return None  # nothing to prove yet
-    yesterday = (datetime.now(timezone.utc) - timedelta(days=1)).strftime("%Y-%m-%d")
+    yesterday = (datetime.now(UTC) - timedelta(days=1)).strftime("%Y-%m-%d")
     prev_fills = len(fills.get(yesterday, []))
     prev_intervals = settled_intervals_by_day().get(yesterday, 0)
     if not prev_intervals or prev_fills >= prev_intervals:
@@ -333,7 +334,7 @@ if __name__ == "__main__":
             load_state()  # touch nothing else; log if possible
             LOG_FILE.parent.mkdir(parents=True, exist_ok=True)
             with LOG_FILE.open("a") as fh:
-                fh.write(f"{datetime.now(timezone.utc).isoformat()} "
+                fh.write(f"{datetime.now(UTC).isoformat()} "
                          f"CRASH {exc}\n")
         except Exception:  # noqa: BLE001
             pass

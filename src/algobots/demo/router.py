@@ -102,7 +102,7 @@ def _sync_loop(every: float) -> None:
         _STOP.wait(min(every, 5.0))
 
 
-def retry_denied_workers(sup: "Supervisor | None" = None) -> list[str]:
+def retry_denied_workers(sup: Supervisor | None = None) -> list[str]:
     """Re-attempt every denied demo account (ALG-3308 follow-up).
 
     Recreating the API container hands its workers' leases to a generation the

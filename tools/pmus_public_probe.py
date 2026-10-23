@@ -24,7 +24,7 @@ def get(path):
 def slot_slug(offset_slots=0):
     now = int(time.time()) + offset_slots * 900
     slot = now // 900 * 900
-    return dt.datetime.fromtimestamp(slot, dt.timezone.utc).strftime(
+    return dt.datetime.fromtimestamp(slot, dt.UTC).strftime(
         "btc-updown-15m-%Y-%m-%d-%H%Mz"
     )
 
@@ -32,25 +32,26 @@ def slot_slug(offset_slots=0):
 def main():
     ev = get("/v1/events?slug=" + slot_slug(0))["events"][0]
     mkt = ev["markets"][0]
-    print("live event  : %s closed=%s" % (ev["slug"], ev["closed"]))
-    print("market      : %s status=%s" % (mkt["slug"], mkt.get("status")))
+    print(f"live event  : {ev['slug']} closed={ev['closed']}")
+    print(f"market      : {mkt['slug']} status={mkt.get('status')}")
     if mkt.get("status") != "MARKET_STATUS_OPEN":
         print("note: book not open yet (BBO 404s outside the live window)")
-    bbo = get("/v1/markets/%s/bbo" % mkt["slug"])["marketData"]
+    bbo = get(f"/v1/markets/{mkt['slug']}/bbo")["marketData"]
     bid = (bbo.get("bestBid") or {}).get("value")
     ask = (bbo.get("bestAsk") or {}).get("value")
-    print("bbo         : bid=%s ask=%s traded=%s oi=%s" % (bid, ask, bbo["sharesTraded"], bbo["openInterest"]))
+    traded, oi = bbo["sharesTraded"], bbo["openInterest"]
+    print(f"bbo         : bid={bid} ask={ask} traded={traded} oi={oi}")
     for off in (-1, -2, -3):
         prev = get("/v1/events?slug=" + slot_slug(off))["events"][0]["markets"][0]
         if prev.get("status") != "MARKET_STATUS_RESOLVED":
             continue
         try:
-            st = get("/v1/markets/%s/settlement" % prev["slug"])
+            st = get(f"/v1/markets/{prev['slug']}/settlement")
         except urllib.error.HTTPError as e:
             if e.code == 404:
                 continue
             raise
-        print("prior settle: %s -> %s" % (prev["slug"], st))
+        print(f"prior settle: {prev['slug']} -> {st}")
         break
     else:
         print("prior settle: none published yet (settlement lags close)")

@@ -86,10 +86,10 @@ def kraken_open(open_ts: float) -> tuple[float, str] | None:
 
 
 def coinbase_open(open_ts: float) -> tuple[float, str] | None:
-    from datetime import datetime, timezone
+    from datetime import datetime
 
-    s = datetime.fromtimestamp(open_ts, timezone.utc).isoformat()
-    e = datetime.fromtimestamp(open_ts + INTERVAL, timezone.utc).isoformat()
+    s = datetime.fromtimestamp(open_ts, UTC).isoformat()
+    e = datetime.fromtimestamp(open_ts + INTERVAL, UTC).isoformat()
     for c in _get(f"{COINBASE}?granularity=900&start={s}&end={e}"):
         if c[0] == int(open_ts):
             return float(c[3]), "coinbase-btcusd-open"  # [time, low, high, open, close, vol]
@@ -261,7 +261,9 @@ class Observer:
                     )
                     out["decided"] = slug
                 else:
-                    out["errors"].append(f"{slug}: not decidable (active={m.get('active')} strike={bool(strike)})")
+                    out["errors"].append(
+                        f"{slug}: not decidable (active={m.get('active')} strike={bool(strike)})"
+                    )
             except Exception as e:  # noqa: BLE001 — API down: retry next poll
                 out["errors"].append(f"{slug}: {e}")
 

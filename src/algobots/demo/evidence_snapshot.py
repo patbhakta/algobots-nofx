@@ -37,7 +37,9 @@ CONTAINER = os.environ.get("SNAPSHOT_CONTAINER", "nautilus-marimo")
 NOTEBOOK_DIR = os.environ.get("SNAPSHOT_NOTEBOOK_DIR", "/home/nautilus/work/notebooks")
 NOTEBOOK = os.environ.get("SNAPSHOT_NOTEBOOK", NOTEBOOK_DIR + "/kalshi_demo_loop.py")
 DIR_HOST = Path(os.environ.get("SNAPSHOT_DIR_HOST", "/mnt/funnytree/algobots/notebooks"))
-PUBLISHED = Path(os.environ.get("SNAPSHOT_PUBLISHED", str(DIR_HOST / "kalshi_demo_loop_latest.html")))
+PUBLISHED = Path(
+    os.environ.get("SNAPSHOT_PUBLISHED", str(DIR_HOST / "kalshi_demo_loop_latest.html"))
+)
 STATE = Path(os.environ.get("SNAPSHOT_STATE", "/opt/laya/kalshi/evidence_state.json"))
 SHARE_DIR = Path(os.environ.get("SNAPSHOT_SHARE_DIR", "/mnt/funnytree/algobots/share-out"))
 SHARE_PUBLISHED = Path(os.environ.get("SNAPSHOT_SHARE_PUBLISHED", str(SHARE_DIR / PUBLISHED.name)))
@@ -131,7 +133,8 @@ def main() -> int:
         publish_web(PUBLISHED, SHARE_PUBLISHED)
         web_ok, web_reason = verify_http()
         if web_ok:
-            write_state(True, f"{reason} in {time.time() - started:.1f}s -> {PUBLISHED.name}; {web_reason}")
+            elapsed = time.time() - started
+            write_state(True, f"{reason} in {elapsed:.1f}s -> {PUBLISHED.name}; {web_reason}")
         else:
             # Files are fresh but nobody can open them - that is a failure the
             # watchdog must see, not a silent success.

@@ -39,13 +39,13 @@ def test_reset_proof_only_when_gated_yesterday(tmp_path, monkeypatch):
     _write(feed, [_settlement(now - 86400 + i * 900) for i in range(4)])
     _write(dlog, [_coin_fill("2026-01-01", "01:00:00"),
                   _coin_fill("2026-01-01", "01:15:00"),
-                  _coin_fill(lw.datetime.now(lw.timezone.utc).strftime("%Y-%m-%d"),
+                  _coin_fill(lw.datetime.now(lw.UTC).strftime("%Y-%m-%d"),
                              "00:15:00")])
 
     state = {"reset_proof_date": None}
     body = lw.reset_proof_check(state)
     assert body is not None and "resumed" in body
-    assert state["reset_proof_date"] == lw.datetime.now(lw.timezone.utc).strftime(
+    assert state["reset_proof_date"] == lw.datetime.now(lw.UTC).strftime(
         "%Y-%m-%d")
     # Idempotent per day.
     assert lw.reset_proof_check(state) is None
@@ -61,9 +61,9 @@ def test_no_proof_when_not_gated_yesterday(tmp_path, monkeypatch):
     # Settled intervals land TODAY: yesterday has none, so no reset claim
     # can be made regardless of today's fills.
     _write(feed, [_settlement(now - 3600 + i * 900) for i in range(2)])
-    today = lw.datetime.now(lw.timezone.utc).strftime("%Y-%m-%d")
+    today = lw.datetime.now(lw.UTC).strftime("%Y-%m-%d")
     _write(dlog, [
-        _coin_fill(lw.datetime.now(lw.timezone.utc).strftime("%Y-%m-%d"), "23:45:00"),
+        _coin_fill(lw.datetime.now(lw.UTC).strftime("%Y-%m-%d"), "23:45:00"),
         _coin_fill(today, "00:15:00"),
     ])
     # Both fills land today; yesterday has no settled intervals -> no claim.
@@ -103,10 +103,9 @@ def test_reset_missing_fires_when_gated_yesterday_and_silent_today(tmp_path, mon
     monkeypatch.setattr(lw, "FEED", feed)
     monkeypatch.setattr(lw, "DECISION_LOG", dlog)
 
-    utc = lw.timezone.utc
+    utc = lw.UTC
     now = lw.datetime(2026, 3, 10, 2, 0, tzinfo=utc).timestamp()
     yesterday = "2026-03-09"
-    today = "2026-03-10"
     # Yesterday: 4 settled intervals, 2 fills -> gated. Today: 3 settled
     # intervals, zero fills -> the reset did not visibly lift.
     _write(feed, [_settlement(now - 86400 + i * 900) for i in range(4)]
@@ -124,7 +123,7 @@ def test_reset_missing_quiet_when_fill_present_or_within_grace(tmp_path, monkeyp
     monkeypatch.setattr(lw, "FEED", feed)
     monkeypatch.setattr(lw, "DECISION_LOG", dlog)
 
-    utc = lw.timezone.utc
+    utc = lw.UTC
     now = lw.datetime(2026, 3, 10, 2, 0, tzinfo=utc).timestamp()
     base = [_settlement(now - 86400 + i * 900) for i in range(4)]
 
