@@ -99,6 +99,12 @@ export default function HeaderBar({
                   hidden?: boolean
                 }[] = [
                   {
+                    page: 'trader',
+                    path: ROUTES.dashboard,
+                    label: t('dashboardNav', language),
+                    requiresAuth: true,
+                  },
+                  {
                     page: 'data',
                     path: ROUTES.data,
                     label:
@@ -108,30 +114,6 @@ export default function HeaderBar({
                           ? 'Data'
                           : 'Data',
                     requiresAuth: false,
-                  },
-                  {
-                    page: 'strategy-market',
-                    path: ROUTES.strategyMarket,
-                    label:
-                      (language as string) === 'zh'
-                        ? 'Market'
-                        : (language as string) === 'id'
-                          ? 'Pasar'
-                          : 'Market',
-                    requiresAuth: true,
-                    hidden: true,
-                  },
-                  {
-                    page: 'traders',
-                    path: ROUTES.traders,
-                    label: t('configNav', language),
-                    requiresAuth: true,
-                  },
-                  {
-                    page: 'trader',
-                    path: ROUTES.dashboard,
-                    label: t('dashboardNav', language),
-                    requiresAuth: true,
                   },
                   {
                     page: 'strategy',
@@ -146,10 +128,28 @@ export default function HeaderBar({
                     requiresAuth: true,
                   },
                   {
+                    page: 'strategy-market',
+                    path: ROUTES.strategyMarket,
+                    label:
+                      (language as string) === 'zh'
+                        ? 'Market'
+                        : (language as string) === 'id'
+                          ? 'Pasar'
+                          : 'Market',
+                    requiresAuth: true,
+                    hidden: true,
+                  },
+                  {
                     page: 'faq',
                     path: ROUTES.faq,
                     label: t('faqNav', language),
                     requiresAuth: false,
+                  },
+                  {
+                    page: 'traders',
+                    path: ROUTES.traders,
+                    label: t('configNav', language),
+                    requiresAuth: true,
                   },
                 ]
 
@@ -318,6 +318,12 @@ export default function HeaderBar({
                     hidden?: boolean
                   }[] = [
                     {
+                      page: 'trader',
+                      path: ROUTES.dashboard,
+                      label: t('dashboardNav', language),
+                      requiresAuth: true,
+                    },
+                    {
                       page: 'data',
                       path: ROUTES.data,
                       label:
@@ -327,30 +333,6 @@ export default function HeaderBar({
                             ? 'Data'
                             : 'Data',
                       requiresAuth: false,
-                    },
-                    {
-                      page: 'strategy-market',
-                      path: ROUTES.strategyMarket,
-                      label:
-                        (language as string) === 'zh'
-                          ? 'Market'
-                          : (language as string) === 'id'
-                            ? 'Pasar'
-                            : 'Market',
-                      requiresAuth: true,
-                      hidden: true,
-                    },
-                    {
-                      page: 'traders',
-                      path: ROUTES.traders,
-                      label: t('configNav', language),
-                      requiresAuth: true,
-                    },
-                    {
-                      page: 'trader',
-                      path: ROUTES.dashboard,
-                      label: t('dashboardNav', language),
-                      requiresAuth: true,
                     },
                     {
                       page: 'strategy',
@@ -365,10 +347,28 @@ export default function HeaderBar({
                       requiresAuth: true,
                     },
                     {
+                      page: 'strategy-market',
+                      path: ROUTES.strategyMarket,
+                      label:
+                        (language as string) === 'zh'
+                          ? 'Market'
+                          : (language as string) === 'id'
+                            ? 'Pasar'
+                            : 'Market',
+                      requiresAuth: true,
+                      hidden: true,
+                    },
+                    {
                       page: 'faq',
                       path: ROUTES.faq,
                       label: t('faqNav', language),
                       requiresAuth: false,
+                    },
+                    {
+                      page: 'traders',
+                      path: ROUTES.traders,
+                      label: t('configNav', language),
+                      requiresAuth: true,
                     },
                   ]
 

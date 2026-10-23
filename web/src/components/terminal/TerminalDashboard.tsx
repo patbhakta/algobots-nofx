@@ -20,6 +20,8 @@ import { ExecutionLog } from './ExecutionLog'
 import { SignalMatrix } from './SignalMatrix'
 import { RiskRadar } from './RiskRadar'
 import { EdgeProfile } from './EdgeProfile'
+import type { PaperLoopLive } from '../../lib/api/paperLoop'
+import { PaperMarketPanel } from './PaperMarketPanel'
 import { useDemoEngine } from '../../lib/demo/useDemoEngine'
 
 // crypto majors trade on the Hyperliquid main dex (no hip3 cost/liq heatmap);
@@ -36,12 +38,13 @@ import { FlowMarkets } from './FlowMarkets'
 import './terminal.css'
 
 interface TerminalDashboardProps {
+  paper?: PaperLoopLive | true
   selectedTrader?: TraderInfo
   traders?: TraderInfo[]
   selectedTraderId?: string
   onTraderSelect: (traderId: string) => void
-  status?: SystemStatus
-  account?: AccountInfo
+  status?: Partial<SystemStatus>
+  account?: Partial<AccountInfo>
   positions?: Position[]
   decisions?: DecisionRecord[]
 }
@@ -106,6 +109,7 @@ function useTick(ms = 1000) {
 }
 
 export function TerminalDashboard({
+  paper,
   selectedTrader,
   traders,
   selectedTraderId,
@@ -171,36 +175,35 @@ export function TerminalDashboard({
   }
 
   const { data: realFullStats } = useSWR(
-    traderId ? ['full-stats', traderId] : null,
+    traderId && !paper ? ['full-stats', traderId] : null,
     () => api.getFullStats(traderId!, true),
     { refreshInterval: 30000, shouldRetryOnError: false }
   )
   const { data: realHistory } = useSWR(
-    traderId ? ['pos-history', traderId] : null,
+    traderId && !paper ? ['pos-history', traderId] : null,
     () => api.getPositionHistory(traderId!, 50, true),
     { refreshInterval: 60000, shouldRetryOnError: false }
   )
   const { data: realConfig } = useSWR(
-    traderId ? ['trader-config', traderId] : null,
+    traderId && !paper ? ['trader-config', traderId] : null,
     () => api.getTraderConfig(traderId!, true),
     { refreshInterval: 120000, shouldRetryOnError: false }
   )
   const { data: realFlow } = useSWR(
-    traderId ? ['flow-markets', traderId] : null,
+    traderId && !paper ? ['flow-markets', traderId] : null,
     () => api.getFlowMarkets(selectedTrader?.ai_model, 'mainnet', '1h', 50, true),
-    // market-data endpoint — poll slowly (5m) to conserve data request load; the
+    // paid x402 endpoint — poll slowly (5m) to conserve claw402 funds; the
     // topology beam animation is client-side and stays fast regardless
     { refreshInterval: 300000, shouldRetryOnError: false }
   )
   const { data: realSignalRank } = useSWR(
-    traderId ? ['signal-rank', traderId] : null,
+    traderId && !paper ? ['signal-rank', traderId] : null,
     () => api.getDirectionChangeLeaderboard(30, true),
-    // market-data endpoint — poll slowly (5m) to conserve data request load
+    // paid x402 endpoint — poll slowly (5m) to conserve claw402 funds
     { refreshInterval: 300000, shouldRetryOnError: false }
   )
 
-  // ALG-3414: the client-side showcase engine (Shift+D / corner dot) is
-  // disabled. This app is the funder demo; it must only show real paper data.
+  // Data wiring: this deployment displays only authenticated paper evidence.
   const demo = false
   const sim = useDemoEngine(demo)
   const on = demo && !!sim
@@ -263,8 +266,8 @@ export function TerminalDashboard({
       : /USDT$/i.test(sourceSymbol) || CRYPTO_MAJORS.has(activeSym) ? 'core_perp' : 'hip3_perp'
   const activeRequestSymbol = activeMarketType === 'hip3_perp' ? `xyz:${activeSym}` : activeSym
 
-  const pnl = account?.total_pnl ?? 0
-  const pnlPct = account?.total_pnl_pct ?? 0
+  const pnl = account?.total_pnl ?? NaN
+  const pnlPct = account?.total_pnl_pct ?? NaN
   const up = pnl >= 0
   const running = status?.is_running
 
@@ -351,18 +354,26 @@ export function TerminalDashboard({
       <div className="tm-box" style={{ maxWidth: 1280, margin: '0 auto', border: 'none' }}>
         {!on && status?.trading_blocked && (
           <div role="alert" className="tm-mono" style={{ margin: '8px 14px 0', padding: '12px', fontSize: 12, border: '1px solid var(--tm-dn)', color: 'var(--tm-dn)', background: 'rgba(200,60,40,0.06)' }}>
-            <strong>Trading blocked</strong>
+            <strong>Trading blocked / 交易已阻断</strong>
             <div>{status.trading_error}</div>
-            <div>Automatic open/close is unavailable. Re-authorize with the main wallet signature. No paid AI or data calls run for this decision round until fixed.</div>
+            <div>自动开仓、平仓不可用；请用主钱包重新签名授权。修复前不会为此决策轮次调用付费 AI 或数据。</div>
           </div>
         )}
-        {!on && status?.safe_mode && (
+        {/* runtime health banner — AI fee wallet dry / safe mode would otherwise
+            only be visible in server logs while the bot silently idles */}
+        {!on && status && (status.safe_mode || status.ai_wallet_status === 'empty' || status.ai_wallet_status === 'low') && (
           <div className="tm-mono" style={{ display: 'flex', gap: 10, alignItems: 'center', margin: '8px 14px 0', padding: '8px 12px', fontSize: 11, border: '1px solid var(--tm-down)', color: 'var(--tm-down)', background: 'rgba(200,60,40,0.06)', flexWrap: 'wrap' }}>
             <span style={{ fontWeight: 600 }}>
-              Safe mode: AI failed repeatedly, no new positions are being opened.
+              {status.ai_wallet_status === 'empty'
+                ? 'AI fee wallet is out of USDC — decisions are failing.'
+                : status.ai_wallet_status === 'low'
+                  ? `AI fee wallet is low (${(status.ai_wallet_balance_usdc ?? 0).toFixed(2)} USDC) — top up soon.`
+                  : 'Safe mode: AI failed repeatedly, no new positions are being opened.'}
             </span>
             <span style={{ color: 'var(--tm-ink-2)' }}>
-              {status.safe_mode_reason || 'Check the model subscription and data-source connections.'}
+              {status.ai_wallet_status === 'empty' || status.ai_wallet_status === 'low'
+                ? 'Deposit Base USDC to the Claw402 wallet, the trader recovers automatically.'
+                : status.safe_mode_reason || ''}
             </span>
           </div>
         )}
@@ -378,18 +389,18 @@ export function TerminalDashboard({
         )}
         {/* config / identity strip — first row, flows directly under the global nav */}
         <div className="tm-mono" style={{ display: 'flex', gap: 16, padding: '6px 14px', fontSize: 11, color: 'var(--tm-ink-2)', flexWrap: 'wrap' }}>
-          <span style={{ fontWeight: 500 }}>{selectedTrader?.trader_name ?? 'AlgoBots'}</span>
+          <span style={{ fontWeight: 500 }}>{selectedTrader?.trader_name ?? 'Paper account'}</span>
           <span><span className="tm-sc">model </span>{(() => {
             const raw = config?.ai_model || status?.ai_model || ''
             if (!raw) return '—'
-            if (/marketData/i.test(raw)) return 'MARKET_DATA'
+            if (/claw402/i.test(raw)) return 'CLAW402'
             return raw.length > 16 ? raw.slice(0, 16).toUpperCase() : raw.toUpperCase()
           })()}</span>
           <span><span className="tm-sc">strategy </span>{config?.strategy_name || selectedTrader?.strategy_name || '—'}</span>
           <span><span className="tm-sc">lev </span>{config?.btc_eth_leverage ?? '—'}× / {config?.altcoin_leverage ?? '—'}×</span>
           <span><span className="tm-sc">scan </span>{scanMin}m</span>
           <span><span className="tm-sc">universe </span>{candidateCoins.length}</span>
-          <span><span className="tm-sc">positions </span>{positions?.length ?? 0}</span>
+          <span><span className="tm-sc">positions </span>{paper ? (account?.position_count ?? '—') : positions?.length ?? 0}</span>
           <span style={{ marginLeft: 'auto' }}><span className="tm-sc">next cycle </span>{countdown}</span>
         </div>
         <div className="tm-rule" />
@@ -444,36 +455,36 @@ export function TerminalDashboard({
             {/* cost/liq heatmap works for both synthetic (hip3_perp) and crypto
                 (perp) markets — pass the likely marketType; the component falls
                 back to the other one if the guess is wrong */}
-            <LiquidationMap
+            {paper ? <PaperMarketPanel kind="liquidation" live={paper === true ? undefined : paper} /> : (<LiquidationMap
               symbol={activeSym}
               demo={on}
               marketType={activeMarketType}
               height={ROW1_H - 130}
-            />
+            />)}
           </div>
           <div style={{ ...sc, borderRight: cellBorder, height: ROW1_H, overflow: 'hidden' }}>
-            <OrderBook symbol={activeRequestSymbol} demo={on} markPrice={positions?.find((p) => baseLabel(p.symbol) === activeSym)?.entry_price} />
+            {paper ? <PaperMarketPanel kind="book" live={paper === true ? undefined : paper} /> : (<OrderBook symbol={activeRequestSymbol} demo={on} markPrice={positions?.find((p) => baseLabel(p.symbol) === activeSym)?.entry_price} />)}
           </div>
           <div style={{ ...sc, height: ROW1_H, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
             <SignalMatrix items={signalRank?.items} max={18} active={activeSym} onSelect={setSelectedSym} />
             {/* the live K-line always sits under the selector and flexes to fill */}
             <div className="tm-rule" style={{ margin: '10px 0 8px' }} />
             <div style={{ flex: 1, minHeight: 0 }}>
-              <KlineChart symbol={activeRequestSymbol} fill demo={on} />
+              {paper ? <PaperMarketPanel kind="prices" live={paper === true ? undefined : paper} /> : (<KlineChart symbol={activeRequestSymbol} fill demo={on} />)}
             </div>
           </div>
         </div>
         <div className="tm-rule" />
 
-        {/* ── win-rate matrix (holder cost × win-rate grid, cross-market adapter data).
+        {/* ── win-rate matrix (holder cost × win-rate grid, claw402 paid data).
               Full-width panel under row 1; long/short grids side by side with
               click-to-drill address lists. ── */}
         <div style={sc}>
-          <WinrateMatrix
+          {paper ? <PaperMarketPanel kind="winrate" live={paper === true ? undefined : paper} /> : (<WinrateMatrix
             symbol={activeSym}
             demo={on}
             marketType={activeMarketType}
-          />
+          />)}
         </div>
         <div className="tm-rule" />
 
@@ -542,15 +553,15 @@ export function TerminalDashboard({
             <ExecutionLog decisions={decisions} height={432} />
           </div>
           <div style={{ ...sc, borderRight: cellBorder }}>
-            <RiskRadar positions={positions} account={account} config={config} fullStats={fullStats} />
+            {paper ? <PaperMarketPanel kind="Risk telemetry" live={paper === true ? undefined : paper} /> : <RiskRadar positions={positions} account={account} config={config} fullStats={fullStats} />}
           </div>
           <div style={sc}>
             {/* live open positions (the book right now) */}
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 6 }}>
               <span className="tm-px" style={{ fontSize: 11 }}>Positions</span>
               <span className="tm-sc">Current positions · live</span>
-              <span className="tm-sc" style={{ marginLeft: 'auto' }}>{positions?.length ?? 0} open</span>
-              {traderId && !on && positions && positions.length > 0 && (
+              <span className="tm-sc" style={{ marginLeft: 'auto' }}>{paper ? account?.position_count ?? '—' : positions?.length ?? 0} open</span>
+              {traderId && !on && !paper && positions && positions.length > 0 && (
                 <button
                   type="button"
                   onClick={() => void closeAllPositions(positions)}
@@ -625,7 +636,7 @@ export function TerminalDashboard({
                   })}
                 </tbody>
               </table>
-            ) : <div className="tm-sc" style={{ padding: '8px 0' }}>No open positions.</div>}
+            ) : <div className="tm-sc" style={{ padding: '8px 0' }}>{paper ? 'Open position details unavailable in this feed; see paper receipts in Strategy.' : 'No open positions.'}</div>}
 
             <div className="tm-rule" style={{ margin: '12px 0 10px' }} />
 
@@ -664,12 +675,12 @@ export function TerminalDashboard({
         </div>
         <div className="tm-rule" />
 
-        {/* market net inflow · by-symbol history · edge profile — footer */}
+        {/* market net inflow (Vergex) · by-symbol history · edge profile — footer */}
         <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1.2fr) minmax(0,0.9fr) minmax(0,0.9fr)' }}>
           <div style={{ ...sc, borderRight: cellBorder }}>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 8 }}>
               <span className="tm-px" style={{ fontSize: 12 }}>Market net inflow</span>
-              <span className="tm-sc">Market net inflow · {flow?.data?.window || '1h'}</span>
+              <span className="tm-sc">Market net inflow · {flow?.data?.window || '1h'} · Vergex</span>
               <span className="tm-sc" style={{ marginLeft: 'auto' }}>{flowItems.length} markets</span>
             </div>
             <FlowMarkets items={flowItems} window={flow?.data?.window} />
