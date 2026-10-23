@@ -27,6 +27,7 @@ import type {
   StrategyConfig,
 } from '../types'
 import { PaperLoopPanel } from '../components/strategy/PaperLoopPanel'
+import { StudioBacktestPanel } from '../components/strategy/StudioBacktestPanel'
 import {
   StudioCompilePanel,
   StudioFieldError,
@@ -1430,6 +1431,10 @@ export function StrategyStudioPage() {
                       </div>
                     ) : null}
                     <StudioCompilePanel
+                      studio={selectedStrategy.studio}
+                      stale={hasChanges}
+                    />
+                    <StudioBacktestPanel
                       studio={selectedStrategy.studio}
                       stale={hasChanges}
                     />
