@@ -321,6 +321,7 @@ def test_data_preserves_live_probabilities_and_counts(client, funder, demo_state
 
 def test_leaderboard_uses_scoped_decision_scores(client, funder, monkeypatch):
     from types import SimpleNamespace
+
     from algobots.demo.decisions import Score
 
     def quality(scope):
