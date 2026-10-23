@@ -17,7 +17,7 @@ Posting rules (anti-spam): one alert per anomaly episode, one recovery post,
 re-alert at most every REALERT_S while persisting, one reset-proof per UTC day.
 Everything is logged; the process always exits 0 so the timer stays healthy.
 
-Env overrides: ALGOBOTS_FEED, ALGOBOTS_PM_FEED (empty disables), ALGOBOTS_DECISION_LOG, ALGOBOTS_WORKERS_URL,
+Env overrides: ALGOBOTS_FEED, ALGOBOTS_PM_FEED (empty disables), ALGOBOTS_DECISION_LOG, ALGOBOTS_WORKERS_URL, ALGOBOTS_DECISIONS_URL,
 WATCHDOG_STATE, WATCHDOG_LOG, PAPERCLIP_URL, PAPERCLIP_TOKEN_FILE, ISSUE.
 """
 
@@ -28,6 +28,7 @@ import os
 import sys
 import time
 import urllib.request
+import urllib.parse
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -39,6 +40,9 @@ DECISION_LOG = Path(os.environ.get(
     "/var/lib/docker/volumes/algobots_demostate/_data/decision_log.jsonl"))
 WORKERS_URL = os.environ.get(
     "ALGOBOTS_WORKERS_URL", "http://100.82.57.72:8000/demo/api/workers")
+DECISIONS_URL = os.environ.get(
+    "ALGOBOTS_DECISIONS_URL",
+    urllib.parse.urljoin(WORKERS_URL, "decisions"))
 STATE_FILE = Path(os.environ.get("WATCHDOG_STATE", "/opt/laya/kalshi/loop-watchdog.state.json"))
 LOG_FILE = Path(os.environ.get("WATCHDOG_LOG", "/opt/laya/kalshi/loop-watchdog.log"))
 PAPERCLIP_URL = os.environ.get("PAPERCLIP_URL", "http://100.101.235.117:3100")
@@ -141,6 +145,18 @@ def workers_check() -> tuple[str, str]:
         problems.append(f"missing workers {missing}")
     return ("workers_unhealthy:" + ";".join(problems) if problems else "",
             "; ".join(bits))
+
+
+def refresh_decisions() -> str | None:
+    """Persist current ledger evidence without requiring an open demo page."""
+    try:
+        with urllib.request.urlopen(DECISIONS_URL, timeout=15) as resp:
+            payload = json.load(resp)
+        if not isinstance(payload, dict) or not isinstance(payload.get("logged"), int):
+            return "decisions endpoint returned no logged count"
+    except Exception as exc:  # noqa: BLE001 - health checks must keep running
+        return str(exc)[:200]
+    return None
 
 
 def coin_fills_by_day() -> dict[str, list[dict]]:
@@ -272,9 +288,13 @@ def main() -> None:
     if wkey:
         anomalies[wkey] = wsum
 
-    rkey, rdetail = reset_missing_check()
-    if rkey:
-        anomalies[rkey] = rdetail
+    evidence_error = refresh_decisions()
+    if evidence_error:
+        anomalies["decision_evidence_unavailable"] = evidence_error
+    else:
+        rkey, rdetail = reset_missing_check()
+        if rkey:
+            anomalies[rkey] = rdetail
 
     # Fire alerts / recoveries.
     for akey, detail in anomalies.items():
@@ -294,7 +314,7 @@ def main() -> None:
         log(state, f"RECOVERED {akey} posted_err={err}")
     state["active"] = anomalies
 
-    proof = reset_proof_check(state)
+    proof = None if evidence_error else reset_proof_check(state)
     if proof:
         err = post_comment(proof)
         log(state, f"RESET_PROOF posted_err={err}")
