@@ -460,6 +460,54 @@
     },
     {
       "repo": "algobots",
+      "path": "artifacts/ALG-3414/README.md"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3414/funder-walkthrough.mjs"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3414/walkthrough/01-owner-studio.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3414/walkthrough/02-owner-minted-invite.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3414/walkthrough/03-funder-studio.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3414/walkthrough/04-decision-with-nautilus-receipt.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3414/walkthrough/04b-funder-studio-config.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3414/walkthrough/05-decision-risk-blocked.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3414/walkthrough/06-owner-revoked-funder.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3414/walkthrough/07-funder-after-revoke.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3414/walkthrough/08-expired-invite-refused.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3414/walkthrough/summary.json"
+    },
+    {
+      "repo": "algobots",
       "path": "docs/adr/0001-nautilus-execution-spine.md"
     },
     {
