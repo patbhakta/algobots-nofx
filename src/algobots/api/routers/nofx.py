@@ -307,7 +307,10 @@ def _momentum_config() -> dict:
                     for k in ("ema", "macd", "rsi", "atr", "boll", "oi", "funding_rate")
                 },
             },
-            "custom_prompt": f"Kalshi BTC 15m: mom3x15m/vol20 P(up); abstain within ±{L.LAYA_MIN_EDGE} of 0.50. Paper only.",
+            "custom_prompt": (
+                "Kalshi BTC 15m: mom3x15m/vol20 P(up); "
+                f"abstain within ±{L.LAYA_MIN_EDGE} of 0.50. Paper only."
+            ),
             "risk_control": {
                 "max_positions": 1,
                 "btc_eth_max_leverage": 1,
@@ -341,7 +344,10 @@ def list_strategies(ctx: AuthContext = Depends(get_auth_context), db: Session = 
             kind=STUDIO_KIND,
             params_json=json.dumps(
                 {
-                    "description": "Demo Laya momentum configuration. Saved drafts do not reconfigure the running paper worker.",
+                    "description": (
+                        "Demo Laya momentum configuration. "
+                        "Saved drafts do not reconfigure the running paper worker."
+                    ),
                     "config": _momentum_config(),
                     "active": False,
                 }
