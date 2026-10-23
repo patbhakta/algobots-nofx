@@ -19,6 +19,7 @@ from __future__ import annotations
 import json
 import secrets
 import time
+from dataclasses import asdict
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
@@ -41,6 +42,8 @@ from algobots.api.security import create_access_token, verify_password
 from algobots.contracts.identity import Grant, IdentityKind, Principal
 
 router = APIRouter(prefix="/api/nofx", tags=["nofx-studio"])
+
+compat_router = APIRouter(tags=["nofx-studio"])
 
 STUDIO_KIND = "nofx-studio"
 FEED_STALE_S = 20 * 60  # observer writes once per 15-min interval
@@ -277,9 +280,77 @@ def _save(row: Strategy, **params: Any) -> None:
     row.params_json = json.dumps({**row.params, **params}, sort_keys=True)
 
 
+def _momentum_config() -> dict:
+    from algobots.demo import ledger as L
+
+    return {
+        "strategy_type": "ai_trading",
+        "language": "en",
+        "ai_config": {
+            "coin_source": {
+                "source_type": "static",
+                "static_coins": ["KXBTC15M"],
+                "use_ai500": False,
+                "use_oi_top": False,
+                "use_oi_low": False,
+            },
+            "indicators": {
+                "klines": {
+                    "primary_timeframe": "15m",
+                    "primary_count": 20,
+                    "enable_multi_timeframe": False,
+                },
+                "enable_raw_klines": True,
+                "enable_volume": False,
+                **{
+                    f"enable_{k}": False
+                    for k in ("ema", "macd", "rsi", "atr", "boll", "oi", "funding_rate")
+                },
+            },
+            "custom_prompt": f"Kalshi BTC 15m: mom3x15m/vol20 P(up); abstain within ±{L.LAYA_MIN_EDGE} of 0.50. Paper only.",
+            "risk_control": {
+                "max_positions": 1,
+                "btc_eth_max_leverage": 1,
+                "altcoin_max_leverage": 1,
+                "max_margin_usage": 1,
+                "min_position_size": float(L.MIN_STAKE),
+                "min_risk_reward_ratio": 1,
+                "min_confidence": 0,
+            },
+        },
+        "demo_worker": {
+            "account": "laya",
+            "p_source": "mom3x15m/vol20",
+            "min_edge": L.LAYA_MIN_EDGE,
+            "max_order_value": str(L.ENVELOPE.max_order_value),
+            "max_daily_loss": str(L.ENVELOPE.max_daily_loss),
+            "execution": "config-only",
+        },
+    }
+
+
 @router.get("/strategies")
 def list_strategies(ctx: AuthContext = Depends(get_auth_context), db: Session = Depends(get_db)):
-    return {"strategies": [_out(r) for r in _studio_rows(db, _tenant(ctx))]}
+    tenant_id = _tenant(ctx)
+    rows = _studio_rows(db, tenant_id)
+    if not rows:
+        row = Strategy(
+            tenant_id=tenant_id,
+            user_id=ctx.user.id,
+            name="Kalshi BTC 15m momentum",
+            kind=STUDIO_KIND,
+            params_json=json.dumps(
+                {
+                    "description": "Demo Laya momentum configuration. Saved drafts do not reconfigure the running paper worker.",
+                    "config": _momentum_config(),
+                    "active": False,
+                }
+            ),
+        )
+        db.add(row)
+        db.commit()
+        rows = [row]
+    return {"strategies": [_out(r) for r in rows]}
 
 
 @router.get("/strategies/active")
@@ -292,9 +363,8 @@ def active_strategy(ctx: AuthContext = Depends(get_auth_context), db: Session = 
 
 @router.get("/strategies/default-config")
 def default_config(ctx: AuthContext = Depends(get_auth_context)) -> dict:
-    """Empty base: the Studio fills its own defaults (simplifyConfig)."""
     _tenant(ctx)
-    return {}
+    return _momentum_config()
 
 
 @router.post("/strategies", status_code=status.HTTP_201_CREATED)
@@ -562,4 +632,62 @@ def studio_live(ctx: AuthContext = Depends(get_auth_context)) -> dict:
         "decisions": decisions,
         "counts": {"logged": logged, "logged_total": sum(logged.values()), "settled": settled},
         "decisions_error": err,
+    }
+
+
+@compat_router.get("/api/data")
+@router.get("/data")
+def data_feed(ctx: AuthContext = Depends(get_auth_context)) -> dict:
+    live = studio_live(ctx)
+    path = Path(get_settings().demo_feed_path)
+    rows = []
+    try:
+        for line in path.read_text().splitlines():
+            try:
+                row = json.loads(line)
+                if isinstance(row, dict):
+                    rows.append(
+                        {
+                            k: row.get(k)
+                            for k in (
+                                "ts",
+                                "event",
+                                "market",
+                                "strike",
+                                "p",
+                                "p_source",
+                                "mkt_yes_bid",
+                                "mkt_yes_ask",
+                                "outcome",
+                            )
+                        }
+                    )
+            except ValueError:
+                continue
+    except OSError:
+        pass
+    return {
+        "as_of": live["as_of"],
+        "feed": live["feed"],
+        "row_count": len(rows),
+        "observations": rows[-100:][::-1],
+        "counts": live["counts"],
+        "error": live["decisions_error"],
+    }
+
+
+@compat_router.get("/api/leaderboard")
+@router.get("/leaderboard")
+def leaderboard(ctx: AuthContext = Depends(get_auth_context)) -> dict:
+    from algobots.demo import router as demo_router
+
+    try:
+        q = demo_router._quality(_demo_scope(ctx))
+    except Exception as exc:
+        return {"accounts": [], "error": f"Scores unavailable: {type(exc).__name__}"}
+    return {
+        "accounts": [asdict(score) for score in q.scores.values()],
+        "logged": q.logged,
+        "settled": len(q.settled),
+        "error": None,
     }

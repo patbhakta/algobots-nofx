@@ -276,3 +276,63 @@ def test_live_reports_stale_and_missing_feed(client, funder, demo_state, monkeyp
     feed.unlink()
     f = client.get("/api/nofx/studio/live", headers=_h(funder["token"])).json()["feed"]
     assert f["state"] == "unavailable"
+
+
+def test_walkthrough_endpoints_require_session(client):
+    for path in ("/api/data", "/api/leaderboard", "/api/nofx/data", "/api/nofx/leaderboard"):
+        assert client.get(path).status_code == 401
+
+
+def test_default_strategy_seed_edit_activate(client, funder):
+    h = _h(funder["token"])
+    rows = client.get("/api/nofx/strategies", headers=h).json()["strategies"]
+    assert len(rows) == 1
+    seed = rows[0]
+    assert seed["config"]["demo_worker"]["p_source"] == "mom3x15m/vol20"
+    assert seed["config"]["demo_worker"]["max_daily_loss"] == "40"
+    again = client.get("/api/nofx/strategies", headers=h).json()["strategies"]
+    assert [r["id"] for r in again] == [seed["id"]]
+    cfg = seed["config"]
+    cfg["ai_config"]["custom_prompt"] = "edited draft"
+    edited = client.put(
+        f"/api/nofx/strategies/{seed['id']}", headers=h, json={"name": seed["name"], "config": cfg}
+    )
+    assert edited.status_code == 200 and edited.json()["config"] == cfg
+    active = client.post(f"/api/nofx/strategies/{seed['id']}/activate", headers=h)
+    assert active.status_code == 200 and active.json()["is_active"] is True
+    assert active.json()["execution"] == "config-only"
+
+
+def test_data_preserves_live_probabilities_and_counts(client, funder, demo_state):
+    path = demo_state / "observations.jsonl"
+    row = json.loads(path.read_text())
+    row.update(p=0.63, p_source="mom3x15m/vol20")
+    path.write_text(json.dumps(row) + "\ninvalid json\n")
+    response = client.get("/api/data", headers=_h(funder["token"]))
+    assert response.status_code == 200
+    data = response.json()
+    assert data["feed"]["state"] == "live" and data["row_count"] == 1
+    assert data["observations"][0]["p"] == 0.63
+    assert data["counts"]["logged_total"] == 2
+    path.unlink()
+    missing = client.get("/api/nofx/data", headers=_h(funder["token"])).json()
+    assert missing["feed"]["state"] == "unavailable" and missing["observations"] == []
+
+
+def test_leaderboard_uses_scoped_decision_scores(client, funder, monkeypatch):
+    from types import SimpleNamespace
+    from algobots.demo.decisions import Score
+
+    def quality(scope):
+        assert "laya" in scope.accounts
+        return SimpleNamespace(
+            scores={"laya": Score("laya", 40, 24, 0.6, 0.23, 0.1, 0.05, "no edge proven", False)},
+            logged=45,
+            settled=[None] * 40,
+        )
+
+    monkeypatch.setattr(demo_router, "_quality", quality)
+    result = client.get("/api/leaderboard", headers=_h(funder["token"])).json()
+    assert result["accounts"][0]["hit_rate"] == 0.6
+    assert result["accounts"][0]["brier"] == 0.23
+    assert result["settled"] == 40
