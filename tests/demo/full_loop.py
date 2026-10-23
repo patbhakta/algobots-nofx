@@ -45,6 +45,9 @@ from typing import Any
 HOST = "100.82.57.72"
 API = f"http://{HOST}:8000"
 MARIMO = f"http://{HOST}:8202"
+# The gateway is its own service (contracts/gateway.openapi.yaml serves it under /v1),
+# published next to the API by the deploy compose (ALG-3404).
+GATEWAY = f"http://{HOST}:8210/v1"
 API_CONTAINER = "algobots-api-1"
 MARIMO_CONTAINER = "nautilus-marimo"
 REDIS_CONTAINER = "algobots-redis-1"
@@ -175,7 +178,9 @@ def _node_feed(host: str, f: Facts) -> None:
         f.node_feed_age_s = now_s - int(f.node_feed_last["_id"].split("-")[0]) / 1000
 
 
-def collect(host: str = HOST, api: str = API, marimo: str = MARIMO) -> Facts:
+def collect(
+    host: str = HOST, api: str = API, marimo: str = MARIMO, gateway: str = GATEWAY
+) -> Facts:
     f = Facts()
 
     code, body = _http(f"{api}/openapi.json")
@@ -186,7 +191,10 @@ def collect(host: str = HOST, api: str = API, marimo: str = MARIMO) -> Facts:
 
     # The gateway contract serves /health (contracts/gateway.openapi.yaml); the
     # demo API only serves /healthz, so a 404 here means no gateway is deployed.
-    f.gateway_health = _status_only(f"{api}/health")
+    # The gateway contract serves /health under /v1 on the gateway own port
+    # (contracts/gateway.openapi.yaml). Probing the API :8000/health answers 404
+    # forever: the gateway never serves it (ALG-3404).
+    f.gateway_health = _status_only(f"{gateway}/health")
 
     code, body = _http(f"{api}/demo/api/workers")
     if code == 200:
@@ -253,7 +261,7 @@ def _studio(f: Facts) -> Hop:
 
 def _gateway(f: Facts) -> Hop:
     h = Hop("gateway", "Gateway accepts and dispatches", MISSING)
-    h.evidence.append(f"GET /health -> {f.gateway_health} (gateway contract health route)")
+    h.evidence.append(f"GET :8210/v1/health -> {f.gateway_health} (gateway contract health route)")
     cmd = f.redis_cmd_streams
     h.evidence.append(
         "redis algobots:cmd:* streams: "
@@ -397,10 +405,11 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--host", default=HOST)
     ap.add_argument("--api", default=API)
     ap.add_argument("--marimo", default=MARIMO)
+    ap.add_argument("--gateway", default=GATEWAY)
     ap.add_argument("--json", action="store_true")
     a = ap.parse_args(argv)
 
-    facts = collect(a.host, a.api, a.marimo)
+    facts = collect(a.host, a.api, a.marimo, a.gateway)
     hops = judge(facts)
     ok = all(h.status == WIRED for h in hops)
     if a.json:
