@@ -1034,39 +1034,6 @@ export function StrategyStudioPage() {
         ? simplifyConfig(await response.json())
         : simplifyConfig(null)
       defaultConfig.language = language as 'zh' | 'en'
-      defaultConfig.ai_config = {
-        ...defaultConfig.ai_config!,
-        coin_source: defaultCoinSource({
-          ...defaultConfig.ai_config?.coin_source,
-          static_coins: [],
-          hyper_rank_category: 'all',
-          vergex_limit: 10,
-          vergex_market_type: 'all',
-        }),
-        indicators: defaultIndicators({
-          ...defaultConfig.ai_config?.indicators,
-          klines: {
-            primary_timeframe: '15m',
-            primary_count: 30,
-            enable_multi_timeframe: false,
-            selected_timeframes: ['15m'],
-          },
-        }),
-        risk_control: defaultRisk({
-          ...defaultConfig.ai_config?.risk_control,
-          max_positions: 8,
-          btc_eth_max_leverage: 10,
-          altcoin_max_leverage: 10,
-          btc_eth_max_position_value_ratio: 5,
-          altcoin_max_position_value_ratio: 5,
-          max_margin_usage: 1.0,
-          min_confidence: 78,
-          min_risk_reward_ratio: 3,
-        }),
-        custom_prompt:
-          'Studio configuration draft. Saved to AlgoBots only; it does not place orders. Execution is the Nautilus paper loop shown above.',
-        prompt_sections: undefined,
-      }
       const created = await api.createStrategy({
         name: text(
           language,
