@@ -24,7 +24,7 @@ import { LeaderboardPage } from '../pages/LeaderboardPage'
 import { DataPage } from '../pages/DataPage'
 import { DemoSettingsPage as SettingsPage } from '../pages/DemoSettingsPage'
 import { StrategyStudioPage } from '../pages/StrategyStudioPage'
-import { PaperLoopPanel } from '../components/strategy/PaperLoopPanel'
+import { PaperDashboardPage } from '../pages/PaperDashboardPage'
 import { useAuth } from '../contexts/AuthContext'
 import { useLanguage } from '../contexts/LanguageContext'
 import { useSystemConfig } from '../hooks/useSystemConfig'
@@ -319,7 +319,7 @@ export function AppRoutes() {
         />
         <Route
           path={ROUTES.dashboard}
-          element={isAuthenticated ? <AppChrome currentPage="trader"><section className="max-w-7xl mx-auto p-6"><h1 className="text-2xl font-semibold mb-4">Dashboard</h1><PaperLoopPanel /></section></AppChrome> : <LandingPage />}
+          element={isAuthenticated ? <AppChrome currentPage="trader"><PaperDashboardPage /></AppChrome> : <LandingPage />}
         />
         <Route
           path={ROUTES.strategy}
