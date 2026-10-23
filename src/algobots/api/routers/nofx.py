@@ -37,9 +37,11 @@ from algobots.api.dependencies import AuthContext, get_auth_context
 from algobots.api.memberships import service as memberships
 from algobots.api.models import InviteCode, Strategy, User, UserRole
 from algobots.api.routers import auth as auth_routes
+from algobots.api.routers import studio as studio_routes
 from algobots.api.schemas import RegisterRequest
 from algobots.api.security import create_access_token, verify_password
 from algobots.contracts.identity import Grant, IdentityKind, Principal
+from algobots.strategies.studio import StudioError, translate_nofx_config
 
 router = APIRouter(prefix="/api/nofx", tags=["nofx-studio"])
 
@@ -271,6 +273,8 @@ def _out(row: Strategy) -> dict:
         "config": p.get("config", {}),
         # Saved here; execution stays on the Nautilus paper loop (see /studio/live).
         "execution": "config-only",
+        # ALG-3408: the same save, through the /api/studio draft + compile contract.
+        "studio": p.get("studio"),
         "created_at": row.created_at.isoformat(),
         "updated_at": (row.updated_at or row.created_at).isoformat(),
     }
@@ -278,6 +282,39 @@ def _out(row: Strategy) -> dict:
 
 def _save(row: Strategy, **params: Any) -> None:
     row.params_json = json.dumps({**row.params, **params}, sort_keys=True)
+
+
+def _sync_studio(db: Session, ctx: AuthContext, row: Strategy) -> None:
+    """Save the NoFX config through the Studio draft contract, then compile it.
+
+    The NoFX row keeps the user's config as typed; `studio` records the linked
+    draft, its revision and the compiled artifact, or the owning field of the
+    translation/compile error. Errors never block the NoFX save itself.
+    """
+    p = row.params
+    link = p.get("studio") or {}
+    try:
+        draft, warnings = translate_nofx_config(row.name, p.get("config") or {})
+        if link.get("draft_id"):
+            d = studio_routes._draft_or_404(db, row.tenant_id, link["draft_id"])
+            if d.params["draft"] != studio_routes.parse_draft(draft).model_dump(mode="json"):
+                studio_routes.revise_draft(d, d.params["revision"], draft)
+        else:
+            d = studio_routes.save_draft(db, ctx, draft)
+        rec, _ = studio_routes.compile_draft(db, ctx, d)
+        studio = {
+            "status": "compiled",
+            "draft_id": str(d.id),
+            "revision": d.params["revision"],
+            "artifact_hash": rec["artifact_hash"],
+            "implementation": rec["implementation"],
+            "strategy_id": rec["strategy_id"],
+            "deployable": rec["deployable"],
+            "warnings": warnings + rec["warnings"],
+        }
+    except StudioError as exc:
+        studio = {"status": "invalid", "draft_id": link.get("draft_id"), **exc.to_dict()}
+    _save(row, studio=studio)
 
 
 def _momentum_config() -> dict:
@@ -354,6 +391,8 @@ def list_strategies(ctx: AuthContext = Depends(get_auth_context), db: Session = 
             ),
         )
         db.add(row)
+        db.flush()
+        _sync_studio(db, ctx, row)
         db.commit()
         rows = [row]
     return {"strategies": [_out(r) for r in rows]}
@@ -390,6 +429,8 @@ def create_strategy(
         ),
     )
     db.add(row)
+    db.flush()
+    _sync_studio(db, ctx, row)
     db.commit()
     return _out(row)
 
@@ -411,6 +452,7 @@ def update_strategy(
     row = _studio_or_404(db, _tenant(ctx), strategy_id)
     row.name = payload.name
     _save(row, description=payload.description, config=payload.config)
+    _sync_studio(db, ctx, row)
     db.commit()
     return _out(row)
 
@@ -447,9 +489,11 @@ def duplicate_strategy(
         user_id=ctx.user.id,
         name=f"{src.name} (copy)"[:120],
         kind=STUDIO_KIND,
-        params_json=json.dumps({**src.params, "active": False}),
+        params_json=json.dumps({**src.params, "active": False, "studio": None}),
     )
     db.add(row)
+    db.flush()
+    _sync_studio(db, ctx, row)
     db.commit()
     return _out(row)
 
