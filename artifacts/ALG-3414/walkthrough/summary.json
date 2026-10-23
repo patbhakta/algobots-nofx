@@ -1,0 +1,70 @@
+{
+  "base": "http://100.82.57.72:8201",
+  "at": "2026-10-23T10:17:06.693Z",
+  "steps": [
+    {
+      "name": "owner login lands on Strategy Studio with the paper loop",
+      "ok": true,
+      "url": "http://100.82.57.72:8201/strategy"
+    },
+    {
+      "name": "owner mints a single-use funder invite",
+      "ok": true,
+      "code_prefix": "ALG-"
+    },
+    {
+      "name": "invited funder registers and sees the Studio",
+      "ok": true,
+      "email": "funder-ui-1792750611523@example.com",
+      "feed": "Kalshi market feed LIVE Kalshi KXBTC15M public market data (read-only observer) Last observation 2026-10-23 10:15:17Z (2 min ago) Market KXBTC15M-26OCT230630-30 Strike 81701.39 YES bid / ask 0.54 / 0.55"
+    },
+    {
+      "name": "decision row shows its Nautilus fill receipt",
+      "ok": true,
+      "row": "2026-10-23 10:00:17 coin KXBTC15M-26OCT230615 YES PAPER FILL O-20261023-100017-COIN-COIN-51 · T-616401dfdf6d61e4-001 · 22 @ 0.45 YES settled"
+    },
+    {
+      "name": "risk-blocked decision shows its reason",
+      "ok": true,
+      "row": "2026-10-23 10:00:17 laya KXBTC15M-26OCT230615 NO RISK BLOCKED P(up) 0.344 vs 0.50 mid → edge -15.6pp → NO; daily-loss envelope (−40 USD) exhausted YES settled"
+    },
+    {
+      "name": "paper / sandbox labelling is visible",
+      "ok": true
+    },
+    {
+      "name": "funder does not get the owner invite controls",
+      "ok": true
+    },
+    {
+      "name": "Studio config saves, activates and persists in AlgoBots",
+      "ok": true,
+      "put": 200,
+      "activate": 200,
+      "saved": {
+        "status": 200,
+        "name": "Studio strategy config",
+        "execution": "config-only",
+        "active": true
+      }
+    },
+    {
+      "name": "revoked funder session is refused",
+      "ok": true,
+      "status": 401
+    },
+    {
+      "name": "revoked funder cannot sign in again",
+      "ok": true,
+      "status": 401,
+      "body": {
+        "error": "Access revoked"
+      }
+    },
+    {
+      "name": "expired invite is refused",
+      "ok": true,
+      "url": "http://100.82.57.72:8201/register"
+    }
+  ]
+}

@@ -575,6 +575,10 @@ def render_index(rows: list[Row]) -> str:
       🪙 Coinflip Baseline — Kalshi BTC 15m
       <small>{s.landing_line}</small>
     </a>
+    <a class="report" href="kalshi_demo_loop_latest.html">
+      ⚡ Demo Loop Live Evidence — Kalshi paper
+      <small>auto-refreshed every 15 min</small>
+    </a>
     <footer>Paper trading only. Not financial advice.</footer>
   </div>
 </body>

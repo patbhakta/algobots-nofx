@@ -184,3 +184,19 @@ def test_debate_needs_both_debaters_in_scope_and_renders():
     html = render(lg, start="2026-10-06", quality=q, view="quality")
     assert "Analyst debate · bull vs bear" in html
     assert "no debate outcome changes an order" in html
+
+
+def test_market_benchmark_scores_the_same_events() -> None:
+    """ALG-3357 honest scoreboard: the Kalshi-mid Brier rides on the strategy's
+    own settled events, so "beat the book" is compared like for like."""
+    recs = [_rec("laya", 0, "up", 0.70), _rec("laya", 1, "up", 0.60)]
+    st = D.settle(recs, {"E0": 1, "E1": 0}, mids={"E0": 0.60, "E1": 0.55})
+    assert st[0].market_brier == pytest.approx(0.16)  # mid .60 vs y=1
+    assert st[1].market_brier == pytest.approx(0.3025)  # mid .55 vs y=0
+    sc = D.score(st, "laya")
+    assert sc.market_n == 2
+    assert sc.market_brier == pytest.approx((0.16 + 0.3025) / 2)
+    # an event the book never quoted is excluded from the market average
+    sc2 = D.score(D.settle(recs, {"E0": 1, "E1": 0}, mids={"E0": 0.60}), "laya")
+    assert sc2.market_n == 1
+    assert sc2.market_brier == pytest.approx(0.16)

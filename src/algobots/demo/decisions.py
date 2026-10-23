@@ -95,7 +95,13 @@ def record(d: L.Decision, row: L.Row) -> dict:
         "p_up": p,
         "inputs": inputs,
         "reason": d.reason,
-        "execution": {"status": d.status, "stake": str(d.stake)},
+        "execution": {
+            "status": d.status,
+            "stake": str(d.stake),
+            "qty": d.qty,
+            "fill_px": str(d.price),
+            "px_source": d.px_source or None,
+        },
     }
 
 
@@ -145,10 +151,19 @@ class Settled:
     hit: bool
     brier: float
     edge: float  # $ per contract bought at the 50c mid, before fees
+    market_brier: float | None = None  # (Kalshi mid - outcome)^2, same event
 
 
-def settle(recs: Iterable[dict], outcomes: dict[str, int]) -> list[Settled]:
-    """Score every VALID decision whose interval has closed; others stay unsettled."""
+def settle(
+    recs: Iterable[dict], outcomes: dict[str, int], mids: dict[str, float] | None = None
+) -> list[Settled]:
+    """Score every VALID decision whose interval has closed; others stay unsettled.
+
+    ``mids`` carries the venue's own YES mid per event: the benchmark a
+    strategy must beat is the book it trades against, scored on exactly the
+    events that strategy decided (ALG-3357 honest scoreboard). An event the
+    book never quoted is excluded from the market average, never guessed at.
+    """
     out = []
     for r in recs:
         if r.get("status") != DecisionStatus.VALID or r.get("instrument_id") not in outcomes:
@@ -156,7 +171,9 @@ def settle(recs: Iterable[dict], outcomes: dict[str, int]) -> list[Settled]:
         y = outcomes[r["instrument_id"]]
         hit = (r["rating"] == "up") == (y == 1)
         p = MID if r.get("p_up") is None else float(r["p_up"])
-        out.append(Settled(r, y, hit, (p - y) ** 2, (1.0 if hit else 0.0) - MID))
+        mid = (mids or {}).get(r["instrument_id"])
+        mb = None if mid is None else (mid - y) ** 2
+        out.append(Settled(r, y, hit, (p - y) ** 2, (1.0 if hit else 0.0) - MID, mb))
     return out
 
 
@@ -171,6 +188,8 @@ class Score:
     se: float | None
     verdict: str
     proven: bool
+    market_brier: float | None = None  # Kalshi mid on the same settled events
+    market_n: int = 0  # settled events the book actually quoted
 
 
 def score(settled: list[Settled], strategy: str) -> Score:
@@ -193,7 +212,12 @@ def score(settled: list[Settled], strategy: str) -> Score:
     else:
         verdict = f"edge {edge * 100:+.1f}¢ > 2σ · not yet out-of-sample"
     proven = n >= MIN_N and edge > 2 * se
-    return Score(strategy, n, hits, h, sum(s.brier for s in xs) / n, edge, se, verdict, proven)
+    mbs = [s.market_brier for s in xs if s.market_brier is not None]
+    market_brier = sum(mbs) / len(mbs) if mbs else None
+    return Score(
+        strategy, n, hits, h, sum(s.brier for s in xs) / n, edge, se, verdict, proven,
+        market_brier, len(mbs),
+    )
 
 
 def load_lessons(path: Path) -> dict[str, str]:
@@ -300,7 +324,8 @@ def quality(
     keep = [k for k in L.STRATEGIES if accounts is None or k in set(accounts)]
     recs = [r for r in recs if r.get("strategy") in keep]
     outcomes = {r.event: r.outcome for r in lg.rows}
-    st = settle(recs, outcomes)
+    mids = {r.event: r.mkt_mid for r in lg.rows if r.mkt_mid is not None}
+    st = settle(recs, outcomes, mids)
     ids = {r["decision_id"] for r in recs}
     mine = {k: v for k, v in (lessons or {}).items() if k in ids}
     deb = debate(recs, outcomes) if set(DEBATERS) <= set(keep) else None

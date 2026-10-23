@@ -23,7 +23,10 @@ from algobots.api.middleware import AccessLogMiddleware, AuditMiddleware
 from algobots.api.risk.router import router as risk_router
 from algobots.api.routers.auth import router as auth_router
 from algobots.api.routers.auth import users_router
+from algobots.api.routers.nofx import compat_router as nofx_compat_router
+from algobots.api.routers.nofx import router as nofx_router
 from algobots.api.routers.resources import router as resources_router
+from algobots.api.routers.studio import router as studio_router
 from algobots.bridge.router import router as bridge_router
 from algobots.demo import router as demo
 from algobots.demo.router import router as demo_router
@@ -54,6 +57,11 @@ app.add_middleware(AuditMiddleware)
 
 app.include_router(auth_router)
 app.include_router(users_router)
+# ALG-3414 NoFX Studio funder surface (:8201 maps its /api/login etc. onto /api/nofx).
+app.include_router(nofx_router)
+app.include_router(nofx_compat_router)
+# ALG-3408 Studio draft/compile contract (the NoFX save path goes through it).
+app.include_router(studio_router)
 app.include_router(resources_router)
 app.include_router(accounts_router)
 app.include_router(broker_accounts_router)

@@ -1,0 +1,10 @@
+[Unit]
+Description=Refresh the AlgoBots demo evidence snapshot every 15 minutes
+
+[Timer]
+OnCalendar=*:0/15
+Persistent=true
+Unit=evidence-snapshot.service
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,26 @@
+# Polymarket US (polymarket.us, CFTC DCM) btc-updown-15m observer (ALG-3411):
+# feed #3, EVIDENCE ONLY — writes its own feed file; NOT wired into the paper
+# workers. Public gateway.polymarket.us market data only: no key, no orders.
+# Install on .243:
+#   mkdir -p /opt/laya/pmus
+#   cp /opt/algobots/repo/deploy/workers/pmus-observer.service /etc/systemd/system/
+#   systemctl daemon-reload && systemctl enable --now pmus-observer
+[Unit]
+Description=AlgoBots Polymarket US btc-updown-15m observer (feed 3, evidence only, paper never)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+ExecStart=/usr/bin/python3 -I /opt/algobots/repo/src/algobots/marketdata/pmus_observer.py --feed /opt/laya/pmus/observations.jsonl --poll 20
+Restart=always
+RestartSec=10
+StandardOutput=append:/opt/laya/pmus/observer.log
+StandardError=append:/opt/laya/pmus/observer.log
+NoNewPrivileges=yes
+ProtectSystem=strict
+ReadWritePaths=/opt/laya/pmus
+ProtectHome=read-only
+PrivateTmp=yes
+
+[Install]
+WantedBy=multi-user.target

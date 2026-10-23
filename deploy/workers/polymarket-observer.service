@@ -1,0 +1,25 @@
+# Polymarket btc-updown-15m observer (ALG-3411): feed #2, EVIDENCE ONLY —
+# writes its own feed file; NOT wired into the paper workers (strike semantics
+# pending sign-off on ALG-3411). Public market data only: no auth, no orders.
+# Install on .243:
+#   cp /opt/algobots/repo/deploy/workers/polymarket-observer.service /etc/systemd/system/
+#   systemctl daemon-reload && systemctl enable --now polymarket-observer
+[Unit]
+Description=AlgoBots Polymarket btc-updown-15m observer (feed 2, evidence only, paper never)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+ExecStart=/usr/bin/python3 -I /opt/algobots/repo/src/algobots/marketdata/polymarket_observer.py --feed /opt/laya/polymarket/observations.jsonl --poll 20
+Restart=always
+RestartSec=10
+StandardOutput=append:/opt/laya/polymarket/observer.log
+StandardError=append:/opt/laya/polymarket/observer.log
+NoNewPrivileges=yes
+ProtectSystem=strict
+ReadWritePaths=/opt/laya/polymarket
+ProtectHome=read-only
+PrivateTmp=yes
+
+[Install]
+WantedBy=multi-user.target

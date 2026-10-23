@@ -961,6 +961,102 @@
     {
       "repo": "algobots",
       "path": "tests/test_scaffold.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3414/README.md"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3414/funder-walkthrough.mjs"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3414/walkthrough/01-owner-studio.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3414/walkthrough/02-owner-minted-invite.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3414/walkthrough/03-funder-studio.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3414/walkthrough/04-decision-with-nautilus-receipt.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3414/walkthrough/04b-funder-studio-config.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3414/walkthrough/05-decision-risk-blocked.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3414/walkthrough/06-owner-revoked-funder.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3414/walkthrough/07-funder-after-revoke.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3414/walkthrough/08-expired-invite-refused.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3414/walkthrough/summary.json"
+    },
+    {
+      "repo": "algobots",
+      "path": "deploy/nofx-frontend-nginx.conf"
+    },
+    {
+      "repo": "algobots",
+      "path": "docs/operations/strategy-studio-first-session.md"
+    },
+    {
+      "repo": "algobots",
+      "path": "docs/polymarket-us-feasibility-2026-10-22.md"
+    },
+    {
+      "repo": "algobots",
+      "path": "docs/research/data-plane-law-2026-10-23.md"
+    },
+    {
+      "repo": "algobots",
+      "path": "src/algobots/demo/evidence_snapshot.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "src/algobots/demo/loop_watchdog.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "tests/api/test_nofx_browser.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "tests/demo/test_evidence_snapshot.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "tests/demo/test_loop_watchdog.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "tests/demo/test_settlements_api.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "tests/demo/test_worker_retry.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "tools/pmus_public_probe.py"
     }
   ],
   "scope_revisions": [
@@ -1149,7 +1245,7 @@
         "tests/contracts/golden/valid/MarketSnapshot@1.0.json",
         "tests/contracts/golden/valid/FeatureSnapshot@1.0.json"
       ],
-      "reason": "dispatched spec (ALG-3101) registers Instrument, MarketSnapshot and FeatureSnapshot as new schema versions with goldens (A04 precedent). Exact files only — dir-level src/algobots/contracts/ stays A01's (identical entries in two packets are forbidden). schema-lock.json (A04-carved) and contracts/__init__.py are additive edits through the schema-registry owner: the lock gains three entries via registry.write_lock() and __init__ re-exports the new modules; both stay proposals through their recorded owners, same as Makefile and api/main.py (router mount, A03/A04 precedent)."
+      "reason": "dispatched spec (ALG-3101) registers Instrument, MarketSnapshot and FeatureSnapshot as new schema versions with goldens (A04 precedent). Exact files only \u2014 dir-level src/algobots/contracts/ stays A01's (identical entries in two packets are forbidden). schema-lock.json (A04-carved) and contracts/__init__.py are additive edits through the schema-registry owner: the lock gains three entries via registry.write_lock() and __init__ re-exports the new modules; both stay proposals through their recorded owners, same as Makefile and api/main.py (router mount, A03/A04 precedent)."
     }
   ],
   "packets": {
@@ -1386,6 +1482,11 @@
         {
           "repo": "algobots",
           "path": "tests/api/test_control_plane.py",
+          "status": "real"
+        },
+        {
+          "repo": "algobots",
+          "path": "tests/api/test_nofx_studio.py",
           "status": "real"
         },
         {
