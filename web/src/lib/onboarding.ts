@@ -16,9 +16,9 @@ export function setUserMode(mode: UserMode) {
   localStorage.setItem(USER_MODE_KEY, mode)
 }
 
-export function getPostAuthPath(mode: UserMode | null | undefined): string {
-  // ALG-3414: the funder demo lands on Strategy Studio (the paper-loop surface)
-  return mode === 'beginner' ? '/welcome' : '/strategy'
+export function getPostAuthPath(_mode: UserMode | null | undefined): string {
+  // The live paper-loop dashboard is the first screen for every invited user.
+  return '/dashboard'
 }
 
 export function setBeginnerWalletAddress(address: string) {
