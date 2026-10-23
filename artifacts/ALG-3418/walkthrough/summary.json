@@ -1,0 +1,80 @@
+{
+  "base": "http://100.82.57.72:8201",
+  "ok": true,
+  "steps": [
+    {
+      "name": "QA user registers and lands in the Studio",
+      "ok": true,
+      "email": "studio-qa-1792768039220@example.com"
+    },
+    {
+      "name": "seeded momentum strategy is compiled; Backtest is enabled",
+      "ok": true,
+      "implementation": "kalshi_momentum.v1",
+      "artifact": "bb4c4150ddae"
+    },
+    {
+      "name": "Backtest returns a Nautilus result tied to a named dataset",
+      "ok": true,
+      "status": 201,
+      "seconds": 0.909,
+      "executor": "NautilusTrader 1.231.0 BacktestEngine",
+      "artifact_hash": "bb4c4150ddaeb5037084d9cd30c1c1a951d96e2d2cca8d23a16c6fd97f666e5f",
+      "dataset": {
+        "id": "kalshi-kxbtc15m-recorder@95e6a2ade70e",
+        "name": "KXBTC15M recorder 2026-10-22 09:00 to 2026-10-23 15:00 UTC (120 settled intervals)",
+        "source": "kalshi-kxbtc15m-recorder",
+        "sha256": "95e6a2ade70e4a8010639b3153759ec5f7357d51f0c73d356aa821c2cc2f3700",
+        "rows": 120,
+        "first_event": "KXBTC15M-26OCT220515",
+        "last_event": "KXBTC15M-26OCT231100",
+        "start": "2026-10-22T09:00:00+00:00",
+        "end": "2026-10-23T15:00:00+00:00"
+      },
+      "metrics": {
+        "intervals": 120,
+        "scored": 108,
+        "filled": 18,
+        "abstain": 17,
+        "blocked": 85,
+        "wins": 6,
+        "starting_equity": "100.00",
+        "ending_equity": "0.45",
+        "pnl": "-99.55",
+        "fees": "9.50",
+        "max_drawdown": "108.56",
+        "hit_rate": 0.3333333333333333,
+        "brier": 0.32922524472222237,
+        "px_sources": {
+          "kalshi_no_ask": 10,
+          "kalshi_yes_ask": 8
+        },
+        "blocked_by": {
+          "max_daily_loss": 85
+        }
+      },
+      "shown": {
+        "dataset": "KXBTC15M recorder 2026-10-22 09:00 to 2026-10-23 15:00 UTC (120 settled intervals)",
+        "pnl": "-99.55",
+        "hit_rate": "33.3% (6/18)",
+        "brier": "0.329"
+      },
+      "curve_points": 120,
+      "result_id": "ace33123-37dd-4131-94c1-d3aefcf02ea1"
+    },
+    {
+      "name": "equity curve renders",
+      "ok": true,
+      "line_paths": 1
+    },
+    {
+      "name": "stored result reloads for the same artifact",
+      "ok": true,
+      "dataset": "KXBTC15M recorder 2026-10-22 09:00 to 2026-10-23 15:00 UTC (120 settled intervals)"
+    },
+    {
+      "name": "unsaved edit disables Backtest",
+      "ok": true
+    }
+  ]
+}
