@@ -10,6 +10,14 @@ from algobots.demo import killswitch
 from algobots.demo import ledger as L
 from algobots.demo.page import VIEWS, render
 
+# The page must label whichever executor actually ran (ALG-3357): the API
+# image installs nautilus_trader, the dev/CI venv may not. Mirror the
+# import fallback in algobots.demo.router so the assertion is honest in both.
+try:
+    from algobots.engine.sleeve import EXECUTOR as PAGE_EXECUTOR
+except ImportError:
+    PAGE_EXECUTOR = L.REFERENCE
+
 
 def _row(i: int, p: float, outcome: int, choice: str = "up", conf: float = 0.5) -> L.Row:
     return L.Row(
@@ -313,8 +321,11 @@ def test_positions_and_orders_endpoints(tmp_path, monkeypatch):
         assert len(client.get("/demo/api/orders").json()["orders"]) == 15
         page = client.get("/demo?account=coin")
         assert page.status_code == 200 and 'class="acct sel" data-account="coin"' in page.text
-        assert 'data-executor="NautilusTrader' in page.text
-        assert "fills, fees, settlement and sleeve cash read back from the engine" in page.text
+        assert f'data-executor="{PAGE_EXECUTOR}' in page.text
+        if PAGE_EXECUTOR == L.REFERENCE:
+            assert "fills computed by the reference model" in page.text
+        else:
+            assert "fills, fees, settlement and sleeve cash read back from the engine" in page.text
         r = client.post(
             "/demo/kill-switch", data={"engaged": "on", "account": "coin"}, follow_redirects=False
         )
