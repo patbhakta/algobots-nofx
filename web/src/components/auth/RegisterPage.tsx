@@ -7,6 +7,7 @@ import { useAuth } from '../../contexts/AuthContext'
 import { useLanguage } from '../../contexts/LanguageContext'
 import { t } from '../../i18n/translations'
 import { getSystemConfig } from '../../lib/config'
+import { normalizeInviteCode } from '../../lib/inviteCode'
 import { DeepVoidBackground } from '../common/DeepVoidBackground'
 import { RegistrationDisabled } from './RegistrationDisabled'
 import { WhitelistFullPage } from '../common/WhitelistFullPage'
@@ -291,23 +292,23 @@ export function RegisterPage() {
               {betaMode && (
                 <div>
                   <label className="block text-xs uppercase tracking-wider text-nofx-gold mb-1.5 ml-1 font-bold">
-                    Priority Access Code
+                    Invite Code
                   </label>
                   <input
                     type="text"
                     value={betaCode}
                     onChange={(e) =>
-                      setBetaCode(
-                        e.target.value.replace(/[^a-z0-9]/gi, '').toLowerCase()
-                      )
+                      setBetaCode(normalizeInviteCode(e.target.value))
                     }
                     className="w-full bg-nofx-bg border border-[rgba(26,24,19,0.14)] rounded px-4 py-3 text-sm focus:border-nofx-gold focus:ring-1 focus:ring-nofx-gold/50 outline-none transition-all placeholder-nofx-text-muted text-nofx-text font-mono tracking-widest"
-                    placeholder="XXXXXX"
-                    maxLength={6}
+                    placeholder="ALG-…"
+                    maxLength={128}
+                    autoComplete="off"
+                    spellCheck={false}
                     required={betaMode}
                   />
                   <p className="text-[10px] text-nofx-text-muted font-mono mt-1 ml-1">
-                    * CASE SENSITIVE ALPHANUMERIC
+                    * PASTE THE SINGLE-USE CODE EXACTLY AS SENT (CASE SENSITIVE)
                   </p>
                 </div>
               )}
