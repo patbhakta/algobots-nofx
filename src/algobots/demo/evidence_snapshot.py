@@ -12,8 +12,9 @@ Stdlib only, designed for ``python3 -I`` like the watchdog. Always exits 0
 (timer stays healthy); the outcome lands in the state JSON for the watchdog
 and cron runs to inspect.
 
-Env overrides: SNAPSHOT_CONTAINER, SNAPSHOT_NOTEBOOK, SNAPSHOT_PUBLISHED,
-SNAPSHOT_STATE, SNAPSHOT_DIR_HOST (host path of the container notebooks dir).
+Env overrides: SNAPSHOT_CONTAINER, SNAPSHOT_NOTEBOOK_DIR, SNAPSHOT_NOTEBOOK,
+SNAPSHOT_PUBLISHED, SNAPSHOT_STATE, SNAPSHOT_DIR_HOST (host path of the
+container notebooks dir).
 """
 
 from __future__ import annotations
@@ -25,7 +26,8 @@ import time
 from pathlib import Path
 
 CONTAINER = os.environ.get("SNAPSHOT_CONTAINER", "nautilus-marimo")
-NOTEBOOK = os.environ.get("SNAPSHOT_NOTEBOOK", "/home/nautilus/work/notebooks/kalshi_demo_loop.py")
+NOTEBOOK_DIR = os.environ.get("SNAPSHOT_NOTEBOOK_DIR", "/home/nautilus/work/notebooks")
+NOTEBOOK = os.environ.get("SNAPSHOT_NOTEBOOK", NOTEBOOK_DIR + "/kalshi_demo_loop.py")
 DIR_HOST = Path(os.environ.get("SNAPSHOT_DIR_HOST", "/mnt/funnytree/algobots/notebooks"))
 PUBLISHED = Path(os.environ.get("SNAPSHOT_PUBLISHED", str(DIR_HOST / "kalshi_demo_loop_latest.html")))
 STATE = Path(os.environ.get("SNAPSHOT_STATE", "/opt/laya/kalshi/evidence_state.json"))
@@ -61,7 +63,7 @@ def run_export() -> Path:
     cmd = [
         "docker", "exec", CONTAINER,
         "marimo", "export", "html", NOTEBOOK,
-        "-o", f"{NOTEBOOK.rsplit(/, 1)[0]}/{TMP_NAME}",
+        "-o", NOTEBOOK_DIR + "/" + TMP_NAME,
     ]
     proc = subprocess.run(cmd, capture_output=True, text=True, timeout=EXPORT_TIMEOUT_S)
     if proc.returncode != 0:
@@ -82,7 +84,6 @@ def write_state(ok: bool, detail: str) -> None:
 
 def main() -> int:
     started = time.time()
-    tmp_path = DIR_HOST / TMP_NAME
     try:
         tmp = run_export()
         ok, reason = validate_snapshot(tmp)
