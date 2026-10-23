@@ -51,6 +51,12 @@ COINBASE = "https://api.exchange.coinbase.com/products/BTC-USD/candles"
 SERIES = "btc-updown-15m"
 INTERVAL = 900
 SETTLE_GIVE_UP = 48 * 3600
+POLYGON_RPC = "https://polygon.gateway.tenderly.co"
+CTF_ADDRESS = "0x4d97dcd97ec945f40cf65f87097ace5ea0476045"
+CONDITION_RESOLUTION_TOPIC = (
+    "0xb44d84d3289691f71497564b85d4233648d9dbae8cbdbb4329f301c3a0185894"
+)
+ORACLE_BACKFILL_WINDOW = 2 * 3600  # grace beyond SETTLE_GIVE_UP for the on-chain check
 
 
 def _get(url: str):
@@ -133,6 +139,52 @@ def settled_outcome(m: dict) -> int | None:
     if up <= 1e-6:
         return 0
     return None  # resolved-but-not-binary / still converging
+
+
+
+def _rpc(method: str, params: list) -> object:
+    body = json.dumps({"jsonrpc": "2.0", "id": 1, "method": method, "params": params}).encode()
+    req = urllib.request.Request(
+        POLYGON_RPC,
+        data=body,
+        headers={"Content-Type": "application/json", "User-Agent": "algobots-pm-observer/1"},
+    )
+    with urllib.request.urlopen(req, timeout=20) as r:
+        return json.load(r).get("result")
+
+
+def onchain_payout(condition_id: str) -> dict | None:
+    """Exact-oracle settlement: CTF ConditionResolution payouts for this condition.
+
+    The 15m series resolves via a Chainlink Data Streams adapter; the payout
+    report lands on Polygon as ConditionResolution(conditionId, oracle,
+    questionId, outcomeSlotCount, payoutNumerators[]). Verified live Oct 23
+    2026: condition 0x1da7..f01 -> tx 0xdc3680..947, payouts [1, 0] (Up),
+    matching gamma's outcomePrices ["1","0"]. This is the license-free exact
+    oracle check (the PolyBolt `price.crypto.twap` ws channel requires auth).
+    """
+    cond = (condition_id or "").lower()
+    if not cond.startswith("0x"):
+        return None
+    latest = _rpc("eth_blockNumber", [])
+    if latest is None:
+        return None
+    logs = _rpc("eth_getLogs", [{
+        "fromBlock": hex(max(0, int(latest, 16) - 1500)),
+        "toBlock": "latest",
+        "address": CTF_ADDRESS,
+        "topics": [CONDITION_RESOLUTION_TOPIC, cond],
+    }])
+    if not logs:
+        return None
+    lg = logs[0]
+    data = lg["data"][2:]
+    words = [data[i:i + 64] for i in range(0, len(data), 64)]
+    if len(words) < 4 or int(words[1], 16) != 0x40:
+        return None
+    n = int(words[2], 16)
+    payouts = [int(w, 16) for w in words[3:3 + n]]
+    return {"tx": lg["transactionHash"], "block": int(lg["blockNumber"], 16), "payouts": payouts}
 
 
 class Observer:
@@ -228,7 +280,29 @@ class Observer:
                 r["settled_ts"] = now
                 out["settled"].append(r["event"])
 
-        if out["decided"] or out["settled"]:
+        # Exact-oracle pass: for each decided row, read the venue's on-chain
+        # payout straight from the Polygon CTF and record whether it matches.
+        for r in rows:
+            close_ts = float(r.get("close_ts") or 0)
+            if r.get("outcome") is None or r.get("oracle_checked"):
+                continue
+            if now - close_ts > SETTLE_GIVE_UP + ORACLE_BACKFILL_WINDOW:
+                continue
+            try:
+                oc = onchain_payout(r.get("market") or "")
+            except Exception as e:  # noqa: BLE001 — RPC hiccup: retry next pass
+                out["errors"].append(f"{r['event']}: oracle_check: {e}")
+                continue
+            if not oc or not oc["payouts"]:
+                continue  # resolution not on-chain yet; retry next pass
+            r["oracle_checked"] = True
+            r["oracle_basis"] = "polygon-ctf-conditionresolution"
+            r["oracle_payouts"] = oc["payouts"]
+            r["oracle_tx"] = oc["tx"]
+            r["oracle_verified"] = oc["payouts"][0] == r["outcome"]
+            out.setdefault("oracle_checked", []).append(r["event"])
+
+        if out["decided"] or out["settled"] or out.get("oracle_checked"):
             self.write(rows)
         return out
 
