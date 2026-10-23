@@ -1334,6 +1334,11 @@
         },
         {
           "repo": "algobots",
+          "path": "tests/api/test_nofx_studio.py",
+          "status": "real"
+        },
+        {
+          "repo": "algobots",
           "path": "tests/api/__init__.py",
           "status": "real"
         },

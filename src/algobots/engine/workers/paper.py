@@ -427,6 +427,9 @@ class PaperWorker:
             "orders_filled": s.filled,
             "fill_events": len(s.fills),
             "last_fill": s.fills[-1] if s.fills else None,
+            # ALG-3414: recent Nautilus fill receipts, so each decision can be
+            # matched to its client_order_id/trade_id (one day of 15-min intervals)
+            "fills": s.fills[-96:],
             "orders_restored": s.restored,
             "orders_rejected_frozen": s.rejected_frozen,
             "api_orders_filled": s.api_filled,
