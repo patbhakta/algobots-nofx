@@ -1,0 +1,105 @@
+{
+ "captured": "nautilus_trader 2.0.0rc6 LiveNode on .243, ALG-3405 prototype run (trader PROTO-3405, one 1000 EUR/USD.SIM market buy)",
+ "entries": [
+  {
+   "key": "trader-PROTO-3405:algobots:events.portfolio.SIM-001",
+   "id": "1792650730311-0",
+   "fields": {
+    "topic": "events.portfolio.SIM-001",
+    "type": "PortfolioSnapshot",
+    "payload": "{\"account_id\":\"SIM-001\",\"account_type\":\"MARGIN\",\"base_currency\":null,\"balances\":[{\"currency\":\"USD\",\"total\":\"100000.00 USD\",\"locked\":\"0.00 USD\",\"free\":\"100000.00 USD\"}],\"margins\":[],\"unrealized_pnls\":[],\"realized_pnls\":[],\"total_equity\":[\"100000.00 USD\"],\"base_currency_equity\":null,\"is_stale\":false,\"stale_instruments\":[],\"stale_currencies\":[],\"unpriced_instruments\":[],\"event_id\":\"771ac1ae-298d-4f36-a969-959f8fb70bca\",\"ts_event\":1792650730309341577,\"ts_init\":1792650730309390146}",
+    "encoding": "Json"
+   }
+  },
+  {
+   "key": "trader-PROTO-3405:algobots:events.heartbeat.proto-3405",
+   "id": "1792650730320-0",
+   "fields": {
+    "topic": "events.heartbeat.proto-3405",
+    "type": "",
+    "payload": "{\"type\": \"AlgoBotsHeartbeat\", \"node\": \"proto-3405\", \"account_id\": \"SIM-001\", \"reconciled\": true, \"ts\": 1792650730.3203387, \"ts_event\": \"2026-10-22T06:32:10.320Z\"}",
+    "encoding": "Json"
+   }
+  },
+  {
+   "key": "trader-PROTO-3405:algobots:events.heartbeat.proto-3405",
+   "id": "1792650735323-0",
+   "fields": {
+    "topic": "events.heartbeat.proto-3405",
+    "type": "",
+    "payload": "{\"type\": \"AlgoBotsHeartbeat\", \"node\": \"proto-3405\", \"account_id\": \"SIM-001\", \"reconciled\": true, \"ts\": 1792650735.3235166, \"ts_event\": \"2026-10-22T06:32:15.323Z\"}",
+    "encoding": "Json"
+   }
+  },
+  {
+   "key": "trader-PROTO-3405:algobots:events.order.CommandNode-000",
+   "id": "1792650736925-0",
+   "fields": {
+    "topic": "events.order.CommandNode-000",
+    "type": "OrderEventAny",
+    "payload": "{\"Initialized\":{\"type\":\"OrderInitialized\",\"trader_id\":\"PROTO-3405\",\"strategy_id\":\"CommandNode-000\",\"instrument_id\":\"EUR/USD.SIM\",\"client_order_id\":\"proto-3405-0001\",\"order_side\":\"BUY\",\"order_type\":\"MARKET\",\"quantity\":\"1000\",\"time_in_force\":\"GTC\",\"post_only\":false,\"reduce_only\":false,\"quote_quantity\":false,\"reconciliation\":false,\"event_id\":\"91edcaa7-0032-4bd7-9f2c-efdac2d21747\",\"ts_event\":1792650736924421357,\"ts_init\":1792650736924421357,\"price\":null,\"activation_price\":null,\"trigger_price\":null,\"trigger_type\":\"NO_TRIGGER\",\"limit_offset\":null,\"trailing_offset\":null,\"trailing_offset_type\":\"NO_TRAILING_OFFSET\",\"expire_time\":null,\"display_qty\":null,\"emulation_trigger\":\"NO_TRIGGER\",\"trigger_instrument_id\":null,\"contingency_type\":\"NO_CONTINGENCY\",\"order_list_id\":null,\"linked_order_ids\":null,\"parent_order_id\":null,\"exec_algorithm_id\":null,\"exec_algorithm_params\":null,\"exec_spawn_id\":null,\"tags\":null}}",
+    "encoding": "Json"
+   }
+  },
+  {
+   "key": "trader-PROTO-3405:algobots:events.order.CommandNode-000",
+   "id": "1792650736926-0",
+   "fields": {
+    "topic": "events.order.CommandNode-000",
+    "type": "OrderEventAny",
+    "payload": "{\"Submitted\":{\"type\":\"OrderSubmitted\",\"trader_id\":\"PROTO-3405\",\"strategy_id\":\"CommandNode-000\",\"instrument_id\":\"EUR/USD.SIM\",\"client_order_id\":\"proto-3405-0001\",\"account_id\":\"SIM-001\",\"event_id\":\"a4bef1ec-f265-40e3-a637-4bf05e187cf8\",\"ts_event\":1792650736925812396,\"ts_init\":1792650736925812396}}",
+    "encoding": "Json"
+   }
+  },
+  {
+   "key": "trader-PROTO-3405:algobots:events.order_submitted.EUR/USD.SIM",
+   "id": "1792650736926-0",
+   "fields": {
+    "topic": "events.order_submitted.EUR/USD.SIM",
+    "type": "OrderEventAny",
+    "payload": "{\"Submitted\":{\"type\":\"OrderSubmitted\",\"trader_id\":\"PROTO-3405\",\"strategy_id\":\"CommandNode-000\",\"instrument_id\":\"EUR/USD.SIM\",\"client_order_id\":\"proto-3405-0001\",\"account_id\":\"SIM-001\",\"event_id\":\"a4bef1ec-f265-40e3-a637-4bf05e187cf8\",\"ts_event\":1792650736925812396,\"ts_init\":1792650736925812396}}",
+    "encoding": "Json"
+   }
+  },
+  {
+   "key": "trader-PROTO-3405:algobots:events.account.SIM-001",
+   "id": "1792650736927-0",
+   "fields": {
+    "topic": "events.account.SIM-001",
+    "type": "AccountState",
+    "payload": "{\"account_id\":\"SIM-001\",\"account_type\":\"MARGIN\",\"base_currency\":null,\"balances\":[{\"currency\":\"USD\",\"total\":\"100000.00 USD\",\"locked\":\"33.00 USD\",\"free\":\"99967.00 USD\"}],\"margins\":[{\"initial\":\"0.00 USD\",\"maintenance\":\"33.00 USD\",\"currency\":\"USD\",\"instrument_id\":\"EUR/USD.SIM\"}],\"is_reported\":false,\"event_id\":\"0fb1931d-f88d-4484-bf83-7d73a486536f\",\"ts_event\":1792650736926373964,\"ts_init\":1792650736926433706}",
+    "encoding": "Json"
+   }
+  },
+  {
+   "key": "trader-PROTO-3405:algobots:events.order.CommandNode-000",
+   "id": "1792650736927-0",
+   "fields": {
+    "topic": "events.order.CommandNode-000",
+    "type": "OrderEventAny",
+    "payload": "{\"Filled\":{\"type\":\"OrderFilled\",\"trader_id\":\"PROTO-3405\",\"strategy_id\":\"CommandNode-000\",\"instrument_id\":\"EUR/USD.SIM\",\"client_order_id\":\"proto-3405-0001\",\"venue_order_id\":\"SIM-0-1\",\"account_id\":\"SIM-001\",\"trade_id\":\"T-26c9c61feb0472fe-001\",\"order_side\":\"BUY\",\"order_type\":\"MARKET\",\"last_qty\":\"1000\",\"last_px\":\"1.10003\",\"currency\":\"USD\",\"liquidity_side\":\"TAKER\",\"event_id\":\"3f2c42f8-3785-4a45-8e86-0d9d30683587\",\"ts_event\":1792650736925907029,\"ts_init\":1792650736925907029,\"reconciliation\":false,\"position_id\":\"EUR/USD.SIM-CommandNode-000\",\"commission\":\"0.00 USD\",\"info\":null}}",
+    "encoding": "Json"
+   }
+  },
+  {
+   "key": "trader-PROTO-3405:algobots:events.order_filled.EUR/USD.SIM",
+   "id": "1792650736927-0",
+   "fields": {
+    "topic": "events.order_filled.EUR/USD.SIM",
+    "type": "OrderEventAny",
+    "payload": "{\"Filled\":{\"type\":\"OrderFilled\",\"trader_id\":\"PROTO-3405\",\"strategy_id\":\"CommandNode-000\",\"instrument_id\":\"EUR/USD.SIM\",\"client_order_id\":\"proto-3405-0001\",\"venue_order_id\":\"SIM-0-1\",\"account_id\":\"SIM-001\",\"trade_id\":\"T-26c9c61feb0472fe-001\",\"order_side\":\"BUY\",\"order_type\":\"MARKET\",\"last_qty\":\"1000\",\"last_px\":\"1.10003\",\"currency\":\"USD\",\"liquidity_side\":\"TAKER\",\"event_id\":\"3f2c42f8-3785-4a45-8e86-0d9d30683587\",\"ts_event\":1792650736925907029,\"ts_init\":1792650736925907029,\"reconciliation\":false,\"position_id\":\"EUR/USD.SIM-CommandNode-000\",\"commission\":\"0.00 USD\",\"info\":null}}",
+    "encoding": "Json"
+   }
+  },
+  {
+   "key": "trader-PROTO-3405:algobots:events.position.CommandNode-000",
+   "id": "1792650736927-0",
+   "fields": {
+    "topic": "events.position.CommandNode-000",
+    "type": "PositionEvent",
+    "payload": "{\"PositionOpened\":{\"trader_id\":\"PROTO-3405\",\"strategy_id\":\"CommandNode-000\",\"instrument_id\":\"EUR/USD.SIM\",\"position_id\":\"EUR/USD.SIM-CommandNode-000\",\"account_id\":\"SIM-001\",\"opening_order_id\":\"proto-3405-0001\",\"entry\":\"BUY\",\"side\":\"LONG\",\"signed_qty\":1000.0,\"quantity\":\"1000\",\"last_qty\":\"1000\",\"last_px\":\"1.10003\",\"currency\":\"USD\",\"avg_px_open\":1.10003,\"realized_pnl\":\"0.00 USD\",\"event_id\":\"7909cc67-c03e-41fe-943b-4cfc5537b2ae\",\"ts_event\":1792650736925907029,\"ts_init\":1792650736926225402}}",
+    "encoding": "Json"
+   }
+  }
+ ]
+}

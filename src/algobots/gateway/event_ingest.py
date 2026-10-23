@@ -29,8 +29,17 @@ projection: an event that was read but not folded is re-read after a restart
 because the cursor only advances once ``ingest`` has returned.
 
 What this loop deliberately does *not* do is interpret. Every payload goes to
-:func:`algobots.gateway.node_events.ingest` unmodified, and an event that
+:func:`algobots.gateway.node_events.ingest` via ``node_events.normalize`` (the
+wire-shape module owns both engine generations' envelopes), and an event that
 module does not recognise is dropped rather than guessed at.
+
+**Only the per-component topics are folded.** Nautilus 2.0.0rc6 publishes each
+order event twice: on ``events.order.<strategy>`` — every event for the
+strategy, in order — and again on a per-type topic such as
+``events.order_filled.<instrument>``. Each stream is read independently, so
+folding both would replay ``OrderSubmitted`` after ``OrderFilled`` and walk a
+filled order back to ``submitted``. :data:`FOLDED_TOPICS` keeps the ordered
+stream and drops the copies (ALG-3405).
 """
 
 from __future__ import annotations
@@ -60,6 +69,12 @@ BATCH = 500
 FROM_START = "0"
 
 
+#: ``events.<kind>.<component>`` topics whose events are folded. ``order``,
+#: ``position`` and ``account`` are the 1.231 capture's and rc6's ordered
+#: streams; ``heartbeat`` is :mod:`algobots.node.event_egress`'s.
+FOLDED_TOPICS = frozenset({"order", "position", "account", "heartbeat"})
+
+
 def _text(value: Any) -> Any:
     return value.decode() if isinstance(value, bytes | bytearray) else value
 
@@ -76,16 +91,22 @@ def decode(fields: dict[Any, Any]) -> dict[str, Any] | None:
     encoding = str(body.get("encoding") or JSON_ENCODING)
     if encoding.lower() != JSON_ENCODING.lower():
         return None
+    parts = str(body.get("topic") or "").split(".")
+    if len(parts) > 1 and parts[1] not in FOLDED_TOPICS:
+        return None
     raw = body.get("payload")
     if raw is None:
         return None
     if isinstance(raw, dict):
-        return raw
-    try:
-        parsed = json.loads(raw)
-    except (TypeError, json.JSONDecodeError):
+        parsed: Any = raw
+    else:
+        try:
+            parsed = json.loads(raw)
+        except (TypeError, json.JSONDecodeError):
+            return None
+    if not isinstance(parsed, dict):
         return None
-    return parsed if isinstance(parsed, dict) else None
+    return NE.normalize(parsed, str(body.get("type") or ""))
 
 
 @dataclass
@@ -183,4 +204,4 @@ class NodeEventIngest:
             self.log(event, fields)
 
 
-__all__ = ["BATCH", "BLOCK_MS", "FROM_START", "NodeEventIngest", "decode"]
+__all__ = ["BATCH", "BLOCK_MS", "FOLDED_TOPICS", "FROM_START", "NodeEventIngest", "decode"]

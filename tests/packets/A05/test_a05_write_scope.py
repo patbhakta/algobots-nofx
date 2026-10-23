@@ -37,6 +37,30 @@ PROPOSED_TO_OWNER = {
     # the same way A04 recorded its shared-surface proposals.
     "pyproject.toml": "integration owner (A01): ruff per-file-ignores for locked validator source",
     "src/algobots/shareout/coinflip.py": "shareout owner (ALG-3381): E501 docstring trim only",
+    # Integrator-approved rc6 node/gateway stack (ALG-3403/3405/3406/3410, CEO
+    # Oct 22-23): the demo-first lane's Nautilus rc6 node + gateway work rides
+    # this branch below the A05 packet; recorded here the same way A04 and the
+    # ALG-3375 lint rollout recorded their cross-packet paths.
+    "artifacts/ALG-3403/README.md": "integrator (ALG-3403): full-loop demo evidence",
+    "artifacts/ALG-3403/full-loop-run-1.md": "integrator (ALG-3403): full-loop run evidence",
+    "artifacts/ALG-3405/README.md": "integrator (ALG-3405): rc6 node verifier evidence",
+    "artifacts/ALG-3406/README.md": "integrator (ALG-3406): hop-4 wired evidence",
+    "artifacts/ALG-3406/verifier-243.txt": "integrator (ALG-3406): .243 verifier output",
+    "deploy/compose.nautilus-node.yaml": "integrator (ALG-3405): rc6 node compose",
+    "deploy/nautilus-node.Dockerfile": "integrator (ALG-3405): rc6 node image",
+    "scripts/rc6_gateway_deploy_smoke.py": "integrator (ALG-3410): gateway deploy smoke",
+    "scripts/rc6_node_smoke.py": "integrator (ALG-3405): rc6 node smoke",
+    "src/algobots/gateway/event_ingest.py": "gateway owner (ALG-3410): rc6 event ingest",
+    "src/algobots/gateway/node_events.py": "gateway owner (ALG-3406): node event contract",
+    "src/algobots/node/nautilus_actor.py": "node owner (ALG-3405): Nautilus actor",
+    "src/algobots/node/paper_node.py": "node owner (ALG-3405): rc6 paper node",
+    "src/algobots/node/replay.py": "node owner (ALG-3406): Parquet catalog replay",
+    "tests/demo/full_loop.py": "integrator (ALG-3403): demo full-loop harness",
+    "tests/demo/test_full_loop.py": "integrator (ALG-3403): demo full-loop tests",
+    "tests/gateway/fixtures/rc6_event_streams.json": "gateway owner (ALG-3410): rc6 wire fixtures",
+    "tests/gateway/test_rc6_wire.py": "gateway owner (ALG-3410): rc6 wire tests",
+    "tests/node/test_paper_node.py": "node owner (ALG-3405): paper node tests",
+    "tests/node/test_replay.py": "node owner (ALG-3406): replay tests",
 }
 
 
