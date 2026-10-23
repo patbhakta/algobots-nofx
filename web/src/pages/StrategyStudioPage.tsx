@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import {
   ArrowDownRight,
   ArrowUpRight,
@@ -27,7 +26,7 @@ import type {
   Strategy,
   StrategyConfig,
 } from '../types'
-import { launchAutopilot } from '../lib/launch/launchAutopilot'
+import { PaperLoopPanel } from '../components/strategy/PaperLoopPanel'
 import type {
   MarketSymbol,
   VergexHeatmapBin,
@@ -36,7 +35,6 @@ import type {
   VergexDirectionCurrentResponse,
   VergexDirectionHistoryResponse,
 } from '../lib/api/data'
-import { buildDashboardPath, ROUTES } from '../router/paths'
 
 const API_BASE = import.meta.env.VITE_API_BASE || ''
 
@@ -66,7 +64,6 @@ const categoryPriority: Record<string, number> = {
 const timeframeOptions = ['5m', '15m', '30m', '1h', '4h', '1d']
 const barCountOptions = [20, 30, 50]
 const topNOptions = [5, 6, 7, 8, 9, 10]
-const marketDataBoardLimit = 30
 const confidenceOptions = [65, 75, 82]
 
 const text = (_language: string, _zh: string, en: string) => en
@@ -144,6 +141,9 @@ const profileOptions: Array<{
       'Active mode: follow strong Market Data direction changes quickly and keep positions until the board turns, becomes neutral, or drops the symbol.',
   },
 ]
+
+const RETIRED_BOARD =
+  'Market board retired: it came from the NoFX Go backend (Vergex), which is not part of AlgoBots. Live market data is the Kalshi feed in the paper loop above.'
 
 function getAIConfig(config: StrategyConfig): AIStrategyConfig | null {
   if (config.ai_config) return config.ai_config
@@ -786,7 +786,6 @@ function CostLiquidationHeatmap({
 export function StrategyStudioPage() {
   const { token } = useAuth()
   const { language } = useLanguage()
-  const navigate = useNavigate()
   const [strategies, setStrategies] = useState<Strategy[]>([])
   const [selectedStrategy, setSelectedStrategy] = useState<Strategy | null>(
     null
@@ -890,37 +889,19 @@ export function StrategyStudioPage() {
   )
 
   const loadSymbols = useCallback(async () => {
-    setSymbolsLoading(true)
-    setSymbolsError('')
-    try {
-      const result = await api.getSymbols('hyperliquid-xyz')
-      setSymbols(result.symbols || [])
-    } catch (err) {
-      setSymbolsError(
-        err instanceof Error ? err.message : 'Symbol list unavailable'
-      )
-    } finally {
-      setSymbolsLoading(false)
-    }
+    // ALG-3414: the symbol list came from the retired NoFX Go backend.
+    setSymbols([])
+    setSymbolsLoading(false)
+    setSymbolsError(RETIRED_BOARD)
   }, [])
 
   const loadSignals = useCallback(async () => {
-    if (!token) return
-    setSignalsLoading(true)
-    setSignalsError('')
-    try {
-      const result =
-        await api.getVergexDirectionChangeLeaderboard(marketDataBoardLimit)
-      setSignals(result.items || [])
-      setListMode('marketData')
-    } catch (err) {
-      setSignalsError(
-        err instanceof Error ? err.message : 'Binance, Polymarket, and IBKR board unavailable'
-      )
-    } finally {
-      setSignalsLoading(false)
-    }
-  }, [token])
+    // ALG-3414: the direction board was a Vergex feed via the retired NoFX Go
+    // backend; it is not part of AlgoBots. Live market data is the Kalshi feed.
+    setSignals([])
+    setSignalsLoading(false)
+    setSignalsError(RETIRED_BOARD)
+  }, [])
 
   const loadSignalDetail = useCallback(
     async (item: VergexSignalItem, bandOverride?: string) => {
@@ -1161,94 +1142,6 @@ export function StrategyStudioPage() {
     }
   }
 
-  const buildUnifiedMarketDataConfig = (): StrategyConfig => {
-    const base = simplifyConfig(editingConfig)
-    base.language = language as 'zh' | 'en'
-    base.ai_config = {
-      ...base.ai_config!,
-      coin_source: defaultCoinSource({
-        ...base.ai_config?.coin_source,
-        static_coins: [],
-        hyper_rank_category: 'all',
-        vergex_limit: 10,
-        vergex_market_type: 'all',
-        vergex_chain: 'hyperliquid',
-      }),
-      indicators: defaultIndicators({
-        ...base.ai_config?.indicators,
-        klines: {
-          primary_timeframe: '15m',
-          primary_count: 30,
-          enable_multi_timeframe: false,
-          selected_timeframes: ['15m'],
-        },
-      }),
-      risk_control: defaultRisk({
-        ...base.ai_config?.risk_control,
-        max_positions: 8,
-        btc_eth_max_leverage: 10,
-        altcoin_max_leverage: 10,
-        // Five times equity is the hard per-position cap; allocation is dynamic.
-        btc_eth_max_position_value_ratio: 5,
-        altcoin_max_position_value_ratio: 5,
-        max_margin_usage: 1.0,
-        min_confidence: 78,
-        min_risk_reward_ratio: 3,
-      }),
-      custom_prompt:
-        'Run AlgoBots Autopilot: use the Binance, Polymarket, and IBKR direction board as the candidate universe, open in the board direction, and hold until that direction changes, becomes neutral, or disappears.',
-      prompt_sections: undefined,
-    }
-    return base
-  }
-
-  const startUnifiedMarketDataAgent = async () => {
-    if (!selectedStrategy) return
-
-    setSaving(true)
-    try {
-      // The shared launcher runs the server-side preflight (fresh wallet and
-      // exchange balances) BEFORE ensureStrategy, so a failed launch never
-      // mutates or activates the strategy as a side effect.
-      const outcome = await launchAutopilot({
-        scanIntervalMinutes: 15,
-        ensureStrategy: async () => {
-          const config = buildUnifiedMarketDataConfig()
-          setEditingConfig(config)
-          await api.updateStrategy(selectedStrategy.id, {
-            name: selectedStrategy.name,
-            description:
-              selectedStrategy.description ||
-              'Autonomous market selection powered by the live Binance, Polymarket, and IBKR direction board.',
-            config,
-          })
-          await api.activateStrategy(selectedStrategy.id)
-          return selectedStrategy.id
-        },
-      })
-
-      if (!outcome.ok) {
-        notify.error(outcome.message)
-        const setupTarget =
-          outcome.kind === 'error' ? null : outcome.setupTarget
-        if (setupTarget) {
-          navigate(`${ROUTES.traders}?setup=${setupTarget}`)
-        }
-        return
-      }
-
-      if (outcome.warning) {
-        notify.warning(outcome.warning)
-      }
-      notify.success('AlgoBots Autopilot started')
-      setHasChanges(false)
-      await loadStrategies(selectedStrategy.id)
-      navigate(buildDashboardPath(outcome.traderId))
-    } finally {
-      setSaving(false)
-    }
-  }
-
   const activateStrategy = async () => {
     if (!selectedStrategy) return
     try {
@@ -1389,19 +1282,25 @@ export function StrategyStudioPage() {
         <div className="flex items-center justify-between gap-4">
           <div>
             <h1 className="text-xl font-semibold text-nofx-text">
-              {text(language, 'AlgoBots Autopilot', 'AlgoBots Autopilot')}
+              {text(language, 'AlgoBots Strategy Studio', 'AlgoBots Strategy Studio')}
             </h1>
             <p className="mt-1 text-sm text-nofx-text-muted">
               {text(
                 language,
-                'Autonomous market selection powered by the live Binance, Polymarket, and IBKR direction board.',
-                'Autonomous market selection powered by the live Binance, Polymarket, and IBKR direction board.'
+                'Configure strategies and watch the live Kalshi paper loop running on Nautilus. Configs are saved to AlgoBots; execution is paper only.',
+                'Configure strategies and watch the live Kalshi paper loop running on Nautilus. Configs are saved to AlgoBots; execution is paper only.'
               )}
             </p>
           </div>
           <button
             type="button"
-            onClick={startUnifiedMarketDataAgent}
+            onClick={() =>
+              void saveStrategy(
+                true,
+                undefined,
+                'Configuration saved to AlgoBots (paper loop unchanged)'
+              )
+            }
             disabled={saving || !selectedStrategy}
             className="inline-flex items-center gap-2 rounded-lg bg-nofx-gold px-4 py-2 text-sm font-semibold text-nofx-bg hover:bg-nofx-gold-highlight"
           >
@@ -1410,7 +1309,7 @@ export function StrategyStudioPage() {
             ) : (
               <Bot className="h-4 w-4" />
             )}
-            {text(language, 'Launch Autopilot', 'Launch Autopilot')}
+            {text(language, 'Save configuration', 'Save configuration')}
           </button>
         </div>
       </div>
@@ -1457,6 +1356,9 @@ export function StrategyStudioPage() {
         </aside>
 
         <main className="overflow-y-auto p-5">
+          <div className="mx-auto mb-6 max-w-7xl">
+            <PaperLoopPanel />
+          </div>
           {selectedStrategy && aiConfig && coinSource && indicators && risk ? (
             <div className="mx-auto max-w-7xl space-y-4">
               <section className="hidden rounded-lg border border-[rgba(26,24,19,0.14)] bg-nofx-bg-lighter p-4">

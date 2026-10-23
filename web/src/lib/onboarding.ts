@@ -17,7 +17,8 @@ export function setUserMode(mode: UserMode) {
 }
 
 export function getPostAuthPath(mode: UserMode | null | undefined): string {
-  return mode === 'beginner' ? '/welcome' : '/traders'
+  // ALG-3414: the funder demo lands on Strategy Studio (the paper-loop surface)
+  return mode === 'beginner' ? '/welcome' : '/strategy'
 }
 
 export function setBeginnerWalletAddress(address: string) {
