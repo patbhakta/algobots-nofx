@@ -812,7 +812,7 @@ export function StrategyStudioPage() {
   const [detailLoading, setDetailLoading] = useState(false)
   const [detailError, setDetailError] = useState('')
   const [detailLiqBand, setDetailLiqBand] = useState('15')
-  const [listMode, setListMode] = useState<ListMode>('marketData')
+  const [listMode, setListMode] = useState<ListMode>('pool') // ALG-3352: pool is the live Kalshi list
   const [hasChanges, setHasChanges] = useState(false)
 
   const aiConfig = editingConfig?.ai_config || null
@@ -832,7 +832,8 @@ export function StrategyStudioPage() {
   }, [signals])
 
   const visibleSymbols = useMemo(() => {
-    const tradefi = symbols.filter((item) => item.category !== 'crypto')
+    // The demo universe is the Kalshi series list (crypto), so no tradefi filter.
+    const tradefi = symbols
     const scoped =
       scope === 'all'
         ? tradefi
@@ -889,11 +890,50 @@ export function StrategyStudioPage() {
   )
 
   const loadSymbols = useCallback(async () => {
-    // ALG-3414: the symbol list came from the retired NoFX Go backend.
-    setSymbols([])
-    setSymbolsLoading(false)
-    setSymbolsError(RETIRED_BOARD)
-  }, [])
+    // ALG-3352: the NoFX Go symbol list is retired; the live symbol universe
+    // for this demo is the Kalshi feed the paper loop actually trades.
+    if (!token) return
+    setSymbolsLoading(true)
+    setSymbolsError('')
+    try {
+      const response = await fetch(`${API_BASE}/api/data`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      if (!response.ok) throw new Error('feed unavailable')
+      const feed = await response.json()
+      const observations: Array<{
+        market?: string
+        event?: string
+        strike?: number
+      }> = Array.isArray(feed?.observations) ? feed.observations : []
+      // Distinct Kalshi series: strip the event date and strike suffixes
+      // (KXBTC15M-26OCT230830-30 -> KXBTC15M) and keep the latest strike.
+      const latest = new Map<string, MarketSymbol>()
+      for (const obs of observations) {
+        const ticker = String(obs.market || obs.event || '').toUpperCase()
+        if (!ticker) continue
+        const series = ticker.split('-')[0]
+        if (!series) continue
+        const existing = latest.get(series)
+        const next: MarketSymbol = {
+          symbol: series,
+          name: `${series} (Kalshi)`,
+          category: 'crypto',
+          exchange: 'kalshi',
+          mark_price: typeof obs.strike === 'number' ? obs.strike : existing?.mark_price,
+        }
+        latest.set(series, next)
+      }
+      setSymbols([...latest.values()].sort((a, b) => a.symbol.localeCompare(b.symbol)))
+    } catch {
+      setSymbols([])
+      setSymbolsError(
+        'Live Kalshi feed unavailable right now; the paper loop above still shows the latest receipts.'
+      )
+    } finally {
+      setSymbolsLoading(false)
+    }
+  }, [token])
 
   const loadSignals = useCallback(async () => {
     // ALG-3414: the direction board was a Vergex feed via the retired NoFX Go
@@ -1424,17 +1464,18 @@ export function StrategyStudioPage() {
                 </div>
               </section>
 
-              {/* ALG-3414: the Vergex signal board came from the retired NoFX Go
-                  backend; live market data is the Kalshi feed in the paper loop. */}
-              <section className="hidden rounded-lg border border-[rgba(26,24,19,0.14)] bg-nofx-bg-lighter p-4">
+              {/* ALG-3352: restored for the demo. The tradable universe is the
+                  live Kalshi feed the paper loop observes (read-only). The old
+                  Vergex cross-market board stays retired. */}
+              <section className="rounded-lg border border-[rgba(26,24,19,0.14)] bg-nofx-bg-lighter p-4">
                 <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
                   <div>
                     <div className="flex items-center gap-2 text-sm font-semibold text-nofx-text">
                       <Sparkles className="h-4 w-4 text-nofx-gold" />
-                      Signal Board
+                      Trading universe
                     </div>
                     <div className="mt-1 text-xs text-nofx-text-muted">
-                      Live direction board · direction history · liquidation map
+                      Live Kalshi markets from the paper-loop feed · pick the series this strategy tracks
                     </div>
                   </div>
                   <div className="flex flex-wrap gap-2">
@@ -1463,7 +1504,7 @@ export function StrategyStudioPage() {
                       type="button"
                       onClick={() => setListMode('pool')}
                       disabled={symbolsLoading}
-                      className={`hidden items-center gap-2 rounded-lg border px-3 py-2 text-xs disabled:opacity-50 ${
+                      className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs disabled:opacity-50 ${
                         listMode === 'pool'
                           ? 'border-[rgba(26,24,19,0.24)] bg-nofx-bg-deeper text-nofx-text'
                           : 'border-[rgba(26,24,19,0.14)] text-nofx-text-muted hover:text-nofx-text'
@@ -1496,7 +1537,7 @@ export function StrategyStudioPage() {
                             vergex_market_type: 'all',
                           })
                         }
-                        className="hidden rounded-lg border border-[rgba(26,24,19,0.14)] px-3 py-2 text-xs text-nofx-text-muted hover:text-nofx-text"
+                        className="inline-flex rounded-lg border border-[rgba(26,24,19,0.14)] px-3 py-2 text-xs text-nofx-text-muted hover:text-nofx-text"
                       >
                         Clear selected
                       </button>
@@ -1630,7 +1671,8 @@ export function StrategyStudioPage() {
                   ) : null}
                 </div>
 
-                {symbolsError || signalsError ? (
+                {symbolsError ||
+                (listMode === 'marketData' && signalsError) ? (
                   <div className="mb-4 rounded-lg border border-nofx-gold/20 bg-nofx-gold/10 px-3 py-2 text-xs text-nofx-gold">
                     {symbolsError || signalsError}
                   </div>
