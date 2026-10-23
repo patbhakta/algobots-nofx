@@ -6,6 +6,7 @@ import signal
 import sys
 import textwrap
 import time
+from pathlib import Path
 
 from fastapi.testclient import TestClient
 
@@ -147,3 +148,15 @@ def test_workers_endpoint_reports_not_started_when_disabled(client: TestClient):
     assert body["enabled"] is False and body["ready"] is False
     assert [w["account"] for w in body["workers"]] == ["laya", "jev", "coin"]
     assert {w["state"] for w in body["workers"]} == {"not_started"}
+
+
+def test_api_image_lets_lifespan_release_leases_on_docker_stop():
+    """ALG-3411 10-23: `sh -c "alembic && uvicorn"` left sh as PID 1, which ignores
+    SIGTERM; docker SIGKILLed at 10 s and every redeploy denied the workers for
+    STALE_LEASE_S. uvicorn must be exec'd and given a grace period > worker stop."""
+    root = Path(__file__).resolve().parents[3]
+    cmd = next(ln for ln in (root / "Dockerfile").read_text().splitlines() if ln.startswith("CMD"))
+    assert "exec uvicorn" in cmd
+    compose = (root / "deploy" / "docker-compose.yml").read_text()
+    api = compose.split("\n  api:\n", 1)[1].split("\n\n  ", 1)[0]
+    assert "stop_grace_period: 45s" in api

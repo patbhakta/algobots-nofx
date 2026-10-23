@@ -17,4 +17,7 @@ EXPOSE 8000
 HEALTHCHECK --interval=10s --timeout=5s --start-period=10s --retries=5 \
     CMD ["python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/healthz', timeout=3)"]
 
-CMD ["sh", "-c", "alembic upgrade head && uvicorn algobots.api.main:app --host 0.0.0.0 --port 8000"]
+# exec: uvicorn must be PID 1. A bare `sh -c` PID 1 ignores SIGTERM, so `docker stop`
+# SIGKILLs after the grace period, the lifespan never releases the paper-worker
+# leases, and the next container is denied for STALE_LEASE_S (ALG-3411, 10-23).
+CMD ["sh", "-c", "alembic upgrade head && exec uvicorn algobots.api.main:app --host 0.0.0.0 --port 8000"]

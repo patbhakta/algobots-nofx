@@ -65,6 +65,9 @@ services:
       redis:
         condition: service_healthy
     restart: unless-stopped
+    # Room for the lifespan to SIGTERM the paper workers (10 s wait each) and
+    # release their leases before docker's SIGKILL (default 10 s).
+    stop_grace_period: 45s
 
   # ALG-3404: the ROADMAP-v3 Phase 1 gateway (contracts/gateway.openapi.yaml,
   # served under /v1). Same image as the API; the API's `alembic upgrade head`
