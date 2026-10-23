@@ -27,6 +27,11 @@ import type {
   StrategyConfig,
 } from '../types'
 import { PaperLoopPanel } from '../components/strategy/PaperLoopPanel'
+import {
+  StudioCompilePanel,
+  StudioFieldError,
+  StudioStatusBadge,
+} from '../components/strategy/StudioCompileStatus'
 import type {
   MarketSymbol,
   VergexHeatmapBin,
@@ -63,7 +68,6 @@ const categoryPriority: Record<string, number> = {
 
 const timeframeOptions = ['5m', '15m', '30m', '1h', '4h', '1d']
 const barCountOptions = [20, 30, 50]
-const topNOptions = [5, 6, 7, 8, 9, 10]
 const confidenceOptions = [65, 75, 82]
 
 const text = (_language: string, _zh: string, en: string) => en
@@ -159,10 +163,18 @@ function getAIConfig(config: StrategyConfig): AIStrategyConfig | null {
   return null
 }
 
+// The one symbol the AlgoBots Studio compiler can resolve to a Nautilus
+// instrument today (KXBTC15M.KALSHI); see strategies/studio.py NOFX_SYMBOLS.
+const DEFAULT_STUDIO_SYMBOL = 'KXBTC15M'
+
 function defaultCoinSource(
   source?: Partial<CoinSourceConfig>
 ): CoinSourceConfig {
-  const staticCoins = source?.static_coins || []
+  // ALG-3415: a brand-new config gets the resolvable static symbol; an
+  // explicit empty list stays empty so the compiler reports it at the field.
+  const staticCoins = source
+    ? source.static_coins || []
+    : [DEFAULT_STUDIO_SYMBOL]
   const minVergexLimit =
     staticCoins.length > 0 ? Math.min(staticCoins.length, 10) : 10
   const vergexLimit = Math.min(
@@ -170,7 +182,9 @@ function defaultCoinSource(
     10
   )
   return {
-    source_type: 'vergex_signal',
+    // ALG-3415: Studio only compiles a static symbol list. The upstream
+    // vergex_signal feed is not part of AlgoBots and made every save invalid.
+    source_type: 'static',
     static_coins: staticCoins,
     excluded_coins: [],
     use_ai500: false,
@@ -263,6 +277,9 @@ function simplifyConfig(
     },
     grid_config: null,
     publish_config: config?.publish_config,
+    // The Studio compiler reads the abstain band and money envelope from here;
+    // dropping it turned every UI save of the momentum config invalid.
+    demo_worker: config?.demo_worker,
   }
 }
 
@@ -1107,7 +1124,7 @@ export function StrategyStudioPage() {
     try {
       const config = simplifyConfig(overrideConfig || editingConfig)
       config.language = language as 'zh' | 'en'
-      await api.updateStrategy(selectedStrategy.id, {
+      const saved = await api.updateStrategy(selectedStrategy.id, {
         name: selectedStrategy.name,
         description: selectedStrategy.description,
         config,
@@ -1116,7 +1133,11 @@ export function StrategyStudioPage() {
         await api.activateStrategy(selectedStrategy.id)
       }
       setHasChanges(false)
-      notify.success(
+      if (saved?.studio?.status === 'invalid') {
+        notify.warning(
+          `Saved, but the Studio compile failed at ${saved.studio.field}: ${saved.studio.message}`
+        )
+      } else notify.success(
         successMessage ||
           (activateAfter
             ? text(
@@ -1341,11 +1362,14 @@ export function StrategyStudioPage() {
                   <span className="line-clamp-2 text-sm font-medium text-nofx-text">
                     {strategy.name}
                   </span>
-                  {strategy.is_active ? (
-                    <span className="rounded bg-nofx-success/15 px-1.5 py-0.5 text-[10px] text-nofx-success">
-                      {text(language, 'Active', 'Active')}
-                    </span>
-                  ) : null}
+                  <span className="flex shrink-0 flex-col items-end gap-1">
+                    {strategy.is_active ? (
+                      <span className="rounded bg-nofx-success/15 px-1.5 py-0.5 text-[10px] text-nofx-success">
+                        {text(language, 'Active', 'Active')}
+                      </span>
+                    ) : null}
+                    <StudioStatusBadge studio={strategy.studio} />
+                  </span>
                 </div>
                 {strategy.description ? (
                   <div className="mt-1 line-clamp-2 text-xs text-nofx-text-muted">
@@ -1396,11 +1420,19 @@ export function StrategyStudioPage() {
                       )}
                       className="mt-1 w-full bg-transparent text-sm text-nofx-text-muted outline-none placeholder:text-nofx-text-muted/50"
                     />
+                    <StudioFieldError
+                      studio={selectedStrategy.studio}
+                      owner="name"
+                    />
                     {hasChanges ? (
                       <div className="mt-2 text-xs text-nofx-gold">
                         {text(language, 'Unsaved changes', 'Unsaved changes')}
                       </div>
                     ) : null}
+                    <StudioCompilePanel
+                      studio={selectedStrategy.studio}
+                      stale={hasChanges}
+                    />
                   </div>
                   <div className="flex flex-wrap gap-2">
                     <button
@@ -1639,25 +1671,15 @@ export function StrategyStudioPage() {
                   <span className="text-sm text-nofx-text-muted">
                     {selectedSymbols.length > 0
                       ? `${selectedSymbols.length} selected`
-                      : `Without manual picks, runtime uses Binance, Polymarket, and IBKR Top ${coinSource.vergex_limit || 5} in this range`}
+                      : 'No series selected; pick at least one for the Studio compiler'}
                   </span>
-                  {selectedSymbols.length === 0 ? (
-                    <select
-                      value={coinSource.vergex_limit || 5}
-                      onChange={(event) =>
-                        patchCoinSource({
-                          vergex_limit: Math.max(Number(event.target.value), 5),
-                        })
-                      }
-                      className="rounded-lg border border-[rgba(26,24,19,0.14)] bg-nofx-bg px-3 py-2 text-sm text-nofx-text"
-                    >
-                      {topNOptions.map((value) => (
-                        <option key={value} value={value}>
-                          Top {value}
-                        </option>
-                      ))}
-                    </select>
-                  ) : null}
+                </div>
+
+                <div className="mb-4">
+                  <StudioFieldError
+                    studio={selectedStrategy.studio}
+                    owner="universe"
+                  />
                 </div>
 
                 {symbolsError ||
@@ -1951,6 +1973,10 @@ export function StrategyStudioPage() {
                         </div>
                       </div>
                     </div>
+                    <StudioFieldError
+                      studio={selectedStrategy.studio}
+                      owner="candles"
+                    />
                   </div>
 
                   <div className="rounded-lg border border-[rgba(26,24,19,0.14)] bg-nofx-bg-lighter p-4">
@@ -2027,6 +2053,10 @@ export function StrategyStudioPage() {
                         </select>
                       </label>
                     </div>
+                    <StudioFieldError
+                      studio={selectedStrategy.studio}
+                      owner="params"
+                    />
                   </div>
                 </div>
 
@@ -2045,6 +2075,10 @@ export function StrategyStudioPage() {
                       'Example: only trade clean trends; skip entries when board signals conflict with candles.'
                     )}
                     className="h-28 w-full resize-none rounded-lg border border-[rgba(26,24,19,0.14)] bg-nofx-bg px-3 py-2 text-sm text-nofx-text outline-none placeholder:text-nofx-text-muted/50"
+                  />
+                  <StudioFieldError
+                    studio={selectedStrategy.studio}
+                    owner="note"
                   />
                 </div>
               </details>
