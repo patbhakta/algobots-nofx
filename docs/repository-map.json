@@ -1032,6 +1032,10 @@
     },
     {
       "repo": "algobots",
+      "path": "docs/research/data-plane-implementation-plan-2026-10-24.md"
+    },
+    {
+      "repo": "algobots",
       "path": "src/algobots/demo/evidence_snapshot.py"
     },
     {
