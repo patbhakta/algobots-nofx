@@ -1,0 +1,23 @@
+2026-10-25T22:02:31Z
+## gateway /v1/health
+{"status":"ok","version":"1.0.0-phase1","nautilus_version":"2.0.0rc6","nodes":[{"node":"nautilus-paper","account":"paper","reachable":true,"last_heartbeat":"2026-10-25T22:02:26.753Z"},{"node":"deployment-3d03073988c1418f88f93711c4368287","account":"b003da31-4f99-4dc3-a411-6f2feb46d068","reachable":true,"last_heartbeat":"2026-10-25T22:02:29.818Z"},{"node":"deployment-63e6f7fbfc3a4d7794dd848c03da38b8","account":"0ae3efb9-4dee-41ce-a342-1c0f2e1c6a15","reachable":true,"last_heartbeat":"2026-10-25T22:02:30.891Z"}],"projection":{"reachable":true,"head":257977}}
+## command streams
+algobots:cmd:nautilus-paper
+algobots:cmd:deployment-63e6f7fbfc3a4d7794dd848c03da38b8
+algobots:cmd:deployment-3d03073988c1418f88f93711c4368287
+## deployment event streams
+trader-DEPLOYMENT-3D03073988C1418F88F93711C4368287:algobots:data.instrument.DEP3D03073988C1418F88F93711C4368287.KXBTC15M/USD
+trader-DEPLOYMENT-3D03073988C1418F88F93711C4368287:algobots:events.heartbeat.deployment-3d03073988c1418f88f93711c4368287
+trader-DEPLOYMENT-3D03073988C1418F88F93711C4368287:algobots:events.portfolio.DEP3D03073988C1418F88F93711C4368287-001
+trader-DEPLOYMENT-63E6F7FBFC3A4D7794DD848C03DA38B8:algobots:data.instrument.DEP63E6F7FBFC3A4D7794DD848C03DA38B8.KXBTC15M/USD
+trader-DEPLOYMENT-63E6F7FBFC3A4D7794DD848C03DA38B8:algobots:events.heartbeat.deployment-63e6f7fbfc3a4d7794dd848c03da38b8
+trader-DEPLOYMENT-63E6F7FBFC3A4D7794DD848C03DA38B8:algobots:events.portfolio.DEP63E6F7FBFC3A4D7794DD848C03DA38B8-001
+## deployments
+3d030739-88c1-418f-88f9-3711c4368287|running|closed|KXBTC15M
+63e6f7fb-fc3a-4d77-94dd-848c03da38b8|running|closed|KXBTC15M
+## supervisor
+INFO:algobots.deployment_supervisor:deployment supervisor: dispatch on
+[1m2026-10-25T21:34:59.808258517Z[0m [94m[INFO] DEPLOYMENT-3D03073988C1418F88F93711C4368287.nautilus_live::node: Reconciliation for DEP3D03073988C1418F88F93711C4368287 succeeded[0m
+[1m2026-10-25T21:59:05.885998136Z[0m [94m[INFO] DEPLOYMENT-63E6F7FBFC3A4D7794DD848C03DA38B8.nautilus_live::node: Reconciliation for DEP63E6F7FBFC3A4D7794DD848C03DA38B8 succeeded[0m
+## gateway_orders by node
+nautilus-paper|11

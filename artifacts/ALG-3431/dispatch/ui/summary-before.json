@@ -1,0 +1,12 @@
+{
+  "base": "http://100.82.57.72:8201",
+  "mode": "live",
+  "ok": false,
+  "steps": [
+    {
+      "name": "live tab renders the viewer deployments card",
+      "ok": false,
+      "rendered": []
+    }
+  ]
+}

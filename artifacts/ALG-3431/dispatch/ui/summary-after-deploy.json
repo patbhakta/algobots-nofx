@@ -1,0 +1,17 @@
+{
+  "base": "http://100.82.57.72:8201",
+  "mode": "live",
+  "ok": true,
+  "steps": [
+    {
+      "name": "live tab renders the viewer deployments card",
+      "ok": true,
+      "rendered": [
+        {
+          "fills": "0",
+          "text": "Kalshi BTC 15m momentum RUNNING KXBTC15M · 63e6f7fb · artifact bb4c4150ddae · 0 fills\n\nNo orders yet — the strategy abstains until its frozen signal clears min_edge on a fresh book."
+        }
+      ]
+    }
+  ]
+}

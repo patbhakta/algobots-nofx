@@ -1,0 +1,31 @@
+{
+  "base": "http://100.82.57.72:8201",
+  "mode": "deploy",
+  "ok": true,
+  "steps": [
+    {
+      "name": "fresh funder lands in the Studio with a compiled artifact",
+      "ok": true,
+      "email": "deploy-qa-1792965516470@example.com",
+      "artifact": "bb4c4150ddae"
+    },
+    {
+      "name": "backtest runs",
+      "ok": true,
+      "status": 201
+    },
+    {
+      "name": "marimo evidence gate opens Deploy",
+      "ok": true,
+      "reason": null
+    },
+    {
+      "name": "deploy returns RUNNING with frozen exact-hash evidence",
+      "ok": true,
+      "status": 201,
+      "deployment_id": "63e6f7fb-fc3a-4d77-94dd-848c03da38b8",
+      "artifact_hash": "bb4c4150ddaeb5037084d9cd30c1c1a951d96e2d2cca8d23a16c6fd97f666e5f",
+      "account_id": "0ae3efb9-4dee-41ce-a342-1c0f2e1c6a15"
+    }
+  ]
+}
