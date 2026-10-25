@@ -17,6 +17,7 @@ import type { StudioCompileStatus } from '../../types'
 import {
   studioBacktestApi,
   type StudioBacktest,
+  type WarehouseSnapshot,
 } from '../../lib/api/studioBacktest'
 
 const pct = (x: number | null) => (x == null ? '—' : `${(x * 100).toFixed(1)}%`)
@@ -63,6 +64,12 @@ export function StudioBacktestResult({ result }: { result: StudioBacktest }) {
         </code>{' '}
         · {result.executor}
       </div>
+      {result.evidence && (
+        <a href={result.evidence.notebook_url} target="_blank" rel="noopener noreferrer"
+           data-testid="studio-view-evidence" className="text-nofx-accent underline">
+          View evidence
+        </a>
+      )}
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
         <Stat
           label="P&L (USD)"
@@ -134,14 +141,24 @@ export function StudioBacktestPanel({
   const draftId = studio?.status === 'compiled' ? studio.draft_id : null
   const hash = studio?.artifact_hash
   const [result, setResult] = useState<StudioBacktest | null>(null)
+  const [snapshots, setSnapshots] = useState<WarehouseSnapshot[]>([])
+  const [snapshotId, setSnapshotId] = useState('')
   const [running, setRunning] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     setResult(null)
     setError(null)
+    setSnapshots([])
+    setSnapshotId('')
     if (!draftId) return
     let live = true
+    studioBacktestApi.snapshots(draftId).then((rows) => {
+      if (live) {
+        setSnapshots(rows)
+        setSnapshotId(rows[rows.length - 1]?.snapshot_id || '')
+      }
+    }).catch((e) => { if (live) setError(e instanceof Error ? e.message : 'Snapshot discovery failed') })
     studioBacktestApi
       .list(draftId)
       .then((rows) => {
@@ -155,11 +172,11 @@ export function StudioBacktestPanel({
   }, [draftId, hash])
 
   const run = async () => {
-    if (!draftId) return
+    if (!draftId || !snapshotId) return
     setRunning(true)
     setError(null)
     try {
-      setResult(await studioBacktestApi.run(draftId))
+      setResult(await studioBacktestApi.run(draftId, snapshotId))
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Backtest failed')
     } finally {
@@ -173,11 +190,21 @@ export function StudioBacktestPanel({
       className="mt-3 rounded-lg border border-[rgba(26,24,19,0.14)] px-3 py-2 text-xs"
     >
       <div className="flex flex-wrap items-center gap-3">
+        <label>
+          Warehouse snapshot{' '}
+          <select aria-label="Warehouse snapshot" value={snapshotId}
+            disabled={running || stale} onChange={(event) => setSnapshotId(event.target.value)}>
+            {!snapshots.length && <option value="">No published snapshots</option>}
+            {snapshots.map((snapshot) => <option key={snapshot.snapshot_id} value={snapshot.snapshot_id}>
+              {snapshot.instrument_id} · {snapshot.snapshot_id} · {snapshot.row_count} rows
+            </option>)}
+          </select>
+        </label>
         <button
           type="button"
           data-testid="studio-backtest-button"
           onClick={run}
-          disabled={!draftId || stale || running}
+          disabled={!draftId || !snapshotId || stale || running}
           className="inline-flex items-center gap-1.5 rounded-lg bg-nofx-gold px-3 py-1.5 text-sm font-semibold text-nofx-bg disabled:cursor-not-allowed disabled:opacity-45"
         >
           {running ? (
@@ -192,7 +219,7 @@ export function StudioBacktestPanel({
             ? 'Save a valid config to compile it before a backtest.'
             : stale
               ? 'Save first: the backtest runs the compiled artifact.'
-              : 'Nautilus BacktestEngine · frozen Kalshi KXBTC15M recorder dataset · paper'}
+              : 'Nautilus BacktestEngine · selected warehouse snapshot · paper'}
         </span>
       </div>
       {error ? (
