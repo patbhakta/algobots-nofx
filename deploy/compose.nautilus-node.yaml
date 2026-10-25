@@ -25,10 +25,18 @@ services:
       ALGOBOTS_NODE: ${ALGOBOTS_NODE:-nautilus-paper}
       ALGOBOTS_NODE_VENUE: ${ALGOBOTS_NODE_VENUE:-SIM}
       ALGOBOTS_NODE_ACCOUNT: ${ALGOBOTS_NODE_ACCOUNT:-SIM-001}
-      ALGOBOTS_NODE_SYMBOL: ${ALGOBOTS_NODE_SYMBOL:-EUR/USD.SIM}
+      ALGOBOTS_NODE_SYMBOL: ${ALGOBOTS_NODE_SYMBOL:-KXBTC15M/USD.SIM}
       ALGOBOTS_NODE_BALANCE: ${ALGOBOTS_NODE_BALANCE:-100000}
+      # ALG-3411: the node quotes the live Kalshi observer (laya loop, KXBTC)
+      # instead of the EUR/USD catalog replay. Paper only, still the sandbox venue.
+      ALGOBOTS_FEED: ${ALGOBOTS_FEED:-kalshi}
+      ALGOBOTS_KALSHI_PATH: ${ALGOBOTS_KALSHI_PATH:-/feeds/kalshi/observations.jsonl}
+      ALGOBOTS_KALSHI_POLL_S: ${ALGOBOTS_KALSHI_POLL_S:-2}
       REDIS_HOST: redis
       REDIS_PORT: "6379"
+    volumes:
+      # the observer's jsonl, read-only: the node tails it, never writes it
+      - ${ALGOBOTS_KALSHI_HOST_DIR:-/opt/laya/kalshi}:/feeds/kalshi:ro
     networks: [stack]
     restart: unless-stopped
 

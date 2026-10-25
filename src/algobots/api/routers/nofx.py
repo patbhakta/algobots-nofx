@@ -28,7 +28,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, EmailStr, Field, ValidationError
-from sqlalchemy import select
+from sqlalchemy import select, text
 from sqlalchemy.orm import Session
 
 from algobots.api.config import get_settings
@@ -369,10 +369,27 @@ def _momentum_config() -> dict:
     }
 
 
+def _seed_lock(db: Session, tenant_id: UUID) -> None:
+    """Serialize the empty-tenant auto-seed (advisory, transaction-scoped).
+
+    First-login dashboards fire several concurrent GET /api/strategies;
+    without the lock each request saw an empty tenant and seeded its own
+    default config, leaving duplicate "Kalshi BTC 15m momentum" rows
+    (observed live on .243, Oct 25). The lock plus re-check keeps one.
+    """
+    if db.get_bind().dialect.name != "postgresql":
+        return  # tests run on sqlite; the live race needs the pg lock
+    stmt = text("SELECT pg_advisory_xact_lock(hashtext('nofx-studio-seed:' || :t))")
+    db.execute(stmt.bindparams(t=str(tenant_id)))
+
+
 @router.get("/strategies")
 def list_strategies(ctx: AuthContext = Depends(get_auth_context), db: Session = Depends(get_db)):
     tenant_id = _tenant(ctx)
     rows = _studio_rows(db, tenant_id)
+    if not rows:
+        _seed_lock(db, tenant_id)
+        rows = _studio_rows(db, tenant_id)
     if not rows:
         row = Strategy(
             tenant_id=tenant_id,
