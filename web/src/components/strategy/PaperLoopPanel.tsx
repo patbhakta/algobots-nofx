@@ -399,11 +399,11 @@ export function PaperLoopPanel() {
         <>
           <div className="grid gap-3 md:grid-cols-2">
             <FeedCard feed={live.feed} />
-            <div className={CARD} data-testid="workers-card">
+            <div className={`${CARD} overflow-x-auto`} data-testid="workers-card">
               <div className="mb-2 text-sm font-semibold text-nofx-text">
                 Nautilus paper workers
               </div>
-              <table className="w-full text-left text-xs">
+              <table className="w-full min-w-[660px] text-left text-xs">
                 <thead className="text-nofx-text-muted">
                   <tr>
                     <th className="py-1">Strategy</th>
@@ -449,7 +449,7 @@ export function PaperLoopPanel() {
           {workers.map(w => <div key={w.account} className={CARD} data-testid="worker-exposure">
             <h3 className="font-semibold">{w.account} · positions and recent fills</h3>
             <p className="text-xs text-nofx-text-muted">Worker snapshot · {w.state} · {age(w.heartbeat_age_s)}. Strategy PnL includes settled outcomes; unmarked positions have no unrealized PnL.</p>
-            {w.positions?.length ? <ul>{w.positions.map(p => <li key={p.instrument} className="font-mono text-xs">
+            {w.positions?.length ? <ul className="my-2 max-h-40 overflow-auto">{w.positions.map(p => <li key={p.instrument} className="font-mono text-xs">
               {p.instrument} · {p.side} {p.qty} @ {p.avg_price} · unrealized PnL {p.unrealized_pnl ?? 'unavailable'}
             </li>)}</ul> : <p className="text-xs">{w.positions ? 'No open positions reported.' : 'Positions unavailable.'}</p>}
             <div className="overflow-x-auto"><table className="w-full text-left text-xs">
