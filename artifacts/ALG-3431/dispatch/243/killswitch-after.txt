@@ -1,0 +1,28 @@
+== captured 2026-10-25T22:54:12Z
+== deployment row
+                  id                  | status  | breaker_state |          updated_at           
+--------------------------------------+---------+---------------+-------------------------------
+ 3d030739-88c1-418f-88f9-3711c4368287 | running | closed        | 2026-10-25 16:42:20.795312+00
+ 63e6f7fb-fc3a-4d77-94dd-848c03da38b8 | stopped | closed        | 2026-10-25 22:53:42.138882+00
+(2 rows)
+
+== supervisor paper_node children (pid, ALGOBOTS_NODE)
+109 
+8 ALGOBOTS_NODE=deployment-3d03073988c1418f88f93711c4368287
+== supervisor log since stop
+[1m2026-10-25T22:53:42.990520583Z[0m [INFO] DEPLOYMENT-63E6F7FBFC3A4D7794DD848C03DA38B8.nautilus_live::node: Received stop signal from handle[0m
+[1m2026-10-25T22:53:42.990538204Z[0m [INFO] DEPLOYMENT-63E6F7FBFC3A4D7794DD848C03DA38B8.nautilus_system::kernel: Stopping trader...[0m
+[1m2026-10-25T22:53:42.990544903Z[0m [INFO] DEPLOYMENT-63E6F7FBFC3A4D7794DD848C03DA38B8.nautilus_system::trader: Stopping[0m
+[1m2026-10-25T22:53:42.990552453Z[0m [INFO] DEPLOYMENT-63E6F7FBFC3A4D7794DD848C03DA38B8.CommandNode-000: Stopping[0m
+[1m2026-10-25T22:53:42.990581214Z[0m [INFO] DEPLOYMENT-63E6F7FBFC3A4D7794DD848C03DA38B8.CommandNode-000: Stopped[0m
+[1m2026-10-25T22:53:42.990583675Z[0m [INFO] DEPLOYMENT-63E6F7FBFC3A4D7794DD848C03DA38B8.nautilus_system::trader: Stopped[0m
+[1m2026-10-25T22:53:42.990585024Z[0m [INFO] DEPLOYMENT-63E6F7FBFC3A4D7794DD848C03DA38B8.nautilus_live::node: Awaiting residual events (10s)...[0m
+== gateway /v1/health nodes
+{'node': 'nautilus-paper', 'account': 'paper', 'reachable': True, 'last_heartbeat': '2026-10-25T22:54:11.753Z'}
+{'node': 'deployment-3d03073988c1418f88f93711c4368287', 'account': 'b003da31-4f99-4dc3-a411-6f2feb46d068', 'reachable': True, 'last_heartbeat': '2026-10-25T22:54:09.818Z'}
+{'node': 'deployment-63e6f7fbfc3a4d7794dd848c03da38b8', 'account': '0ae3efb9-4dee-41ce-a342-1c0f2e1c6a15', 'reachable': False, 'last_heartbeat': '2026-10-25T22:53:50.891Z'}
+== gateway admission probe as dispatcher (IOC buy 1 @ 0.01, cannot fill at a 0.5x ask) key=killswitch-probe-1792968852
+{"code":"worker_unavailable","reason":"node deployment-63e6f7fbfc3a4d7794dd848c03da38b8: deployment 63e6f7fb-fc3a-4d77-94dd-848c03da38b8 is stopped — no fallback exists"}
+HTTP 503
+== gateway_orders rows for the probe key
+0
