@@ -196,6 +196,26 @@
   "integrator_owned": [
     {
       "repo": "algobots",
+      "path": "artifacts/ALG-3409/README.md"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3409/delivery-smoke.jsonl"
+    },
+    {
+      "repo": "algobots",
+      "path": "scripts/rc6_delivery_smoke.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "src/algobots/node/kalshi.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "tests/node/test_kalshi.py"
+    },
+    {
+      "repo": "algobots",
       "path": ".env.example"
     },
     {

@@ -251,3 +251,19 @@ def test_a_replayed_http_request_never_reaches_the_stream(redis, venue) -> None:
     reader.ensure_group()
     reader.poll()
     assert venue.order_count == 1
+
+
+def test_engine_queue_and_egress_failures_leave_entry_pending(redis, stream, venue):
+    publish(redis, submit_command())
+
+    def waiting(outcome):
+        raise RuntimeError("engine has only queued the command")
+
+    stream.before_ack = waiting
+    with pytest.raises(RuntimeError, match="only queued"):
+        stream.poll()
+    assert venue.order_count == 1
+    # A restart must replay the unacknowledged entry without submitting twice.
+    restarted = CommandStream(client=redis, actor=CommandActor(execution=venue), node=NODE)
+    assert [o.action for o in restarted.drain_pending()] == [DUPLICATE]
+    assert venue.order_count == 1
