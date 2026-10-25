@@ -361,3 +361,29 @@ def test_leaderboard_uses_scoped_decision_scores(client, funder, monkeypatch):
         ]
     }
     assert "replay" in result["equity_source"]
+
+
+def test_empty_tenant_seed_happens_once(client, funder):
+    """ALG-3352: repeat GETs on an empty tenant keep exactly one default row."""
+    first = client.get("/api/nofx/strategies", headers=_h(funder["token"])).json()
+    assert len(first["strategies"]) == 1
+    for _ in range(3):
+        again = client.get("/api/nofx/strategies", headers=_h(funder["token"])).json()
+        assert len(again["strategies"]) == 1
+        assert again["strategies"][0]["id"] == first["strategies"][0]["id"]
+
+
+def test_seed_lock_is_pg_only_and_rechecks():
+    """The advisory lock guards the live Postgres race; sqlite tests skip it."""
+    from unittest.mock import MagicMock
+
+    from algobots.api.routers import nofx
+
+    nofx._seed_lock(MagicMock(), MagicMock())  # sqlite bind: no execute expected
+
+    pg_session = MagicMock()
+    pg_bind = MagicMock()
+    pg_bind.dialect.name = "postgresql"
+    pg_session.get_bind.return_value = pg_bind
+    nofx._seed_lock(pg_session, MagicMock())
+    assert "pg_advisory_xact_lock" in str(pg_session.execute.call_args[0][0])
