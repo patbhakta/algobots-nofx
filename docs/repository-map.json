@@ -1105,6 +1105,34 @@
     {
       "repo": "algobots",
       "path": "artifacts/ALG-3418/walkthrough/summary.json"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3419/api.patch"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3419/live-view.mjs"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3419/live/01-live-coin.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3419/live/02-live-coin-refreshed.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3419/live/summary.json"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3419/ui.patch"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3419/verification.md"
     }
   ],
   "scope_revisions": [
