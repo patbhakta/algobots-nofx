@@ -1181,8 +1181,7 @@
     {
       "repo": "algobots",
       "path": "artifacts/ALG-3420/warehouse-walkthrough.json"
-    }
-  ,
+    },
     {
       "repo": "algobots",
       "path": "artifacts/ALG-3424/review-handoff.md"
@@ -1258,7 +1257,40 @@
     {
       "repo": "algobots",
       "path": "notebooks/quantlab_openbb.py"
-    }],
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3421/acceptance.md"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3421/engine-acceptance.json"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3421/http-acceptance.json"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3421/image-tests.log"
+    },
+    {
+      "repo": "algobots",
+      "path": "deploy/compose.openbb-backtest.yaml"
+    },
+    {
+      "repo": "algobots",
+      "path": "deploy/quantlab/start.sh"
+    },
+    {
+      "repo": "algobots",
+      "path": "scripts/verify_openbb_backtest.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "scripts/verify_studio_openbb_http.py"
+    }
+  ],
   "scope_revisions": [
     {
       "packet": "A01",

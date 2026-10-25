@@ -1,0 +1,25 @@
+.................................                                        [100%]
+=============================== warnings summary ===============================
+../usr/local/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /usr/local/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/strategies/test_backtest.py::test_backtest_is_deterministic_on_nautilus
+tests/strategies/test_backtest.py::test_backtest_is_deterministic_on_nautilus
+tests/strategies/test_backtest.py::test_no_look_ahead
+tests/strategies/test_backtest.py::test_no_look_ahead
+tests/strategies/test_backtest.py::test_backtest_route_contract
+tests/strategies/test_backtest.py::test_backtest_route_contract
+  /usr/local/lib/python3.12/site-packages/algobots/engine/sleeve.py:259: Pandas4Warning: Timestamp.utcnow is deprecated and will be removed in a future version. Use Timestamp.now('UTC') instead.
+    self.engine.run(streaming=True)
+
+tests/strategies/test_backtest.py::test_backtest_is_deterministic_on_nautilus
+tests/strategies/test_backtest.py::test_backtest_is_deterministic_on_nautilus
+tests/strategies/test_backtest.py::test_no_look_ahead
+tests/strategies/test_backtest.py::test_no_look_ahead
+tests/strategies/test_backtest.py::test_backtest_route_contract
+tests/strategies/test_backtest.py::test_backtest_route_contract
+  /usr/local/lib/python3.12/site-packages/algobots/engine/sleeve.py:292: Pandas4Warning: Timestamp.utcnow is deprecated and will be removed in a future version. Use Timestamp.now('UTC') instead.
+    self.engine.end()
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html

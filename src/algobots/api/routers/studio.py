@@ -332,7 +332,8 @@ def run_draft_backtest(
             f"Draft revision {p['revision']} has no compiled artifact; compile before a backtest",
         )
     s = get_settings()
-    bt._check_artifact(rec)
+    if rec.get("implementation") != "condition_dsl.v1":
+        bt._check_artifact(rec)
     instruments = rec["nautilus"]["instrument_ids"]
     if len(instruments) != 1:
         raise StudioError("universe.symbols", "choose exactly one snapshot instrument")

@@ -304,7 +304,7 @@ def test_backtest_needs_a_compiled_backtestable_artifact(client, token, recorder
     assert client.post(f"{url}/backtest", headers=_h(token)).status_code == 409
     client.post(f"{url}/compile", headers=_h(token))
     dsl = client.post(f"{url}/backtest", headers=_h(token))
-    assert dsl.status_code == 422 and dsl.json()["detail"]["field"] == "signals.entry"
+    assert dsl.status_code == 422 and dsl.json()["detail"]["field"] == "dataset_id"
     assert (
         client.post("/api/studio/strategies/not-a-uuid/backtest", headers=_h(token)).status_code
         == 404
