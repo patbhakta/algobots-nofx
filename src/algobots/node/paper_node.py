@@ -24,7 +24,10 @@ the blocking loop :meth:`CommandStream.run` uses in the sandbox node.
 **Prices.** A sandbox venue only fills against market data. By default
 (``ALGOBOTS_FEED=replay``, ALG-3406) the ``REPLAY`` client replays the recorded
 EUR/USD quotes of the Parquet catalog the image ships (:mod:`algobots.node.replay`)
-on their own clock, until IBKR paper data exists (ALG-3357). Every quote that
+on their own clock, until IBKR paper data exists (ALG-3357).
+``ALGOBOTS_FEED=kalshi`` (ALG-3411) serves the live Kalshi observer's book
+(:mod:`algobots.node.kalshi`) — the laya loop's KXBTC observations, wall-clock
+stamped, re-served between 15-minute market boundaries. Every quote that
 reaches the strategy is counted, and once a second the node writes what it
 received — recorded timestamp, its own receive timestamp, source — to
 ``algobots:feed:<node>``; that stream is hop 4's evidence. ``ALGOBOTS_FEED=synthetic``
@@ -47,7 +50,7 @@ from dataclasses import dataclass
 from decimal import Decimal
 from typing import Any
 
-from algobots.node import replay
+from algobots.node import kalshi, replay
 from algobots.node.command_actor import CommandActor, Outcome
 from algobots.node.command_stream import CommandStream
 from algobots.node.event_egress import STREAMS_PREFIX, EventEgress
@@ -78,6 +81,8 @@ class Settings:
     replay_speed: float
     replay_max_gap_s: float
     feed_signal_s: float
+    kalshi_path: str
+    kalshi_poll_s: float
 
     @property
     def trader_id(self) -> str:
@@ -104,16 +109,61 @@ def settings(env: dict[str, str] | None = None) -> Settings:
         replay_speed=float(e.get("ALGOBOTS_REPLAY_SPEED", "1")),
         replay_max_gap_s=float(e.get("ALGOBOTS_REPLAY_MAX_GAP_S", "2")),
         feed_signal_s=float(e.get("ALGOBOTS_FEED_SIGNAL_S", "1")),
+        kalshi_path=e.get("ALGOBOTS_KALSHI_PATH", kalshi.DEFAULT_PATH),
+        kalshi_poll_s=float(e.get("ALGOBOTS_KALSHI_POLL_S", "2")),
     )
 
 
 def _instrument(s: Settings) -> Any:
-    """The node's one instrument; precisions match the replayed catalog (5 / 0)."""
+    """The node's one instrument; precisions match the replayed catalog (5 / 0).
+
+    The Kalshi feed (ALG-3411) quotes a binary contract in cents, so it gets
+    its own constructor instead: 2-decimal prices, lot size 1.
+    """
+    if s.feed == "kalshi":
+        return _kalshi_instrument(s)
     from nautilus_trader.model import Venue
     from nautilus_trader.testkit.providers import TestInstrumentProvider
 
     pair, venue = s.symbol.rsplit(".", 1)
     return TestInstrumentProvider.default_fx_ccy(pair, venue=Venue(venue))
+
+
+def _kalshi_instrument(s: Settings) -> Any:
+    """A KXBTC-style contract: YES prices in cents (0.01 ticks), sizes in contracts."""
+    from decimal import Decimal
+
+    from nautilus_trader.model import (
+        Currency,
+        CurrencyPair,
+        InstrumentId,
+        Money,
+        Price,
+        Quantity,
+        Symbol,
+        Venue,
+    )
+
+    pair, venue = s.symbol.rsplit(".", 1)
+    return CurrencyPair(
+        instrument_id=InstrumentId(Symbol(pair), Venue(venue)),
+        raw_symbol=Symbol(pair),
+        base_currency=Currency.from_str(pair.split("/")[0]),
+        quote_currency=Currency.from_str(pair.split("/")[1]),
+        price_precision=2,
+        size_precision=0,
+        price_increment=Price(Decimal("0.01"), 2),
+        size_increment=Quantity.from_int(1),
+        ts_event=0,
+        ts_init=0,
+        lot_size=Quantity.from_int(1),
+        max_quantity=Quantity.from_int(1_000_000),
+        min_quantity=Quantity.from_int(1),
+        max_notional=Money(1_000_000.00, Currency.from_str("USD")),
+        min_notional=Money(0.01, Currency.from_str("USD")),
+        margin_init=Decimal("0.03"),
+        margin_maint=Decimal("0.03"),
+    )
 
 
 def _data_client_types() -> tuple[type, type, type]:
@@ -196,6 +246,58 @@ def _data_client_types() -> tuple[type, type, type]:
                 cur.laps += 1
                 log.info("replay lap %d done (%d quotes); restarting", cur.laps, cur.row + 1)
 
+    class KalshiLiveQuotes(SyntheticQuotes):
+        """The Kalshi observer's latest book, re-served on the node's clock (ALG-3411).
+
+        The observer writes one snapshot per 15-minute market boundary
+        (:mod:`algobots.node.kalshi`); between snapshots this client re-serves
+        the last observed top of book every ``interval_s``. The feed signal
+        keeps the two times apart — ``recorded_ts`` is the observation's wall
+        clock, ``node_ts`` the re-serve — so a stale book is visible as the
+        gap between them, never hidden.
+        """
+
+        path: str = kalshi.DEFAULT_PATH
+        poll_s: float = 2.0
+        cursor: replay.ReplayCursor | None = None
+
+        async def _subscribe_quotes(self, command: Any) -> None:
+            self.create_task(self._serve(), "kalshi-quotes")
+
+        async def _serve(self) -> None:
+            inst, cur = self.instrument, self.cursor
+            assert cur is not None
+            pp, sp = inst.price_precision, inst.size_precision
+            tail = kalshi.ObservationTail(self.path)
+            obs = tail.bootstrap()
+            if obs is not None:
+                cur.row, cur.recorded_ts = obs.row, obs.ts_ns
+                log.info(
+                    "kalshi book %s bid=%s ask=%s (row %d, recorded_ts=%d)",
+                    obs.market, obs.bid, obs.ask, obs.row, obs.ts_ns,
+                )
+            last_emit_ns = 0
+            while True:
+                new = tail.poll()
+                if new is not None:
+                    obs = new
+                    cur.row, cur.recorded_ts = new.row, new.ts_ns
+                now = self.clock.timestamp_ns()
+                if obs is not None and now - last_emit_ns >= self.interval_s * 1e9:
+                    last_emit_ns = now
+                    self._handle_data(
+                        QuoteTick(
+                            instrument_id=inst.id,
+                            bid_price=Price(obs.bid, pp),
+                            ask_price=Price(obs.ask, pp),
+                            bid_size=Quantity.from_int(1),
+                            ask_size=Quantity.from_int(1),
+                            ts_event=now,
+                            ts_init=now,
+                        )
+                    )
+                await asyncio.sleep(min(self.poll_s, self.interval_s))
+
     class QuotesFactory(DataClientFactory):
         settings: Settings | None = None
         cursor: replay.ReplayCursor | None = None
@@ -205,7 +307,13 @@ def _data_client_types() -> tuple[type, type, type]:
             s = QuotesFactory.settings
             assert s is not None
             inst = _instrument(s)
-            kind = ReplayQuotes if s.feed == "replay" else SyntheticQuotes
+            kind = (
+                KalshiLiveQuotes
+                if s.feed == "kalshi"
+                else ReplayQuotes
+                if s.feed == "replay"
+                else SyntheticQuotes
+            )
             client = kind(name=name, config=config, cache=cache, clock=clock, venue=inst.id.venue)
             client.instrument = inst
             client.interval_s = s.quote_interval_s
@@ -214,6 +322,10 @@ def _data_client_types() -> tuple[type, type, type]:
                 client.path = s.replay_path
                 client.speed = s.replay_speed
                 client.max_gap_s = s.replay_max_gap_s
+                client.cursor = QuotesFactory.cursor
+            if isinstance(client, KalshiLiveQuotes):
+                client.path = s.kalshi_path
+                client.poll_s = s.kalshi_poll_s
                 client.cursor = QuotesFactory.cursor
             return client
 
@@ -397,10 +509,14 @@ def build(s: Settings) -> Any:
             f"nautilus_trader {nautilus_trader.__version__} != pinned {NAUTILUS_PIN}"
         )
 
-    if s.feed not in ("replay", "synthetic"):
-        raise ValueError(f"ALGOBOTS_FEED={s.feed!r}: expected replay or synthetic")
+    if s.feed not in ("replay", "synthetic", "kalshi"):
+        raise ValueError(f"ALGOBOTS_FEED={s.feed!r}: expected replay, synthetic or kalshi")
     cursor: replay.ReplayCursor | None = None
-    if s.feed == "replay":
+    if s.feed == "kalshi":
+        cursor = replay.ReplayCursor(
+            source=f"kalshi-live:{s.kalshi_path}", instrument=s.symbol
+        )
+    elif s.feed == "replay":
         meta = replay.catalog_meta(s.replay_path)
         if meta.get("instrument_id") != s.symbol:
             raise RuntimeError(
@@ -426,7 +542,9 @@ def build(s: Settings) -> Any:
         RedisMessageBusFactory(RedisMessageBusConfig(host=s.redis_host, port=s.redis_port))
     )
     builder.add_data_client(
-        "REPLAY" if s.feed == "replay" else "SYNTHETIC", quotes_factory, DataClientConfig()
+        {"replay": "REPLAY", "kalshi": "KALSHI"}.get(s.feed, "SYNTHETIC"),
+        quotes_factory,
+        DataClientConfig(),
     )
     builder.add_simulated_exec_client(
         s.venue,
