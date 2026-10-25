@@ -18,7 +18,7 @@ WORKDIR /app
 COPY pyproject.toml README.md ./
 COPY src ./src
 
-RUN pip install --no-cache-dir . "redis>=5" \
+RUN pip install --no-cache-dir ".[postgres]" "redis>=5" \
     && python -c "import nautilus_trader as n; assert n.__version__ == '2.0.0rc6', n.__version__"
 
 CMD ["python", "-m", "algobots.node.paper_node"]

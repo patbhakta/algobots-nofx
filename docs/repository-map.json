@@ -1297,6 +1297,54 @@
     {
       "repo": "algobots",
       "path": "tests/deployments/test_runtime.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3431/command-identity-after.txt"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3431/command-identity-before.txt"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3431/supervisor/243-before.txt"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3431/supervisor/README.md"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3431/supervisor/after.txt"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3431/supervisor/before.txt"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3431/supervisor/postgres.txt"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3431/supervisor/symbol-before.txt"
+    },
+    {
+      "repo": "algobots",
+      "path": "src/algobots/api/deployments/command_identity.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "src/algobots/node/deployment_supervisor.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "tests/deployments/test_command_identity.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "tests/deployments/test_deployment_supervisor.py"
     }
   ],
   "scope_revisions": [

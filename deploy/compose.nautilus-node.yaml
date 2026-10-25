@@ -40,6 +40,27 @@ services:
     networks: [stack]
     restart: unless-stopped
 
+  # Opt-in until the frozen signal / gateway attribution leg is commissioned.
+  # Shares the pinned image; never runs in the API's older Nautilus environment.
+  deployment-supervisor:
+    profiles: [deployments]
+    image: algobots/nautilus-node:rc6
+    build:
+      context: ..
+      dockerfile: deploy/nautilus-node.Dockerfile
+    command: ["python", "-m", "algobots.node.deployment_supervisor"]
+    init: true
+    stop_grace_period: 30s
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-}
+      ALGOBOTS_KALSHI_PATH: /feeds/kalshi/observations.jsonl
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+    volumes:
+      - ${ALGOBOTS_KALSHI_HOST_DIR:-/opt/laya/kalshi}:/feeds/kalshi:ro
+    networks: [stack]
+    restart: "no"
+
 networks:
   stack:
     external: true
