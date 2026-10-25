@@ -351,6 +351,23 @@ def run_backtest(
             "px_sources": px_sources,
             "blocked_by": blocked_by,
         },
+        "data_timeline": {
+            "first_tick": dataset.describe()["start"],
+            "last_tick": dataset.describe()["end"],
+            "gap_policy": (
+                "Recorder intervals: gaps are time between previous close and next open; "
+                "no intra-interval tick coverage claim."
+            ),
+            "gaps": [
+                {
+                    "after": previous["event"],
+                    "before": following["event"],
+                    "seconds": _open(following) - float(previous["close_ts"]),
+                }
+                for previous, following in zip(dataset.rows, dataset.rows[1:], strict=False)
+                if _open(following) > float(previous["close_ts"])
+            ],
+        },
         "equity_curve": curve,
         "trades": trades,
     }
