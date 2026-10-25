@@ -187,7 +187,7 @@ func probeExchangeAccountState(exchangeCfg *store.Exchange, userID string) Excha
 	}
 	if exchangeCfg.ExchangeType == "nautilus" {
 		total, totalOK := balanceInfo["total_equity"].(string)
-		available, availableOK := balanceInfo["available_balance"].(string)
+		_, availableOK := balanceInfo["available_balance"].(string)
 		asset, _ := balanceInfo["asset"].(string)
 		if !totalOK || !availableOK {
 			state.Status = exchangeAccountStatusUnavailable
