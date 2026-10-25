@@ -57,9 +57,14 @@ class Node:
     mode: str = PAPER
     reconciled: bool = False
     last_heartbeat: float | None = None
+    #: Why a deployment node may not take new orders (stopped, paused, breaker).
+    #: The node stays registered so its in-flight fills still fold.
+    halted: str = ""
 
     def fit(self, now: float) -> tuple[bool, str]:
         """Is this node fit to take an order? (why-not text otherwise)."""
+        if self.halted:
+            return False, self.halted
         if self.last_heartbeat is None:
             return False, "no node heartbeat"
         if not self.reconciled:
@@ -126,7 +131,8 @@ class NodeRegistry:
     nodes: dict[str, Node] = field(default_factory=dict)
 
     def add(self, node: Node) -> Node:
-        self.nodes[node.node] = node
+        # Copy-on-write: deployment sync adds nodes while routes iterate them.
+        self.nodes = {**self.nodes, node.node: node}
         return node
 
     def by_account(self, account_id: str) -> Node | None:

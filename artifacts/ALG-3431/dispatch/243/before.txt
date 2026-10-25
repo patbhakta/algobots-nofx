@@ -1,0 +1,9 @@
+2026-10-25T21:31:50Z
+## gateway /v1/health
+{"status":"ok","version":"1.0.0-phase1","nautilus_version":"2.0.0rc6","nodes":[{"node":"nautilus-paper","account":"paper","reachable":true,"last_heartbeat":"2026-10-25T21:31:46.753Z"}],"projection":{"reachable":true,"head":195044}}
+## deployment command streams
+algobots:cmd:nautilus-paper
+## gateway_orders by node
+nautilus-paper|11
+## deployments
+3d030739-88c1-418f-88f9-3711c4368287|running|closed|KXBTC15M

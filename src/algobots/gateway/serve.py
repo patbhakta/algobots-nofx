@@ -16,6 +16,9 @@ place the real ones are chosen (ALG-3404):
   ``401`` until the deploy supplies tokens. They live in the deploy's ``.env``,
   never in this repository (roadmap rule 3).
 - **gate** — :class:`PaperLimitsGate`, the deploy's pre-trade gate.
+- **deployments** — ``ALGOBOTS_GATEWAY_DEPLOYMENTS=1`` registers RUNNING Studio
+  deployments as nodes (:mod:`~algobots.gateway.deployment_nodes`) and grants
+  ``ALGOBOTS_GATEWAY_DISPATCH_TOKEN`` exactly those accounts.
 - **ingest** — one :class:`~algobots.gateway.event_ingest.NodeEventIngest`
   thread folding every node's event streams into the projection.
 
@@ -35,9 +38,11 @@ from typing import Any
 
 from fastapi import FastAPI
 
+from algobots.gateway import deployment_nodes
 from algobots.gateway.admission import GateDecision, OrderIntent
 from algobots.gateway.app import build_gateway
 from algobots.gateway.auth import Caller, NoSessions, Sessions, StaticSessions
+from algobots.gateway.deployment_nodes import DispatchSessions
 from algobots.gateway.event_ingest import NodeEventIngest
 from algobots.gateway.nodes import PAPER, Node, NodeRegistry, RedisCommandBus
 from algobots.gateway.store import SqlProjection
@@ -145,18 +150,37 @@ def create_app(env: Mapping[str, str] | None = None) -> FastAPI:
     registry = registry_from(env.get("ALGOBOTS_GATEWAY_NODES"))
     # Same driver normalisation as api.config: psycopg 3 is the installed driver.
     url = env["DATABASE_URL"].replace("postgresql://", "postgresql+psycopg://", 1)
-    projection = SqlProjection(create_engine(url, pool_pre_ping=True))
+    engine = create_engine(url, pool_pre_ping=True)
+    projection = SqlProjection(engine)
     client = redis.Redis.from_url(env["REDIS_URL"])
 
     streams = ensure_command_streams(client, registry)
     log.info("gateway: %d node(s), command streams %s", len(streams), streams)
+
+    sessions = sessions_from(env.get("ALGOBOTS_GATEWAY_SESSIONS"))
+    if env.get("ALGOBOTS_GATEWAY_DEPLOYMENTS", "") in ("1", "true", "yes"):
+        # ALG-3431: RUNNING Studio deployments become nodes; stop/pause halts them.
+        sessions = DispatchSessions(
+            sessions, env.get("ALGOBOTS_GATEWAY_DISPATCH_TOKEN", ""), registry
+        )
+        threading.Thread(
+            target=deployment_nodes.sync_forever,
+            args=(
+                registry,
+                lambda: deployment_nodes.read_rows(engine),
+                lambda added: ensure_command_streams(
+                    client, NodeRegistry({n: registry.nodes[n] for n in added})
+                ),
+            ),
+            daemon=True,
+        ).start()
 
     app = build_gateway(
         registry=registry,
         gate=gate_from(env),
         projection=projection,
         bus=RedisCommandBus(client=client),
-        sessions=sessions_from(env.get("ALGOBOTS_GATEWAY_SESSIONS")),
+        sessions=sessions,
     )
     # Started here rather than in a startup hook: uvicorn calls the factory once,
     # in the serving process, and this FastAPI has no add_event_handler.
