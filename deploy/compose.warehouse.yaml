@@ -1,0 +1,23 @@
+# Overlay the existing paper stack; do not recreate gateway/node/quantlab.
+services:
+  api:
+    image: algobots/warehouse:alg3420
+    environment:
+      ALGOBOTS_WAREHOUSE_ROOT: /mnt/funnytree/algobots/warehouse
+      ALGOBOTS_CATALOG_ROOT: /mnt/funnytree/algobots/ntl_catalog
+    volumes:
+      - /mnt/funnytree/algobots/warehouse:/mnt/funnytree/algobots/warehouse:ro
+      - /mnt/funnytree/algobots/ntl_catalog:/mnt/funnytree/algobots/ntl_catalog:ro
+  warehouse-exporter:
+    image: algobots/warehouse:alg3420
+    command: [python, -m, algobots.warehouse.schedule]
+    environment:
+      REDIS_URL: redis://redis:6379/0
+      ALGOBOTS_WAREHOUSE_ROOT: /mnt/funnytree/algobots/warehouse
+      ALGOBOTS_RECORDER_RELEASE: ${ALGOBOTS_RECORDER_RELEASE:?set committed recorder release}
+    volumes:
+      - /opt/laya/kalshi:/feeds/kalshi:ro
+      - /opt/laya/pmus:/feeds/pmus:ro
+      - /mnt/funnytree/algobots/warehouse:/mnt/funnytree/algobots/warehouse
+      - /mnt/funnytree/algobots/ntl_catalog:/mnt/funnytree/algobots/ntl_catalog
+    restart: unless-stopped
