@@ -26,16 +26,16 @@ function preflightResult(checks: LaunchCheck[]): LaunchPreflightResult {
 }
 
 describe('setupTargetForCheck', () => {
-  it('routes AI wallet problems to claw402 setup', () => {
+  it('routes AI model/data problems to the market-data setup', () => {
     expect(setupTargetForCheck({ id: 'ai_model', status: 'failed' })).toBe(
-      'claw402'
+      'marketData'
     )
     expect(setupTargetForCheck({ id: 'ai_wallet', status: 'failed' })).toBe(
-      'claw402'
+      'marketData'
     )
     expect(
       setupTargetForCheck({ id: 'ai_wallet_funds', status: 'failed' })
-    ).toBe('claw402')
+    ).toBe('marketData')
   })
 
   it('routes exchange config/account problems to hyperliquid setup', () => {
@@ -65,7 +65,7 @@ describe('primarySetupTarget', () => {
       { id: 'ai_wallet_funds', status: 'failed', message: 'AI wallet empty.' },
       { id: 'exchange_funds', status: 'failed', message: 'Low margin.' },
     ])
-    expect(primarySetupTarget(result)).toBe('claw402')
+    expect(primarySetupTarget(result)).toBe('marketData')
   })
 
   it('returns null when everything passes', () => {
@@ -93,19 +93,19 @@ describe('describeLaunchFailures / failedLaunchChecks', () => {
 describe('pickTradingModel', () => {
   const base: Partial<AIModel> = { enabled: true }
 
-  it('prefers claw402 over other enabled models', () => {
+  it('prefers the marketData provider over other enabled models', () => {
     const models = [
       { ...base, id: 'openai', provider: 'openai', has_api_key: true },
-      { ...base, id: 'c402', provider: 'claw402', has_api_key: true },
+      { ...base, id: 'mdata', provider: 'marketData', has_api_key: true },
     ] as AIModel[]
-    expect(pickTradingModel(models)?.id).toBe('c402')
+    expect(pickTradingModel(models)?.id).toBe('mdata')
   })
 
-  it('accepts a claw402 model with only a wallet address', () => {
+  it('accepts a marketData model with only a wallet address', () => {
     const models = [
-      { ...base, id: 'c402', provider: 'claw402', walletAddress: '0xabc' },
+      { ...base, id: 'mdata', provider: 'marketData', walletAddress: '0xabc' },
     ] as AIModel[]
-    expect(pickTradingModel(models)?.id).toBe('c402')
+    expect(pickTradingModel(models)?.id).toBe('mdata')
   })
 
   it('returns null when nothing usable exists', () => {

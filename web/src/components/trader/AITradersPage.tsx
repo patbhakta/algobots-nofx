@@ -21,7 +21,6 @@ import { TelegramConfigModal } from './TelegramConfigModal'
 import { ModelConfigModal } from './ModelConfigModal'
 import { ConfigStatusGrid } from './ConfigStatusGrid'
 import { TradersList } from './TradersList'
-import { AutopilotLaunchPanel } from './AutopilotLaunchPanel'
 import { Bot, Plus, MessageCircle } from 'lucide-react'
 import { confirmToast } from '../../lib/notify'
 import { toast } from 'sonner'
@@ -635,53 +634,16 @@ export function AITradersPage({ onTraderSelect }: AITradersPageProps) {
     setShowExchangeModal(true)
   }
 
-  const handleOpenClaw402Config = () => {
-    const configuredClaw402 = allModels?.find(
-      (model) => model.provider === 'claw402'
-    )
-    const supportedClaw402 = supportedModels?.find(
-      (model) => model.provider === 'claw402'
-    )
-    const modelId = configuredClaw402?.id || supportedClaw402?.id || 'claw402'
-
-    setEditingModel(configuredClaw402?.id || null)
-    setInitialModelId(modelId)
-    setShowModelModal(true)
-  }
-
-  const handleOpenHyperliquidConfig = () => {
-    const existingHyperliquid = allExchanges?.find(
-      (exchange) =>
-        exchange.exchange_type === 'hyperliquid' ||
-        exchange.id === 'hyperliquid'
-    )
-
-    setEditingExchange(existingHyperliquid?.id || null)
-    setInitialExchangeType(existingHyperliquid ? null : 'hyperliquid')
-    setShowExchangeModal(true)
-  }
-
   useEffect(() => {
     if (!user || !token) return
 
     const setupTarget = searchParams.get('setup')
     if (!setupTarget) return
 
-    if (setupTarget === 'claw402') {
+    if (setupTarget === 'marketData') {
       // The welcome page shows the deposit QR, auto-creates the wallet if
       // needed, and polls the balance — friendlier than the key-config modal.
       navigate(ROUTES.welcome)
-    } else if (setupTarget === 'hyperliquid') {
-      handleOpenHyperliquidConfig()
-    } else if (setupTarget === 'hyperliquid-funds') {
-      // Funding shortfall: bring the guided launch panel (with the trading
-      // balance step and live preflight polling) into view.
-      document
-        .getElementById('autopilot-launch-panel')
-        ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-      toast.info(
-        'Deposit USDC to your Hyperliquid account, the balance check updates automatically.'
-      )
     } else {
       return
     }
@@ -690,25 +652,6 @@ export function AITradersPage({ onTraderSelect }: AITradersPageProps) {
     nextParams.delete('setup')
     setSearchParams(nextParams, { replace: true })
   }, [allExchanges, allModels, searchParams, setSearchParams, supportedModels, token, user])
-
-  const refreshLaunchState = async () => {
-    await Promise.all([loadConfigs(), mutateTraders()])
-  }
-
-  const hasRunningTrader = (traders || []).some((trader) => trader.is_running)
-  const launchPanel = (
-    <AutopilotLaunchPanel
-      models={allModels}
-      exchanges={allExchanges}
-      exchangeAccountStates={exchangeAccountStates}
-      traders={traders || []}
-      isLoggedIn={Boolean(user && token)}
-      language={language}
-      onRefresh={refreshLaunchState}
-      onOpenClaw402Config={handleOpenClaw402Config}
-      onOpenHyperliquidConfig={handleOpenHyperliquidConfig}
-    />
-  )
 
   return (
     <DeepVoidBackground className="py-8" disableAnimation>
@@ -757,6 +700,11 @@ export function AITradersPage({ onTraderSelect }: AITradersPageProps) {
               </div>
             </button>
 
+            {/* TELEGRAM_BOT hidden per Pat (Oct 14): invite-only friends/family
+                dashboard; messaging plugin returns later as WhatsApp. Code kept:
+                TelegramConfigModal + showTelegramModal state retained, button
+                gated off. */}
+            {false && (
             <button
               onClick={() => setShowTelegramModal(true)}
               className="px-4 py-2 rounded text-xs font-mono uppercase tracking-wider transition-all border border-nofx-accent/30 bg-nofx-bg-lighter text-nofx-accent hover:text-nofx-gold hover:border-nofx-accent/50 whitespace-nowrap"
@@ -766,6 +714,7 @@ export function AITradersPage({ onTraderSelect }: AITradersPageProps) {
                 <span>TELEGRAM_BOT</span>
               </div>
             </button>
+            )}
 
             <button
               onClick={() => setShowCreateModal(true)}
@@ -786,7 +735,6 @@ export function AITradersPage({ onTraderSelect }: AITradersPageProps) {
 
         {/* Newcomers see the guided launch FIRST — the config grid is detail.
             Once an autopilot is running, the running bot takes back the top. */}
-        {!hasRunningTrader && launchPanel}
 
         {/* Configuration Status Grid */}
         <ConfigStatusGrid
@@ -805,7 +753,6 @@ export function AITradersPage({ onTraderSelect }: AITradersPageProps) {
           onCopyAddress={handleCopyAddress}
         />
 
-        {hasRunningTrader && launchPanel}
 
         {/* Traders List */}
         <TradersList

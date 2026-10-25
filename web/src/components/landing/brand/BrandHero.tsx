@@ -1,7 +1,6 @@
 import { motion } from 'framer-motion'
 import { ArrowRight, Github } from 'lucide-react'
 import { Marquee } from './Marquee'
-import { OFFICIAL_LINKS } from '../../../constants/branding'
 import AgentTerminal from './AgentTerminal'
 
 export default function BrandHero() {
@@ -18,8 +17,8 @@ export default function BrandHero() {
             {/* Top Marquee */}
             <div className="w-full bg-nofx-gold text-nofx-bg-lighter font-bold py-2 border-y border-nofx-text/20 z-20">
                 <Marquee speed={40}>
-                    <span className="mx-8 text-sm md:text-base uppercase tracking-widest">NOFX AI TRADING • AUTOMATED WEALTH • DECENTRALIZED INTELLIGENCE • PUNK ETHOS •</span>
-                    <span className="mx-8 text-sm md:text-base uppercase tracking-widest">NOFX AI TRADING • AUTOMATED WEALTH • DECENTRALIZED INTELLIGENCE • PUNK ETHOS •</span>
+                    <span className="mx-8 text-sm md:text-base uppercase tracking-widest">AlgoBots AI TRADING • AUTOMATED WEALTH • DECENTRALIZED INTELLIGENCE • PUNK ETHOS •</span>
+                    <span className="mx-8 text-sm md:text-base uppercase tracking-widest">AlgoBots AI TRADING • AUTOMATED WEALTH • DECENTRALIZED INTELLIGENCE • PUNK ETHOS •</span>
                 </Marquee>
             </div>
 
@@ -54,7 +53,7 @@ export default function BrandHero() {
                             </button>
 
                             <a
-                                href={OFFICIAL_LINKS.github}
+                                href="https://github.com/patbhakta/algobots-nofx"
                                 target="_blank"
                                 rel="noreferrer"
                                 className="border-2 border-[rgba(26,24,19,0.2)] text-nofx-text text-lg font-bold px-8 py-4 uppercase tracking-wider hover:bg-nofx-text/5 hover:border-nofx-text transition-all flex items-center gap-2"

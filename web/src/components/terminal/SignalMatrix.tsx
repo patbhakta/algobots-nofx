@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 import type { SignalRankItem } from '../../lib/api/data'
 
 /**
- * SignalMatrix renders the Vergex (Claw402) direction board as a high-density
+ * SignalMatrix renders the Vergex (Market Data) direction board as a high-density
  * heatmap grid — one cell per symbol, colored by directional bias (green =
  * bullish, red = bearish, muted = neutral) with intensity scaled by the signal
  * score. Rank 1 is the strongest signal. Cream-themed Bloomberg/terminal feel.
@@ -96,7 +96,7 @@ export function SignalMatrix({
     return (
       <div style={{ fontFamily: 'var(--tm-mono)' }}>
         <Head />
-        <div className="tm-sc">No signal data (claw402).</div>
+        <div className="tm-sc">No signal data.</div>
       </div>
     )
   }

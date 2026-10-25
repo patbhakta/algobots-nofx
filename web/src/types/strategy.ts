@@ -10,6 +10,35 @@ export interface Strategy {
   config: StrategyConfig;
   created_at: string;
   updated_at: string;
+  // ALG-3408: result of saving this config through the /api/studio draft +
+  // compile contract. Absent on rows saved before that contract existed.
+  studio?: StudioCompileStatus | null;
+}
+
+// AlgoBots /api/studio compile result for a NoFX strategy row.
+export interface StudioCompileStatus {
+  status: 'compiled' | 'invalid';
+  draft_id?: string | null;
+  revision?: number;
+  artifact_hash?: string;
+  implementation?: string;
+  strategy_id?: string;
+  deployable?: boolean;
+  warnings?: string[];
+  // Set when status is 'invalid': the owning config path and the reason.
+  field?: string;
+  message?: string;
+}
+
+// AlgoBots demo worker binding (abstain band + money envelope). The Studio
+// compiler reads it, so the UI must round-trip it untouched.
+export interface DemoWorkerConfig {
+  account?: string;
+  p_source?: string;
+  min_edge?: number;
+  max_order_value?: string;
+  max_daily_loss?: string;
+  execution?: string;
 }
 
 // Strategy usage statistics
@@ -55,6 +84,7 @@ export interface StrategyConfig {
   // Grid trading configuration (only used when strategy_type is 'grid_trading')
   grid_config?: GridStrategyConfig | null;
   publish_config?: PublishStrategyConfig;
+  demo_worker?: DemoWorkerConfig;
 }
 
 export interface AIStrategyConfig {

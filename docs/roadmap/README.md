@@ -1,6 +1,5 @@
 # 🗺️ NOFX Roadmap
 
-**Language:** [English](README.md) | [中文](README.zh-CN.md)
 
 Strategic plan for NOFX development and universal market expansion.
 

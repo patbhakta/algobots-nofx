@@ -6,7 +6,6 @@ import FooterSection from '../components/landing/FooterSection'
 import TerminalHero from '../components/landing/core/TerminalHero'
 import LiveFeed from '../components/landing/core/LiveFeed'
 import AgentGrid from '../components/landing/core/AgentGrid'
-import DeploymentHub from '../components/landing/core/DeploymentHub'
 import { useAuth } from '../contexts/AuthContext'
 import { useLanguage } from '../contexts/LanguageContext'
 
@@ -42,7 +41,8 @@ export function LandingPage() {
 
         <AgentGrid />
 
-        <DeploymentHub />
+        {/* DeploymentHub ("DEPLOY INSTANTLY" / one-line self-host install /
+            "~$13 to start") removed — ALG-3344. */}
 
         <FooterSection language={language} />
 

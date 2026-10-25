@@ -1,6 +1,5 @@
 # NOFX Architecture Documentation
 
-**Language:** [English](README.md) | [中文](README.zh-CN.md)
 
 Technical documentation for developers who want to understand NOFX internals.
 

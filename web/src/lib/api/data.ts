@@ -348,7 +348,7 @@ export const dataApi = {
       `${API_BASE}/vergex/direction-change/leaderboard`
     )
     if (!result.success)
-      throw new Error('Failed to fetch Claw402/Vergex direction leaderboard')
+      throw new Error('Failed to fetch Market Data/Vergex direction leaderboard')
     const items = (result.data?.items || []).slice(0, limit).map((item) => ({
       rank: item.rank,
       symbol: item.symbol,

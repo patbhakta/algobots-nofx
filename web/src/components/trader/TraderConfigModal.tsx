@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import type {
   AIModel,
+  CoinSourceConfig,
   Exchange,
   CreateTraderRequest,
   Strategy,
@@ -25,6 +26,21 @@ function getShortName(fullName: string): string {
   return parts.length > 1 ? parts[parts.length - 1] : fullName
 }
 
+// Human labels for the saved coin-source modes. The wire values still carry the
+// upstream names (hyper_*, vergex_signal) until the Studio is recontracted onto
+// our own gateway; the labels describe what the mode does for us instead of
+// naming a venue or data vendor we no longer run.
+const COIN_SOURCE_LABELS: Record<CoinSourceConfig['source_type'], string> = {
+  static: 'Fixed US stocks',
+  vergex_signal: 'Signal board',
+  hyper_rank: 'cross-market signal board',
+  hyper_all: 'All venue markets',
+  hyper_main: 'Main venue markets',
+  ai500: 'AI500',
+  oi_top: 'OI Top',
+  oi_low: 'OI Low',
+}
+
 function getStrategyAIConfig(strategy: Strategy) {
   return (
     strategy.config.ai_config ||
@@ -37,29 +53,18 @@ function getStrategyAIConfig(strategy: Strategy) {
   )
 }
 
-// Exchange registration link configuration
+// Exchange registration links. Plain signup URLs only: we earn nothing on
+// where you open an account, so no referral codes and no "bonus" badge.
 const EXCHANGE_REGISTRATION_LINKS: Record<
   string,
   { url: string; hasReferral?: boolean }
 > = {
-  binance: {
-    url: 'https://www.binance.com/join?ref=NOFXENG',
-    hasReferral: true,
-  },
-  okx: { url: 'https://www.okx.com/join/1865360', hasReferral: true },
-  bybit: { url: 'https://partner.bybit.com/b/83856', hasReferral: true },
-  hyperliquid: {
-    url: 'https://app.hyperliquid.xyz/join/AITRADING',
-    hasReferral: true,
-  },
-  aster: {
-    url: 'https://www.asterdex.com/en/referral/fdfc0e',
-    hasReferral: true,
-  },
-  lighter: {
-    url: 'https://app.lighter.xyz/?referral=68151432',
-    hasReferral: true,
-  },
+  binance: { url: 'https://www.binance.com/en/register' },
+  okx: { url: 'https://www.okx.com' },
+  bybit: { url: 'https://www.bybit.com/register' },
+  hyperliquid: { url: 'https://app.hyperliquid.xyz' },
+  aster: { url: 'https://www.asterdex.com' },
+  lighter: { url: 'https://app.lighter.xyz' },
 }
 // Internal form state type
 interface FormState {
@@ -379,17 +384,17 @@ export function TraderConfigModal({
                   </div>
                   <p className="text-sm text-nofx-text-muted mb-2">
                     {selectedStrategy.description ||
-                      (language === 'zh' ? 'No description' : 'No description')}
+                      ('No description')}
                   </p>
                   {selectedStrategy.config.strategy_type === 'grid_trading' &&
                   selectedStrategy.config.grid_config ? (
                     <div className="grid grid-cols-2 gap-2 text-xs text-nofx-text-muted">
                       <div>
-                        {language === 'zh' ? 'Symbol' : 'Symbol'}:{' '}
+                        {'Symbol'}:{' '}
                         {selectedStrategy.config.grid_config.symbol || '-'}
                       </div>
                       <div>
-                        {language === 'zh' ? 'Grids' : 'Grids'}:{' '}
+                        {'Grids'}:{' '}
                         {selectedStrategy.config.grid_config.grid_count}
                       </div>
                     </div>
@@ -401,40 +406,9 @@ export function TraderConfigModal({
                         <div className="grid grid-cols-2 gap-2 text-xs text-nofx-text-muted">
                           <div>
                             {t('coinSource', language)}:{' '}
-                            {aiConfig.coin_source.source_type === 'static'
-                              ? language === 'zh'
-                                ? 'Fixed US stocks'
-                                : 'Fixed US stocks'
-                              : aiConfig.coin_source.source_type ===
-                                  'vergex_signal'
-                                ? language === 'zh'
-                                  ? 'Vergex signal board'
-                                  : 'Vergex signal board'
-                                : aiConfig.coin_source.source_type ===
-                                    'hyper_rank'
-                                  ? language === 'zh'
-                                    ? 'Claw402 board'
-                                    : 'Claw402 board'
-                                  : aiConfig.coin_source.source_type ===
-                                      'hyper_all'
-                                    ? language === 'zh'
-                                      ? 'Hyperliquid all markets'
-                                      : 'Hyperliquid all markets'
-                                    : aiConfig.coin_source.source_type ===
-                                        'hyper_main'
-                                      ? language === 'zh'
-                                        ? 'Hyperliquid main markets'
-                                        : 'Hyperliquid main markets'
-                                      : aiConfig.coin_source.source_type ===
-                                          'ai500'
-                                        ? 'AI500'
-                                        : aiConfig.coin_source.source_type ===
-                                            'oi_top'
-                                          ? 'OI Top'
-                                          : aiConfig.coin_source.source_type ===
-                                              'oi_low'
-                                            ? 'OI Low'
-                                            : '-'}
+                            {COIN_SOURCE_LABELS[
+                              aiConfig.coin_source.source_type
+                            ] || '-'}
                           </div>
                           <div>
                             {t('marginLimit', language)}:{' '}

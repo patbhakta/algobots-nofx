@@ -1,6 +1,5 @@
 # 📚 Maintainer Documentation
 
-**Language:** [English](README.md) | [中文](README.zh-CN.md)
 
 This directory contains documentation for NOFX project maintainers and contributors who want to understand our processes.
 
@@ -14,7 +13,6 @@ This directory contains documentation for NOFX project maintainers and contribut
 | [PROJECT_MANAGEMENT.md](PROJECT_MANAGEMENT.md) | Project management workflow and processes |
 | [SETUP_GUIDE.md](SETUP_GUIDE.md) | Setup guide for the PR management system |
 
-**Available in:** 🇬🇧 English | 🇨🇳 中文
 
 ---
 

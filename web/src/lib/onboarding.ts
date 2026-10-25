@@ -16,8 +16,9 @@ export function setUserMode(mode: UserMode) {
   localStorage.setItem(USER_MODE_KEY, mode)
 }
 
-export function getPostAuthPath(mode: UserMode | null | undefined): string {
-  return mode === 'beginner' ? '/welcome' : '/traders'
+export function getPostAuthPath(_mode: UserMode | null | undefined): string {
+  // The live paper-loop dashboard is the first screen for every invited user.
+  return '/dashboard'
 }
 
 export function setBeginnerWalletAddress(address: string) {

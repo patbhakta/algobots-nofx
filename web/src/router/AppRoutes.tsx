@@ -7,7 +7,6 @@ import {
   Routes,
   useLocation,
   useNavigate,
-  useSearchParams,
 } from 'react-router-dom'
 import HeaderBar from '../components/common/HeaderBar'
 import { SiteFooter } from '../components/common/SiteFooter'
@@ -16,26 +15,22 @@ import { LoginPage } from '../components/auth/LoginPage'
 import { RegisterPage } from '../components/auth/RegisterPage'
 import { ResetPasswordPage } from '../components/auth/ResetPasswordPage'
 import { SetupPage } from '../components/modals/SetupPage'
-import { CompetitionPage } from '../components/trader/CompetitionPage'
 import { AITradersPage } from '../components/trader/AITradersPage'
 import { TraderLaunchGuestPage } from '../components/trader/TraderLaunchGuestPage'
 import { FAQPage } from '../pages/FAQPage'
 import { LandingPage } from '../pages/LandingPage'
 import { BeginnerOnboardingPage } from '../pages/BeginnerOnboardingPage'
+import { LeaderboardPage } from '../pages/LeaderboardPage'
 import { DataPage } from '../pages/DataPage'
-import { SettingsPage } from '../pages/SettingsPage'
+import { DemoSettingsPage as SettingsPage } from '../pages/DemoSettingsPage'
 import { StrategyStudioPage } from '../pages/StrategyStudioPage'
-import { TerminalDashboard } from '../components/terminal/TerminalDashboard'
+import { PaperDashboardPage } from '../pages/PaperDashboardPage'
 import { useAuth } from '../contexts/AuthContext'
 import { useLanguage } from '../contexts/LanguageContext'
 import { useSystemConfig } from '../hooks/useSystemConfig'
 import { t } from '../i18n/translations'
 import { api } from '../lib/api'
 import type {
-  AccountInfo,
-  DecisionRecord,
-  Position,
-  SystemStatus,
   TraderInfo,
 } from '../types'
 import {
@@ -50,20 +45,6 @@ function getTraderSlug(trader: TraderInfo) {
   return `${trader.trader_name}-${idPrefix}`
 }
 
-function findTraderBySlug(slug: string, traderList: TraderInfo[]) {
-  const lastDashIndex = slug.lastIndexOf('-')
-  if (lastDashIndex === -1) {
-    return traderList.find((trader) => trader.trader_name === slug)
-  }
-
-  const name = slug.slice(0, lastDashIndex)
-  const idPrefix = slug.slice(lastDashIndex + 1)
-  return traderList.find(
-    (trader) =>
-      trader.trader_name === name && trader.trader_id.startsWith(idPrefix)
-  )
-}
-
 function LoadingScreen() {
   const { language } = useLanguage()
 
@@ -74,8 +55,8 @@ function LoadingScreen() {
     >
       <div className="text-center">
         <img
-          src="/icons/nofx.svg"
-          alt="NoFx Logo"
+          src="/icons/algobots.svg"
+          alt="AlgoBots Logo"
           className="w-16 h-16 mx-auto mb-4 animate-pulse"
         />
         <p style={{ color: '#1A1813' }}>{t('loading', language)}</p>
@@ -222,165 +203,6 @@ function TradersRoute({
   )
 }
 
-function DashboardRoute() {
-  const { user, token } = useAuth()
-  const navigate = useNavigate()
-  const [searchParams] = useSearchParams()
-  const selectedTraderSlug = searchParams.get('trader') || undefined
-  const [selectedTraderId, setSelectedTraderId] = useState<string | undefined>()
-  const [, setLastUpdate] = useState<string>('--:--:--')
-  const [decisionsLimit] = useState(5)
-  const [accountPollOff, setAccountPollOff] = useState(false)
-  const [positionsPollOff, setPositionsPollOff] = useState(false)
-  const [decisionsPollOff, setDecisionsPollOff] = useState(false)
-
-  useEffect(() => {
-    setAccountPollOff(false)
-    setPositionsPollOff(false)
-    setDecisionsPollOff(false)
-  }, [selectedTraderId])
-
-  const { data: traders } = useSWR<TraderInfo[]>(
-    user && token ? 'traders-dashboard' : null,
-    () => api.getTraders(true),
-    {
-      refreshInterval: 10000,
-      shouldRetryOnError: false,
-    }
-  )
-
-  useEffect(() => {
-    if (!traders || traders.length === 0) {
-      return
-    }
-
-    if (selectedTraderSlug) {
-      const trader = findTraderBySlug(selectedTraderSlug, traders)
-      const nextTraderId = trader?.trader_id || traders[0].trader_id
-      if (nextTraderId !== selectedTraderId) {
-        setSelectedTraderId(nextTraderId)
-      }
-      return
-    }
-
-    if (!selectedTraderId) {
-      setSelectedTraderId(traders[0].trader_id)
-    }
-  }, [selectedTraderId, selectedTraderSlug, traders])
-
-  const { data: status } = useSWR<SystemStatus>(
-    selectedTraderId ? `status-${selectedTraderId}` : null,
-    () => api.getStatus(selectedTraderId, true),
-    {
-      refreshInterval: 15000,
-      revalidateOnFocus: false,
-      dedupingInterval: 10000,
-    }
-  )
-
-  const { data: account } = useSWR<AccountInfo>(
-    selectedTraderId ? `account-${selectedTraderId}` : null,
-    () => api.getAccount(selectedTraderId, true),
-    {
-      refreshInterval: accountPollOff ? 0 : 15000,
-      revalidateOnFocus: false,
-      dedupingInterval: 10000,
-      onErrorRetry: (_err, _key, _config, revalidate, { retryCount }) => {
-        if (retryCount >= 2) {
-          setAccountPollOff(true)
-          return
-        }
-        setTimeout(() => revalidate({ retryCount }), 500)
-      },
-      onSuccess: () => {
-        if (accountPollOff) {
-          setAccountPollOff(false)
-        }
-      },
-    }
-  )
-
-  const { data: positions } = useSWR<Position[]>(
-    selectedTraderId ? `positions-${selectedTraderId}` : null,
-    () => api.getPositions(selectedTraderId, true),
-    {
-      refreshInterval: positionsPollOff ? 0 : 15000,
-      revalidateOnFocus: false,
-      dedupingInterval: 10000,
-      onErrorRetry: (_err, _key, _config, revalidate, { retryCount }) => {
-        if (retryCount >= 2) {
-          setPositionsPollOff(true)
-          return
-        }
-        setTimeout(() => revalidate({ retryCount }), 500)
-      },
-      onSuccess: () => {
-        if (positionsPollOff) {
-          setPositionsPollOff(false)
-        }
-      },
-    }
-  )
-
-  const { data: decisions } = useSWR<DecisionRecord[]>(
-    selectedTraderId
-      ? `decisions/latest-${selectedTraderId}-${decisionsLimit}`
-      : null,
-    () => api.getLatestDecisions(selectedTraderId, decisionsLimit, true),
-    {
-      refreshInterval: decisionsPollOff ? 0 : 30000,
-      revalidateOnFocus: false,
-      dedupingInterval: 20000,
-      onErrorRetry: (_err, _key, _config, revalidate, { retryCount }) => {
-        if (retryCount >= 2) {
-          setDecisionsPollOff(true)
-          return
-        }
-        setTimeout(() => revalidate({ retryCount }), 500)
-      },
-      onSuccess: () => {
-        if (decisionsPollOff) {
-          setDecisionsPollOff(false)
-        }
-      },
-    }
-  )
-
-  useEffect(() => {
-    if (account) {
-      setLastUpdate(new Date().toLocaleTimeString())
-    }
-  }, [account])
-
-  const selectedTrader = traders?.find(
-    (trader) => trader.trader_id === selectedTraderId
-  )
-
-  return (
-    <AppChrome currentPage="trader" animateContent>
-      <TerminalDashboard
-        selectedTrader={selectedTrader}
-        status={status}
-        account={account}
-        positions={positions}
-        decisions={decisions}
-        traders={traders}
-        selectedTraderId={selectedTraderId}
-        onTraderSelect={(traderId) => {
-          setSelectedTraderId(traderId)
-          const trader = traders?.find((item) => item.trader_id === traderId)
-          navigate(
-            buildDashboardPath(trader ? getTraderSlug(trader) : undefined),
-            {
-              replace: true,
-            }
-          )
-        }}
-      />
-    </AppChrome>
-  )
-}
-
 export function AppRoutes() {
   const { user, token, isLoading } = useAuth()
   const { config: systemConfig, loading: configLoading } = useSystemConfig()
@@ -398,7 +220,7 @@ export function AppRoutes() {
     <>
       <LegacyHashRedirect />
       <Routes>
-        <Route path={ROUTES.home} element={<LandingPage />} />
+        <Route path={ROUTES.home} element={isAuthenticated ? <Navigate to={ROUTES.dashboard} replace /> : <LandingPage />} />
         <Route path={ROUTES.login} element={<LoginPage />} />
         <Route path={ROUTES.register} element={<RegisterPage />} />
         <Route path={ROUTES.resetPassword} element={<ResetPasswordPage />} />
@@ -406,7 +228,7 @@ export function AppRoutes() {
           path={ROUTES.setup}
           element={
             user ? (
-              <Navigate to={ROUTES.welcome} replace />
+              <Navigate to={ROUTES.dashboard} replace />
             ) : systemConfig?.initialized ? (
               <Navigate to={ROUTES.login} replace />
             ) : (
@@ -430,6 +252,8 @@ export function AppRoutes() {
             </AppChrome>
           }
         />
+        <Route path="/config" element={<Navigate to={ROUTES.settings} replace />} />
+        <Route path="/leaderboard" element={isAuthenticated ? <AppChrome currentPage="competition"><LeaderboardPage /></AppChrome> : <Navigate to={ROUTES.login} replace />} />
         <Route
           path={ROUTES.settings}
           element={
@@ -449,7 +273,7 @@ export function AppRoutes() {
             // auto-refreshing balance) — useful to every signed-in user, so
             // no legacy "beginner mode" gate here.
             isAuthenticated ? (
-              <TradersRoute showBeginnerOnboarding />
+              <Navigate to={ROUTES.dashboard} replace />
             ) : (
               <Navigate to={ROUTES.login} replace />
             )
@@ -460,7 +284,7 @@ export function AppRoutes() {
           element={
             isAuthenticated ? (
               <AppChrome currentPage="competition" animateContent>
-                <CompetitionPage />
+                <LeaderboardPage />
               </AppChrome>
             ) : (
               <LandingPage />
@@ -495,7 +319,7 @@ export function AppRoutes() {
         />
         <Route
           path={ROUTES.dashboard}
-          element={isAuthenticated ? <DashboardRoute /> : <LandingPage />}
+          element={isAuthenticated ? <AppChrome currentPage="trader"><PaperDashboardPage /></AppChrome> : <LandingPage />}
         />
         <Route
           path={ROUTES.strategy}

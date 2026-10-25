@@ -16,10 +16,6 @@ vi.mock('../../contexts/LanguageContext', () => ({
   useLanguage: () => ({ language: 'en' }),
 }))
 
-vi.mock('../common/HyperliquidWalletConnect', () => ({
-  HyperliquidWalletConnect: () => null,
-}))
-
 describe('beginner-only live trading experience', () => {
   beforeEach(() => {
     localStorage.clear()

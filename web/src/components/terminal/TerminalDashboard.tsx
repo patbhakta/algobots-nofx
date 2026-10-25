@@ -20,6 +20,8 @@ import { ExecutionLog } from './ExecutionLog'
 import { SignalMatrix } from './SignalMatrix'
 import { RiskRadar } from './RiskRadar'
 import { EdgeProfile } from './EdgeProfile'
+import type { PaperLoopLive } from '../../lib/api/paperLoop'
+import { PaperMarketPanel } from './PaperMarketPanel'
 import { useDemoEngine } from '../../lib/demo/useDemoEngine'
 
 // crypto majors trade on the Hyperliquid main dex (no hip3 cost/liq heatmap);
@@ -36,12 +38,13 @@ import { FlowMarkets } from './FlowMarkets'
 import './terminal.css'
 
 interface TerminalDashboardProps {
+  paper?: PaperLoopLive | true
   selectedTrader?: TraderInfo
   traders?: TraderInfo[]
   selectedTraderId?: string
   onTraderSelect: (traderId: string) => void
-  status?: SystemStatus
-  account?: AccountInfo
+  status?: Partial<SystemStatus>
+  account?: Partial<AccountInfo>
   positions?: Position[]
   decisions?: DecisionRecord[]
 }
@@ -106,6 +109,7 @@ function useTick(ms = 1000) {
 }
 
 export function TerminalDashboard({
+  paper,
   selectedTrader,
   traders,
   selectedTraderId,
@@ -171,50 +175,36 @@ export function TerminalDashboard({
   }
 
   const { data: realFullStats } = useSWR(
-    traderId ? ['full-stats', traderId] : null,
+    traderId && !paper ? ['full-stats', traderId] : null,
     () => api.getFullStats(traderId!, true),
     { refreshInterval: 30000, shouldRetryOnError: false }
   )
   const { data: realHistory } = useSWR(
-    traderId ? ['pos-history', traderId] : null,
+    traderId && !paper ? ['pos-history', traderId] : null,
     () => api.getPositionHistory(traderId!, 50, true),
     { refreshInterval: 60000, shouldRetryOnError: false }
   )
   const { data: realConfig } = useSWR(
-    traderId ? ['trader-config', traderId] : null,
+    traderId && !paper ? ['trader-config', traderId] : null,
     () => api.getTraderConfig(traderId!, true),
     { refreshInterval: 120000, shouldRetryOnError: false }
   )
   const { data: realFlow } = useSWR(
-    traderId ? ['flow-markets', traderId] : null,
+    traderId && !paper ? ['flow-markets', traderId] : null,
     () => api.getFlowMarkets(selectedTrader?.ai_model, 'mainnet', '1h', 50, true),
     // paid x402 endpoint — poll slowly (5m) to conserve claw402 funds; the
     // topology beam animation is client-side and stays fast regardless
     { refreshInterval: 300000, shouldRetryOnError: false }
   )
   const { data: realSignalRank } = useSWR(
-    traderId ? ['signal-rank', traderId] : null,
+    traderId && !paper ? ['signal-rank', traderId] : null,
     () => api.getDirectionChangeLeaderboard(30, true),
     // paid x402 endpoint — poll slowly (5m) to conserve claw402 funds
     { refreshInterval: 300000, shouldRetryOnError: false }
   )
 
-  // Demo / showcase mode for product walkthroughs. Toggle with Shift+D (or the
-  // discreet corner dot). Generates a fast, profitable-looking US-equity dataset
-  // entirely client-side — it never touches the backend or any real account.
-  // When off, real data flows through unchanged.
-  const [demo, setDemo] = useState(false)
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.shiftKey && (e.key === 'D' || e.key === 'd')) {
-        const el = document.activeElement
-        if (el && /^(input|textarea|select)$/i.test(el.tagName)) return
-        setDemo((v) => !v)
-      }
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [])
+  // Data wiring: this deployment displays only authenticated paper evidence.
+  const demo = false
   const sim = useDemoEngine(demo)
   const on = demo && !!sim
 
@@ -276,8 +266,8 @@ export function TerminalDashboard({
       : /USDT$/i.test(sourceSymbol) || CRYPTO_MAJORS.has(activeSym) ? 'core_perp' : 'hip3_perp'
   const activeRequestSymbol = activeMarketType === 'hip3_perp' ? `xyz:${activeSym}` : activeSym
 
-  const pnl = account?.total_pnl ?? 0
-  const pnlPct = account?.total_pnl_pct ?? 0
+  const pnl = account?.total_pnl ?? NaN
+  const pnlPct = account?.total_pnl_pct ?? NaN
   const up = pnl >= 0
   const running = status?.is_running
 
@@ -343,26 +333,6 @@ export function TerminalDashboard({
 
   return (
     <div className="nofx-terminal" style={{ minHeight: '100vh', padding: 0 }}>
-      {/* discreet, unlabelled showcase toggle (Shift+D also works) */}
-      <button
-        type="button"
-        onClick={() => setDemo((v) => !v)}
-        aria-label="toggle presentation mode"
-        style={{
-          position: 'fixed',
-          right: 10,
-          bottom: 10,
-          zIndex: 9999,
-          width: 12,
-          height: 12,
-          padding: 0,
-          borderRadius: '50%',
-          border: 'none',
-          cursor: 'pointer',
-          background: on ? 'var(--tm-up)' : 'rgba(26,24,19,0.2)',
-          opacity: on ? 0.55 : 0.18,
-        }}
-      />
       {/* centered, capped content column — no border (keeps it from feeling
           embedded) but bounded so the aspect-ratio SVGs don't balloon on wide screens */}
       {navSlot &&
@@ -419,7 +389,7 @@ export function TerminalDashboard({
         )}
         {/* config / identity strip — first row, flows directly under the global nav */}
         <div className="tm-mono" style={{ display: 'flex', gap: 16, padding: '6px 14px', fontSize: 11, color: 'var(--tm-ink-2)', flexWrap: 'wrap' }}>
-          <span style={{ fontWeight: 500 }}>{selectedTrader?.trader_name ?? 'NOFX'}</span>
+          <span style={{ fontWeight: 500 }}>{selectedTrader?.trader_name ?? 'Paper account'}</span>
           <span><span className="tm-sc">model </span>{(() => {
             const raw = config?.ai_model || status?.ai_model || ''
             if (!raw) return '—'
@@ -430,7 +400,7 @@ export function TerminalDashboard({
           <span><span className="tm-sc">lev </span>{config?.btc_eth_leverage ?? '—'}× / {config?.altcoin_leverage ?? '—'}×</span>
           <span><span className="tm-sc">scan </span>{scanMin}m</span>
           <span><span className="tm-sc">universe </span>{candidateCoins.length}</span>
-          <span><span className="tm-sc">positions </span>{positions?.length ?? 0}</span>
+          <span><span className="tm-sc">positions </span>{paper ? (account?.position_count ?? '—') : positions?.length ?? 0}</span>
           <span style={{ marginLeft: 'auto' }}><span className="tm-sc">next cycle </span>{countdown}</span>
         </div>
         <div className="tm-rule" />
@@ -485,22 +455,22 @@ export function TerminalDashboard({
             {/* cost/liq heatmap works for both synthetic (hip3_perp) and crypto
                 (perp) markets — pass the likely marketType; the component falls
                 back to the other one if the guess is wrong */}
-            <LiquidationMap
+            {paper ? <PaperMarketPanel kind="liquidation" live={paper === true ? undefined : paper} /> : (<LiquidationMap
               symbol={activeSym}
               demo={on}
               marketType={activeMarketType}
               height={ROW1_H - 130}
-            />
+            />)}
           </div>
           <div style={{ ...sc, borderRight: cellBorder, height: ROW1_H, overflow: 'hidden' }}>
-            <OrderBook symbol={activeRequestSymbol} demo={on} markPrice={positions?.find((p) => baseLabel(p.symbol) === activeSym)?.entry_price} />
+            {paper ? <PaperMarketPanel kind="book" live={paper === true ? undefined : paper} /> : (<OrderBook symbol={activeRequestSymbol} demo={on} markPrice={positions?.find((p) => baseLabel(p.symbol) === activeSym)?.entry_price} />)}
           </div>
           <div style={{ ...sc, height: ROW1_H, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
             <SignalMatrix items={signalRank?.items} max={18} active={activeSym} onSelect={setSelectedSym} />
             {/* the live K-line always sits under the selector and flexes to fill */}
             <div className="tm-rule" style={{ margin: '10px 0 8px' }} />
             <div style={{ flex: 1, minHeight: 0 }}>
-              <KlineChart symbol={activeRequestSymbol} fill demo={on} />
+              {paper ? <PaperMarketPanel kind="prices" live={paper === true ? undefined : paper} /> : (<KlineChart symbol={activeRequestSymbol} fill demo={on} />)}
             </div>
           </div>
         </div>
@@ -510,11 +480,11 @@ export function TerminalDashboard({
               Full-width panel under row 1; long/short grids side by side with
               click-to-drill address lists. ── */}
         <div style={sc}>
-          <WinrateMatrix
+          {paper ? <PaperMarketPanel kind="winrate" live={paper === true ? undefined : paper} /> : (<WinrateMatrix
             symbol={activeSym}
             demo={on}
             marketType={activeMarketType}
-          />
+          />)}
         </div>
         <div className="tm-rule" />
 
@@ -583,15 +553,15 @@ export function TerminalDashboard({
             <ExecutionLog decisions={decisions} height={432} />
           </div>
           <div style={{ ...sc, borderRight: cellBorder }}>
-            <RiskRadar positions={positions} account={account} config={config} fullStats={fullStats} />
+            {paper ? <PaperMarketPanel kind="Risk telemetry" live={paper === true ? undefined : paper} /> : <RiskRadar positions={positions} account={account} config={config} fullStats={fullStats} />}
           </div>
           <div style={sc}>
             {/* live open positions (the book right now) */}
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 6 }}>
               <span className="tm-px" style={{ fontSize: 11 }}>Positions</span>
               <span className="tm-sc">Current positions · live</span>
-              <span className="tm-sc" style={{ marginLeft: 'auto' }}>{positions?.length ?? 0} open</span>
-              {traderId && !on && positions && positions.length > 0 && (
+              <span className="tm-sc" style={{ marginLeft: 'auto' }}>{paper ? account?.position_count ?? '—' : positions?.length ?? 0} open</span>
+              {traderId && !on && !paper && positions && positions.length > 0 && (
                 <button
                   type="button"
                   onClick={() => void closeAllPositions(positions)}
@@ -666,7 +636,7 @@ export function TerminalDashboard({
                   })}
                 </tbody>
               </table>
-            ) : <div className="tm-sc" style={{ padding: '8px 0' }}>No open positions.</div>}
+            ) : <div className="tm-sc" style={{ padding: '8px 0' }}>{paper ? 'Open position details unavailable in this feed; see paper receipts in Strategy.' : 'No open positions.'}</div>}
 
             <div className="tm-rule" style={{ margin: '12px 0 10px' }} />
 

@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import {
   ArrowDownRight,
   ArrowUpRight,
@@ -27,7 +26,14 @@ import type {
   Strategy,
   StrategyConfig,
 } from '../types'
-import { launchAutopilot } from '../lib/launch/launchAutopilot'
+import { PaperLoopPanel } from '../components/strategy/PaperLoopPanel'
+import { StudioBacktestPanel } from '../components/strategy/StudioBacktestPanel'
+import { StudioDeployPanel } from '../components/strategy/StudioDeployPanel'
+import {
+  StudioCompilePanel,
+  StudioFieldError,
+  StudioStatusBadge,
+} from '../components/strategy/StudioCompileStatus'
 import type {
   MarketSymbol,
   VergexHeatmapBin,
@@ -36,16 +42,15 @@ import type {
   VergexDirectionCurrentResponse,
   VergexDirectionHistoryResponse,
 } from '../lib/api/data'
-import { buildDashboardPath, ROUTES } from '../router/paths'
 
 const API_BASE = import.meta.env.VITE_API_BASE || ''
 
 type Scope =
   'all' | 'crypto' | 'stock' | 'commodity' | 'index' | 'forex' | 'pre_ipo'
-type ListMode = 'claw402' | 'pool'
+type ListMode = 'marketData' | 'pool'
 
 const scopeOptions: Array<{ value: Scope; zh: string; en: string }> = [
-  { value: 'all', zh: 'All Claw402', en: 'All Claw402' },
+  { value: 'all', zh: 'All Market Data', en: 'All Market Data' },
   { value: 'stock', zh: 'US Stocks', en: 'US Stocks' },
   { value: 'crypto', zh: 'Crypto', en: 'Crypto' },
   { value: 'commodity', zh: 'Commodities', en: 'Commodities' },
@@ -65,12 +70,9 @@ const categoryPriority: Record<string, number> = {
 
 const timeframeOptions = ['5m', '15m', '30m', '1h', '4h', '1d']
 const barCountOptions = [20, 30, 50]
-const topNOptions = [5, 6, 7, 8, 9, 10]
-const claw402BoardLimit = 30
 const confidenceOptions = [65, 75, 82]
 
-const text = (language: string, zh: string, en: string) =>
-  language === 'zh' ? zh : en
+const text = (_language: string, _zh: string, en: string) => en
 
 type Profile = 'careful' | 'balanced' | 'active'
 
@@ -104,9 +106,9 @@ const profileOptions: Array<{
     bars: 30,
     margin: 1.0,
     promptZh:
-      'Careful mode: follow the live Claw402 direction board; use direction history, the cost/liquidation heatmap, and raw candles as context only.',
+      'Careful mode: follow the live cross-market signal board; use direction history, the cost/liquidation heatmap, and raw candles as context only.',
     promptEn:
-      'Careful mode: follow the live Claw402 direction board; use direction history, the cost/liquidation heatmap, and raw candles as context only.',
+      'Careful mode: follow the live cross-market signal board; use direction history, the cost/liquidation heatmap, and raw candles as context only.',
   },
   {
     value: 'balanced',
@@ -140,11 +142,14 @@ const profileOptions: Array<{
     bars: 50,
     margin: 1.0,
     promptZh:
-      'Active mode: follow strong Claw402 direction changes quickly and keep positions until the board turns, becomes neutral, or drops the symbol.',
+      'Active mode: follow strong Market Data direction changes quickly and keep positions until the board turns, becomes neutral, or drops the symbol.',
     promptEn:
-      'Active mode: follow strong Claw402 direction changes quickly and keep positions until the board turns, becomes neutral, or drops the symbol.',
+      'Active mode: follow strong Market Data direction changes quickly and keep positions until the board turns, becomes neutral, or drops the symbol.',
   },
 ]
+
+const RETIRED_BOARD =
+  'Market board retired: it came from the NoFX Go backend (Vergex), which is not part of AlgoBots. Live market data is the Kalshi feed in the paper loop above.'
 
 function getAIConfig(config: StrategyConfig): AIStrategyConfig | null {
   if (config.ai_config) return config.ai_config
@@ -160,10 +165,18 @@ function getAIConfig(config: StrategyConfig): AIStrategyConfig | null {
   return null
 }
 
+// The one symbol the AlgoBots Studio compiler can resolve to a Nautilus
+// instrument today (KXBTC15M.KALSHI); see strategies/studio.py NOFX_SYMBOLS.
+const DEFAULT_STUDIO_SYMBOL = 'KXBTC15M'
+
 function defaultCoinSource(
   source?: Partial<CoinSourceConfig>
 ): CoinSourceConfig {
-  const staticCoins = source?.static_coins || []
+  // ALG-3415: a brand-new config gets the resolvable static symbol; an
+  // explicit empty list stays empty so the compiler reports it at the field.
+  const staticCoins = source
+    ? source.static_coins || []
+    : [DEFAULT_STUDIO_SYMBOL]
   const minVergexLimit =
     staticCoins.length > 0 ? Math.min(staticCoins.length, 10) : 10
   const vergexLimit = Math.min(
@@ -171,7 +184,9 @@ function defaultCoinSource(
     10
   )
   return {
-    source_type: 'vergex_signal',
+    // ALG-3415: Studio only compiles a static symbol list. The upstream
+    // vergex_signal feed is not part of AlgoBots and made every save invalid.
+    source_type: 'static',
     static_coins: staticCoins,
     excluded_coins: [],
     use_ai500: false,
@@ -232,19 +247,19 @@ function defaultIndicators(
 
 function defaultRisk(risk?: Partial<RiskControlConfig>): RiskControlConfig {
   const leverage =
-    risk?.altcoin_max_leverage || risk?.btc_eth_max_leverage || 10
+    risk?.altcoin_max_leverage ?? risk?.btc_eth_max_leverage ?? 10
   return {
-    max_positions: risk?.max_positions || 8,
-    btc_eth_max_leverage: leverage,
-    altcoin_max_leverage: leverage,
+    max_positions: risk?.max_positions ?? 8,
+    btc_eth_max_leverage: risk?.btc_eth_max_leverage ?? leverage,
+    altcoin_max_leverage: risk?.altcoin_max_leverage ?? leverage,
     btc_eth_max_position_value_ratio:
-      risk?.btc_eth_max_position_value_ratio || 5,
+      risk?.btc_eth_max_position_value_ratio ?? 5,
     altcoin_max_position_value_ratio:
-      risk?.altcoin_max_position_value_ratio || 5,
-    max_margin_usage: risk?.max_margin_usage || 1.0,
-    min_position_size: risk?.min_position_size || 12,
-    min_risk_reward_ratio: risk?.min_risk_reward_ratio || 3,
-    min_confidence: risk?.min_confidence || 78,
+      risk?.altcoin_max_position_value_ratio ?? 5,
+    max_margin_usage: risk?.max_margin_usage ?? 1.0,
+    min_position_size: risk?.min_position_size ?? 12,
+    min_risk_reward_ratio: risk?.min_risk_reward_ratio ?? 3,
+    min_confidence: risk?.min_confidence ?? 78,
   }
 }
 
@@ -264,6 +279,9 @@ function simplifyConfig(
     },
     grid_config: null,
     publish_config: config?.publish_config,
+    // The Studio compiler reads the abstain band and money envelope from here;
+    // dropping it turned every UI save of the momentum config invalid.
+    demo_worker: config?.demo_worker,
   }
 }
 
@@ -787,7 +805,6 @@ function CostLiquidationHeatmap({
 export function StrategyStudioPage() {
   const { token } = useAuth()
   const { language } = useLanguage()
-  const navigate = useNavigate()
   const [strategies, setStrategies] = useState<Strategy[]>([])
   const [selectedStrategy, setSelectedStrategy] = useState<Strategy | null>(
     null
@@ -814,7 +831,7 @@ export function StrategyStudioPage() {
   const [detailLoading, setDetailLoading] = useState(false)
   const [detailError, setDetailError] = useState('')
   const [detailLiqBand, setDetailLiqBand] = useState('15')
-  const [listMode, setListMode] = useState<ListMode>('claw402')
+  const [listMode, setListMode] = useState<ListMode>('pool') // ALG-3352: pool is the live Kalshi list
   const [hasChanges, setHasChanges] = useState(false)
 
   const aiConfig = editingConfig?.ai_config || null
@@ -834,7 +851,8 @@ export function StrategyStudioPage() {
   }, [signals])
 
   const visibleSymbols = useMemo(() => {
-    const tradefi = symbols.filter((item) => item.category !== 'crypto')
+    // The demo universe is the Kalshi series list (crypto), so no tradefi filter.
+    const tradefi = symbols
     const scoped =
       scope === 'all'
         ? tradefi
@@ -891,37 +909,58 @@ export function StrategyStudioPage() {
   )
 
   const loadSymbols = useCallback(async () => {
+    // ALG-3352: the NoFX Go symbol list is retired; the live symbol universe
+    // for this demo is the Kalshi feed the paper loop actually trades.
+    if (!token) return
     setSymbolsLoading(true)
     setSymbolsError('')
     try {
-      const result = await api.getSymbols('hyperliquid-xyz')
-      setSymbols(result.symbols || [])
-    } catch (err) {
+      const response = await fetch(`${API_BASE}/api/data`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      if (!response.ok) throw new Error('feed unavailable')
+      const feed = await response.json()
+      const observations: Array<{
+        market?: string
+        event?: string
+        strike?: number
+      }> = Array.isArray(feed?.observations) ? feed.observations : []
+      // Distinct Kalshi series: strip the event date and strike suffixes
+      // (KXBTC15M-26OCT230830-30 -> KXBTC15M) and keep the latest strike.
+      const latest = new Map<string, MarketSymbol>()
+      for (const obs of observations) {
+        const ticker = String(obs.market || obs.event || '').toUpperCase()
+        if (!ticker) continue
+        const series = ticker.split('-')[0]
+        if (!series) continue
+        const existing = latest.get(series)
+        const next: MarketSymbol = {
+          symbol: series,
+          name: `${series} (Kalshi)`,
+          category: 'crypto',
+          exchange: 'kalshi',
+          mark_price: typeof obs.strike === 'number' ? obs.strike : existing?.mark_price,
+        }
+        latest.set(series, next)
+      }
+      setSymbols([...latest.values()].sort((a, b) => a.symbol.localeCompare(b.symbol)))
+    } catch {
+      setSymbols([])
       setSymbolsError(
-        err instanceof Error ? err.message : 'Symbol list unavailable'
+        'Live Kalshi feed unavailable right now; the paper loop above still shows the latest receipts.'
       )
     } finally {
       setSymbolsLoading(false)
     }
-  }, [])
+  }, [token])
 
   const loadSignals = useCallback(async () => {
-    if (!token) return
-    setSignalsLoading(true)
-    setSignalsError('')
-    try {
-      const result =
-        await api.getVergexDirectionChangeLeaderboard(claw402BoardLimit)
-      setSignals(result.items || [])
-      setListMode('claw402')
-    } catch (err) {
-      setSignalsError(
-        err instanceof Error ? err.message : 'Claw402.ai board unavailable'
-      )
-    } finally {
-      setSignalsLoading(false)
-    }
-  }, [token])
+    // ALG-3414: the direction board was a Vergex feed via the retired NoFX Go
+    // backend; it is not part of AlgoBots. Live market data is the Kalshi feed.
+    setSignals([])
+    setSignalsLoading(false)
+    setSignalsError(RETIRED_BOARD)
+  }, [])
 
   const loadSignalDetail = useCallback(
     async (item: VergexSignalItem, bandOverride?: string) => {
@@ -945,7 +984,7 @@ export function StrategyStudioPage() {
 
       window.requestAnimationFrame(() => {
         document
-          .getElementById('claw402-detail-panel')
+          .getElementById('marketData-detail-panel')
           ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
       })
 
@@ -1054,49 +1093,16 @@ export function StrategyStudioPage() {
         ? simplifyConfig(await response.json())
         : simplifyConfig(null)
       defaultConfig.language = language as 'zh' | 'en'
-      defaultConfig.ai_config = {
-        ...defaultConfig.ai_config!,
-        coin_source: defaultCoinSource({
-          ...defaultConfig.ai_config?.coin_source,
-          static_coins: [],
-          hyper_rank_category: 'all',
-          vergex_limit: 10,
-          vergex_market_type: 'all',
-        }),
-        indicators: defaultIndicators({
-          ...defaultConfig.ai_config?.indicators,
-          klines: {
-            primary_timeframe: '15m',
-            primary_count: 30,
-            enable_multi_timeframe: false,
-            selected_timeframes: ['15m'],
-          },
-        }),
-        risk_control: defaultRisk({
-          ...defaultConfig.ai_config?.risk_control,
-          max_positions: 8,
-          btc_eth_max_leverage: 10,
-          altcoin_max_leverage: 10,
-          btc_eth_max_position_value_ratio: 5,
-          altcoin_max_position_value_ratio: 5,
-          max_margin_usage: 1.0,
-          min_confidence: 78,
-          min_risk_reward_ratio: 3,
-        }),
-        custom_prompt:
-          'NOFX Autopilot reads the Claw402.ai direction board each cycle, loads direction history and cost/liquidation structure, and holds each position until its board direction changes.',
-        prompt_sections: undefined,
-      }
       const created = await api.createStrategy({
         name: text(
           language,
-          'NOFX Claw402 Auto Strategy',
-          'NOFX Claw402 Auto Strategy'
+          'Studio strategy config',
+          'Studio strategy config'
         ),
         description: text(
           language,
-          'The single built-in strategy: read the Claw402.ai board, fetch per-symbol details, then trade with raw candles.',
-          'The single built-in strategy: read the Claw402.ai board, fetch per-symbol details, then trade with raw candles.'
+          'Config-only draft saved to AlgoBots (paper; no orders are placed from this config).',
+          'Config-only draft saved to AlgoBots (paper; no orders are placed from this config).'
         ),
         config: defaultConfig,
       })
@@ -1120,29 +1126,20 @@ export function StrategyStudioPage() {
     try {
       const config = simplifyConfig(overrideConfig || editingConfig)
       config.language = language as 'zh' | 'en'
-      const response = await fetch(
-        `${API_BASE}/api/strategies/${selectedStrategy.id}`,
-        {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            name: selectedStrategy.name,
-            description: selectedStrategy.description,
-            config,
-            is_public: selectedStrategy.is_public,
-            config_visible: selectedStrategy.config_visible,
-          }),
-        }
-      )
-      if (!response.ok) throw new Error('Failed to save strategy')
+      const saved = await api.updateStrategy(selectedStrategy.id, {
+        name: selectedStrategy.name,
+        description: selectedStrategy.description,
+        config,
+      })
       if (activateAfter) {
         await api.activateStrategy(selectedStrategy.id)
       }
       setHasChanges(false)
-      notify.success(
+      if (saved?.studio?.status === 'invalid') {
+        notify.warning(
+          `Saved, but the Studio compile failed at ${saved.studio.field}: ${saved.studio.message}`
+        )
+      } else notify.success(
         successMessage ||
           (activateAfter
             ? text(
@@ -1157,94 +1154,6 @@ export function StrategyStudioPage() {
       notify.error(
         err instanceof Error ? err.message : 'Failed to save strategy'
       )
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  const buildUnifiedClaw402Config = (): StrategyConfig => {
-    const base = simplifyConfig(editingConfig)
-    base.language = language as 'zh' | 'en'
-    base.ai_config = {
-      ...base.ai_config!,
-      coin_source: defaultCoinSource({
-        ...base.ai_config?.coin_source,
-        static_coins: [],
-        hyper_rank_category: 'all',
-        vergex_limit: 10,
-        vergex_market_type: 'all',
-        vergex_chain: 'hyperliquid',
-      }),
-      indicators: defaultIndicators({
-        ...base.ai_config?.indicators,
-        klines: {
-          primary_timeframe: '15m',
-          primary_count: 30,
-          enable_multi_timeframe: false,
-          selected_timeframes: ['15m'],
-        },
-      }),
-      risk_control: defaultRisk({
-        ...base.ai_config?.risk_control,
-        max_positions: 8,
-        btc_eth_max_leverage: 10,
-        altcoin_max_leverage: 10,
-        // Five times equity is the hard per-position cap; allocation is dynamic.
-        btc_eth_max_position_value_ratio: 5,
-        altcoin_max_position_value_ratio: 5,
-        max_margin_usage: 1.0,
-        min_confidence: 78,
-        min_risk_reward_ratio: 3,
-      }),
-      custom_prompt:
-        'Run NOFX Autopilot: use the Claw402.ai direction board as the candidate universe, open in the board direction, and hold until that direction changes, becomes neutral, or disappears.',
-      prompt_sections: undefined,
-    }
-    return base
-  }
-
-  const startUnifiedClaw402Agent = async () => {
-    if (!selectedStrategy) return
-
-    setSaving(true)
-    try {
-      // The shared launcher runs the server-side preflight (fresh wallet and
-      // exchange balances) BEFORE ensureStrategy, so a failed launch never
-      // mutates or activates the strategy as a side effect.
-      const outcome = await launchAutopilot({
-        scanIntervalMinutes: 15,
-        ensureStrategy: async () => {
-          const config = buildUnifiedClaw402Config()
-          setEditingConfig(config)
-          await api.updateStrategy(selectedStrategy.id, {
-            name: selectedStrategy.name,
-            description:
-              selectedStrategy.description ||
-              'Autonomous market selection powered by the live Claw402.ai direction board.',
-            config,
-          })
-          await api.activateStrategy(selectedStrategy.id)
-          return selectedStrategy.id
-        },
-      })
-
-      if (!outcome.ok) {
-        notify.error(outcome.message)
-        const setupTarget =
-          outcome.kind === 'error' ? null : outcome.setupTarget
-        if (setupTarget) {
-          navigate(`${ROUTES.traders}?setup=${setupTarget}`)
-        }
-        return
-      }
-
-      if (outcome.warning) {
-        notify.warning(outcome.warning)
-      }
-      notify.success('NOFX Autopilot started')
-      setHasChanges(false)
-      await loadStrategies(selectedStrategy.id)
-      navigate(buildDashboardPath(outcome.traderId))
     } finally {
       setSaving(false)
     }
@@ -1390,19 +1299,25 @@ export function StrategyStudioPage() {
         <div className="flex items-center justify-between gap-4">
           <div>
             <h1 className="text-xl font-semibold text-nofx-text">
-              {text(language, 'NOFX Autopilot', 'NOFX Autopilot')}
+              {text(language, 'AlgoBots Strategy Studio', 'AlgoBots Strategy Studio')}
             </h1>
             <p className="mt-1 text-sm text-nofx-text-muted">
               {text(
                 language,
-                'Autonomous market selection powered by the live Claw402.ai direction board.',
-                'Autonomous market selection powered by the live Claw402.ai direction board.'
+                'Configure strategies and watch the live Kalshi paper loop running on Nautilus. Configs are saved to AlgoBots; execution is paper only.',
+                'Configure strategies and watch the live Kalshi paper loop running on Nautilus. Configs are saved to AlgoBots; execution is paper only.'
               )}
             </p>
           </div>
           <button
             type="button"
-            onClick={startUnifiedClaw402Agent}
+            onClick={() =>
+              void saveStrategy(
+                true,
+                undefined,
+                'Configuration saved to AlgoBots (paper loop unchanged)'
+              )
+            }
             disabled={saving || !selectedStrategy}
             className="inline-flex items-center gap-2 rounded-lg bg-nofx-gold px-4 py-2 text-sm font-semibold text-nofx-bg hover:bg-nofx-gold-highlight"
           >
@@ -1411,15 +1326,23 @@ export function StrategyStudioPage() {
             ) : (
               <Bot className="h-4 w-4" />
             )}
-            {text(language, 'Launch Autopilot', 'Launch Autopilot')}
+            {text(language, 'Save configuration', 'Save configuration')}
           </button>
         </div>
       </div>
 
-      <div className="grid min-h-[calc(100vh-137px)] grid-cols-1">
-        <aside className="hidden border-r border-[rgba(26,24,19,0.14)] bg-nofx-bg-deeper p-3">
-          <div className="mb-2 px-2 text-xs font-medium uppercase tracking-wide text-nofx-text-muted">
-            {text(language, 'My strategies', 'My strategies')}
+      <div className="grid min-h-[calc(100vh-137px)] grid-cols-1 lg:grid-cols-[260px_1fr]">
+        <aside className="hidden border-r border-[rgba(26,24,19,0.14)] bg-nofx-bg-deeper p-3 lg:block">
+          <div className="mb-2 flex items-center justify-between px-2 text-xs font-medium uppercase tracking-wide text-nofx-text-muted">
+            {text(language, 'My strategy configs', 'My strategy configs')}
+            <button
+              type="button"
+              onClick={createStrategy}
+              title={text(language, 'New strategy config', 'New strategy config')}
+              className="rounded p-1 text-nofx-gold hover:bg-nofx-gold/10"
+            >
+              <Plus className="h-3.5 w-3.5" />
+            </button>
           </div>
           <div className="space-y-2">
             {strategies.map((strategy) => (
@@ -1441,11 +1364,14 @@ export function StrategyStudioPage() {
                   <span className="line-clamp-2 text-sm font-medium text-nofx-text">
                     {strategy.name}
                   </span>
-                  {strategy.is_active ? (
-                    <span className="rounded bg-nofx-success/15 px-1.5 py-0.5 text-[10px] text-nofx-success">
-                      {text(language, 'Active', 'Active')}
-                    </span>
-                  ) : null}
+                  <span className="flex shrink-0 flex-col items-end gap-1">
+                    {strategy.is_active ? (
+                      <span className="rounded bg-nofx-success/15 px-1.5 py-0.5 text-[10px] text-nofx-success">
+                        {text(language, 'Active', 'Active')}
+                      </span>
+                    ) : null}
+                    <StudioStatusBadge studio={strategy.studio} />
+                  </span>
                 </div>
                 {strategy.description ? (
                   <div className="mt-1 line-clamp-2 text-xs text-nofx-text-muted">
@@ -1458,12 +1384,17 @@ export function StrategyStudioPage() {
         </aside>
 
         <main className="overflow-y-auto p-5">
+          <details open className="mx-auto mb-6 max-w-7xl rounded-lg border p-4">
+            <summary className="cursor-pointer font-semibold">Live paper-loop receipts</summary>
+            <PaperLoopPanel />
+          </details>
           {selectedStrategy && aiConfig && coinSource && indicators && risk ? (
             <div className="mx-auto max-w-7xl space-y-4">
-              <section className="hidden rounded-lg border border-[rgba(26,24,19,0.14)] bg-nofx-bg-lighter p-4">
+              <section className="rounded-lg border border-[rgba(26,24,19,0.14)] bg-nofx-bg-lighter p-4">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div className="min-w-0 flex-1">
                     <input
+                      aria-label="Strategy name"
                       value={selectedStrategy.name}
                       onChange={(event) => {
                         setSelectedStrategy({
@@ -1475,6 +1406,7 @@ export function StrategyStudioPage() {
                       className="w-full bg-transparent text-lg font-semibold text-nofx-text outline-none"
                     />
                     <input
+                      aria-label="Strategy description"
                       value={selectedStrategy.description || ''}
                       onChange={(event) => {
                         setSelectedStrategy({
@@ -1490,13 +1422,29 @@ export function StrategyStudioPage() {
                       )}
                       className="mt-1 w-full bg-transparent text-sm text-nofx-text-muted outline-none placeholder:text-nofx-text-muted/50"
                     />
+                    <StudioFieldError
+                      studio={selectedStrategy.studio}
+                      owner="name"
+                    />
                     {hasChanges ? (
                       <div className="mt-2 text-xs text-nofx-gold">
                         {text(language, 'Unsaved changes', 'Unsaved changes')}
                       </div>
                     ) : null}
+                    <StudioCompilePanel
+                      studio={selectedStrategy.studio}
+                      stale={hasChanges}
+                    />
+                    <StudioBacktestPanel
+                      studio={selectedStrategy.studio}
+                      stale={hasChanges}
+                    />
+                    <StudioDeployPanel
+                      studio={selectedStrategy.studio}
+                      stale={hasChanges}
+                    />
                   </div>
-                  <div className="hidden flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-2">
                     <button
                       type="button"
                       onClick={() => saveStrategy(true)}
@@ -1547,15 +1495,18 @@ export function StrategyStudioPage() {
                 </div>
               </section>
 
+              {/* ALG-3352: restored for the demo. The tradable universe is the
+                  live Kalshi feed the paper loop observes (read-only). The old
+                  Vergex cross-market board stays retired. */}
               <section className="rounded-lg border border-[rgba(26,24,19,0.14)] bg-nofx-bg-lighter p-4">
                 <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
                   <div>
                     <div className="flex items-center gap-2 text-sm font-semibold text-nofx-text">
                       <Sparkles className="h-4 w-4 text-nofx-gold" />
-                      Signal Board
+                      Trading universe
                     </div>
                     <div className="mt-1 text-xs text-nofx-text-muted">
-                      Live direction board · direction history · liquidation map
+                      Live Kalshi markets from the paper-loop feed · pick the series this strategy tracks
                     </div>
                   </div>
                   <div className="flex flex-wrap gap-2">
@@ -1565,26 +1516,26 @@ export function StrategyStudioPage() {
                         if (signals.length === 0) {
                           void loadSignals()
                         } else {
-                          setListMode('claw402')
+                          setListMode('marketData')
                         }
                       }}
                       disabled={signalsLoading}
                       className={`hidden items-center gap-2 rounded-lg border px-3 py-2 text-xs disabled:opacity-50 ${
-                        listMode === 'claw402'
+                        listMode === 'marketData'
                           ? 'border-nofx-gold bg-nofx-gold/10 text-nofx-gold'
                           : 'border-[rgba(26,24,19,0.14)] text-nofx-text-muted hover:text-nofx-text'
                       }`}
                     >
                       <Sparkles className="h-3.5 w-3.5" />
                       {signals.length === 0
-                        ? 'Load Claw402 board'
-                        : 'Claw402 board'}
+                        ? 'Load cross-market signal board'
+                        : 'cross-market signal board'}
                     </button>
                     <button
                       type="button"
                       onClick={() => setListMode('pool')}
                       disabled={symbolsLoading}
-                      className={`hidden items-center gap-2 rounded-lg border px-3 py-2 text-xs disabled:opacity-50 ${
+                      className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs disabled:opacity-50 ${
                         listMode === 'pool'
                           ? 'border-[rgba(26,24,19,0.24)] bg-nofx-bg-deeper text-nofx-text'
                           : 'border-[rgba(26,24,19,0.14)] text-nofx-text-muted hover:text-nofx-text'
@@ -1617,7 +1568,7 @@ export function StrategyStudioPage() {
                             vergex_market_type: 'all',
                           })
                         }
-                        className="hidden rounded-lg border border-[rgba(26,24,19,0.14)] px-3 py-2 text-xs text-nofx-text-muted hover:text-nofx-text"
+                        className="inline-flex rounded-lg border border-[rgba(26,24,19,0.14)] px-3 py-2 text-xs text-nofx-text-muted hover:text-nofx-text"
                       >
                         Clear selected
                       </button>
@@ -1641,7 +1592,7 @@ export function StrategyStudioPage() {
                             (item) => item.category === option.value
                           ).length
                     const count =
-                      listMode === 'claw402' ? signalCount : poolCount
+                      listMode === 'marketData' ? signalCount : poolCount
                     return (
                       <button
                         key={option.value}
@@ -1670,7 +1621,7 @@ export function StrategyStudioPage() {
                         static_coins: [],
                         vergex_market_type: 'all',
                       })
-                      setListMode('claw402')
+                      setListMode('marketData')
                       if (signals.length === 0) {
                         void loadSignals()
                       }
@@ -1683,7 +1634,7 @@ export function StrategyStudioPage() {
                   >
                     <div className="flex items-center justify-between gap-3">
                       <div className="text-sm font-semibold text-nofx-text">
-                        Follow Claw402.ai board dynamically
+                        Follow Binance, Polymarket, and IBKR board dynamically
                       </div>
                       {selectedSymbols.length === 0 ? (
                         <Check className="h-4 w-4 text-nofx-success" />
@@ -1699,7 +1650,7 @@ export function StrategyStudioPage() {
                   <button
                     type="button"
                     onClick={() => {
-                      setListMode('claw402')
+                      setListMode('marketData')
                       if (signals.length === 0) {
                         void loadSignals()
                       }
@@ -1721,7 +1672,7 @@ export function StrategyStudioPage() {
                     <div className="mt-2 text-xs text-nofx-text-muted">
                       {selectedSymbols.length > 0
                         ? `${selectedSymbols.length} symbols fixed; trade only these.`
-                        : 'Autopilot uses the live Claw402 board by default.'}
+                        : 'Autopilot uses the live cross-market signal board by default.'}
                     </div>
                   </button>
                 </div>
@@ -1730,34 +1681,25 @@ export function StrategyStudioPage() {
                   <span className="text-sm text-nofx-text-muted">
                     {selectedSymbols.length > 0
                       ? `${selectedSymbols.length} selected`
-                      : `Without manual picks, runtime uses Claw402.ai Top ${coinSource.vergex_limit || 5} in this range`}
+                      : 'No series selected; pick at least one for the Studio compiler'}
                   </span>
-                  {selectedSymbols.length === 0 ? (
-                    <select
-                      value={coinSource.vergex_limit || 5}
-                      onChange={(event) =>
-                        patchCoinSource({
-                          vergex_limit: Math.max(Number(event.target.value), 5),
-                        })
-                      }
-                      className="rounded-lg border border-[rgba(26,24,19,0.14)] bg-nofx-bg px-3 py-2 text-sm text-nofx-text"
-                    >
-                      {topNOptions.map((value) => (
-                        <option key={value} value={value}>
-                          Top {value}
-                        </option>
-                      ))}
-                    </select>
-                  ) : null}
                 </div>
 
-                {symbolsError || signalsError ? (
+                <div className="mb-4">
+                  <StudioFieldError
+                    studio={selectedStrategy.studio}
+                    owner="universe"
+                  />
+                </div>
+
+                {symbolsError ||
+                (listMode === 'marketData' && signalsError) ? (
                   <div className="mb-4 rounded-lg border border-nofx-gold/20 bg-nofx-gold/10 px-3 py-2 text-xs text-nofx-gold">
                     {symbolsError || signalsError}
                   </div>
                 ) : null}
 
-                {listMode === 'claw402' &&
+                {listMode === 'marketData' &&
                 signals.length === 0 &&
                 !signalsLoading ? (
                   <button
@@ -1773,7 +1715,7 @@ export function StrategyStudioPage() {
                 ) : null}
 
                 <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                  {listMode === 'claw402' && signals.length > 0
+                  {listMode === 'marketData' && signals.length > 0
                     ? visibleSignalItems.map((item) => {
                         const symbol = normalizeSymbol(item.symbol)
                         const selected = selectedSet.has(symbol)
@@ -1785,7 +1727,7 @@ export function StrategyStudioPage() {
                         const BiasIcon = bias.icon
                         return (
                           <div
-                            key={`claw402-${item.rank || 0}-${symbol}`}
+                            key={`marketData-${item.rank || 0}-${symbol}`}
                             role="button"
                             tabIndex={0}
                             onClick={() => void loadSignalDetail(item)}
@@ -1866,9 +1808,9 @@ export function StrategyStudioPage() {
                       })}
                 </div>
 
-                {listMode === 'claw402' ? (
+                {listMode === 'marketData' ? (
                   <div
-                    id="claw402-detail-panel"
+                    id="marketData-detail-panel"
                     className="mt-4 scroll-mt-28 space-y-4"
                   >
                     {detailSignal ? (
@@ -1941,18 +1883,18 @@ export function StrategyStudioPage() {
                       </>
                     ) : (
                       <div className="rounded-lg border border-[rgba(26,24,19,0.14)] bg-nofx-bg-deeper px-4 py-4 text-sm text-nofx-text-muted">
-                        NOFX Autopilot follows the Claw402 direction board and
+                        AlgoBots Autopilot follows the cross-market signal board and
                         uses liquidation structure and raw candles as context.
                       </div>
                     )}
                   </div>
                 ) : null}
 
-                {listMode === 'claw402' &&
+                {listMode === 'marketData' &&
                 signals.length > 0 &&
                 visibleSignalItems.length === 0 ? (
                   <div className="rounded-lg border border-[rgba(26,24,19,0.14)] bg-nofx-bg-deeper px-3 py-3 text-sm text-nofx-text-muted">
-                    No Claw402 markets available.
+                    No Market Data markets available.
                   </div>
                 ) : null}
 
@@ -1965,9 +1907,9 @@ export function StrategyStudioPage() {
                 ) : null}
               </section>
 
-              <details className="hidden rounded-lg border border-[rgba(26,24,19,0.14)] bg-nofx-bg-deeper p-4">
+              <details open className="rounded-lg border border-[rgba(26,24,19,0.14)] bg-nofx-bg-deeper p-4">
                 <summary className="cursor-pointer text-sm font-semibold text-nofx-text">
-                  {text(language, 'Advanced settings', 'Advanced settings')}
+                  {text(language, 'Strategy configuration', 'Strategy configuration')}
                 </summary>
                 <div className="mt-4 rounded-lg border border-[rgba(26,24,19,0.14)] bg-nofx-bg-lighter p-4">
                   <div className="mb-3 text-sm font-semibold text-nofx-text">
@@ -2041,6 +1983,10 @@ export function StrategyStudioPage() {
                         </div>
                       </div>
                     </div>
+                    <StudioFieldError
+                      studio={selectedStrategy.studio}
+                      owner="candles"
+                    />
                   </div>
 
                   <div className="rounded-lg border border-[rgba(26,24,19,0.14)] bg-nofx-bg-lighter p-4">
@@ -2100,6 +2046,7 @@ export function StrategyStudioPage() {
                           )}
                         </span>
                         <select
+                          aria-label="Entry confidence"
                           value={risk.min_confidence}
                           onChange={(event) =>
                             patchRisk({
@@ -2108,7 +2055,7 @@ export function StrategyStudioPage() {
                           }
                           className="w-full rounded-lg border border-[rgba(26,24,19,0.14)] bg-nofx-bg px-3 py-2 text-sm text-nofx-text"
                         >
-                          {confidenceOptions.map((value) => (
+                          {Array.from(new Set([risk.min_confidence, ...confidenceOptions])).sort((a, b) => a - b).map((value) => (
                             <option key={value} value={value}>
                               {value}%
                             </option>
@@ -2116,6 +2063,10 @@ export function StrategyStudioPage() {
                         </select>
                       </label>
                     </div>
+                    <StudioFieldError
+                      studio={selectedStrategy.studio}
+                      owner="params"
+                    />
                   </div>
                 </div>
 
@@ -2135,6 +2086,10 @@ export function StrategyStudioPage() {
                     )}
                     className="h-28 w-full resize-none rounded-lg border border-[rgba(26,24,19,0.14)] bg-nofx-bg px-3 py-2 text-sm text-nofx-text outline-none placeholder:text-nofx-text-muted/50"
                   />
+                  <StudioFieldError
+                    studio={selectedStrategy.studio}
+                    owner="note"
+                  />
                 </div>
               </details>
             </div>
@@ -2146,7 +2101,11 @@ export function StrategyStudioPage() {
                 className="inline-flex items-center gap-2 rounded-lg bg-nofx-gold px-4 py-2 text-sm font-semibold text-nofx-bg hover:bg-nofx-gold-highlight"
               >
                 <Plus className="h-4 w-4" />
-                {text(language, 'Initialize Autopilot', 'Initialize Autopilot')}
+                {text(
+                  language,
+                  'Create a strategy config',
+                  'Create a strategy config'
+                )}
               </button>
             </div>
           )}

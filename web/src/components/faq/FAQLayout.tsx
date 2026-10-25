@@ -56,7 +56,8 @@ export function FAQLayout() {
                   FAQ
                 </h1>
                 <p className="mt-1 font-mono text-xs uppercase tracking-[0.14em] text-nofx-text-muted">
-                  {totalItems} answers · wallets · launch · trading · self-hosting
+                  {totalItems} answers · accounts · launch · trading ·
+                  self-hosting
                 </p>
               </div>
             </div>
@@ -107,27 +108,9 @@ export function FAQLayout() {
             Still have questions?
           </h3>
           <p className="mt-2 text-sm text-nofx-text-muted">
-            Ask in the community or open an issue — both are answered by the
-            people building NOFX.
+            Ask whoever set up your instance — this is a private deployment, so
+            a direct message is the fastest way to get an answer.
           </p>
-          <div className="mt-5 flex items-center justify-center gap-3">
-            <a
-              href="https://github.com/NoFxAiOS/nofx"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="rounded-lg border border-[rgba(26,24,19,0.14)] bg-nofx-bg-deeper px-5 py-2.5 font-mono text-xs font-bold uppercase tracking-[0.12em] text-nofx-text hover:border-nofx-gold/40"
-            >
-              GitHub
-            </a>
-            <a
-              href="https://t.me/nofx_dev_community"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="rounded-lg bg-nofx-gold px-5 py-2.5 font-mono text-xs font-bold uppercase tracking-[0.12em] text-white hover:bg-nofx-accent"
-            >
-              Telegram community
-            </a>
-          </div>
         </div>
       </div>
     </DeepVoidBackground>

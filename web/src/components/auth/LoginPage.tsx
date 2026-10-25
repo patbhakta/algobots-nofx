@@ -41,7 +41,7 @@ export function LoginPage() {
   // so we surface the instruction instead of calling an endpoint.
   const handleResetAccount = () => {
     toast(t('resetAccountCliIntro', language), {
-      description: 'nofx reset-account',
+      description: 'algobots reset-account',
       duration: 10000,
     })
   }
@@ -74,9 +74,9 @@ export function LoginPage() {
 
           {/* Brand mark */}
           <div className="flex items-center gap-3 relative">
-            <img src="/icons/nofx.svg" alt="NOFX" className="w-9 h-9" />
+            <img src="/icons/algobots.svg" alt="AlgoBots" className="w-9 h-9" />
             <div className="font-mono font-bold text-xl tracking-tight text-nofx-text">
-              NOFX<span className="text-nofx-gold">.</span>
+              AlgoBots<span className="text-nofx-gold">.</span>
             </div>
           </div>
 
@@ -89,14 +89,14 @@ export function LoginPage() {
               </span>
             </div>
             <h2 className="text-4xl xl:text-5xl font-bold tracking-tight text-nofx-text leading-[1.05]">
-              {language === 'zh' ? (
+              {(language as string) === 'zh' ? (
                 <>
                   AI-Powered<br />
                   <span className="text-nofx-gold">
                     Multi-Market Trading Terminal
                   </span>
                 </>
-              ) : language === 'id' ? (
+              ) : (language as string) === 'id' ? (
                 <>
                   Terminal Trading<br />
                   <span className="text-nofx-gold">
@@ -113,11 +113,9 @@ export function LoginPage() {
               )}
             </h2>
             <p className="mt-5 text-nofx-text-muted text-base leading-relaxed max-w-md">
-              {language === 'zh'
-                ? 'Plug into 10+ exchanges including Hyperliquid, OKX, Aster, and 7 LLM models. Deploy 24/7 automated strategies with natural language.'
-                : language === 'id'
-                ? 'Hubungkan ke 10+ bursa termasuk Hyperliquid, OKX, Aster dan 7 model LLM. Terapkan strategi otomatis 24/7 dengan bahasa alami.'
-                : 'Plug into 10+ exchanges including Hyperliquid, OKX, Aster, and 7 LLM models. Deploy 24/7 automated strategies with natural language.'}
+              Paper-trade stocks, prediction markets and crypto with 7 LLM
+              models, every order executed through Nautilus. Deploy 24/7
+              automated strategies with natural language.
             </p>
           </div>
 
@@ -126,9 +124,9 @@ export function LoginPage() {
             <Stat
               value="10+"
               label={
-                language === 'zh'
+                (language as string) === 'zh'
                   ? 'Exchanges'
-                  : language === 'id'
+                  : (language as string) === 'id'
                   ? 'Bursa'
                   : 'Exchanges'
               }
@@ -136,9 +134,9 @@ export function LoginPage() {
             <Stat
               value="7"
               label={
-                language === 'zh'
+                (language as string) === 'zh'
                   ? 'AI Models'
-                  : language === 'id'
+                  : (language as string) === 'id'
                   ? 'Model AI'
                   : 'AI Models'
               }
@@ -146,9 +144,9 @@ export function LoginPage() {
             <Stat
               value="24/7"
               label={
-                language === 'zh'
+                (language as string) === 'zh'
                   ? 'Always On'
-                  : language === 'id'
+                  : (language as string) === 'id'
                   ? 'Sepanjang Waktu'
                   : 'Always On'
               }
@@ -161,9 +159,9 @@ export function LoginPage() {
           <div className="w-full max-w-sm">
             {/* Mobile brand */}
             <div className="lg:hidden flex flex-col items-center gap-3 mb-10">
-              <img src="/icons/nofx.svg" alt="NOFX" className="w-12 h-12" />
+              <img src="/icons/algobots.svg" alt="AlgoBots" className="w-12 h-12" />
               <div className="font-mono font-bold text-lg tracking-tight text-nofx-text">
-                NOFX<span className="text-nofx-gold">.</span>
+                AlgoBots<span className="text-nofx-gold">.</span>
               </div>
             </div>
 
@@ -173,9 +171,9 @@ export function LoginPage() {
                 {t('signIn', language)}
               </h1>
               <p className="mt-1.5 text-sm text-nofx-text-muted">
-                {language === 'zh'
+                {(language as string) === 'zh'
                   ? 'Continue with your email'
-                  : language === 'id'
+                  : (language as string) === 'id'
                   ? 'Lanjutkan dengan email Anda'
                   : 'Continue with your email'}
               </p>

@@ -1,6 +1,5 @@
 # 📘 NOFX User Guides
 
-**Language:** [English](README.md) | [中文](README.zh-CN.md)
 
 Comprehensive guides to help you use NOFX effectively.
 
@@ -13,7 +12,6 @@ Comprehensive guides to help you use NOFX effectively.
 | Guide | Description | Status |
 |-------|-------------|--------|
 | [FAQ (English)](faq.en.md) | Frequently asked questions | ✅ Available |
-| [FAQ (中文)](faq.zh-CN.md) | 常见问题解答 | ✅ Available |
 | Configuration Guide | Advanced settings and options | 🚧 Coming Soon |
 | Trading Strategies | AI trading strategy examples | 🚧 Coming Soon |
 
@@ -119,10 +117,8 @@ Run multiple AI models simultaneously:
 ## 🔗 Related Documentation
 
 - [Getting Started (EN)](../getting-started/README.md) - Initial setup
-- [Getting Started (中文)](../getting-started/README.zh-CN.md) - 初始设置
 - [Community](../community/README.md) - Contributing and bounties
 - [FAQ (English)](faq.en.md) - Common questions
-- [FAQ (中文)](faq.zh-CN.md) - 常见问题
 
 ---
 

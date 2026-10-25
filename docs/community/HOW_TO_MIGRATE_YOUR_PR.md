@@ -1,6 +1,5 @@
 # 🔄 How to Migrate Your PR to the New Format
 
-**Language:** [English](HOW_TO_MIGRATE_YOUR_PR.md) | [中文](HOW_TO_MIGRATE_YOUR_PR.zh-CN.md)
 
 This guide helps you migrate your existing PR to meet the new PR management system requirements.
 

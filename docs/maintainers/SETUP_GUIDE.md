@@ -1,6 +1,5 @@
 # 🚀 PR Management System Setup Guide
 
-**Language:** [English](SETUP_GUIDE.md) | [中文](SETUP_GUIDE.zh-CN.md)
 
 This guide will help you set up and activate the complete PR management system for NOFX.
 

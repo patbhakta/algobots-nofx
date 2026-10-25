@@ -240,9 +240,9 @@ export function MetricTooltip({
     return null
   }
 
-  const name = language === 'zh' ? metric.nameZh : metric.nameEn
-  const description = language === 'zh' ? metric.descriptionZh : metric.descriptionEn
-  const formulaLabel = t('metricTooltip.formula', language as 'en' | 'zh' | 'id')
+  const name = (language as string) === 'zh' ? metric.nameZh : metric.nameEn
+  const description = (language as string) === 'zh' ? metric.descriptionZh : metric.descriptionEn
+  const formulaLabel = t('metricTooltip.formula', 'en')
 
   const tooltipContent = (
     <div
@@ -355,7 +355,7 @@ interface MetricLabelProps {
 
 export function MetricLabel({ metricKey, label, language = 'en', className = '' }: MetricLabelProps) {
   const metric = METRIC_DEFINITIONS[metricKey]
-  const displayLabel = label || (language === 'zh' ? metric?.nameZh : metric?.nameEn) || metricKey
+  const displayLabel = label || ((language as string) === 'zh' ? metric?.nameZh : metric?.nameEn) || metricKey
 
   return (
     <span className={`inline-flex items-center gap-1 ${className}`}>

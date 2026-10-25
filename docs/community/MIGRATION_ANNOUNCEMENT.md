@@ -1,6 +1,5 @@
 # 📢 PR Management System Update - What Contributors Need to Know
 
-**Language:** [English](MIGRATION_ANNOUNCEMENT.md) | [中文](MIGRATION_ANNOUNCEMENT.zh-CN.md)
 
 We're introducing a new PR management system to improve code quality and make contributing easier! This guide explains what's changing and what you need to do.
 

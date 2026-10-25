@@ -171,5 +171,5 @@ export interface CurrentBeginnerWalletResponse {
   address?: string
   balance_usdc?: string
   source?: string
-  claw402_status?: string
+  marketData_status?: string
 }
