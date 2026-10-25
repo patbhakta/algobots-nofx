@@ -28,6 +28,7 @@ from decimal import Decimal
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from algobots.api.deployments.evidence import EvidenceRequired, studio_evidence
 from algobots.api.deployments.models import (
     BreakerState,
     Deployment,
@@ -106,6 +107,10 @@ def create_deployment(db: Session, user: User, payload: DeploymentCreate) -> Dep
     account = db.get(Account, payload.account_id)
     if account is None or account.user_id != user.id:
         raise DeploymentError(404, "Account not found")
+    try:
+        evidence = studio_evidence(db, strategy)
+    except EvidenceRequired as exc:
+        raise DeploymentError(422, str(exc)) from None
     if strategy.kind != SPEC_KIND:
         raise DeploymentError(
             422, f"Strategy kind must be '{SPEC_KIND}' to deploy (got '{strategy.kind}')"
@@ -136,6 +141,8 @@ def create_deployment(db: Session, user: User, payload: DeploymentCreate) -> Dep
         "kind": strategy.kind,
         "spec": spec.model_dump(mode="json"),
     }
+    if evidence is not None:
+        frozen["studio_evidence"] = evidence
     deployment = Deployment(
         user_id=user.id,
         strategy_id=strategy.id,
