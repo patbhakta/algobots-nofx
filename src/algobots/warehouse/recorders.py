@@ -127,3 +127,67 @@ def export_rows(
             "gap_policy": "irregular-recorded-events",
         },
     )
+
+
+def export_observer_quotes(
+    warehouse: Warehouse,
+    snapshot_id: str,
+    catalog_root: Path,
+) -> Path:
+    """Catalog the observer's recorded YES book with a real expiring instrument.
+
+    Rows without a book remain in the ledger but do not invent quotes. Sizes
+    were not recorded: zero sizes make this a price record, not fill liquidity.
+    """
+    from decimal import Decimal
+
+    from nautilus_trader.model.currencies import USD
+    from nautilus_trader.model.data import QuoteTick
+    from nautilus_trader.model.enums import AssetClass
+    from nautilus_trader.model.identifiers import InstrumentId, Symbol, Venue
+    from nautilus_trader.model.instruments import BinaryOption
+    from nautilus_trader.model.objects import Price, Quantity
+
+    from algobots.warehouse.catalog import publish_quotes
+
+    manifest, table = warehouse.load(snapshot_id)
+    venue = Venue("KALSHI" if manifest["provider"] == "kalshi" else "PMUS")
+    instruments, quotes = {}, []
+    for row in table.to_pylist():
+        bid, ask = row.get("mkt_yes_bid"), row.get("mkt_yes_ask")
+        if bid is None or ask is None:
+            continue
+        bid_px, ask_px = Decimal(str(bid)), Decimal(str(ask))
+        precision = max(2, -bid_px.as_tuple().exponent, -ask_px.as_tuple().exponent)
+        symbol = Symbol(f"{row['event']}-YES")
+        expiry = int(Decimal(str(row["close_ts"])) * 1_000_000_000)
+        ts = int(Decimal(str(row["ts"])) * 1_000_000_000)
+        inst = BinaryOption(
+            instrument_id=InstrumentId(symbol, venue),
+            raw_symbol=symbol,
+            asset_class=AssetClass.CRYPTOCURRENCY,
+            currency=USD,
+            price_precision=precision,
+            size_precision=0,
+            price_increment=Price.from_str(f"{Decimal(10) ** -precision:.{precision}f}"),
+            size_increment=Quantity.from_int(1),
+            activation_ns=expiry - 900_000_000_000,
+            expiration_ns=expiry,
+            ts_event=ts,
+            ts_init=ts,
+            outcome="YES",
+        )
+        instruments[inst.id] = inst
+        quotes.append(
+            QuoteTick(
+                inst.id,
+                Price.from_str(f"{bid_px:.{precision}f}"),
+                Price.from_str(f"{ask_px:.{precision}f}"),
+                Quantity.from_int(0),
+                Quantity.from_int(0),
+                ts,
+                ts,
+            )
+        )
+    quotes.sort(key=lambda quote: quote.ts_init)
+    return publish_quotes(snapshot_id, list(instruments.values()), quotes, catalog_root)

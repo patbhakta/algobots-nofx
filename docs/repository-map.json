@@ -1157,6 +1157,14 @@
     {
       "repo": "algobots",
       "path": "tests/warehouse/test_snapshots.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "src/algobots/warehouse/export.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "docs/operations/warehouse-studio.md"
     }
   ],
   "scope_revisions": [

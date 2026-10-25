@@ -12,7 +12,7 @@ import shutil
 import tempfile
 from pathlib import Path
 
-from nautilus_trader.model.data import Bar
+from nautilus_trader.model.data import Bar, QuoteTick
 from nautilus_trader.model.instruments import Instrument
 from nautilus_trader.persistence.catalog.parquet import ParquetDataCatalog
 
@@ -42,6 +42,24 @@ def publish_bars(
         raise WarehouseError("bar initialization predates event")
     if any(a.ts_event >= b.ts_event for a, b in zip(bars, bars[1:], strict=False)):
         raise WarehouseError("catalog bars must be strictly ordered")
+    return _publish(snapshot_id, [instrument], bars, Bar, root)
+
+
+def publish_quotes(
+    snapshot_id: str,
+    instruments: list[Instrument],
+    quotes: list[QuoteTick],
+    root: Path = DEFAULT_CATALOG_ROOT,
+) -> Path:
+    """Publish actual recorded top-of-book prices; zero sizes mean unrecorded size."""
+    ids = {inst.id for inst in instruments}
+    if not quotes or any(quote.instrument_id not in ids for quote in quotes):
+        raise WarehouseError("quotes need matching catalog instruments")
+    return _publish(snapshot_id, instruments, quotes, QuoteTick, root)
+
+
+def _publish(snapshot_id, instruments, data, data_class, root):
+    _token(snapshot_id)
     root = Path(root)
     root.mkdir(parents=True, exist_ok=True)
     target = root / snapshot_id
@@ -58,10 +76,36 @@ def publish_bars(
         if target.exists():
             raise WarehouseError("catalog snapshot already published")
         catalog = ParquetDataCatalog(str(stage))
-        catalog.write_data([instrument])
-        catalog.write_data(bars)
-        replay = catalog.query(Bar)
-        if replay != bars or not catalog.instruments():
+        catalog.write_data(instruments)
+        catalog.write_data(data)
+        replay = catalog.query(data_class)
+
+        def identity(item):
+            if data_class is Bar:
+                return (
+                    str(item.bar_type),
+                    item.ts_event,
+                    item.ts_init,
+                    str(item.open),
+                    str(item.high),
+                    str(item.low),
+                    str(item.close),
+                    str(item.volume),
+                )
+            return (
+                str(item.instrument_id),
+                item.ts_event,
+                item.ts_init,
+                str(item.bid_price),
+                str(item.ask_price),
+                str(item.bid_size),
+                str(item.ask_size),
+            )
+
+        if (
+            sorted(map(identity, replay)) != sorted(map(identity, data))
+            or not catalog.instruments()
+        ):
             raise WarehouseError("Nautilus catalog read-back mismatch")
         stage.rename(target)
         return target

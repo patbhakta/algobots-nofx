@@ -63,3 +63,29 @@ def test_paper_stream_records_bounded_cursor_without_mutating_stream(tmp_path):
     assert manifest["row_count"] == 1
     assert manifest["query"]["last_id"] == "1-0"
     assert warehouse.load("paper")[1].to_pylist()[0]["recorded_ts"] == "123"
+
+
+def test_observer_catalog_query_preserves_recorded_price_precision(tmp_path):
+    from nautilus_trader.model.data import QuoteTick
+    from nautilus_trader.persistence.catalog.parquet import ParquetDataCatalog
+
+    from algobots.warehouse.recorders import export_observer_quotes, export_rows
+
+    warehouse = Warehouse(tmp_path / "warehouse")
+    export_rows(
+        warehouse,
+        "pmus",
+        [dict(event="event", close_ts=1800, ts=950, mkt_yes_bid=0.5371, mkt_yes_ask=0.5382)],
+        "quotes",
+        instrument_id="BTC15M.PMUS",
+        provider_release="fixture",
+        retrieved_at=2000,
+        query={},
+        timestamp_column="close_ts",
+        key_columns=["event"],
+    )
+    path = export_observer_quotes(warehouse, "quotes", tmp_path / "catalog")
+    quote = ParquetDataCatalog(str(path)).query(QuoteTick)[0]
+    assert str(quote.bid_price) == "0.5371"
+    assert str(quote.ask_price) == "0.5382"
+    assert quote.ts_event == 950_000_000_000
