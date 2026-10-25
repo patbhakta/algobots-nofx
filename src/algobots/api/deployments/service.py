@@ -20,6 +20,7 @@ Logging discipline: structured, secret-free events (`deployment_created`,
 only. Deployments never copy account credentials or secrets.
 """
 
+import hashlib
 import json
 import logging
 from datetime import UTC, datetime
@@ -111,14 +112,39 @@ def create_deployment(db: Session, user: User, payload: DeploymentCreate) -> Dep
         evidence = studio_evidence(db, strategy)
     except EvidenceRequired as exc:
         raise DeploymentError(422, str(exc)) from None
-    if strategy.kind != SPEC_KIND:
+    # ARTIFACT_KIND mirrors algobots.api.routers.studio.ARTIFACT_KIND (kept
+    # local so the service never imports a router).
+    artifact_kind = "studio-artifact"
+    if strategy.kind == SPEC_KIND:
+        try:
+            spec = validate_spec(json.loads(strategy.params_json or "{}"))
+        except (json.JSONDecodeError, SpecError) as exc:
+            raise DeploymentError(422, f"Strategy spec invalid: {exc}") from None
+        frozen = {
+            "name": strategy.name,
+            "kind": strategy.kind,
+            "spec": spec.model_dump(mode="json"),
+        }
+        digest = artifact_hash(spec)
+    elif strategy.kind == artifact_kind:
+        # ALG-3423: NoFX-authored demo artifacts (kalshi_momentum.v1) deploy
+        # ONLY behind the evidence gate — studio_evidence resolved above, so a
+        # None here means the draft had no published evidence to resolve.
+        if evidence is None:
+            raise DeploymentError(
+                422, "Studio artifacts deploy only with published marimo evidence"
+            )
+        params = json.loads(strategy.params_json or "{}")
+        frozen = {"name": strategy.name, "kind": strategy.kind, "artifact": params}
+        digest = params.get("artifact_hash") or hashlib.sha256(
+            json.dumps(params, sort_keys=True, separators=(",", ":")).encode()
+        ).hexdigest()
+    else:
         raise DeploymentError(
-            422, f"Strategy kind must be '{SPEC_KIND}' to deploy (got '{strategy.kind}')"
+            422,
+            f"Strategy kind must be '{SPEC_KIND}' or '{artifact_kind}' to deploy "
+            f"(got '{strategy.kind}')",
         )
-    try:
-        spec = validate_spec(json.loads(strategy.params_json or "{}"))
-    except (json.JSONDecodeError, SpecError) as exc:
-        raise DeploymentError(422, f"Strategy spec invalid: {exc}") from None
 
     symbol = payload.symbol.upper()
     conflict = db.scalar(
@@ -136,11 +162,6 @@ def create_deployment(db: Session, user: User, payload: DeploymentCreate) -> Dep
             f"({strategy.name} x {symbol}); stop it before deploying again",
         )
 
-    frozen = {
-        "name": strategy.name,
-        "kind": strategy.kind,
-        "spec": spec.model_dump(mode="json"),
-    }
     if evidence is not None:
         frozen["studio_evidence"] = evidence
     deployment = Deployment(
@@ -150,7 +171,7 @@ def create_deployment(db: Session, user: User, payload: DeploymentCreate) -> Dep
         symbol=symbol,
         status=DeploymentStatus.RUNNING.value,
         frozen_spec_json=json.dumps(frozen, sort_keys=True, separators=(",", ":")),
-        artifact_hash=artifact_hash(spec),
+        artifact_hash=digest,
         max_order_value=str(payload.max_order_value),
         max_daily_loss=str(payload.max_daily_loss),
     )
