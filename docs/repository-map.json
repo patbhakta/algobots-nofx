@@ -1289,6 +1289,14 @@
     {
       "repo": "algobots",
       "path": "scripts/verify_studio_openbb_http.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "src/algobots/api/deployments/runtime.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "tests/deployments/test_runtime.py"
     }
   ],
   "scope_revisions": [
