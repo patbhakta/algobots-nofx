@@ -64,6 +64,17 @@ export function StudioBacktestResult({ result }: { result: StudioBacktest }) {
         </code>{' '}
         · {result.executor}
       </div>
+      {result.evidence && (
+        <a
+          href={result.evidence.notebook_url}
+          target="_blank"
+          rel="noopener noreferrer"
+          data-testid="studio-view-evidence"
+          className="text-nofx-accent underline"
+        >
+          View evidence
+        </a>
+      )}
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
         <Stat
           label="P&L (USD)"
@@ -147,12 +158,18 @@ export function StudioBacktestPanel({
     setSnapshotId('')
     if (!draftId) return
     let live = true
-    studioBacktestApi.snapshots(draftId).then((rows) => {
-      if (live) {
-        setSnapshots(rows)
-        setSnapshotId(rows[rows.length - 1]?.snapshot_id || '')
-      }
-    }).catch((e) => { if (live) setError(e instanceof Error ? e.message : 'Snapshot discovery failed') })
+    studioBacktestApi
+      .snapshots(draftId)
+      .then((rows) => {
+        if (live) {
+          setSnapshots(rows)
+          setSnapshotId(rows[rows.length - 1]?.snapshot_id || '')
+        }
+      })
+      .catch((e) => {
+        if (live)
+          setError(e instanceof Error ? e.message : 'Snapshot discovery failed')
+      })
     studioBacktestApi
       .list(draftId)
       .then((rows) => {
@@ -186,12 +203,21 @@ export function StudioBacktestPanel({
       <div className="flex flex-wrap items-center gap-3">
         <label>
           Warehouse snapshot{' '}
-          <select aria-label="Warehouse snapshot" value={snapshotId}
-            disabled={running || stale} onChange={(event) => setSnapshotId(event.target.value)}>
-            {!snapshots.length && <option value="">No published snapshots</option>}
-            {snapshots.map((snapshot) => <option key={snapshot.snapshot_id} value={snapshot.snapshot_id}>
-              {snapshot.instrument_id} · {snapshot.snapshot_id} · {snapshot.row_count} rows
-            </option>)}
+          <select
+            aria-label="Warehouse snapshot"
+            value={snapshotId}
+            disabled={running || stale}
+            onChange={(event) => setSnapshotId(event.target.value)}
+          >
+            {!snapshots.length && (
+              <option value="">No published snapshots</option>
+            )}
+            {snapshots.map((snapshot) => (
+              <option key={snapshot.snapshot_id} value={snapshot.snapshot_id}>
+                {snapshot.instrument_id} · {snapshot.snapshot_id} ·{' '}
+                {snapshot.row_count} rows
+              </option>
+            ))}
           </select>
         </label>
         <button
