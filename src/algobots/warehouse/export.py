@@ -32,7 +32,7 @@ def main() -> None:
         "--root",
         type=Path,
         default=Path(
-            os.environ.get("ALGOBOTS_WAREHOUSE_ROOT", "/mnt/funnytree/algobots/warehouse")
+            os.environ.get("ALGOBOTS_WAREHOUSE_ROOT", "/mnt/funnytree/algobots/openbb_store")
         ),
     )
     parser.add_argument("--catalog-root", type=Path)

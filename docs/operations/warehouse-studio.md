@@ -1,7 +1,7 @@
 # Studio warehouse snapshots
 
 Studio reads published Parquet snapshots from
-`ALGOBOTS_WAREHOUSE_ROOT` (default `/mnt/funnytree/algobots/warehouse`).
+`ALGOBOTS_WAREHOUSE_ROOT` (default `/mnt/funnytree/algobots/openbb_store`).
 Catalog writers use `/mnt/funnytree/algobots/ntl_catalog`, the quantlab seam.
 The API needs read access; recorder export jobs need write access.
 

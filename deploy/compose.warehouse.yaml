@@ -3,21 +3,23 @@ services:
   api:
     image: algobots/warehouse:alg3420
     environment:
-      ALGOBOTS_WAREHOUSE_ROOT: /mnt/funnytree/algobots/warehouse
+      ALGOBOTS_WAREHOUSE_ROOT: /mnt/funnytree/algobots/openbb_store
       ALGOBOTS_CATALOG_ROOT: /mnt/funnytree/algobots/ntl_catalog
     volumes:
-      - /mnt/funnytree/algobots/warehouse:/mnt/funnytree/algobots/warehouse:ro
+      - /mnt/funnytree/algobots/openbb_store:/mnt/funnytree/algobots/openbb_store:ro
       - /mnt/funnytree/algobots/ntl_catalog:/mnt/funnytree/algobots/ntl_catalog:ro
   warehouse-exporter:
     image: algobots/warehouse:alg3420
     command: [python, -m, algobots.warehouse.schedule]
+    healthcheck:
+      disable: true
     environment:
       REDIS_URL: redis://redis:6379/0
-      ALGOBOTS_WAREHOUSE_ROOT: /mnt/funnytree/algobots/warehouse
+      ALGOBOTS_WAREHOUSE_ROOT: /mnt/funnytree/algobots/openbb_store
       ALGOBOTS_RECORDER_RELEASE: ${ALGOBOTS_RECORDER_RELEASE:?set committed recorder release}
     volumes:
       - /opt/laya/kalshi:/feeds/kalshi:ro
       - /opt/laya/pmus:/feeds/pmus:ro
-      - /mnt/funnytree/algobots/warehouse:/mnt/funnytree/algobots/warehouse
+      - /mnt/funnytree/algobots/openbb_store:/mnt/funnytree/algobots/openbb_store
       - /mnt/funnytree/algobots/ntl_catalog:/mnt/funnytree/algobots/ntl_catalog
     restart: unless-stopped
