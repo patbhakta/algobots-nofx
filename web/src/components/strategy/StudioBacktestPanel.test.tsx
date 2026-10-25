@@ -3,9 +3,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { StudioBacktestPanel } from './StudioBacktestPanel'
 import type { StudioBacktest } from '../../lib/api/studioBacktest'
 
-const mocks = vi.hoisted(() => ({ run: vi.fn(), list: vi.fn() }))
+const mocks = vi.hoisted(() => ({ run: vi.fn(), list: vi.fn(), snapshots: vi.fn() }))
 vi.mock('../../lib/api/studioBacktest', () => ({
-  studioBacktestApi: { run: mocks.run, list: mocks.list },
+  studioBacktestApi: { run: mocks.run, list: mocks.list, snapshots: mocks.snapshots },
 }))
 
 // recharts' ResponsiveContainer needs ResizeObserver; jsdom has none.
@@ -71,6 +71,7 @@ const RESULT: StudioBacktest = {
 
 describe('Studio backtest (ALG-3418)', () => {
   beforeEach(() => {
+    mocks.snapshots.mockReset().mockResolvedValue([{snapshot_id: "recorder-48", instrument_id: "KXBTC15M.KALSHI", row_count: 48}])
     mocks.run.mockReset()
     mocks.list.mockReset().mockResolvedValue([])
   })
@@ -79,9 +80,10 @@ describe('Studio backtest (ALG-3418)', () => {
     mocks.run.mockResolvedValue(RESULT)
     render(<StudioBacktestPanel studio={STUDIO} stale={false} />)
     await waitFor(() => expect(mocks.list).toHaveBeenCalledWith('draft-1'))
+    await waitFor(() => expect((screen.getByTestId('studio-backtest-button') as HTMLButtonElement).disabled).toBe(false))
     fireEvent.click(screen.getByTestId('studio-backtest-button'))
     await screen.findByTestId('studio-backtest-result')
-    expect(mocks.run).toHaveBeenCalledWith('draft-1')
+    expect(mocks.run).toHaveBeenCalledWith('draft-1', 'recorder-48')
     expect(screen.getByTestId('studio-backtest-dataset').textContent).toContain(
       '119 settled intervals'
     )
@@ -131,6 +133,7 @@ describe('Studio backtest (ALG-3418)', () => {
       new Error('signals.entry: needs an OHLC bar dataset')
     )
     rerender(<StudioBacktestPanel studio={STUDIO} stale={false} />)
+    await waitFor(() => expect((screen.getByTestId('studio-backtest-button') as HTMLButtonElement).disabled).toBe(false))
     fireEvent.click(screen.getByTestId('studio-backtest-button'))
     expect(
       (await screen.findByTestId('studio-backtest-error')).textContent

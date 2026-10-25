@@ -2,6 +2,7 @@
 // strategy's `studio.draft_id`; the backend runs the draft's compiled artifact
 // on a frozen KXBTC15M recorder dataset in a Nautilus BacktestEngine.
 import { API_BASE, httpClient } from './helpers'
+import type { StudioEvidence } from './studioDeploy'
 
 export interface BacktestDataset {
   id: string
@@ -48,6 +49,9 @@ export interface StudioBacktest {
   metrics: BacktestMetrics
   equity_curve: { ts: number; event: string; equity: string }[]
   created_at: string
+  // Present only when the backend published the immutable marimo notebook for
+  // this exact artifact (ALG-3422). The deploy gate (ALG-3423) requires it.
+  evidence?: StudioEvidence
 }
 
 // A Nautilus run over the whole recorder takes tens of seconds.
@@ -60,13 +64,28 @@ function detail(r: { message?: string; errorData?: any }) {
   return r.message || 'Backtest failed'
 }
 
+export interface WarehouseSnapshot {
+  snapshot_id: string
+  instrument_id: string
+  row_count: number
+  event_start: number
+  event_end: number
+}
+
 export const studioBacktestApi = {
+  snapshots: async (draftId: string) => {
+    const r = await httpClient.get<{ snapshots: WarehouseSnapshot[] }>(
+      `${API_BASE}/studio/strategies/${draftId}/snapshots`
+    )
+    if (!r.success || !r.data) throw new Error(detail(r))
+    return r.data.snapshots
+  },
   run: async (draftId: string, datasetId?: string) => {
     const r = await httpClient.request<StudioBacktest>(
       `${API_BASE}/studio/strategies/${draftId}/backtest`,
       {
         method: 'POST',
-        data: datasetId ? { dataset_id: datasetId } : {},
+        data: datasetId ? { snapshot_id: datasetId } : {},
         timeout: BACKTEST_TIMEOUT_MS,
       }
     )
