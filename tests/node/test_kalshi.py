@@ -5,6 +5,8 @@ from __future__ import annotations
 import json
 from decimal import Decimal
 
+import pytest
+
 from algobots.node import kalshi, paper_node
 
 
@@ -88,6 +90,9 @@ def test_settings_read_the_kalshi_environment():
 
 
 def test_kalshi_instrument_is_a_cents_contract():
+    nt = pytest.importorskip("nautilus_trader")
+    if nt.__version__ != paper_node.NAUTILUS_PIN:
+        pytest.skip(f"instrument asserts need {paper_node.NAUTILUS_PIN}; CI installs 1.x")
     s = paper_node.settings({"ALGOBOTS_FEED": "kalshi", "ALGOBOTS_NODE_SYMBOL": "KXBTC15M/USD.SIM"})
     inst = paper_node._instrument(s)
     assert str(inst.id) == "KXBTC15M/USD.SIM"
