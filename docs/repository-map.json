@@ -1344,7 +1344,7 @@
     },
     {
       "repo": "algobots",
-      "path": "tests/deployments/test_supervisor.py"
+      "path": "tests/deployments/test_deployment_supervisor.py"
     }
   ],
   "scope_revisions": [
