@@ -1182,7 +1182,83 @@
       "repo": "algobots",
       "path": "artifacts/ALG-3420/warehouse-walkthrough.json"
     }
-  ],
+  ,
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3424/review-handoff.md"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3424/root-context-acceptance.log"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3424/runtime-verification.log"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3424/uid1000-acceptance.log"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3424/verify-runtime.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "deploy/compose.quantlab.yaml"
+    },
+    {
+      "repo": "algobots",
+      "path": "deploy/quantlab/Dockerfile"
+    },
+    {
+      "repo": "algobots",
+      "path": "deploy/quantlab/README.md"
+    },
+    {
+      "repo": "algobots",
+      "path": "deploy/quantlab/mount-funnytree-quantlab.sh"
+    },
+    {
+      "repo": "algobots",
+      "path": "deploy/quantlab/pyproject.toml"
+    },
+    {
+      "repo": "algobots",
+      "path": "deploy/quantlab/uv.lock"
+    },
+    {
+      "repo": "algobots",
+      "path": "deploy/tdai-memory-hub/Dockerfile"
+    },
+    {
+      "repo": "algobots",
+      "path": "deploy/tdai-memory-hub/MemoryKnowledge/package-lock.json"
+    },
+    {
+      "repo": "algobots",
+      "path": "deploy/tdai-memory-hub/MemoryKnowledge/package.json"
+    },
+    {
+      "repo": "algobots",
+      "path": "deploy/tdai-memory-hub/README.md"
+    },
+    {
+      "repo": "algobots",
+      "path": "deploy/tdai-memory-hub/build.sh"
+    },
+    {
+      "repo": "algobots",
+      "path": "deploy/tdai-memory-hub/recreate-hub.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "deploy/tdai-memory-hub/start-combined.sh"
+    },
+    {
+      "repo": "algobots",
+      "path": "notebooks/quantlab_openbb.py"
+    }],
   "scope_revisions": [
     {
       "packet": "A01",
