@@ -195,6 +195,11 @@
   },
   "integrator_owned": [
     {"repo": "algobots", "path": "src/algobots/api/deployments/momentum.py"},
+    {"repo": "algobots", "path": "src/algobots/gateway/deployment_nodes.py"},
+    {"repo": "algobots", "path": "src/algobots/node/deployment_dispatch.py"},
+    {"repo": "algobots", "path": "tests/deployments/test_dispatch_wiring.py"},
+    {"repo": "algobots", "path": "artifacts/ALG-3431/dispatch/before.txt"},
+    {"repo": "algobots", "path": "artifacts/ALG-3431/dispatch/after.txt"},
     {"repo": "algobots", "path": "tests/deployments/test_momentum_intent.py"},
     {
       "repo": "algobots",

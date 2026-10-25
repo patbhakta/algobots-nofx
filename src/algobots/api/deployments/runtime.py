@@ -15,9 +15,35 @@ import sys
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any
+from uuid import UUID
 
+from sqlalchemy import and_, select
+
+from algobots.api.deployments.models import Deployment, FleetBreaker
 from algobots.api.deployments.service import effective_state
+from algobots.api.models import Account
 from algobots.strategies.studio import compile_studio_strategy, parse_draft
+
+
+def node_identity(deployment_id: Any) -> tuple[str, str]:
+    """``(node, venue)`` for one deployment; the gateway registers the same pair."""
+    tag = UUID(str(deployment_id)).hex
+    return f"deployment-{tag}", f"DEP{tag.upper()}"
+
+
+def deployment_rows_statement() -> Any:
+    """Every deployment with its account and (tenant, user) fleet breaker."""
+    return (
+        select(Deployment, Account, FleetBreaker)
+        .join(Account, Account.id == Deployment.account_id)
+        .outerjoin(
+            FleetBreaker,
+            and_(
+                FleetBreaker.tenant_id == Account.tenant_id,
+                FleetBreaker.user_id == Deployment.user_id,
+            ),
+        )
+    )
 
 
 @dataclass(frozen=True)
@@ -68,9 +94,7 @@ def launch_spec(deployment: Any, account: Any) -> LaunchSpec:
         cap = Decimal(value)
         if not cap.is_finite() or cap <= 0:
             raise ValueError("deployment risk caps must be positive and finite")
-    tag = deployment.id.hex
-    node = f"deployment-{tag}"
-    venue = f"DEP{tag.upper()}"
+    node, venue = node_identity(deployment.id)
     snapshot = {
         "deployment_id": str(deployment.id),
         "account_id": str(account.id),

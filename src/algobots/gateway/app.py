@@ -119,8 +119,11 @@ def get_health(request: Request) -> dict[str, Any]:
     gw = _gw(request)
     now = time.time()
     nodes = []
+    live = []
     for node in gw.registry.accounts():
         reachable, _ = node.fit(now)
+        if not node.halted:
+            live.append(reachable)
         nodes.append(
             {
                 "node": node.node,
@@ -133,7 +136,8 @@ def get_health(request: Request) -> dict[str, Any]:
     # unreachable projection is still degraded — the gateway could answer
     # neither /orders nor /positions.
     projection = gw.projection.health()
-    healthy = bool(nodes) and all(n["reachable"] for n in nodes) and projection["reachable"]
+    # A halted deployment node is intent, not an outage.
+    healthy = bool(live) and all(live) and projection["reachable"]
     return {
         "status": "ok" if healthy else "degraded",
         "version": gw.version,

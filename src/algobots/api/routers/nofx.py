@@ -639,8 +639,49 @@ def _decisions(state_dir: Path, scope) -> tuple[list[dict], dict[str, int], int,
     return D.load(state_dir / D.LOG_FILE), outcomes, settled, err
 
 
+def _deployments_live(db: Session, user: User) -> tuple[list[dict], str | None]:
+    """The viewer's own deployments with the gateway orders their node filled.
+
+    Attribution is the projection's ``node`` column: ``deployment-<hex>`` is the
+    node the supervisor spawned for exactly one deployment (ALG-3431), so a
+    demo worker's fill on the same account can never be shown as this one's.
+    """
+    from algobots.api.deployments.runtime import node_identity
+    from algobots.api.deployments.service import list_deployments
+    from algobots.gateway.store import SqlProjection
+
+    out = []
+    try:
+        projection = SqlProjection(db.get_bind())
+        for d in list_deployments(db, user):
+            node, _ = node_identity(d.id)
+            orders = [
+                o.contract()
+                for o in projection.orders(accounts=(str(d.account_id),), limit=50)
+                if o.node == node
+            ]
+            out.append(
+                {
+                    "deployment_id": str(d.id),
+                    "strategy": d.frozen_spec.get("name"),
+                    "symbol": d.symbol,
+                    "status": d.status,
+                    "breaker_state": d.breaker_state,
+                    "artifact_hash": d.artifact_hash,
+                    "node": node,
+                    "orders": orders,
+                    "fills": sum(len(o.get("fills") or []) for o in orders),
+                }
+            )
+    except Exception as exc:  # noqa: BLE001 — the rest of the live tab still renders
+        return out, f"deployment fills unavailable: {type(exc).__name__}"
+    return out, None
+
+
 @router.get("/studio/live")
-def studio_live(ctx: AuthContext = Depends(get_auth_context)) -> dict:
+def studio_live(
+    ctx: AuthContext = Depends(get_auth_context), db: Session | None = Depends(get_db)
+) -> dict:
     s = get_settings()
     now = time.time()
     state_dir = Path(s.demo_state_dir)
@@ -698,13 +739,21 @@ def studio_live(ctx: AuthContext = Depends(get_auth_context)) -> dict:
         "decisions": decisions,
         "counts": {"logged": logged, "logged_total": sum(logged.values()), "settled": settled},
         "decisions_error": err,
+        **_deployments_section(db, ctx.user),
     }
+
+
+def _deployments_section(db: Session | None, user: User) -> dict:
+    if db is None:
+        return {}
+    deployments, error = _deployments_live(db, user)
+    return {"deployments": deployments, "deployments_error": error}
 
 
 @compat_router.get("/api/data")
 @router.get("/data")
 def data_feed(ctx: AuthContext = Depends(get_auth_context)) -> dict:
-    live = studio_live(ctx)
+    live = studio_live(ctx, None)
     path = Path(get_settings().demo_feed_path)
     rows = []
     try:
