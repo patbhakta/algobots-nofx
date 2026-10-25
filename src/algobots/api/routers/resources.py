@@ -234,6 +234,8 @@ def update_strategy(
     db: Session = Depends(get_db),
 ) -> Strategy:
     strategy = _owned_or_404(db, Strategy, ctx, strategy_id)
+    if strategy.kind == "studio-backtest":
+        raise HTTPException(status.HTTP_409_CONFLICT, "Backtest evidence is immutable")
     data = payload.model_dump(exclude_unset=True)
     if "params" in data:
         strategy.params_json = params_to_json(data.pop("params"))
@@ -252,6 +254,8 @@ def delete_strategy(
     db: Session = Depends(get_db),
 ) -> None:
     strategy = _owned_or_404(db, Strategy, ctx, strategy_id)
+    if strategy.kind == "studio-backtest":
+        raise HTTPException(status.HTTP_409_CONFLICT, "Backtest evidence is immutable")
     has_dependents = (
         db.scalar(select(Deployment.id).where(Deployment.strategy_id == strategy.id).limit(1))
         is not None

@@ -181,6 +181,11 @@ def load_warehouse(snapshot_id: str | None, root: Path, instrument_id: str) -> B
         rows = [row for row in table.to_pylist() if _settled(row)]
         if not rows:
             raise WarehouseError("snapshot contains no settled recorder intervals")
+        if any(
+            float(previous["close_ts"]) > _open(current)
+            for previous, current in zip(rows, rows[1:], strict=False)
+        ):
+            raise WarehouseError("snapshot intervals overlap or are out of event-time order")
         return BacktestDataset(
             snapshot_id, manifest["sha256"], rows, root / manifest["path"], "warehouse"
         )

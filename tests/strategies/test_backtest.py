@@ -239,11 +239,20 @@ def test_backtest_route_contract(client, token, recorder):
     for key in ("pnl", "hit_rate", "brier", "ending_equity", "max_drawdown"):
         assert key in res["metrics"]
     assert len(res["equity_curve"]) == 48
+    assert (
+        client.patch(
+            f"/api/strategies/{res['id']}", json={"params": {}}, headers=_h(token)
+        ).status_code
+        == 409
+    )
+    assert client.delete(f"/api/strategies/{res['id']}", headers=_h(token)).status_code == 409
 
     discovery = client.get(
         "/api/studio/snapshots", params={"instrument_id": "KXBTC15M.KALSHI"}, headers=_h(token)
     )
     assert discovery.status_code == 200
+    by_draft = client.get(f"{url}/snapshots", headers=_h(token))
+    assert by_draft.status_code == 200 and by_draft.json() == discovery.json()
     assert discovery.json()["snapshots"][0]["snapshot_id"] == "recorder-48"
     assert (
         client.get("/api/studio/snapshots", params={"instrument_id": "KXBTC15M.KALSHI"}).status_code
