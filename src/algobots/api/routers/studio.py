@@ -92,6 +92,7 @@ def draft_out(row: Strategy) -> dict:
         "revision": p["revision"],
         "draft": p["draft"],
         "artifacts": p.get("artifacts", []),
+        "evidence": p.get("evidence", []),
         "created_at": row.created_at.isoformat(),
         "updated_at": (row.updated_at or row.created_at).isoformat(),
     }
@@ -240,21 +241,48 @@ def compile_route(
 
 
 def backtest_out(row: Strategy) -> dict:
-    return {"id": str(row.id), **row.params}
+    from algobots.strategies.evidence import evidence_record
+
+    settings = get_settings()
+    published = (Path(settings.evidence_notebook_root) / "evidence" / f"{row.id}.py").is_file()
+    return {
+        "id": str(row.id),
+        **row.params,
+        "evidence": evidence_record(str(row.id), row.params, settings.evidence_base_url)
+        if published
+        else None,
+    }
 
 
 def _attach_backtest(row: Strategy, result: Strategy, artifact_hash: str, digest: str) -> None:
+    from algobots.strategies.evidence import publish_notebook
+
+    settings = get_settings()
+    try:
+        evidence = publish_notebook(
+            Path(settings.evidence_notebook_root),
+            str(result.id),
+            result.params,
+            settings.evidence_base_url,
+        )
+    except (OSError, ValueError) as exc:
+        raise HTTPException(503, "Evidence publication failed; retry backtest") from exc
     params = row.params
-    if not any(ref["id"] == str(result.id) for ref in params.get("backtests", [])):
+    refs = params.get("backtests", [])
+    if not any(ref["id"] == str(result.id) for ref in refs):
         params["backtests"] = [
-            *params.get("backtests", []),
+            *refs,
             {
                 "id": str(result.id),
                 "artifact_hash": artifact_hash,
                 "dataset_sha256": digest,
             },
         ]
-        row.params_json = json.dumps(params)
+    params["evidence"] = [
+        *[e for e in params.get("evidence", []) if e["backtest_row_id"] != str(result.id)],
+        evidence,
+    ]
+    row.params_json = json.dumps(params)
 
 
 @router.get("/snapshots")
