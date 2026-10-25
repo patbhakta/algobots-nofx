@@ -53,6 +53,9 @@ dev = [
 postgres = [
     { name = "psycopg", extra = ["binary"] },
 ]
+warehouse = [
+    { name = "pyarrow" },
+]
 workers = [
     { name = "nautilus-trader" },
 ]
@@ -68,6 +71,7 @@ requires-dist = [
     { name = "nautilus-trader", marker = "extra == 'workers'", specifier = ">=1.231" },
     { name = "openapi-spec-validator", marker = "extra == 'dev'", specifier = ">=0.7" },
     { name = "psycopg", extras = ["binary"], marker = "extra == 'postgres'", specifier = ">=3.2" },
+    { name = "pyarrow", marker = "extra == 'warehouse'", specifier = ">=21" },
     { name = "pydantic", specifier = "==2.13.5" },
     { name = "pydantic-settings", specifier = ">=2.6" },
     { name = "pyjwt", specifier = ">=2.9" },
@@ -78,7 +82,7 @@ requires-dist = [
     { name = "sqlalchemy", specifier = ">=2.0" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.32" },
 ]
-provides-extras = ["postgres", "dev", "workers"]
+provides-extras = ["warehouse", "postgres", "dev", "workers"]
 
 [[package]]
 name = "annotated-doc"

@@ -7,9 +7,9 @@ check; compiling appends an immutable artifact row (never updated), and a
 existing frozen `/api/deployments` resource deploys it unchanged.
 
 Backtests (ALG-3418, slice 2): `POST .../{id}/backtest` runs the draft's
-latest compiled artifact on a frozen dataset (`strategies/backtest.py`) and
+latest compiled artifact on a published warehouse snapshot and
 stores one immutable `studio-backtest` row keyed by (artifact hash, dataset
-content hash); re-running the same pair returns that row.
+snapshot id); the tenant-scoped primary key makes the pair unique across drafts.
 
 Storage reuses the `strategies` table: a draft row has kind `studio-draft`
 with `{"draft", "revision", "artifacts"}` params; each compile adds one row of
@@ -23,11 +23,12 @@ import logging
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
-from uuid import UUID
+from uuid import NAMESPACE_URL, UUID, uuid5
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 from pydantic import BaseModel, Field
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from algobots.api.config import get_settings
@@ -57,9 +58,9 @@ class DraftPatch(BaseModel):
 
 
 class BacktestRequest(BaseModel):
-    # A frozen dataset id from an earlier result; omitted = freeze the
-    # recorder feed's settled intervals as of now.
-    dataset_id: str | None = Field(default=None, max_length=80)
+    # Explicit warehouse snapshot; dataset_id remains a compatibility alias.
+    dataset_id: str | None = Field(default=None, max_length=128)
+    snapshot_id: str | None = Field(default=None, max_length=128)
 
 
 def _tenant(ctx: AuthContext) -> UUID:
@@ -242,6 +243,52 @@ def backtest_out(row: Strategy) -> dict:
     return {"id": str(row.id), **row.params}
 
 
+def _attach_backtest(row: Strategy, result: Strategy, artifact_hash: str, digest: str) -> None:
+    params = row.params
+    if not any(ref["id"] == str(result.id) for ref in params.get("backtests", [])):
+        params["backtests"] = [
+            *params.get("backtests", []),
+            {
+                "id": str(result.id),
+                "artifact_hash": artifact_hash,
+                "dataset_sha256": digest,
+            },
+        ]
+        row.params_json = json.dumps(params)
+
+
+@router.get("/snapshots")
+def list_snapshots(instrument_id: str, ctx: AuthContext = Depends(get_auth_context)):
+    """Discover published snapshot ids for an exact instrument, behind Studio auth."""
+    from algobots.warehouse import Warehouse, WarehouseError
+
+    _tenant(ctx)
+    try:
+        return {
+            "snapshots": Warehouse(Path(get_settings().warehouse_root)).list_snapshots(
+                instrument_id
+            )
+        }
+    except WarehouseError as exc:
+        raise _invalid(StudioError("snapshot_id", str(exc))) from exc
+
+
+@router.get("/strategies/{draft_id}/snapshots")
+def draft_snapshots(
+    draft_id: str, ctx: AuthContext = Depends(get_auth_context), db: Session = Depends(get_db)
+):
+    row = _draft_or_404(db, _tenant(ctx), draft_id)
+    artifact = compile_studio_strategy(parse_draft(row.params["draft"]))
+    instruments = artifact.nautilus["instrument_ids"]
+    return {
+        "snapshots": [
+            snapshot
+            for instrument in instruments
+            for snapshot in list_snapshots(instrument, ctx)["snapshots"]
+        ]
+    }
+
+
 def run_draft_backtest(
     db: Session, ctx: AuthContext, row: Strategy, dataset_id: str | None
 ) -> tuple[Strategy, bool]:
@@ -257,15 +304,24 @@ def run_draft_backtest(
             f"Draft revision {p['revision']} has no compiled artifact; compile before a backtest",
         )
     s = get_settings()
-    state = Path(s.demo_state_dir)
-    dataset = bt.load(dataset_id, state) if dataset_id else bt.freeze(Path(s.demo_feed_path), state)
-    for ref in p.get("backtests", []):
-        if ref["artifact_hash"] == rec["artifact_hash"] and ref["dataset_sha256"] == dataset.sha256:
-            existing = db.get(Strategy, UUID(ref["id"]))
-            if existing is not None and existing.tenant_id == row.tenant_id:
-                return existing, False
+    bt._check_artifact(rec)
+    instruments = rec["nautilus"]["instrument_ids"]
+    if len(instruments) != 1:
+        raise StudioError("universe.symbols", "choose exactly one snapshot instrument")
+    dataset = bt.load_warehouse(dataset_id, Path(s.warehouse_root), instruments[0])
+    # The DB primary key enforces this identity across drafts AND racing requests.
+    # Tenant identity prevents evidence from leaking across tenant boundaries.
+    result_id = uuid5(
+        NAMESPACE_URL,
+        json.dumps([str(row.tenant_id), rec["artifact_hash"], dataset.id], separators=(",", ":")),
+    )
+    existing = db.get(Strategy, result_id)
+    if existing is not None:
+        _attach_backtest(row, existing, rec["artifact_hash"], dataset.sha256)
+        return existing, False
     result = bt.run_backtest(rec, dataset)
     out = Strategy(
+        id=result_id,
         tenant_id=row.tenant_id,
         user_id=ctx.user.id,
         name=row.name,
@@ -287,17 +343,17 @@ def run_draft_backtest(
             }
         ),
     )
-    db.add(out)
-    db.flush()
-    p["backtests"] = [
-        *p.get("backtests", []),
-        {
-            "id": str(out.id),
-            "artifact_hash": rec["artifact_hash"],
-            "dataset_sha256": dataset.sha256,
-        },
-    ]
-    row.params_json = json.dumps(p)
+    try:
+        with db.begin_nested():
+            db.add(out)
+            db.flush()
+    except IntegrityError:
+        existing = db.get(Strategy, result_id)
+        if existing is None:
+            raise
+        _attach_backtest(row, existing, rec["artifact_hash"], dataset.sha256)
+        return existing, False
+    _attach_backtest(row, out, rec["artifact_hash"], dataset.sha256)
     log.info(
         "studio_backtest tenant=%s draft=%s artifact_hash=%s dataset=%s sha256=%s pnl=%s",
         row.tenant_id,
@@ -320,7 +376,9 @@ def backtest_route(
 ):
     row = _draft_or_404(db, _tenant(ctx), draft_id)
     try:
-        out, created = run_draft_backtest(db, ctx, row, payload.dataset_id if payload else None)
+        out, created = run_draft_backtest(
+            db, ctx, row, (payload.snapshot_id or payload.dataset_id) if payload else None
+        )
     except StudioError as exc:
         raise _invalid(exc) from None
     db.commit()

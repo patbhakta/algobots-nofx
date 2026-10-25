@@ -1133,6 +1133,54 @@
     {
       "repo": "algobots",
       "path": "artifacts/ALG-3419/verification.md"
+    },
+    {
+      "repo": "algobots",
+      "path": "src/algobots/warehouse/__init__.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "src/algobots/warehouse/catalog.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "src/algobots/warehouse/recorders.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "tests/warehouse/test_catalog.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "tests/warehouse/test_recorders.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "tests/warehouse/test_snapshots.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "src/algobots/warehouse/export.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "docs/operations/warehouse-studio.md"
+    },
+    {
+      "repo": "algobots",
+      "path": "src/algobots/warehouse/schedule.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "deploy/compose.warehouse.yaml"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3420/warehouse-walkthrough.md"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3420/warehouse-walkthrough.json"
     }
   ],
   "scope_revisions": [
