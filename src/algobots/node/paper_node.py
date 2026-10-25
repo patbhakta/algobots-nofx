@@ -267,7 +267,7 @@ def _data_client_types() -> tuple[type, type, type]:
         async def _serve(self) -> None:
             inst, cur = self.instrument, self.cursor
             assert cur is not None
-            pp, sp = inst.price_precision, inst.size_precision
+            pp = inst.price_precision
             tail = kalshi.ObservationTail(self.path)
             obs = tail.bootstrap()
             if obs is not None:

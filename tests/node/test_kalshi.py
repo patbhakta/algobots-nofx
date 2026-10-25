@@ -5,8 +5,7 @@ from __future__ import annotations
 import json
 from decimal import Decimal
 
-from algobots.node import kalshi
-from algobots.node import paper_node
+from algobots.node import kalshi, paper_node
 
 
 def _obs(ts=1792899916.9, bid=0.51, ask=0.52, market="KXBTC15M-26OCT250000-00"):
@@ -33,7 +32,9 @@ def test_parse_line_reads_the_observers_book(tmp_path):
 
 
 def test_parse_line_drops_lines_without_a_book():
-    pre_open = json.dumps({"market": "KXBTC15M-X", "ts": 1.0, "mkt_yes_bid": None, "mkt_yes_ask": None})
+    pre_open = json.dumps(
+        {"market": "KXBTC15M-X", "ts": 1.0, "mkt_yes_bid": None, "mkt_yes_ask": None}
+    )
     assert kalshi.parse_line(1, pre_open) is None
 
 
@@ -46,7 +47,8 @@ def test_tail_bootstraps_the_last_book_and_follows_appends(tmp_path):
     f.write_text(_obs(ts=1.0, bid=0.40, ask=0.41) + "\n" + _obs(ts=2.0, bid=0.50, ask=0.51) + "\n")
     tail = kalshi.ObservationTail(str(f))
     latest = tail.bootstrap()
-    assert latest is not None and (latest.bid, latest.ask, latest.row) == (Decimal("0.50"), Decimal("0.51"), 2)
+    assert latest is not None
+    assert (latest.bid, latest.ask, latest.row) == (Decimal("0.50"), Decimal("0.51"), 2)
 
     with f.open("a") as h:  # a new 15-minute boundary lands
         h.write(_obs(ts=900.0, bid=0.60, ask=0.61, market="KXBTC15M-NEXT-00") + "\n")
