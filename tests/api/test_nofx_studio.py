@@ -363,6 +363,31 @@ def test_leaderboard_uses_scoped_decision_scores(client, funder, monkeypatch):
     assert "replay" in result["equity_source"]
 
 
+
+def test_live_preserves_worker_positions_and_pnl(client, funder, demo_state):
+    path = demo_state / "workers" / "coin.json"
+    hb = json.loads(path.read_text())
+    position = {"instrument": "KXBTC15M-YES.PAPER_COIN", "side": "LONG", "qty": "19",
+                "avg_price": "0.52", "unrealized_pnl": None}
+    hb["report"] = {"positions": [position], "funds": {"strategy_pnl": "-2.30", "equity": "97.70"}}
+    hb["orders_submitted"] = 3
+    hb["orders_filled"] = 2
+    hb["open_positions"] = 1
+    path.write_text(json.dumps(hb))
+    body = client.get("/api/nofx/studio/live", headers=_h(funder["token"])).json()
+    coin = next(w for w in body["workers"] if w["account"] == "coin")
+    assert coin["positions"] == [position]
+    assert coin["funds"]["strategy_pnl"] == "-2.30"
+    assert (coin["orders_submitted"], coin["orders_filled"], coin["open_positions"]) == (3, 2, 1)
+    hb["orders_filled"] = 3
+    hb["report"]["positions"] = []
+    path.write_text(json.dumps(hb))
+    updated = client.get("/api/nofx/studio/live", headers=_h(funder["token"])).json()
+    coin = next(w for w in updated["workers"] if w["account"] == "coin")
+    assert coin["orders_filled"] == 3 and coin["positions"] == []
+
+
+
 def test_empty_tenant_seed_happens_once(client, funder):
     """ALG-3352: repeat GETs on an empty tenant keep exactly one default row."""
     first = client.get("/api/nofx/strategies", headers=_h(funder["token"])).json()

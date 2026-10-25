@@ -1,0 +1,96 @@
+{
+  "base": "http://100.82.57.72:8201",
+  "first_as_of": 1792893261.280105,
+  "second_as_of": 1792893280.7535467,
+  "feed": {
+    "source": "Kalshi KXBTC15M public market data (read-only observer)",
+    "state": "live",
+    "last_observed_ts": 1792892734.061724,
+    "age_s": 546.7,
+    "event": "KXBTC15M-26OCT242200",
+    "market": "KXBTC15M-26OCT242200-00",
+    "strike": 80755.41,
+    "yes_bid": 0.51,
+    "yes_ask": 0.52,
+    "open_ts": 1792892700,
+    "close_ts": 1792893600,
+    "recent": [
+      {
+        "event": "KXBTC15M-26OCT242200",
+        "ts": 1792892734.061724,
+        "strike": 80755.41,
+        "outcome": null,
+        "settle_value": null,
+        "settled_ts": null
+      },
+      {
+        "event": "KXBTC15M-26OCT242145",
+        "ts": 1792891833.5502079,
+        "strike": 80698.33,
+        "outcome": 1,
+        "settle_value": "80755.41",
+        "settled_ts": 1792892713.9867988
+      },
+      {
+        "event": "KXBTC15M-26OCT242130",
+        "ts": 1792890913.0681646,
+        "strike": 80692.16,
+        "outcome": 1,
+        "settle_value": "80698.33",
+        "settled_ts": 1792891833.5502079
+      },
+      {
+        "event": "KXBTC15M-26OCT242115",
+        "ts": 1792890032.6979282,
+        "strike": 80777.49,
+        "outcome": 0,
+        "settle_value": "80692.16",
+        "settled_ts": 1792890913.0681646
+      },
+      {
+        "event": "KXBTC15M-26OCT242100",
+        "ts": 1792889132.2480223,
+        "strike": 80764.48,
+        "outcome": 1,
+        "settle_value": "80777.49",
+        "settled_ts": 1792890012.634138
+      },
+      {
+        "event": "KXBTC15M-26OCT242045",
+        "ts": 1792888211.6495664,
+        "strike": 80765.43,
+        "outcome": 0,
+        "settle_value": "80764.48",
+        "settled_ts": 1792889112.1784384
+      }
+    ]
+  },
+  "workers": [
+    {
+      "account": "laya",
+      "state": "ready",
+      "orders": 24,
+      "fills": 24,
+      "positions": 24,
+      "pnl": "-96.29"
+    },
+    {
+      "account": "jev",
+      "state": "ready",
+      "orders": 0,
+      "fills": 0,
+      "positions": 0,
+      "pnl": "0"
+    },
+    {
+      "account": "coin",
+      "state": "ready",
+      "orders": 209,
+      "fills": 209,
+      "positions": 209,
+      "pnl": "164.11"
+    }
+  ],
+  "polling_updated": true,
+  "fills_increased": false
+}

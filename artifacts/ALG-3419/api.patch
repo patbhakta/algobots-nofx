@@ -1,0 +1,58 @@
+From bcdc3b7f68408e20c83ce1a84295e3f065f5aed3 Mon Sep 17 00:00:00 2001
+From: root <root@ip-208-84-102-245.my-advin.com>
+Date: Sun, 25 Oct 2026 01:50:26 +0000
+Subject: [PATCH] feat: expose paper worker positions in authenticated live
+ view
+
+Co-Authored-By: Paperclip <noreply@paperclip.ing>
+---
+ src/algobots/api/routers/nofx.py |  1 -
+ tests/api/test_nofx_studio.py    | 23 +++++++++++++++++++++++
+ 2 files changed, 23 insertions(+), 1 deletion(-)
+
+diff --git a/src/algobots/api/routers/nofx.py b/src/algobots/api/routers/nofx.py
+index 6e364dd..9721404 100644
+--- a/src/algobots/api/routers/nofx.py
++++ b/src/algobots/api/routers/nofx.py
+@@ -667,7 +667,6 @@ def studio_live(ctx: AuthContext = Depends(get_auth_context)) -> dict:
+             )
+     decisions.sort(key=lambda d: (d["decided_at"] or "", d["strategy"]), reverse=True)
+     for w in workers.values():
+-        w.pop("positions")  # summarised through receipts; keep the payload small
+         w["fills"] = w["fills"][-10:]
+     return {
+         "as_of": now,
+diff --git a/tests/api/test_nofx_studio.py b/tests/api/test_nofx_studio.py
+index f85bb07..137f0d9 100644
+--- a/tests/api/test_nofx_studio.py
++++ b/tests/api/test_nofx_studio.py
+@@ -361,3 +361,26 @@ def test_leaderboard_uses_scoped_decision_scores(client, funder, monkeypatch):
+         ]
+     }
+     assert "replay" in result["equity_source"]
++
++
++def test_live_preserves_worker_positions_and_pnl(client, funder, demo_state):
++    path = demo_state / "workers" / "coin.json"
++    hb = json.loads(path.read_text())
++    position = {"instrument": "KXBTC15M-YES.PAPER_COIN", "side": "LONG", "qty": "19",
++                "avg_price": "0.52", "unrealized_pnl": None}
++    hb["report"] = {"positions": [position], "funds": {"strategy_pnl": "-2.30", "equity": "97.70"}}
++    hb["orders_submitted"] = 3
++    hb["orders_filled"] = 2
++    hb["open_positions"] = 1
++    path.write_text(json.dumps(hb))
++    body = client.get("/api/nofx/studio/live", headers=_h(funder["token"])).json()
++    coin = next(w for w in body["workers"] if w["account"] == "coin")
++    assert coin["positions"] == [position]
++    assert coin["funds"]["strategy_pnl"] == "-2.30"
++    assert (coin["orders_submitted"], coin["orders_filled"], coin["open_positions"]) == (3, 2, 1)
++    hb["orders_filled"] = 3
++    hb["report"]["positions"] = []
++    path.write_text(json.dumps(hb))
++    updated = client.get("/api/nofx/studio/live", headers=_h(funder["token"])).json()
++    coin = next(w for w in updated["workers"] if w["account"] == "coin")
++    assert coin["orders_filled"] == 3 and coin["positions"] == []
+-- 
+2.43.0
+
