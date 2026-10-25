@@ -29,3 +29,21 @@ it('filters worker receipts and PnL by strategy and refreshes fill counts', asyn
   expect(within(screen.getByTestId('workers-card')).queryByText('2')).toBeNull()
   expect(paperLoopApi.live).toHaveBeenCalledTimes(2)
 })
+it('shows the viewer deployment orders and fills from its own node', async () => {
+  vi.mocked(paperLoopApi.me).mockResolvedValue({ user_id: 'u', email: 'u@example.com', role: 'member', tenant_id: null, can_mint_invites: false })
+  vi.mocked(paperLoopApi.live).mockResolvedValue({ ...snapshot(), deployments: [
+    { deployment_id: '3d030739-88c1', strategy: 'owned momentum', symbol: 'KXBTC15M', status: 'running', breaker_state: 'closed',
+      artifact_hash: 'bb4c4150ddae0000', node: 'deployment-3d03', fills: 1, orders: [
+        { client_order_id: 'dp1-abcdef0123456789', symbol: 'KXBTC15M/USD.DEP3D03', side: 'buy', qty: '10', filled_qty: '10', status: 'filled',
+          limit_px: '0.49', avg_px: '0.49', reason: null, submitted_at: '2026-10-25T22:00:28.000Z',
+          fills: [{ trade_id: 't1', qty: '10', px: '0.49', ts_event: '2026-10-25T22:00:28.100Z' }] }] },
+    { deployment_id: 'ffff0000-1111', strategy: 'stopped one', symbol: 'KXBTC15M', status: 'stopped', breaker_state: 'closed',
+      artifact_hash: 'cc', node: 'deployment-ffff', fills: 0, orders: [] }] })
+  render(<PaperLoopPanel />)
+  await act(async () => { await Promise.resolve() })
+  const card = screen.getByTestId('deployments-card')
+  expect(within(card).getByText('owned momentum')).toBeTruthy()
+  expect(within(card).getByText('10 @ 0.49')).toBeTruthy()
+  expect(within(card).getByText('stopped')).toBeTruthy()
+  expect(within(card).getAllByTestId('deployment-row').map(r => r.dataset.fills)).toEqual(['1', '0'])
+})

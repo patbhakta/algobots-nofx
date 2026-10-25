@@ -76,6 +76,41 @@ export interface LoopWorker {
   fills: FillReceipt[]
 }
 
+// ALG-3431: the gateway's orders for the viewer's own Studio deployments,
+// attributed by the deployment's dedicated paper node.
+export interface GatewayFill {
+  trade_id: string
+  qty: string
+  px: string
+  ts_event: string
+}
+
+export interface GatewayOrder {
+  client_order_id: string
+  symbol: string
+  side: string
+  qty: string
+  filled_qty: string
+  status: string
+  limit_px?: string
+  avg_px?: string
+  reason: string | null
+  submitted_at: string
+  fills: GatewayFill[]
+}
+
+export interface DeploymentLive {
+  deployment_id: string
+  strategy: string | null
+  symbol: string
+  status: string
+  breaker_state: string
+  artifact_hash: string
+  node: string
+  orders: GatewayOrder[]
+  fills: number
+}
+
 export interface PaperLoopLive {
   as_of: number
   environment: { mode: string; execution: string; market_data: string }
@@ -89,6 +124,8 @@ export interface PaperLoopLive {
     settled: number
   }
   decisions_error: string | null
+  deployments?: DeploymentLive[]
+  deployments_error?: string | null
 }
 
 export interface StudioMe {

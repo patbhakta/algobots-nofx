@@ -319,6 +319,58 @@ function InvitesCard() {
   )
 }
 
+function DeploymentsCard({ live }: { live: PaperLoopLive }) {
+  const deployments = live.deployments ?? []
+  return (
+    <div className={`${CARD} overflow-x-auto`} data-testid="deployments-card">
+      <div className="mb-2 text-sm font-semibold text-nofx-text">
+        Your deployments · gateway paper fills
+      </div>
+      <p className="text-xs text-nofx-text-muted">
+        Each running deployment trades its frozen artifact on its own Nautilus
+        paper node; orders below are that node's, admitted by the gateway.
+      </p>
+      {live.deployments_error ? (
+        <p className="text-xs text-red-600">{live.deployments_error}</p>
+      ) : null}
+      {deployments.length === 0 ? (
+        <p className="text-xs">No deployments yet.</p>
+      ) : null}
+      {deployments.map(d => (
+        <div key={d.deployment_id} className="mt-2" data-testid="deployment-row" data-fills={d.fills}>
+          <div className="text-xs">
+            <span className="font-semibold">{d.strategy || 'Studio strategy'}</span>{' '}
+            <Badge tone={d.status === 'running' && d.breaker_state === 'closed' ? 'ok' : 'warn'}>
+              {d.breaker_state === 'open' ? 'breaker open' : d.status}
+            </Badge>{' '}
+            <span className="font-mono text-nofx-text-muted">
+              {d.symbol} · {d.deployment_id.slice(0, 8)} · artifact {d.artifact_hash.slice(0, 12)} · {d.fills} fills
+            </span>
+          </div>
+          {d.orders.length ? (
+            <table className="mt-1 w-full text-left text-xs">
+              <thead className="text-nofx-text-muted">
+                <tr><th>Submitted (UTC)</th><th>Order</th><th>Side</th><th>Qty</th><th>Limit</th><th>Status</th><th>Filled @</th></tr>
+              </thead>
+              <tbody>{d.orders.map(o => (
+                <tr key={o.client_order_id} className="border-t border-[rgba(26,24,19,0.08)]">
+                  <td className="whitespace-nowrap">{o.submitted_at.slice(0, 19).replace('T', ' ')}</td>
+                  <td className="font-mono">{o.client_order_id.slice(0, 16)}…</td>
+                  <td>{o.side}</td><td>{o.qty}</td><td>{o.limit_px ?? '—'}</td>
+                  <td>{o.status}{o.reason ? ` · ${o.reason}` : ''}</td>
+                  <td>{o.fills.length ? `${o.filled_qty} @ ${o.avg_px ?? o.fills[0].px}` : '—'}</td>
+                </tr>
+              ))}</tbody>
+            </table>
+          ) : (
+            <p className="text-xs text-nofx-text-muted">No orders yet — the strategy abstains until its frozen signal clears min_edge on a fresh book.</p>
+          )}
+        </div>
+      ))}
+    </div>
+  )
+}
+
 export function PaperLoopPanel() {
   const [strategy, setStrategy] = useState('all')
   const [live, setLive] = useState<PaperLoopLive | null>(null)
@@ -446,6 +498,7 @@ export function PaperLoopPanel() {
               </div>
             </div>
           </div>
+          <DeploymentsCard live={live} />
           {workers.map(w => <div key={w.account} className={CARD} data-testid="worker-exposure">
             <h3 className="font-semibold">{w.account} · positions and recent fills</h3>
             <p className="text-xs text-nofx-text-muted">Worker snapshot · {w.state} · {age(w.heartbeat_age_s)}. Strategy PnL includes settled outcomes; unmarked positions have no unrealized PnL.</p>
