@@ -1,0 +1,25 @@
+# Kalshi KXBTC15M forward observer (ALG-3357): writes the demo feed that the
+# paper workers poll. Public market data only: no credentials, no orders.
+# Install on .243:
+#   cp /opt/algobots/repo/deploy/workers/kalshi-observer.service /etc/systemd/system/
+#   systemctl daemon-reload && systemctl enable --now kalshi-observer
+[Unit]
+Description=AlgoBots Kalshi KXBTC15M observer (demo feed, public data, paper only)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+# -I: stdlib only; skip the algobots.marketdata package init and the script dir on sys.path
+ExecStart=/usr/bin/python3 -I /opt/algobots/repo/src/algobots/marketdata/kalshi_observer.py --feed /opt/laya/kalshi/observations.jsonl --poll 20
+Restart=always
+RestartSec=10
+StandardOutput=append:/opt/laya/kalshi/observer.log
+StandardError=append:/opt/laya/kalshi/observer.log
+NoNewPrivileges=yes
+ProtectSystem=strict
+ReadWritePaths=/opt/laya/kalshi
+ProtectHome=read-only
+PrivateTmp=yes
+
+[Install]
+WantedBy=multi-user.target

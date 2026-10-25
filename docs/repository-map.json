@@ -196,6 +196,10 @@
   "integrator_owned": [
     {
       "repo": "algobots",
+      "path": ".env.example"
+    },
+    {
+      "repo": "algobots",
       "path": ".gitignore"
     },
     {
@@ -208,143 +212,11 @@
     },
     {
       "repo": "algobots",
+      "path": "INVENTORY.md"
+    },
+    {
+      "repo": "algobots",
       "path": "README.md"
-    },
-    {
-      "repo": "algobots",
-      "path": "deploy/.env.example"
-    },
-    {
-      "repo": "algobots",
-      "path": "deploy/docker-compose.yml"
-    },
-    {
-      "repo": "algobots",
-      "path": "src/algobots/__init__.py"
-    },
-    {
-      "repo": "algobots",
-      "path": "src/algobots/evals/__init__.py"
-    },
-    {
-      "repo": "algobots",
-      "path": "tests/__init__.py"
-    },
-    {
-      "repo": "algobots",
-      "path": "tests/conftest.py"
-    },
-    {
-      "repo": "algobots",
-      "path": "tests/evals/__init__.py"
-    },
-    {
-      "repo": "algobots",
-      "path": "tests/test_scaffold.py"
-    },
-    {
-      "repo": "algobots",
-      "path": "src/algobots/demo/__init__.py"
-    },
-    {
-      "repo": "algobots",
-      "path": "src/algobots/demo/accounts.py"
-    },
-    {
-      "repo": "algobots",
-      "path": "tests/demo/test_accounts.py"
-    },
-    {
-      "repo": "algobots",
-      "path": "src/algobots/demo/killswitch.py"
-    },
-    {
-      "repo": "algobots",
-      "path": "src/algobots/demo/blotter.py"
-    },
-    {
-      "repo": "algobots",
-      "path": "src/algobots/demo/decisions.py"
-    },
-    {
-      "repo": "algobots",
-      "path": "src/algobots/demo/ledger.py"
-    },
-    {
-      "repo": "algobots",
-      "path": "src/algobots/demo/page.py"
-    },
-    {
-      "repo": "algobots",
-      "path": "src/algobots/demo/router.py"
-    },
-    {
-      "repo": "algobots",
-      "path": "src/algobots/demo/theme.py"
-    },
-    {
-      "repo": "algobots",
-      "path": "tests/demo/test_decisions.py"
-    },
-    {
-      "repo": "algobots",
-      "path": "tests/demo/test_ledger.py"
-    },
-    {
-      "repo": "algobots",
-      "path": "src/algobots/demo/scope.py"
-    },
-    {
-      "repo": "algobots",
-      "path": "src/algobots/demo/studio.py"
-    },
-    {
-      "repo": "algobots",
-      "path": "src/algobots/demo/studio_page.py"
-    },
-    {
-      "repo": "algobots",
-      "path": "src/algobots/demo/bars.py"
-    },
-    {
-      "repo": "algobots",
-      "path": "tests/demo/test_scope.py"
-    },
-    {
-      "repo": "algobots",
-      "path": "tests/demo/test_studio.py"
-    },
-    {
-      "repo": "algobots",
-      "path": "tests/demo/test_campaigns.py"
-    },
-    {
-      "repo": "algobots",
-      "path": "src/algobots/demo/tickets.py"
-    },
-    {
-      "repo": "algobots",
-      "path": "src/algobots/demo/gate.py"
-    },
-    {
-      "repo": "algobots",
-      "path": "tests/demo/test_tickets.py"
-    },
-    {
-      "repo": "algobots",
-      "path": "src/algobots/demo/quality.py"
-    },
-    {
-      "repo": "algobots",
-      "path": "src/algobots/demo/scope.py"
-    },
-    {
-      "repo": "algobots",
-      "path": "tests/demo/test_quality.py"
-    },
-    {
-      "repo": "algobots",
-      "path": "tests/demo/test_scope.py"
     },
     {
       "repo": "algobots",
@@ -460,11 +332,135 @@
     },
     {
       "repo": "algobots",
+      "path": "artifacts/ALG-3350/p02-migration-rehearsal.md"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3350/p03-redis-xread-evidence.md"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3373/g1-latency.json"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3381/capture.mjs"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3381/coinflip.html.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3381/index.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3381/summary.json"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3403/README.md"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3403/full-loop-run-1.md"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3405/README.md"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3406/README.md"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3406/verifier-243.txt"
+    },
+    {
+      "repo": "algobots",
+      "path": "clients/gateway/README.md"
+    },
+    {
+      "repo": "algobots",
+      "path": "clients/gateway/client.gen.go"
+    },
+    {
+      "repo": "algobots",
+      "path": "compose.yaml"
+    },
+    {
+      "repo": "algobots",
+      "path": "contracts/gateway.openapi.yaml"
+    },
+    {
+      "repo": "algobots",
+      "path": "data/research/laya-kalshi/coinflip.jsonl"
+    },
+    {
+      "repo": "algobots",
+      "path": "data/research/laya-kalshi/coinflip_markets.json"
+    },
+    {
+      "repo": "algobots",
+      "path": "deploy/.env.example"
+    },
+    {
+      "repo": "algobots",
+      "path": "deploy/compose.nautilus-node.yaml"
+    },
+    {
+      "repo": "algobots",
+      "path": "deploy/docker-compose.yml"
+    },
+    {
+      "repo": "algobots",
+      "path": "deploy/nautilus-node.Dockerfile"
+    },
+    {
+      "repo": "algobots",
+      "path": "deploy/postgres-init.sh"
+    },
+    {
+      "repo": "algobots",
+      "path": "docs/ROADMAP-v3.md"
+    },
+    {
+      "repo": "algobots",
       "path": "docs/adr/0001-nautilus-execution-spine.md"
     },
     {
       "repo": "algobots",
       "path": "docs/alg-3145-shelpid-sets-evaluation.md"
+    },
+    {
+      "repo": "algobots",
+      "path": "docs/bridge.md"
+    },
+    {
+      "repo": "algobots",
+      "path": "docs/gates/G1-phase1-end-to-end.md"
+    },
+    {
+      "repo": "algobots",
+      "path": "docs/nautilus-setup.md"
+    },
+    {
+      "repo": "algobots",
+      "path": "docs/research/alg-3309-strategy-sourcing-shortlist.md"
+    },
+    {
+      "repo": "algobots",
+      "path": "docs/research/openbb-architecture-decision-2026-10-23.md"
+    },
+    {
+      "repo": "algobots",
+      "path": "docs/research/openalgo-feature-reference.md"
+    },
+    {
+      "repo": "algobots",
+      "path": "docs/research/polymarket-us-feed-feasibility.md"
     },
     {
       "repo": "algobots",
@@ -564,87 +560,15 @@
     },
     {
       "repo": "algobots",
-      "path": "docs/adr/0001-nautilus-execution-spine.md"
+      "path": "docs/shareout/coinflip.md"
     },
     {
       "repo": "algobots",
-      "path": "src/algobots/demo/orderapi.py"
+      "path": "notebooks/kalshi_demo_loop.py"
     },
     {
       "repo": "algobots",
-      "path": "tests/demo/test_order_api.py"
-    },
-    {
-      "repo": "algobots",
-      "path": "docs/research/alg-3309-strategy-sourcing-shortlist.md"
-    },
-    {
-      "repo": "algobots",
-      "path": "tests/api/test_fleet_breaker_tenancy.py"
-    },
-    {
-      "repo": "algobots",
-      "path": "src/algobots/knowledge/__init__.py"
-    },
-    {
-      "repo": "algobots",
-      "path": ".env.example"
-    },
-    {
-      "repo": "algobots",
-      "path": "INVENTORY.md"
-    },
-    {
-      "repo": "algobots",
-      "path": "artifacts/ALG-3350/p02-migration-rehearsal.md"
-    },
-    {
-      "repo": "algobots",
-      "path": "artifacts/ALG-3350/p03-redis-xread-evidence.md"
-    },
-    {
-      "repo": "algobots",
-      "path": "artifacts/ALG-3373/g1-latency.json"
-    },
-    {
-      "repo": "algobots",
-      "path": "clients/gateway/README.md"
-    },
-    {
-      "repo": "algobots",
-      "path": "clients/gateway/client.gen.go"
-    },
-    {
-      "repo": "algobots",
-      "path": "compose.yaml"
-    },
-    {
-      "repo": "algobots",
-      "path": "contracts/gateway.openapi.yaml"
-    },
-    {
-      "repo": "algobots",
-      "path": "deploy/postgres-init.sh"
-    },
-    {
-      "repo": "algobots",
-      "path": "docs/ROADMAP-v3.md"
-    },
-    {
-      "repo": "algobots",
-      "path": "docs/bridge.md"
-    },
-    {
-      "repo": "algobots",
-      "path": "docs/gates/G1-phase1-end-to-end.md"
-    },
-    {
-      "repo": "algobots",
-      "path": "docs/nautilus-setup.md"
-    },
-    {
-      "repo": "algobots",
-      "path": "docs/research/openalgo-feature-reference.md"
+      "path": "notebooks/paper_run_evidence.py"
     },
     {
       "repo": "algobots",
@@ -656,7 +580,19 @@
     },
     {
       "repo": "algobots",
+      "path": "scripts/rc6_gateway_deploy_smoke.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "scripts/rc6_node_smoke.py"
+    },
+    {
+      "repo": "algobots",
       "path": "scripts/verify_g1.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "src/algobots/__init__.py"
     },
     {
       "repo": "algobots",
@@ -677,6 +613,78 @@
     {
       "repo": "algobots",
       "path": "src/algobots/bridge/stats.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "src/algobots/demo/__init__.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "src/algobots/demo/accounts.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "src/algobots/demo/bars.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "src/algobots/demo/blotter.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "src/algobots/demo/decisions.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "src/algobots/demo/gate.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "src/algobots/demo/killswitch.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "src/algobots/demo/ledger.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "src/algobots/demo/orderapi.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "src/algobots/demo/page.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "src/algobots/demo/quality.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "src/algobots/demo/router.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "src/algobots/demo/scope.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "src/algobots/demo/studio.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "src/algobots/demo/studio_page.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "src/algobots/demo/theme.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "src/algobots/demo/tickets.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "src/algobots/evals/__init__.py"
     },
     {
       "repo": "algobots",
@@ -720,7 +728,15 @@
     },
     {
       "repo": "algobots",
+      "path": "src/algobots/gateway/serve.py"
+    },
+    {
+      "repo": "algobots",
       "path": "src/algobots/gateway/store.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "src/algobots/knowledge/__init__.py"
     },
     {
       "repo": "algobots",
@@ -748,6 +764,14 @@
     },
     {
       "repo": "algobots",
+      "path": "src/algobots/node/paper_node.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "src/algobots/node/replay.py"
+    },
+    {
+      "repo": "algobots",
       "path": "src/algobots/node/sandbox.py"
     },
     {
@@ -768,11 +792,79 @@
     },
     {
       "repo": "algobots",
+      "path": "src/algobots/shareout/__init__.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "src/algobots/shareout/coinflip.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "tests/__init__.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "tests/api/test_fleet_breaker_tenancy.py"
+    },
+    {
+      "repo": "algobots",
       "path": "tests/bridge/test_api.py"
     },
     {
       "repo": "algobots",
       "path": "tests/bridge/test_channel.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "tests/conftest.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "tests/demo/full_loop.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "tests/demo/test_accounts.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "tests/demo/test_campaigns.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "tests/demo/test_decisions.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "tests/demo/test_full_loop.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "tests/demo/test_ledger.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "tests/demo/test_order_api.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "tests/demo/test_paper_run_evidence.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "tests/demo/test_quality.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "tests/demo/test_scope.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "tests/demo/test_studio.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "tests/demo/test_tickets.py"
     },
     {
       "repo": "algobots",
@@ -796,7 +888,15 @@
     },
     {
       "repo": "algobots",
+      "path": "tests/evals/__init__.py"
+    },
+    {
+      "repo": "algobots",
       "path": "tests/fakes.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "tests/gateway/fixtures/rc6_event_streams.json"
     },
     {
       "repo": "algobots",
@@ -805,6 +905,14 @@
     {
       "repo": "algobots",
       "path": "tests/gateway/test_event_path.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "tests/gateway/test_rc6_wire.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "tests/gateway/test_serve.py"
     },
     {
       "repo": "algobots",
@@ -828,6 +936,14 @@
     },
     {
       "repo": "algobots",
+      "path": "tests/node/test_paper_node.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "tests/node/test_replay.py"
+    },
+    {
+      "repo": "algobots",
       "path": "tests/node/test_sandbox.py"
     },
     {
@@ -840,42 +956,6 @@
     },
     {
       "repo": "algobots",
-      "path": "artifacts/ALG-3381/capture.mjs"
-    },
-    {
-      "repo": "algobots",
-      "path": "artifacts/ALG-3381/coinflip.html.png"
-    },
-    {
-      "repo": "algobots",
-      "path": "artifacts/ALG-3381/index.png"
-    },
-    {
-      "repo": "algobots",
-      "path": "artifacts/ALG-3381/summary.json"
-    },
-    {
-      "repo": "algobots",
-      "path": "data/research/laya-kalshi/coinflip.jsonl"
-    },
-    {
-      "repo": "algobots",
-      "path": "data/research/laya-kalshi/coinflip_markets.json"
-    },
-    {
-      "repo": "algobots",
-      "path": "docs/shareout/coinflip.md"
-    },
-    {
-      "repo": "algobots",
-      "path": "src/algobots/shareout/__init__.py"
-    },
-    {
-      "repo": "algobots",
-      "path": "src/algobots/shareout/coinflip.py"
-    },
-    {
-      "repo": "algobots",
       "path": "tests/shareout/__init__.py"
     },
     {
@@ -884,67 +964,127 @@
     },
     {
       "repo": "algobots",
-      "path": "artifacts/ALG-3403/README.md"
+      "path": "tests/test_scaffold.py"
     },
     {
       "repo": "algobots",
-      "path": "artifacts/ALG-3403/full-loop-run-1.md"
+      "path": "artifacts/ALG-3414/README.md"
     },
     {
       "repo": "algobots",
-      "path": "deploy/compose.nautilus-node.yaml"
+      "path": "artifacts/ALG-3414/funder-walkthrough.mjs"
     },
     {
       "repo": "algobots",
-      "path": "deploy/nautilus-node.Dockerfile"
+      "path": "artifacts/ALG-3414/walkthrough/01-owner-studio.png"
     },
     {
       "repo": "algobots",
-      "path": "scripts/rc6_node_smoke.py"
+      "path": "artifacts/ALG-3414/walkthrough/02-owner-minted-invite.png"
     },
     {
       "repo": "algobots",
-      "path": "src/algobots/node/paper_node.py"
+      "path": "artifacts/ALG-3414/walkthrough/03-funder-studio.png"
     },
     {
       "repo": "algobots",
-      "path": "tests/demo/full_loop.py"
+      "path": "artifacts/ALG-3414/walkthrough/04-decision-with-nautilus-receipt.png"
     },
     {
       "repo": "algobots",
-      "path": "tests/demo/test_full_loop.py"
+      "path": "artifacts/ALG-3414/walkthrough/04b-funder-studio-config.png"
     },
     {
       "repo": "algobots",
-      "path": "tests/gateway/fixtures/rc6_event_streams.json"
+      "path": "artifacts/ALG-3414/walkthrough/05-decision-risk-blocked.png"
     },
     {
       "repo": "algobots",
-      "path": "tests/gateway/test_rc6_wire.py"
+      "path": "artifacts/ALG-3414/walkthrough/06-owner-revoked-funder.png"
     },
     {
       "repo": "algobots",
-      "path": "tests/node/test_paper_node.py"
+      "path": "artifacts/ALG-3414/walkthrough/07-funder-after-revoke.png"
     },
     {
       "repo": "algobots",
-      "path": "artifacts/ALG-3406/README.md"
+      "path": "artifacts/ALG-3414/walkthrough/08-expired-invite-refused.png"
     },
     {
       "repo": "algobots",
-      "path": "artifacts/ALG-3406/verifier-243.txt"
+      "path": "artifacts/ALG-3414/walkthrough/summary.json"
     },
     {
       "repo": "algobots",
-      "path": "src/algobots/node/replay.py"
+      "path": "deploy/nofx-frontend-nginx.conf"
     },
     {
       "repo": "algobots",
-      "path": "tests/node/test_replay.py"
+      "path": "docs/operations/strategy-studio-first-session.md"
     },
     {
       "repo": "algobots",
-      "path": "artifacts/ALG-3405/README.md"
+      "path": "docs/polymarket-us-feasibility-2026-10-22.md"
+    },
+    {
+      "repo": "algobots",
+      "path": "docs/research/data-plane-law-2026-10-23.md"
+    },
+    {
+      "repo": "algobots",
+      "path": "docs/research/data-plane-implementation-plan-2026-10-24.md"
+    },
+    {
+      "repo": "algobots",
+      "path": "src/algobots/demo/evidence_snapshot.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "src/algobots/demo/loop_watchdog.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "tests/api/test_nofx_browser.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "tests/demo/test_evidence_snapshot.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "tests/demo/test_loop_watchdog.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "tests/demo/test_settlements_api.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "tests/demo/test_worker_retry.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "tools/pmus_public_probe.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3418/alg3418-studio-backtest-walkthrough.mjs"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3418/walkthrough/01-before-backtest.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3418/walkthrough/02-backtest-result.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3418/walkthrough/03-result-after-reload.png"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3418/walkthrough/summary.json"
     }
   ],
   "scope_revisions": [
@@ -1133,7 +1273,7 @@
         "tests/contracts/golden/valid/MarketSnapshot@1.0.json",
         "tests/contracts/golden/valid/FeatureSnapshot@1.0.json"
       ],
-      "reason": "dispatched spec (ALG-3101) registers Instrument, MarketSnapshot and FeatureSnapshot as new schema versions with goldens (A04 precedent). Exact files only — dir-level src/algobots/contracts/ stays A01's (identical entries in two packets are forbidden). schema-lock.json (A04-carved) and contracts/__init__.py are additive edits through the schema-registry owner: the lock gains three entries via registry.write_lock() and __init__ re-exports the new modules; both stay proposals through their recorded owners, same as Makefile and api/main.py (router mount, A03/A04 precedent)."
+      "reason": "dispatched spec (ALG-3101) registers Instrument, MarketSnapshot and FeatureSnapshot as new schema versions with goldens (A04 precedent). Exact files only \u2014 dir-level src/algobots/contracts/ stays A01's (identical entries in two packets are forbidden). schema-lock.json (A04-carved) and contracts/__init__.py are additive edits through the schema-registry owner: the lock gains three entries via registry.write_lock() and __init__ re-exports the new modules; both stay proposals through their recorded owners, same as Makefile and api/main.py (router mount, A03/A04 precedent)."
     }
   ],
   "packets": {
@@ -1370,6 +1510,11 @@
         {
           "repo": "algobots",
           "path": "tests/api/test_control_plane.py",
+          "status": "real"
+        },
+        {
+          "repo": "algobots",
+          "path": "tests/api/test_nofx_studio.py",
           "status": "real"
         },
         {

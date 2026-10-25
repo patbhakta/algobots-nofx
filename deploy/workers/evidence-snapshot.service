@@ -1,0 +1,18 @@
+# Evidence snapshot (ALG-3357): refresh the published static export of the demo
+# notebook (kalshi_demo_loop_latest.html) every 15 minutes. Failed exports keep
+# the previous snapshot; outcome lands in /opt/laya/kalshi/evidence_state.json.
+# Install on .243:
+#   cp /opt/algobots/repo/deploy/workers/evidence-snapshot.* /etc/systemd/system/
+#   systemctl daemon-reload && systemctl enable --now evidence-snapshot.timer
+[Unit]
+Description=AlgoBots demo evidence snapshot (marimo notebook -> static HTML)
+After=network-online.target docker.service
+Wants=network-online.target
+RequiresMountsFor=/mnt/funnytree/algobots
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 -I /opt/algobots/repo/src/algobots/demo/evidence_snapshot.py
+StandardOutput=journal
+StandardError=journal
+NoNewPrivileges=yes

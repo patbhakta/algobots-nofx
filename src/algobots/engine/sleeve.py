@@ -18,7 +18,8 @@ read back from the engine; ``algobots.demo.ledger`` takes P&L and sleeve
 equity from here, never from its own arithmetic.
 
 What is still assumed: the Laya feed records no order book, so the quote the
-engine fills against is the 50c mid on both sides (``QUOTE``). Nautilus
+engine fills against is the executable price the feed recorded (``px``;
+default ``QUOTE``). Nautilus
 executes and accounts; it cannot invent prices the feed never captured.
 """
 
@@ -54,7 +55,7 @@ warnings.filterwarnings("ignore", message="Timestamp.utcnow")
 
 NS = 1_000_000_000
 INTERVAL_S = 900  # KXBTC15M
-QUOTE = L.FILL_PRICE  # the feed records no book: assumed mid, both sides
+QUOTE = L.FILL_PRICE  # default fill price when a row captured no book
 EXECUTOR = f"NautilusTrader {nautilus_trader.__version__} BacktestEngine"
 
 
@@ -123,9 +124,11 @@ def instrument(venue: Venue, event: str, outcome: str, ts: float) -> BinaryOptio
     )
 
 
-def quote(inst_id: InstrumentId, ts: float) -> QuoteTick:
-    px, sz, ts_ns = Price.from_str(str(QUOTE)), Quantity.from_int(10_000), int(ts * NS)
-    return QuoteTick(inst_id, px, px, sz, sz, ts_ns, ts_ns)
+def quote(inst_id: InstrumentId, ts: float, px: Decimal = QUOTE) -> QuoteTick:
+    # The row's executable price both sides, with ample size so a
+    # sleeve-capped order always fills in full.
+    q, sz, ts_ns = Price.from_str(str(px)), Quantity.from_int(10_000), int(ts * NS)
+    return QuoteTick(inst_id, q, q, sz, sz, ts_ns, ts_ns)
 
 
 @dataclass(frozen=True)
@@ -234,8 +237,10 @@ class NautilusSleeve:
         """
         self._treasury.exchange.adjust_account(Money(amount, USD))
 
-    def execute(self, event: str, side: str, ts: float, won: bool, qty: int) -> Execution:
-        """Buy ``qty`` contracts of ``event``'s ``side`` and settle them at ``ts``."""
+    def execute(
+        self, event: str, side: str, ts: float, won: bool, qty: int, px: Decimal = QUOTE
+    ) -> Execution:
+        """Buy ``qty`` at ``px`` of ``event``'s ``side`` and settle them at ``ts``."""
         before = self.equity
         inst = instrument(self.venue, event, side, ts)
         self._settle[inst.id] = 1.0 if won else 0.0
@@ -250,7 +255,7 @@ class NautilusSleeve:
             ts_ns,
             ts_ns,
         )
-        self.engine.add_data([quote(inst.id, entry_ts), close])
+        self.engine.add_data([quote(inst.id, entry_ts, px), close])
         self.engine.run(streaming=True)
         self.engine.clear_data()
         self.ran = True
