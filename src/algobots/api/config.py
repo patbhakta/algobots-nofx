@@ -38,6 +38,8 @@ class Settings(BaseSettings):
     # ALG-3411 feed 2: the Polymarket btc-updown-15m observer writes this;
     # evidence-only (cross-venue calibration) — never wired into a paper worker.
     demo_feed2_path: str = Field(default="/opt/laya/polymarket/observations.jsonl")
+    warehouse_root: str = Field(default="/mnt/funnytree/algobots/warehouse")
+    catalog_root: str = Field(default="/mnt/funnytree/algobots/ntl_catalog")
     demo_state_dir: str = Field(default="./.demo-state")
     demo_start: str = Field(default="2026-10-03")
     # Comma-separated UTC timestamps (YYYY-MM-DDTHH:MM) at which every demo

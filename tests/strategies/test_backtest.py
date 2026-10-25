@@ -191,6 +191,23 @@ def token(client: TestClient, founder: dict) -> str:
 def recorder(tmp_path, monkeypatch):
     feed = tmp_path / "observations.jsonl"
     write_feed(feed, recorder_rows())
+    from algobots.warehouse import Warehouse
+    from algobots.warehouse.recorders import export_rows
+
+    warehouse = Warehouse(tmp_path / "warehouse")
+    export_rows(
+        warehouse,
+        "kalshi",
+        recorder_rows(),
+        "recorder-48",
+        instrument_id="KXBTC15M.KALSHI",
+        provider_release="fixture",
+        retrieved_at=T0,
+        query={},
+        timestamp_column="close_ts",
+        key_columns=["event"],
+    )
+    monkeypatch.setenv("ALGOBOTS_WAREHOUSE_ROOT", str(warehouse.root))
     monkeypatch.setenv("ALGOBOTS_DEMO_FEED_PATH", str(feed))
     monkeypatch.setenv("ALGOBOTS_DEMO_STATE_DIR", str(tmp_path / "state"))
     get_settings.cache_clear()
@@ -216,19 +233,46 @@ def test_backtest_route_contract(client, token, recorder):
     assert res["artifact"]["artifact_hash"] == studio["artifact_hash"]
     assert res["artifact"]["implementation"] == "kalshi_momentum.v1"
     ds = res["dataset"]
-    assert ds["source"] == bt.DATASET_SOURCE and ds["rows"] == 48
-    assert ds["id"] == f"{bt.DATASET_SOURCE}@{ds['sha256'][:12]}"
+    assert ds["source"] == "warehouse" and ds["rows"] == 48
+    assert ds["id"] == "recorder-48"
     assert res["executor"].startswith("NautilusTrader ")
     for key in ("pnl", "hit_rate", "brier", "ending_equity", "max_drawdown"):
         assert key in res["metrics"]
     assert len(res["equity_curve"]) == 48
 
+    discovery = client.get(
+        "/api/studio/snapshots", params={"instrument_id": "KXBTC15M.KALSHI"}, headers=_h(token)
+    )
+    assert discovery.status_code == 200
+    assert discovery.json()["snapshots"][0]["snapshot_id"] == "recorder-48"
+    assert (
+        client.get("/api/studio/snapshots", params={"instrument_id": "KXBTC15M.KALSHI"}).status_code
+        == 401
+    )
+
     # same artifact + same dataset -> the stored row, not a re-run
     r2 = client.post(f"{url}/backtest", headers=_h(token))
     assert r2.status_code == 200 and r2.json()["id"] == res["id"]
 
-    # the feed grows; the frozen dataset still reproduces the first result
+    # Growing the live feed does not mutate warehouse input or its cached result.
     write_feed(recorder, recorder_rows(51))
+    unchanged = client.post(f"{url}/backtest", headers=_h(token))
+    assert unchanged.status_code == 200 and unchanged.json()["id"] == res["id"]
+    from algobots.warehouse import Warehouse
+    from algobots.warehouse.recorders import export_rows
+
+    export_rows(
+        Warehouse(recorder.parent / "warehouse"),
+        "kalshi",
+        recorder_rows(51),
+        "recorder-51",
+        instrument_id="KXBTC15M.KALSHI",
+        provider_release="fixture",
+        retrieved_at=T0,
+        query={},
+        timestamp_column="close_ts",
+        key_columns=["event"],
+    )
     r3 = client.post(f"{url}/backtest", headers=_h(token))
     assert r3.status_code == 201 and r3.json()["dataset"]["rows"] == 51
     r4 = client.post(f"{url}/backtest", json={"dataset_id": ds["id"]}, headers=_h(token))
@@ -251,3 +295,44 @@ def test_backtest_needs_a_compiled_backtestable_artifact(client, token, recorder
         client.post("/api/studio/strategies/not-a-uuid/backtest", headers=_h(token)).status_code
         == 404
     )
+
+
+def test_concurrent_backtests_across_drafts_share_one_immutable_row(
+    client, token, recorder, monkeypatch
+):
+    from concurrent.futures import ThreadPoolExecutor
+    from threading import Barrier
+
+    urls = []
+    for name in ("same-config-a", "same-config-b"):
+        response = client.post(
+            "/api/nofx/strategies",
+            json={"name": name, "config": NOFX_MOMENTUM},
+            headers=_h(token),
+        )
+        urls.append(f"/api/studio/strategies/{response.json()['studio']['draft_id']}/backtest")
+    # Names are part of the artifact. Make two drafts with exactly the same config.
+    response = client.post(
+        "/api/nofx/strategies",
+        json={"name": "same-config-a", "config": NOFX_MOMENTUM},
+        headers=_h(token),
+    )
+    urls[1] = f"/api/studio/strategies/{response.json()['studio']['draft_id']}/backtest"
+    barrier = Barrier(2)
+
+    def run(artifact, dataset):
+        barrier.wait(timeout=10)
+        return {"metrics": {"pnl": "0.00"}, "fixture": True}
+
+    monkeypatch.setattr(bt, "run_backtest", run)
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        responses = list(
+            pool.map(
+                lambda url: client.post(
+                    url, json={"snapshot_id": "recorder-48"}, headers=_h(token)
+                ),
+                urls,
+            )
+        )
+    assert sorted(r.status_code for r in responses) == [200, 201]
+    assert responses[0].json() == responses[1].json()

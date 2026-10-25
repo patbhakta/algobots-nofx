@@ -62,6 +62,7 @@ class BacktestDataset:
     sha256: str
     rows: list[dict[str, Any]]
     path: Path
+    source: str = DATASET_SOURCE
 
     @property
     def name(self) -> str:
@@ -76,7 +77,8 @@ class BacktestDataset:
         return {
             "id": self.id,
             "name": self.name,
-            "source": DATASET_SOURCE,
+            "source": self.source,
+            "snapshot_id": self.id if self.source == "warehouse" else None,
             "sha256": self.sha256,
             "rows": len(self.rows),
             "first_event": first["event"],
@@ -158,6 +160,32 @@ def load(dataset_id: str, state_dir: Path) -> BacktestDataset:
         raise StudioError("dataset_id", f"dataset {dataset_id!r} failed its content-hash check")
     rows = [json.loads(line) for line in body.decode().splitlines()]
     return BacktestDataset(dataset_id, digest, rows, matches[0])
+
+
+def load_warehouse(snapshot_id: str | None, root: Path, instrument_id: str) -> BacktestDataset:
+    """Load only a published, hash-verified warehouse snapshot for this instrument."""
+    from algobots.warehouse import Warehouse, WarehouseError
+
+    warehouse = Warehouse(root)
+    try:
+        if snapshot_id is None:
+            available = warehouse.list_snapshots(instrument_id)
+            if not available:
+                raise WarehouseError("no published warehouse snapshots for instrument")
+            snapshot_id = max(available, key=lambda m: (m["event_end"], m["snapshot_id"]))[
+                "snapshot_id"
+            ]
+        manifest, table = warehouse.load(snapshot_id)
+        if manifest["instrument_id"] != instrument_id:
+            raise WarehouseError("snapshot instrument does not match compiled artifact")
+        rows = [row for row in table.to_pylist() if _settled(row)]
+        if not rows:
+            raise WarehouseError("snapshot contains no settled recorder intervals")
+        return BacktestDataset(
+            snapshot_id, manifest["sha256"], rows, root / manifest["path"], "warehouse"
+        )
+    except WarehouseError as exc:
+        raise StudioError("dataset_id", str(exc)) from exc
 
 
 def _row(raw: dict[str, Any], p: float) -> L.Row:

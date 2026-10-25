@@ -22,6 +22,9 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+warehouse = [
+    "pyarrow>=21",
+]
 postgres = [
     "psycopg[binary]>=3.2",
 ]

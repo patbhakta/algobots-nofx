@@ -1133,6 +1133,30 @@
     {
       "repo": "algobots",
       "path": "artifacts/ALG-3419/verification.md"
+    },
+    {
+      "repo": "algobots",
+      "path": "src/algobots/warehouse/__init__.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "src/algobots/warehouse/catalog.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "src/algobots/warehouse/recorders.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "tests/warehouse/test_catalog.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "tests/warehouse/test_recorders.py"
+    },
+    {
+      "repo": "algobots",
+      "path": "tests/warehouse/test_snapshots.py"
     }
   ],
   "scope_revisions": [
