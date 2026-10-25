@@ -2,7 +2,7 @@
 services:
   marimo-quantlab:
     build:
-      context: ..
+      context: ${QUANTLAB_BUILD_CONTEXT:?set absolute repository path}
       dockerfile: deploy/quantlab/Dockerfile
     image: algobots/quantlab:alg3424
     user: "1000:1000"
@@ -11,9 +11,10 @@ services:
     ports: !override
       - "100.82.57.72:8205:2718"
     volumes: !override
-      - /mnt/funnytree/algobots/quantlab:/home/quantlab
-      - /mnt/funnytree/algobots/openbb_store:/home/quantlab/openbb_store
-      - /mnt/funnytree/algobots/ntl_catalog:/home/quantlab/ntl_catalog
+      - /mnt/funnytree-quantlab/algobots/quantlab:/home/quantlab
+      - /mnt/funnytree-quantlab/algobots/openbb_store:/home/quantlab/openbb_store
+      - /mnt/funnytree-quantlab/algobots/ntl_catalog:/home/quantlab/ntl_catalog
+    entrypoint: [/bin/sh, -c, 'umask 0002; exec "$@"', quantlab]
     command: [marimo, edit, /home/quantlab/notebooks, --host, 0.0.0.0, --port, "2718", --token-password, "${QUANTLAB_TOKEN:?set QUANTLAB_TOKEN in gitignored .env}", --headless]
     healthcheck:
       test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://127.0.0.1:2718/health')"]

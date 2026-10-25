@@ -5,6 +5,8 @@ ENV UV_PROJECT_ENVIRONMENT=/opt/venv PATH=/opt/venv/bin:$PATH PYTHONUNBUFFERED=1
 WORKDIR /app
 COPY deploy/quantlab/pyproject.toml deploy/quantlab/uv.lock ./
 RUN uv sync --frozen --no-dev --no-install-project
+# Generate OpenBB bindings at build time; runtime UID cannot modify the venv.
+RUN python -c "from openbb import obb; assert obb.equity.price.historical"
 COPY src/algobots/warehouse /app/src/algobots/warehouse
 COPY notebooks/quantlab_openbb.py /app/notebooks/quantlab_openbb.py
 USER 1000:1000

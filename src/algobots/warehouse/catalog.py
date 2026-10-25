@@ -9,13 +9,14 @@ from __future__ import annotations
 
 import os
 import shutil
-import tempfile
+import uuid
 from pathlib import Path
 
 try:  # Rust rc6 public API
+    from typing import Any as Instrument
+
     from nautilus_trader.model import Bar, QuoteTick
     from nautilus_trader.persistence import ParquetDataCatalog
-    from typing import Any as Instrument
 except ImportError:  # Existing Cython recorder runtime
     from nautilus_trader.model.data import Bar, QuoteTick
     from nautilus_trader.model.instruments import Instrument
@@ -68,7 +69,8 @@ def _publish(snapshot_id, instruments, data, data_class, root):
     root = Path(root)
     root.mkdir(parents=True, exist_ok=True)
     target = root / snapshot_id
-    stage = Path(tempfile.mkdtemp(prefix=".staging-", dir=root))
+    stage = root / f".staging-{uuid.uuid4().hex}"
+    stage.mkdir(mode=0o770)
     lock = root / f".{snapshot_id}.lock"
     locked = False
     try:

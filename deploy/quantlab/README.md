@@ -21,22 +21,22 @@ warehouse data files are never rewritten. Snapshot catalog writes use the
 ParquetDataCatalog API and the same immutable adapter as the warehouse exporter.
 The adapter supports both its existing Cython runtime and the rc6 Rust API.
 
-## Deployment hold: FUSE access
+## Approved mount
 
-The existing SSHFS mount is root-only (no allow_other). UID 1000 cannot even
-stat its mounted home, despite correct 1000:1000 directory ownership. Do not
-deploy the overlay until non-root FunnyTree access is approved and verified.
-Automatic approval review rejected adding an allow_other mount because it
-changes the local-user security boundary. No mount changes were applied.
+The ops-managed `funnytree-quantlab.service` mounts the bounded alias at
+`/mnt/funnytree-quantlab/algobots` with
+`allow_other,default_permissions,reconnect`. The compose overlay uses this alias;
+existing exporter and stock-vault mounts remain unchanged.
 
-Proposed bounded resolution for approval: a separate SSHFS mount of
-root@100.79.207.5:/mnt/vault-data/algobots at
-/mnt/funnytree-quantlab/algobots with allow_other,default_permissions,reconnect.
-Only quantlab would use this alias; the exporter mount stays untouched.
-Unix ownership/modes still apply, but other local users gain traversal/read
-access wherever the underlying modes permit it. A persistent mount unit and
-compose source-path update would follow approval. Alternatively the operator
-can provide an approved non-root-capable mount of the same directory.
+Files created through SSHFS appear as root:1000. The container entrypoint and
+acceptance publisher set umask 0002 to preserve group write. Acceptance uses
+ordinary open/write/read-back and append as UID/GID 1000, rather than `touch`,
+whose utimes operation fails for non-owners on this mount. The bounded mount
+script also requests SFTP server umask 0002: the server default 0022 otherwise
+removes group-write even when the container requests it. Recreate quantlab after
+restarting its alias so Docker binds the current mount. Private staging paths
+use random UUID names with mode 0770 (subject to umask), since tempfile's 0700
+would exclude UID 1000 from root:1000 directories on this SSHFS alias.
 
 ## Acceptance
 
@@ -50,5 +50,10 @@ policy, precision, catalog path and engine event count. Weekends are explicit
 irregular-event gaps. A failed catalog/engine check publishes no manifest.
 Catalog directories orphaned before manifest publication remain undiscoverable.
 
-Do not claim the non-root deployment acceptance from a root smoke run. The new
-image has not replaced the existing running service while mount access is held.
+Deploy only this service (the base compose supplies the gitignored token):
+
+    QUANTLAB_BUILD_CONTEXT=/opt/algobots-alg3424 docker compose --project-directory /opt/algobots-stack -f /opt/algobots-stack/docker-compose.yml -f deploy/compose.quantlab.yaml up -d --no-deps --build marimo-quantlab
+
+Acceptance rejects a root-context run and verifies write/read-back and group-write
+before fetching data. After publication it reads the manifest and parquet back
+through Warehouse.load as the same UID.
