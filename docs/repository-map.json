@@ -194,6 +194,8 @@
     }
   },
   "integrator_owned": [
+    {"repo": "algobots", "path": "src/algobots/api/deployments/momentum.py"},
+    {"repo": "algobots", "path": "tests/deployments/test_momentum_intent.py"},
     {
       "repo": "algobots",
       "path": "artifacts/ALG-3409/README.md"
