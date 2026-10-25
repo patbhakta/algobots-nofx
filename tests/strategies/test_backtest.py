@@ -210,6 +210,11 @@ def recorder(tmp_path, monkeypatch):
     monkeypatch.setenv("ALGOBOTS_WAREHOUSE_ROOT", str(warehouse.root))
     monkeypatch.setenv("ALGOBOTS_DEMO_FEED_PATH", str(feed))
     monkeypatch.setenv("ALGOBOTS_DEMO_STATE_DIR", str(tmp_path / "state"))
+    # Evidence publication must target a test-local root: the production
+    # default is the FunnyTree mount, which only exists on the deployment
+    # host (CI runners cannot mkdir under /mnt, surfacing as 503s).
+    monkeypatch.setenv("ALGOBOTS_EVIDENCE_NOTEBOOK_ROOT", str(tmp_path / "evidence-root"))
+    monkeypatch.setenv("ALGOBOTS_EVIDENCE_BASE_URL", "http://evidence.test")
     get_settings.cache_clear()
     yield feed
     get_settings.cache_clear()
