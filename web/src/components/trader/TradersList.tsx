@@ -266,7 +266,7 @@ function TraderRow({
                 onToggleTraderAddress(trader.trader_id)
               }}
               className="p-0.5 rounded hover:bg-nofx-bg-deeper transition-colors"
-              title={isVisible ? (language === 'zh' ? 'Hide' : 'Hide') : (language === 'zh' ? 'Show' : 'Show')}
+              title={isVisible ? ('Hide') : ('Show')}
             >
               {isVisible ? (
                 <EyeOff className="w-3 h-3" style={{ color: '#8A8478' }} />
@@ -281,7 +281,7 @@ function TraderRow({
                 onCopyAddress(trader.trader_id, walletAddr)
               }}
               className="p-0.5 rounded hover:bg-nofx-bg-deeper transition-colors"
-              title={language === 'zh' ? 'Copy' : 'Copy'}
+              title={'Copy'}
             >
               {isCopied ? (
                 <Check className="w-3 h-3" style={{ color: '#2E8B57' }} />

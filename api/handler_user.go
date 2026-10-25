@@ -43,9 +43,12 @@ func (s *Server) handleLogout(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Logged out"})
 }
 
-// handleRegister Handle user registration request.
-// handleRegister allows registration only when no users exist yet (first-time setup).
-// This is a single-user system; subsequent registrations are permanently closed.
+// handleRegister Handle tenant self-registration request.
+// Registration is backend-gated: allowed while the system is uninitialized
+// (first tenant bootstrap) or while the operator has enabled the
+// registration_enabled system setting (`nofx set-registration --enable`).
+// Every registration provisions a new investor tenant: each login owns its
+// own traders, strategies, exchanges and keys (user_id == tenant scope).
 func (s *Server) handleRegister(c *gin.Context) {
 	userCount, err := s.store.User().Count()
 	if err != nil {
@@ -53,8 +56,8 @@ func (s *Server) handleRegister(c *gin.Context) {
 		return
 	}
 
-	if userCount > 0 {
-		c.JSON(http.StatusForbidden, gin.H{"error": "System already initialized"})
+	if !s.registrationOpen(userCount) {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Registration is disabled"})
 		return
 	}
 
@@ -122,10 +125,11 @@ func (s *Server) handleRegister(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"token":   token,
-		"user_id": user.ID,
-		"email":   user.Email,
-		"message": "Registration successful",
+		"token":     token,
+		"user_id":   user.ID,
+		"tenant_id": user.ID,
+		"email":     user.Email,
+		"message":   "Registration successful",
 	})
 }
 
@@ -172,10 +176,11 @@ func (s *Server) handleLogin(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"token":   token,
-		"user_id": user.ID,
-		"email":   user.Email,
-		"message": "Login successful",
+		"token":     token,
+		"user_id":   user.ID,
+		"tenant_id": user.ID,
+		"email":     user.Email,
+		"message":   "Login successful",
 	})
 }
 

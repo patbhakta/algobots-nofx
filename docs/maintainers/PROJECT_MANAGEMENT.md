@@ -1,6 +1,5 @@
 # 📊 Project Management Guide
 
-**Language:** [English](PROJECT_MANAGEMENT.md) | [中文](PROJECT_MANAGEMENT.zh-CN.md)
 
 This guide explains how we manage the NOFX project, track progress, and prioritize work.
 

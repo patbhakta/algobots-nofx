@@ -15,6 +15,13 @@ func MissingRequiredExchangeCredentialFields(exchangeType, apiKey, secretKey, pa
 			namedField{"secret_key", secretKey},
 			namedField{"passphrase", passphrase},
 		)
+	case "nautilus":
+		// Generic fields carry gateway_url, bearer_token, and account_id.
+		return missingNamedFields(
+			namedField{"gateway_url", apiKey},
+			namedField{"bearer_token", secretKey},
+			namedField{"account_id", passphrase},
+		)
 	case "hyperliquid":
 		return missingNamedFields(
 			namedField{"api_key", apiKey},

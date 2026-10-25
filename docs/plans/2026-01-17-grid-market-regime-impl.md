@@ -148,11 +148,6 @@ type BoxData struct {
 type RegimeLevel string
 
 const (
-	RegimeLevelNarrow   RegimeLevel = "narrow"   // 窄幅震荡
-	RegimeLevelStandard RegimeLevel = "standard" // 标准震荡
-	RegimeLevelWide     RegimeLevel = "wide"     // 宽幅震荡
-	RegimeLevelVolatile RegimeLevel = "volatile" // 剧烈震荡
-	RegimeLevelTrending RegimeLevel = "trending" // 趋势
 )
 
 // BreakoutLevel represents which box level has been broken
@@ -1308,29 +1303,6 @@ export function GridRiskPanel({ traderId, language }: GridRiskPanelProps) {
 
   const t = (key: string) => {
     const translations: Record<string, Record<string, string>> = {
-      leverageInfo: { zh: '杠杆信息', en: 'Leverage Info' },
-      currentLeverage: { zh: '当前杠杆', en: 'Current Leverage' },
-      effectiveLeverage: { zh: '有效杠杆', en: 'Effective Leverage' },
-      recommendedLeverage: { zh: '推荐杠杆', en: 'Recommended Leverage' },
-      positionInfo: { zh: '仓位信息', en: 'Position Info' },
-      currentPosition: { zh: '当前仓位', en: 'Current Position' },
-      maxPosition: { zh: '最大仓位', en: 'Max Position' },
-      liquidationInfo: { zh: '爆仓信息', en: 'Liquidation Info' },
-      liquidationPrice: { zh: '爆仓价格', en: 'Liquidation Price' },
-      liquidationDistance: { zh: '爆仓距离', en: 'Distance' },
-      marketState: { zh: '市场状态', en: 'Market State' },
-      regimeLevel: { zh: '震荡级别', en: 'Regime Level' },
-      boxState: { zh: '箱体状态', en: 'Box State' },
-      shortBox: { zh: '短期箱体', en: 'Short Box' },
-      midBox: { zh: '中期箱体', en: 'Mid Box' },
-      longBox: { zh: '长期箱体', en: 'Long Box' },
-      narrow: { zh: '窄幅震荡', en: 'Narrow' },
-      standard: { zh: '标准震荡', en: 'Standard' },
-      wide: { zh: '宽幅震荡', en: 'Wide' },
-      volatile: { zh: '剧烈震荡', en: 'Volatile' },
-      trending: { zh: '趋势', en: 'Trending' },
-      breakout: { zh: '突破', en: 'Breakout' },
-      none: { zh: '无', en: 'None' },
     }
     return translations[key]?.[language] || key
   }

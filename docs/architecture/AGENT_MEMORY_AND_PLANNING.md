@@ -256,7 +256,6 @@ Current safeguards:
 - the user reply is appended as a `user_reply` observation
 - planner prompt receives explicit `Resume context`
 
-This prevents short replies like `是` from being misread as unrelated fresh intents as often as before.
 
 ## Dynamic State Refresh
 
@@ -283,7 +282,6 @@ This makes the planner rely more on current system state and less on older narra
 
 The system currently resets or weakens stale execution state when:
 
-- user says retry-like phrases such as `再试`, `继续`, `try again`, `continue`
 - request is config / trader related and old execution state is failed / completed / waiting
 
 Reset scope:
@@ -449,6 +447,5 @@ Always prefer fresh tool snapshots before answering about:
 
 - add workflow versioning so capability changes invalidate stale `ExecutionState`
 - separate `waiting_user_confirmation` from generic `waiting_user`
-- introduce code-level handling for short confirmations such as `是`, `好`, `继续`
 - move dynamic state refresh from heuristic to explicit planner preflight stage
 - support multiple concurrent execution sessions per user if needed

@@ -62,10 +62,14 @@ func IsTokenBlacklisted(token string) bool {
 	return false
 }
 
-// Claims represents JWT claims
+// Claims represents JWT claims. TenantID mirrors UserID (the fork's auth is
+// 1:1 one login = one investor tenant) and is carried explicitly so tenant
+// identity travels with the session the same way the main repo's contracts
+// name it (tenant_id).
 type Claims struct {
-	UserID string `json:"user_id"`
-	Email  string `json:"email"`
+	UserID   string `json:"user_id"`
+	TenantID string `json:"tenant_id,omitempty"`
+	Email    string `json:"email"`
 	jwt.RegisteredClaims
 }
 
@@ -81,11 +85,13 @@ func CheckPassword(password, hash string) bool {
 	return err == nil
 }
 
-// GenerateJWT generates JWT token
+// GenerateJWT generates JWT token. The tenant of a session is the user
+// account itself (each login = one investor tenant), so TenantID = userID.
 func GenerateJWT(userID, email string) (string, error) {
 	claims := Claims{
-		UserID: userID,
-		Email:  email,
+		UserID:   userID,
+		TenantID: userID,
+		Email:    email,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)), // Expires in 24 hours
 			IssuedAt:  jwt.NewNumericDate(time.Now()),

@@ -2,9 +2,6 @@ import React, { useState, useEffect } from 'react'
 import type { Exchange } from '../../types'
 import { t, type Language } from '../../i18n/translations'
 import { api } from '../../lib/api'
-import { useAuth } from '../../contexts/AuthContext'
-import { HyperliquidWalletConnect } from '../common/HyperliquidWalletConnect'
-import { HyperliquidFundsPanel } from '../common/HyperliquidFundsPanel'
 import { getExchangeIcon } from '../common/ExchangeIcons'
 import {
   TwoStageKeyModal,
@@ -30,7 +27,6 @@ const SUPPORTED_EXCHANGE_TEMPLATES = [
   { exchange_type: 'bitget', name: 'Bitget Futures', type: 'cex' as const },
   { exchange_type: 'gate', name: 'Gate.io Futures', type: 'cex' as const },
   { exchange_type: 'kucoin', name: 'KuCoin Futures', type: 'cex' as const },
-  { exchange_type: 'hyperliquid', name: 'Hyperliquid', type: 'dex' as const },
   { exchange_type: 'aster', name: 'Aster DEX', type: 'dex' as const },
   { exchange_type: 'lighter', name: 'Lighter', type: 'dex' as const },
   { exchange_type: 'indodax', name: 'Indodax', type: 'cex' as const },
@@ -156,7 +152,6 @@ export function ExchangeConfigModal({
   onClose,
   language,
 }: ExchangeConfigModalProps) {
-  const { user } = useAuth()
   // Step: 0 = select exchange, 1 = configure
   const [currentStep, setCurrentStep] = useState(
     editingExchangeId || initialExchangeType ? 1 : 0
@@ -202,17 +197,18 @@ export function ExchangeConfigModal({
     ? selectedExchange?.exchange_type
     : selectedExchangeType
 
+  // Plain signup URLs only. We earn nothing on where you open an account, so
+  // these carry no referral codes and show no "bonus" badge.
   const exchangeRegistrationLinks: Record<string, { url: string; hasReferral?: boolean }> = {
-    binance: { url: 'https://www.binance.com/join?ref=NOFXENG', hasReferral: true },
-    okx: { url: 'https://www.okx.com/join/1865360', hasReferral: true },
-    bybit: { url: 'https://partner.bybit.com/b/83856', hasReferral: true },
-    bitget: { url: 'https://www.bitget.com/referral/register?from=referral&clacCode=c8a43172', hasReferral: true },
-    gate: { url: 'https://www.gatenode.xyz/share/VQBGUAxY', hasReferral: true },
-    kucoin: { url: 'https://www.kucoin.com/r/broker/CXEV7XKK', hasReferral: true },
-    hyperliquid: { url: 'https://app.hyperliquid.xyz/join/AITRADING', hasReferral: true },
-    aster: { url: 'https://www.asterdex.com/en/referral/fdfc0e', hasReferral: true },
-    lighter: { url: 'https://app.lighter.xyz/?referral=68151432', hasReferral: true },
-    indodax: { url: 'https://indodax.com/ref/Saep23/1', hasReferral: true },
+    binance: { url: 'https://www.binance.com/en/register', hasReferral: false },
+    okx: { url: 'https://www.okx.com', hasReferral: false },
+    bybit: { url: 'https://www.bybit.com/register', hasReferral: false },
+    bitget: { url: 'https://www.bitget.com/register', hasReferral: false },
+    gate: { url: 'https://www.gate.com/signup', hasReferral: false },
+    kucoin: { url: 'https://www.kucoin.com/ucenter/signup', hasReferral: false },
+    aster: { url: 'https://www.asterdex.com', hasReferral: false },
+    lighter: { url: 'https://app.lighter.xyz', hasReferral: false },
+    indodax: { url: 'https://indodax.com/register', hasReferral: false },
   }
 
   // Initialize form when editing
@@ -321,7 +317,7 @@ export function ExchangeConfigModal({
         if (!apiKey.trim() || !secretKey.trim() || !passphrase.trim()) return
         await onSave(exchangeId, exchangeType, trimmedAccountName, apiKey.trim(), secretKey.trim(), passphrase.trim(), testnet)
       } else if (currentExchangeType === 'hyperliquid') {
-        toast.error(language === 'zh' ? 'Use the wallet authorization flow to connect Hyperliquid.' : 'Use the wallet authorization flow to connect Hyperliquid.')
+        toast.error('This venue is no longer supported.')
         return
       } else if (currentExchangeType === 'aster') {
         if (!asterUser.trim() || !asterSigner.trim() || !asterPrivateKey.trim()) return
@@ -688,34 +684,12 @@ export function ExchangeConfigModal({
                 </>
               )}
 
-              {/* Hyperliquid Wallet Authorization */}
+              {/* ALG-3360: the Hyperliquid wallet-connect flow is retired. A
+                  record saved before then can still be opened here, but it can
+                  only be removed — AlgoBots executes through Nautilus. */}
               {currentExchangeType === 'hyperliquid' && (
-                <div className="space-y-4">
-                  <div className="p-4 rounded-xl" style={{ background: 'rgba(224, 72, 59, 0.1)', border: '1px solid rgba(224, 72, 59, 0.3)' }}>
-                    <div className="flex items-start gap-2">
-                      <span style={{ fontSize: '16px' }}>🔐</span>
-                      <div>
-                        <div className="text-sm font-semibold mb-1" style={{ color: '#E0483B' }}>
-                          {language === 'zh' ? 'Hyperliquid requires wallet authorization' : 'Hyperliquid requires wallet authorization'}
-                        </div>
-                        <div className="text-xs leading-5" style={{ color: '#8A8478' }}>
-                          {language === 'zh'
-                            ? 'Manual private-key/API-key entry is disabled. Use MetaMask, Rabby, OKX, Coinbase Wallet or another EVM wallet to connect, authorize the agent, and approve the builder fee.'
-                            : 'Manual private-key/API-key entry is disabled. Use MetaMask, Rabby, OKX, Coinbase Wallet or another EVM wallet to connect, authorize the agent, and approve the builder fee.'}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex justify-start">
-                    <HyperliquidWalletConnect language={language} isLoggedIn={Boolean(user)} variant="inline" />
-                  </div>
-                  {selectedExchange?.hyperliquidWalletAddr && (
-                    <HyperliquidFundsPanel
-                      language={language}
-                      walletAddress={selectedExchange.hyperliquidWalletAddr}
-                      unifiedAccount={selectedExchange.hyperliquidUnifiedAccount ?? true}
-                    />
-                  )}
+                <div className="p-4 rounded-xl text-xs leading-5" style={{ background: 'rgba(224, 72, 59, 0.1)', border: '1px solid rgba(224, 72, 59, 0.3)', color: '#8A8478' }}>
+                  This venue is no longer supported. Delete this account and connect a paper account instead.
                 </div>
               )}
 

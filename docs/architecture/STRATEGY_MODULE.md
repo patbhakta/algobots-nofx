@@ -1,6 +1,5 @@
 # NOFX Strategy Module - Technical Documentation
 
-**Language:** [English](STRATEGY_MODULE.md) | [中文](STRATEGY_MODULE.zh-CN.md)
 
 ## Overview
 

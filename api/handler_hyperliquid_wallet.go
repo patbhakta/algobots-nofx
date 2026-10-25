@@ -22,9 +22,13 @@ const (
 	defaultHyperliquidBuilderMaxFee = "0.05%"
 	hyperliquidExchangeURL          = "https://api.hyperliquid.xyz/exchange"
 	hyperliquidInfoURL              = "https://api.hyperliquid.xyz/info"
-	// nofxHyperliquidAgentName must match AGENT_NAME used by the frontend
-	// approveAgent flow so we can locate the NOFX-managed agent on-chain.
-	nofxHyperliquidAgentName = "NOFX Agent"
+	// agentName must match AGENT_NAME used by the frontend approveAgent flow
+	// so we can locate our managed agent on-chain. Renamed with the AlgoBots
+	// rebrand (ALG-3344): the user sees this string in the wallet signature
+	// prompt, so it cannot stay "NOFX Agent". Approvals made under the old
+	// name are not matched, which is safe here because no exchange account had
+	// been connected on the deployed instance at rebrand time.
+	nofxHyperliquidAgentName = "AlgoBots Agent"
 )
 
 type hyperliquidSubmitRequest struct {
@@ -72,7 +76,7 @@ type hyperliquidAgentInfo struct {
 }
 
 type hyperliquidAgentResponse struct {
-	// Agent is the NOFX-managed agent ("NOFX Agent"), nil when none is approved.
+	// Agent is our managed agent ("AlgoBots Agent"), nil when none is approved.
 	Agent *hyperliquidAgentInfo `json:"agent"`
 	// Agents lists every approved agent for the wallet (for visibility/cleanup).
 	Agents []hyperliquidAgentInfo `json:"agents"`

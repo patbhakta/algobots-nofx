@@ -49,7 +49,7 @@ export const strategyApi = {
     }
   ): Promise<Strategy> {
     const result = await httpClient.put<Strategy>(`${API_BASE}/strategies/${strategyId}`, data)
-    if (!result.success) throw new Error('Failed to update strategy')
+    if (!result.success) throw new Error(result.message || 'Failed to update strategy')
     return result.data!
   },
 

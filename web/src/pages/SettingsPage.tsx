@@ -255,11 +255,7 @@ export function SettingsPage() {
   ) => {
     try {
       if (exchangeType === 'hyperliquid') {
-        toast.error(
-          language === 'zh'
-            ? 'Hyperliquid must be connected through wallet authorization, not manual keys.'
-            : 'Hyperliquid must be connected through wallet authorization, not manual keys.'
-        )
+        toast.error('This venue is no longer supported.')
         return
       }
       if (exchangeId) {
@@ -331,7 +327,8 @@ export function SettingsPage() {
     { key: 'account', label: 'Account', icon: <User size={16} /> },
     { key: 'models', label: 'AI Models', icon: <Cpu size={16} /> },
     { key: 'exchanges', label: 'Exchanges', icon: <Building2 size={16} /> },
-    { key: 'telegram', label: 'Telegram', icon: <MessageCircle size={16} /> },
+    // Telegram tab hidden per Pat (Oct 14): invite-only dashboard, WhatsApp
+    // plugin planned. TelegramConfigModal + state kept for the future swap.
   ]
 
   return (
@@ -551,9 +548,6 @@ export function SettingsPage() {
                               {configBadge('Secret', !!exchange.has_secret_key)}
                               {exchange.has_passphrase
                                 ? configBadge('Passphrase', true)
-                                : null}
-                              {exchange.hyperliquidWalletAddr
-                                ? configBadge('Wallet', true)
                                 : null}
                               {exchange.has_aster_private_key
                                 ? configBadge('Aster Key', true)

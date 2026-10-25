@@ -1,6 +1,6 @@
 // Constants for AI model and provider configuration
 
-export interface Claw402Model {
+export interface MarketDataModel {
   id: string
   name: string
   provider: string
@@ -37,13 +37,11 @@ export function getShortName(fullName: string): string {
   return parts.length > 1 ? parts[parts.length - 1] : fullName
 }
 
-export const DEFAULT_CLAW402_MODEL = 'gpt-5.6'
+export const DEFAULT_MARKET_DATA_MODEL = 'gpt-5.6'
 
-// Models available through Claw402 (x402 USDC payment protocol)
-// Must stay in sync with the claw402 catalog (GET /api/v1/catalog)
-// Prices are USD per 1M tokens (input / output), settled pay-as-you-go via
-// the x402 upto scheme — each call is charged on actual token usage.
-export const CLAW402_MODELS: Claw402Model[] = [
+// Legacy catalog shape retained temporarily for API compatibility. New accounts
+// use subscription-backed AI providers and never fund a per-call wallet.
+export const MARKET_DATA_MODELS: MarketDataModel[] = [
   {
     id: 'gpt-6',
     name: 'GPT-6 Astra',
@@ -130,10 +128,10 @@ export const CLAW402_MODELS: Claw402Model[] = [
 
 // AI Provider configuration - default models and API links
 export const AI_PROVIDER_CONFIG: Record<string, AIProviderConfig> = {
-  claw402: {
-    defaultModel: DEFAULT_CLAW402_MODEL,
-    apiUrl: 'https://claw402.ai',
-    apiName: 'Claw402',
+  marketData: {
+    defaultModel: DEFAULT_MARKET_DATA_MODEL,
+    apiUrl: 'https://marketData.ai',
+    apiName: 'Market Data',
   },
 }
 

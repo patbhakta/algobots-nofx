@@ -1,6 +1,5 @@
 # 🤝 Contributing to NOFX
 
-**Language:** [English](CONTRIBUTING.md) | [中文](docs/i18n/zh-CN/CONTRIBUTING.md)
 
 Thank you for your interest in contributing to NOFX! This document provides guidelines and workflows for contributing to the project.
 

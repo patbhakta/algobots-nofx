@@ -29,7 +29,6 @@ Before reporting a bug, please check:
 1. Login to [Binance Futures](https://www.binance.com/futures/BTCUSDT)
 2. Click **⚙️ Preferences** (top right)
 3. Select **Position Mode**
-4. Switch to **Hedge Mode** (双向持仓)
 5. ⚠️ **Important:** Close all positions before switching
 
 **Why this happens:**

@@ -7,6 +7,7 @@ import { useAuth } from '../../contexts/AuthContext'
 import { useLanguage } from '../../contexts/LanguageContext'
 import { t } from '../../i18n/translations'
 import { getSystemConfig } from '../../lib/config'
+import { normalizeInviteCode } from '../../lib/inviteCode'
 import { DeepVoidBackground } from '../common/DeepVoidBackground'
 import { RegistrationDisabled } from './RegistrationDisabled'
 import { WhitelistFullPage } from '../common/WhitelistFullPage'
@@ -32,7 +33,11 @@ export function RegisterPage() {
     getSystemConfig()
       .then((config) => {
         setBetaMode(config.beta_mode || false)
-        setRegistrationEnabled(config.initialized === false)
+        // Registration is backend-controlled: open during first-time setup or
+        // when the operator has enabled it; otherwise show the closed page.
+        setRegistrationEnabled(
+          config.registration_enabled === true || config.initialized === false
+        )
       })
       .catch((err) => {
         console.error('Failed to fetch system config:', err)
@@ -136,8 +141,8 @@ export function RegisterPage() {
           <div className="flex justify-center mb-6">
             <div className="relative">
               <img
-                src="/icons/nofx.svg"
-                alt="NoFx Logo"
+                src="/icons/algobots.svg"
+                alt="AlgoBots Logo"
                 className="w-16 h-16 object-contain relative z-10 opacity-90"
               />
             </div>
@@ -146,7 +151,8 @@ export function RegisterPage() {
             <span className="text-nofx-gold">CREATE</span> YOUR ACCOUNT
           </h1>
           <p className="text-nofx-text-muted text-sm">
-            This account owns your NOFX instance. Next step: a guided launch —
+            This account is your investor tenant — your traders, strategies
+            and exchange keys stay scoped to it. Next step: a guided launch —
             about $13 and five minutes to your first AI trade.
           </p>
         </div>
@@ -191,7 +197,7 @@ export function RegisterPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full bg-nofx-bg border border-[rgba(26,24,19,0.14)] rounded px-4 py-3 text-sm focus:border-nofx-gold focus:ring-1 focus:ring-nofx-gold/50 outline-none transition-all placeholder-nofx-text-muted text-nofx-text font-mono"
-                  placeholder="user@nofx.os"
+                  placeholder="user@algobots.os"
                   required
                 />
               </div>
@@ -286,23 +292,23 @@ export function RegisterPage() {
               {betaMode && (
                 <div>
                   <label className="block text-xs uppercase tracking-wider text-nofx-gold mb-1.5 ml-1 font-bold">
-                    Priority Access Code
+                    Invite Code
                   </label>
                   <input
                     type="text"
                     value={betaCode}
                     onChange={(e) =>
-                      setBetaCode(
-                        e.target.value.replace(/[^a-z0-9]/gi, '').toLowerCase()
-                      )
+                      setBetaCode(normalizeInviteCode(e.target.value))
                     }
                     className="w-full bg-nofx-bg border border-[rgba(26,24,19,0.14)] rounded px-4 py-3 text-sm focus:border-nofx-gold focus:ring-1 focus:ring-nofx-gold/50 outline-none transition-all placeholder-nofx-text-muted text-nofx-text font-mono tracking-widest"
-                    placeholder="XXXXXX"
-                    maxLength={6}
+                    placeholder="ALG-…"
+                    maxLength={128}
+                    autoComplete="off"
+                    spellCheck={false}
                     required={betaMode}
                   />
                   <p className="text-[10px] text-nofx-text-muted font-mono mt-1 ml-1">
-                    * CASE SENSITIVE ALPHANUMERIC
+                    * PASTE THE SINGLE-USE CODE EXACTLY AS SENT (CASE SENSITIVE)
                   </p>
                 </div>
               )}

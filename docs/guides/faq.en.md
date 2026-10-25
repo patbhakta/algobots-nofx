@@ -72,7 +72,6 @@ Default: **3 positions**. This is a soft limit defined in the AI prompt, not har
 
 **Error**: `Order's position side does not match user's setting`
 
-**Solution**: Switch to **Hedge Mode** (双向持仓)
 1. Login to [Binance Futures](https://www.binance.com/en/futures/BTCUSDT)
 2. Click **⚙️ Preferences** (top right)
 3. Select **Position Mode** → **Hedge Mode**

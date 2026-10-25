@@ -1,47 +1,24 @@
-# AI自适应网格交易系统修复计划
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
-**Goal:** 修复AI网格交易系统的所有致命和严重问题，添加代码级风控保护机制。
 
 **Architecture:**
-1. 在AI决策和订单执行之间添加风控验证层
-2. 实现代码级止损、仓位限制、突破检测
-3. 修复杠杆设置和订单取消的BUG
-4. 添加自动网格调整机制
 
-**Tech Stack:** Go, GORM, 交易所API接口
 
 ---
 
-## 问题优先级
 
-| 优先级 | 问题 | Task |
 |--------|------|------|
-| P0 致命 | 杠杆未生效 | Task 1 |
-| P0 致命 | 取消订单逻辑错误 | Task 2 |
-| P0 致命 | 无总仓位限制 | Task 3 |
-| P1 严重 | 无止损执行 | Task 4 |
-| P1 严重 | 无突破检测 | Task 5 |
-| P1 严重 | MaxDrawdown未执行 | Task 6 |
-| P1 严重 | DailyLossLimit未执行 | Task 7 |
-| P2 中等 | 无动态调整 | Task 8 |
-| P2 中等 | 订单状态同步错误 | Task 9 |
 
 ---
 
-## Task 1: 修复杠杆设置BUG
 
-**问题:** `PlaceLimitOrder` 完全忽略 `Leverage` 字段，从未调用 `SetLeverage()`
 
 **Files:**
 - Modify: `trader/interface.go:171-194`
 - Modify: `trader/auto_trader_grid.go:324-409`
-- Create: `trader/grid_test.go` (新增测试)
 
-### Step 1.1: 在 GridTraderAdapter.PlaceLimitOrder 中添加杠杆设置
 
-修改 `trader/interface.go`:
 
 ```go
 // PlaceLimitOrder implements limit order using available methods
@@ -80,14 +57,11 @@ func (a *GridTraderAdapter) PlaceLimitOrder(req *LimitOrderRequest) (*LimitOrder
 }
 ```
 
-### Step 1.2: 在 InitializeGrid 中设置杠杆
 
-修改 `trader/auto_trader_grid.go`, 在 `InitializeGrid()` 函数末尾添加:
 
 ```go
 // InitializeGrid initializes the grid state and calculates levels
 func (at *AutoTrader) InitializeGrid() error {
-	// ... 现有代码 ...
 
 	at.gridState.IsInitialized = true
 
@@ -106,14 +80,12 @@ func (at *AutoTrader) InitializeGrid() error {
 }
 ```
 
-### Step 1.3: 运行测试验证
 
 ```bash
 go build ./trader/
 go test -v -run "TestLighter.*Leverage" ./trader/ -timeout 60s
 ```
 
-### Step 1.4: 提交
 
 ```bash
 git add trader/interface.go trader/auto_trader_grid.go
@@ -127,16 +99,12 @@ CRITICAL BUG FIX:
 
 ---
 
-## Task 2: 修复订单取消逻辑BUG
 
-**问题:** `GridTraderAdapter.CancelOrder()` 错误地调用 `CancelAllOrders()`
 
 **Files:**
 - Modify: `trader/interface.go:196-200`
 
-### Step 2.1: 修复 CancelOrder 实现
 
-修改 `trader/interface.go`:
 
 ```go
 // CancelOrder cancels a specific order
@@ -158,23 +126,18 @@ func (a *GridTraderAdapter) CancelOrder(symbol, orderID string) error {
 }
 ```
 
-### Step 2.2: 添加 fmt import (如果缺失)
 
-确保 `trader/interface.go` 顶部有:
 ```go
 import (
 	"fmt"
-	// ... 其他imports
 )
 ```
 
-### Step 2.3: 运行测试验证
 
 ```bash
 go build ./trader/
 ```
 
-### Step 2.4: 提交
 
 ```bash
 git add trader/interface.go
@@ -188,17 +151,12 @@ CRITICAL BUG FIX:
 
 ---
 
-## Task 3: 添加总仓位限制
 
-**问题:** 只检查单层仓位，不检查总仓位，导致可能开出巨额仓位
 
 **Files:**
 - Modify: `trader/auto_trader_grid.go:324-409`
-- Modify: `trader/auto_trader_grid.go` (新增 `checkTotalPositionLimit` 函数)
 
-### Step 3.1: 添加总仓位检查函数
 
-在 `trader/auto_trader_grid.go` 中 `placeGridLimitOrder` 函数之前添加:
 
 ```go
 // checkTotalPositionLimit checks if adding a new position would exceed total limits
@@ -244,13 +202,10 @@ func (at *AutoTrader) checkTotalPositionLimit(symbol string, additionalValue flo
 }
 ```
 
-### Step 3.2: 在 placeGridLimitOrder 中使用总仓位检查
 
-修改 `trader/auto_trader_grid.go` 的 `placeGridLimitOrder` 函数，在现有检查之后添加:
 
 ```go
 func (at *AutoTrader) placeGridLimitOrder(d *kernel.Decision, side string) error {
-	// ... 现有代码到 line 377 ...
 
 	// CRITICAL: Check total position limit before placing order
 	orderValue := quantity * d.Price
@@ -262,19 +217,15 @@ func (at *AutoTrader) placeGridLimitOrder(d *kernel.Decision, side string) error
 	}
 
 	req := &LimitOrderRequest{
-		// ... 现有代码 ...
 	}
-	// ... 其余代码 ...
 }
 ```
 
-### Step 3.3: 运行测试验证
 
 ```bash
 go build ./trader/
 ```
 
-### Step 3.4: 提交
 
 ```bash
 git add trader/auto_trader_grid.go
@@ -289,17 +240,11 @@ CRITICAL: Prevent excessive position accumulation
 
 ---
 
-## Task 4: 添加止损执行机制
 
-**问题:** `StopLossPct` 存在于配置但从未使用
 
 **Files:**
-- Modify: `trader/auto_trader_grid.go` (添加 `checkAndExecuteStopLoss` 函数)
-- Modify: `trader/auto_trader_grid.go:504-565` (在 `syncGridState` 中调用)
 
-### Step 4.1: 添加止损检查和执行函数
 
-在 `trader/auto_trader_grid.go` 中添加:
 
 ```go
 // checkAndExecuteStopLoss checks if any filled level has exceeded stop loss and closes it
@@ -361,13 +306,10 @@ func (at *AutoTrader) checkAndExecuteStopLoss() {
 }
 ```
 
-### Step 4.2: 在 syncGridState 中调用止损检查
 
-修改 `trader/auto_trader_grid.go` 的 `syncGridState` 函数末尾:
 
 ```go
 func (at *AutoTrader) syncGridState() {
-	// ... 现有代码 ...
 
 	logger.Debugf("[Grid] Synced state: position=%.4f, orders=%d", totalPosition, len(openOrders))
 
@@ -376,13 +318,11 @@ func (at *AutoTrader) syncGridState() {
 }
 ```
 
-### Step 4.3: 运行测试验证
 
 ```bash
 go build ./trader/
 ```
 
-### Step 4.4: 提交
 
 ```bash
 git add trader/auto_trader_grid.go
@@ -397,17 +337,11 @@ CRITICAL: Add code-level stop loss protection
 
 ---
 
-## Task 5: 添加突破检测机制
 
-**问题:** 价格突破网格边界时无响应，继续执行导致单边亏损
 
 **Files:**
-- Modify: `trader/auto_trader_grid.go` (添加 `checkBreakout` 函数)
-- Modify: `trader/auto_trader_grid.go:184-224` (在 `RunGridCycle` 中调用)
 
-### Step 5.1: 添加突破检测函数
 
-在 `trader/auto_trader_grid.go` 中添加:
 
 ```go
 // BreakoutType represents the type of price breakout
@@ -486,9 +420,7 @@ func (at *AutoTrader) handleBreakout(breakoutType BreakoutType, breakoutPct floa
 }
 ```
 
-### Step 5.2: 在 RunGridCycle 中添加突破检测
 
-修改 `trader/auto_trader_grid.go` 的 `RunGridCycle` 函数:
 
 ```go
 func (at *AutoTrader) RunGridCycle() error {
@@ -516,17 +448,14 @@ func (at *AutoTrader) RunGridCycle() error {
 	}
 
 	gridConfig := at.config.StrategyConfig.GridConfig
-	// ... 其余现有代码 ...
 }
 ```
 
-### Step 5.3: 运行测试验证
 
 ```bash
 go build ./trader/
 ```
 
-### Step 5.4: 提交
 
 ```bash
 git add trader/auto_trader_grid.go
@@ -541,17 +470,11 @@ CRITICAL: Detect price breakout from grid range
 
 ---
 
-## Task 6: 添加 MaxDrawdown 强制执行
 
-**问题:** `MaxDrawdownPct` 存在于配置但从未检查
 
 **Files:**
-- Modify: `trader/auto_trader_grid.go` (添加 `checkMaxDrawdown` 函数)
-- Modify: `trader/auto_trader_grid.go:184-224` (在 `RunGridCycle` 中调用)
 
-### Step 6.1: 添加最大回撤检查函数
 
-在 `trader/auto_trader_grid.go` 中添加:
 
 ```go
 // checkMaxDrawdown checks if current drawdown exceeds maximum allowed
@@ -642,16 +565,12 @@ func (at *AutoTrader) emergencyExit(reason string) error {
 }
 ```
 
-### Step 6.2: 在 RunGridCycle 中添加回撤检查
 
-修改 `trader/auto_trader_grid.go` 的 `RunGridCycle` 函数，在突破检测后添加:
 
 ```go
 func (at *AutoTrader) RunGridCycle() error {
-	// ... 初始化检查 ...
 
 	// CRITICAL: Check for breakout
-	// ... 突破检测代码 ...
 
 	// CRITICAL: Check max drawdown
 	exceeded, drawdown := at.checkMaxDrawdown()
@@ -659,17 +578,14 @@ func (at *AutoTrader) RunGridCycle() error {
 		return at.emergencyExit(fmt.Sprintf("max drawdown exceeded: %.2f%%", drawdown))
 	}
 
-	// ... 其余代码 ...
 }
 ```
 
-### Step 6.3: 运行测试验证
 
 ```bash
 go build ./trader/
 ```
 
-### Step 6.4: 提交
 
 ```bash
 git add trader/auto_trader_grid.go
@@ -684,17 +600,11 @@ CRITICAL: Add drawdown protection
 
 ---
 
-## Task 7: 添加 DailyLossLimit 强制执行
 
-**问题:** `DailyLossLimitPct` 存在于配置但从未检查
 
 **Files:**
-- Modify: `trader/auto_trader_grid.go` (添加 `checkDailyLossLimit` 函数)
-- Modify: `trader/auto_trader_grid.go:184-224` (在 `RunGridCycle` 中调用)
 
-### Step 7.1: 添加日损失限制检查函数
 
-在 `trader/auto_trader_grid.go` 中添加:
 
 ```go
 // checkDailyLossLimit checks if daily loss exceeds limit
@@ -734,13 +644,10 @@ func (at *AutoTrader) updateDailyPnL(realizedPnL float64) {
 }
 ```
 
-### Step 7.2: 在 RunGridCycle 中添加日损失检查
 
-修改 `trader/auto_trader_grid.go` 的 `RunGridCycle` 函数:
 
 ```go
 func (at *AutoTrader) RunGridCycle() error {
-	// ... 初始化和突破检测 ...
 
 	// CRITICAL: Check max drawdown
 	// ...
@@ -755,17 +662,14 @@ func (at *AutoTrader) RunGridCycle() error {
 		return fmt.Errorf("daily loss limit exceeded: %.2f%%", dailyLossPct)
 	}
 
-	// ... 其余代码 ...
 }
 ```
 
-### Step 7.3: 运行测试验证
 
 ```bash
 go build ./trader/
 ```
 
-### Step 7.4: 提交
 
 ```bash
 git add trader/auto_trader_grid.go
@@ -779,17 +683,11 @@ git commit -m "feat(grid): enforce daily loss limit
 
 ---
 
-## Task 8: 添加自动网格调整
 
-**问题:** 网格无法自动适应价格偏移
 
 **Files:**
-- Modify: `trader/auto_trader_grid.go` (添加 `checkGridSkew` 函数)
-- Modify: `trader/auto_trader_grid.go:504-565` (在 `syncGridState` 中调用)
 
-### Step 8.1: 添加网格倾斜检测函数
 
-在 `trader/auto_trader_grid.go` 中添加:
 
 ```go
 // checkGridSkew checks if grid is heavily skewed (too many fills on one side)
@@ -876,13 +774,10 @@ func (at *AutoTrader) autoAdjustGrid() {
 }
 ```
 
-### Step 8.2: 在 syncGridState 中调用自动调整
 
-修改 `trader/auto_trader_grid.go` 的 `syncGridState` 函数:
 
 ```go
 func (at *AutoTrader) syncGridState() {
-	// ... 现有代码 ...
 
 	// Check stop loss
 	at.checkAndExecuteStopLoss()
@@ -892,13 +787,11 @@ func (at *AutoTrader) syncGridState() {
 }
 ```
 
-### Step 8.3: 运行测试验证
 
 ```bash
 go build ./trader/
 ```
 
-### Step 8.4: 提交
 
 ```bash
 git add trader/auto_trader_grid.go
@@ -912,16 +805,12 @@ git commit -m "feat(grid): add automatic grid adjustment
 
 ---
 
-## Task 9: 修复订单状态同步逻辑
 
-**问题:** 假设订单不存在就是成交，但可能是被取消
 
 **Files:**
 - Modify: `trader/auto_trader_grid.go:504-565`
 
-### Step 9.1: 改进订单状态同步逻辑
 
-修改 `trader/auto_trader_grid.go` 的 `syncGridState` 函数:
 
 ```go
 // syncGridState syncs grid state with exchange
@@ -999,13 +888,11 @@ func (at *AutoTrader) syncGridState() {
 }
 ```
 
-### Step 9.2: 运行测试验证
 
 ```bash
 go build ./trader/
 ```
 
-### Step 9.3: 提交
 
 ```bash
 git add trader/auto_trader_grid.go
@@ -1019,54 +906,27 @@ git commit -m "fix(grid): improve order state sync logic
 
 ---
 
-## 完成后的验证步骤
 
-### 全面测试
 
 ```bash
-# 编译验证
 go build ./...
 
-# 运行所有trader测试
 go test -v ./trader/... -timeout 300s
 
-# 运行网格相关测试
 go test -v -run "Grid" ./trader/ -timeout 60s
 ```
 
-### 代码审查清单
 
-- [ ] 所有P0致命问题已修复
-- [ ] 所有P1严重问题已修复
-- [ ] 杠杆在初始化时设置
-- [ ] 订单取消逻辑正确
-- [ ] 总仓位有限制
-- [ ] 止损被执行
-- [ ] 突破时自动暂停
-- [ ] MaxDrawdown触发紧急退出
-- [ ] DailyLossLimit暂停交易
-- [ ] 网格自动调整
 
 ---
 
-## 架构改进总结
 
 ```
-修复后的架构:
 
 ┌─────────────┐     ┌─────────────┐     ┌─────────────────────────┐     ┌─────────────┐
-│ 市场数据    │ ──▶ │ AI决策      │ ──▶ │ 代码级风控验证          │ ──▶ │ 执行交易    │
 └─────────────┘     └─────────────┘     └─────────────────────────┘     └─────────────┘
                                                     │
                                                     ▼
                     ┌────────────────────────────────────────────────────┐
-                    │ 风控检查清单 (每个周期执行)                          │
-                    │ ✓ checkBreakout() - 突破检测                        │
-                    │ ✓ checkMaxDrawdown() - 最大回撤                     │
-                    │ ✓ checkDailyLossLimit() - 日损失限制                 │
-                    │ ✓ checkTotalPositionLimit() - 总仓位限制             │
-                    │ ✓ checkAndExecuteStopLoss() - 止损执行               │
-                    │ ✓ checkGridSkew() - 网格平衡                        │
-                    │ ✓ SetLeverage() - 杠杆设置                          │
                     └────────────────────────────────────────────────────┘
 ```
