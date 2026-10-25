@@ -12,9 +12,14 @@ import shutil
 import tempfile
 from pathlib import Path
 
-from nautilus_trader.model.data import Bar, QuoteTick
-from nautilus_trader.model.instruments import Instrument
-from nautilus_trader.persistence.catalog.parquet import ParquetDataCatalog
+try:  # Rust rc6 public API
+    from nautilus_trader.model import Bar, QuoteTick
+    from nautilus_trader.persistence import ParquetDataCatalog
+    from typing import Any as Instrument
+except ImportError:  # Existing Cython recorder runtime
+    from nautilus_trader.model.data import Bar, QuoteTick
+    from nautilus_trader.model.instruments import Instrument
+    from nautilus_trader.persistence.catalog.parquet import ParquetDataCatalog
 
 from algobots.warehouse import WarehouseError, _token
 
@@ -76,9 +81,18 @@ def _publish(snapshot_id, instruments, data, data_class, root):
         if target.exists():
             raise WarehouseError("catalog snapshot already published")
         catalog = ParquetDataCatalog(str(stage))
-        catalog.write_data(instruments)
-        catalog.write_data(data)
-        replay = catalog.query(data_class)
+        if hasattr(catalog, "write_data"):
+            catalog.write_data(instruments)
+            catalog.write_data(data)
+            replay = catalog.query(data_class)
+        else:
+            catalog.write_instruments(instruments)
+            if data_class is Bar:
+                catalog.write_bars(data)
+                replay = catalog.query_bars()
+            else:
+                catalog.write_quote_ticks(data)
+                replay = catalog.query_quote_ticks()
 
         def identity(item):
             if data_class is Bar:

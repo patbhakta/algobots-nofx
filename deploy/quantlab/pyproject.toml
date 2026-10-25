@@ -1,0 +1,5 @@
+[project]
+name = "algobots-quantlab"
+version = "0.1.0"
+requires-python = ">=3.12,<3.13"
+dependencies = ["marimo==0.25.1", "openbb==4.7.2", "nautilus_trader==2.0.0rc6", "pandas==2.3.3", "pyarrow==25.0.1"]
