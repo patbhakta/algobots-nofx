@@ -320,6 +320,7 @@ function InvitesCard() {
 }
 
 export function PaperLoopPanel() {
+  const [strategy, setStrategy] = useState('all')
   const [live, setLive] = useState<PaperLoopLive | null>(null)
   const [me, setMe] = useState<StudioMe | null>(null)
   const [error, setError] = useState('')
@@ -347,6 +348,9 @@ export function PaperLoopPanel() {
     return () => window.clearInterval(id)
   }, [refresh])
 
+  const workers = live?.workers.filter(w => strategy === 'all' || w.account === strategy) ?? []
+  const decisions = live?.decisions.filter(d => strategy === 'all' || d.strategy === strategy) ?? []
+
   return (
     <section className="space-y-3" data-testid="paper-loop-panel">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -354,6 +358,12 @@ export function PaperLoopPanel() {
           <h2 className="text-lg font-semibold text-nofx-text">
             Live paper loop
           </h2>
+          <label className="text-xs">Strategy{' '}
+            <select aria-label="Paper strategy" value={strategy} onChange={e => setStrategy(e.target.value)}>
+              <option value="all">All running strategies</option>
+              {live?.workers.map(w => <option key={w.account} value={w.account}>{w.account}</option>)}
+            </select>
+          </label>
           <Badge tone="warn">paper</Badge>
           <Badge tone="warn">sandbox · no real money</Badge>
         </div>
@@ -399,12 +409,15 @@ export function PaperLoopPanel() {
                     <th className="py-1">Strategy</th>
                     <th>State</th>
                     <th>Venue account</th>
+                    <th>Orders submitted</th>
                     <th>Fills</th>
+                    <th>Open positions</th>
+                    <th>Strategy PnL</th>
                     <th>Equity</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {live.workers.map((w) => (
+                  {workers.map((w) => (
                     <tr
                       key={w.account}
                       className="border-t border-[rgba(26,24,19,0.08)]"
@@ -417,7 +430,10 @@ export function PaperLoopPanel() {
                         </span>
                       </td>
                       <td className="font-mono">{w.venue_account_id || '—'}</td>
+                      <td>{w.orders_submitted ?? '—'}</td>
                       <td>{w.orders_filled ?? '—'}</td>
+                      <td>{w.open_positions ?? '—'}</td>
+                      <td>{w.funds?.strategy_pnl !== undefined ? `$${w.funds.strategy_pnl}` : '—'}</td>
                       <td>{w.funds?.equity ? `$${w.funds.equity}` : '—'}</td>
                     </tr>
                   ))}
@@ -430,6 +446,20 @@ export function PaperLoopPanel() {
               </div>
             </div>
           </div>
+          {workers.map(w => <div key={w.account} className={CARD} data-testid="worker-exposure">
+            <h3 className="font-semibold">{w.account} · positions and recent fills</h3>
+            <p className="text-xs text-nofx-text-muted">Worker snapshot · {w.state} · {age(w.heartbeat_age_s)}. Strategy PnL includes settled outcomes; unmarked positions have no unrealized PnL.</p>
+            {w.positions?.length ? <ul>{w.positions.map(p => <li key={p.instrument} className="font-mono text-xs">
+              {p.instrument} · {p.side} {p.qty} @ {p.avg_price} · unrealized PnL {p.unrealized_pnl ?? 'unavailable'}
+            </li>)}</ul> : <p className="text-xs">{w.positions ? 'No open positions reported.' : 'Positions unavailable.'}</p>}
+            <div className="overflow-x-auto"><table className="w-full text-left text-xs">
+              <caption className="text-left">Latest {w.fills.length} fill receipts (bounded recent window)</caption>
+              <thead><tr><th>Order</th><th>Trade</th><th>Instrument</th><th>Quantity</th><th>Price</th></tr></thead>
+              <tbody>{w.fills.map((f, i) => <tr key={f.trade_id ?? i}>
+                <td>{f.client_order_id ?? '—'}</td><td>{f.trade_id ?? '—'}</td><td>{f.instrument}</td><td>{f.qty}</td><td>{f.px ?? '—'}</td>
+              </tr>)}</tbody>
+            </table></div>
+          </div>)}
           <div className={CARD} data-testid="decisions-card">
             <div className="mb-2 text-sm font-semibold text-nofx-text">
               Decisions → Nautilus receipts
@@ -448,7 +478,7 @@ export function PaperLoopPanel() {
                   </tr>
                 </thead>
                 <tbody>
-                  {live.decisions.map((d) => (
+                  {decisions.map((d) => (
                     <tr
                       key={d.decision_id}
                       className="border-t border-[rgba(26,24,19,0.08)] align-top"

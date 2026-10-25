@@ -1383,7 +1383,7 @@ export function StrategyStudioPage() {
         </aside>
 
         <main className="overflow-y-auto p-5">
-          <details className="mx-auto mb-6 max-w-7xl rounded-lg border p-4">
+          <details open className="mx-auto mb-6 max-w-7xl rounded-lg border p-4">
             <summary className="cursor-pointer font-semibold">Live paper-loop receipts</summary>
             <PaperLoopPanel />
           </details>

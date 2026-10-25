@@ -71,6 +71,7 @@ export interface LoopWorker {
   orders_submitted?: number
   orders_filled?: number
   open_positions?: number
+  positions?: Array<{ instrument: string; side: string; qty: string; avg_price: string; unrealized_pnl: string | null }>
   funds?: Record<string, string> | null
   fills: FillReceipt[]
 }
