@@ -1,0 +1,4 @@
+{"authenticated": 200, "health": "healthy", "ports": [{"HostIp": "100.82.57.72", "HostPort": "8205"}], "unauthenticated": 401, "user": "1000:1000"}
+{"path": "openbb_store/manifests/external/openbb-spy-daily/openbb-spy-ad6a2491f1d84484.json", "uid": 0, "gid": 1000, "mode": "0o664"}
+{"path": "ntl_catalog/openbb-spy-ad6a2491f1d84484", "uid": 0, "gid": 1000, "mode": "0o2770"}
+ROOT_ONLY_UID1000_DENIED (temporary root-owned 0700 directory, removed after check)

@@ -12,7 +12,7 @@ import json
 import math
 import re
 import shutil
-import tempfile
+import uuid
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -110,7 +110,8 @@ class Warehouse:
             raise WarehouseError("invalid timestamp or event key") from exc
         staging = self.root / "_staging"
         staging.mkdir(parents=True, exist_ok=True)
-        stage = Path(tempfile.mkdtemp(dir=staging))
+        stage = staging / uuid.uuid4().hex
+        stage.mkdir(mode=0o770)
         try:
             parquet = stage / "data.parquet"
             pq.write_table(table, parquet)

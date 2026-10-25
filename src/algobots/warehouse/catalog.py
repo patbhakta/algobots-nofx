@@ -9,12 +9,18 @@ from __future__ import annotations
 
 import os
 import shutil
-import tempfile
+import uuid
 from pathlib import Path
 
-from nautilus_trader.model.data import Bar, QuoteTick
-from nautilus_trader.model.instruments import Instrument
-from nautilus_trader.persistence.catalog.parquet import ParquetDataCatalog
+try:  # Rust rc6 public API
+    from typing import Any as Instrument
+
+    from nautilus_trader.model import Bar, QuoteTick
+    from nautilus_trader.persistence import ParquetDataCatalog
+except ImportError:  # Existing Cython recorder runtime
+    from nautilus_trader.model.data import Bar, QuoteTick
+    from nautilus_trader.model.instruments import Instrument
+    from nautilus_trader.persistence.catalog.parquet import ParquetDataCatalog
 
 from algobots.warehouse import WarehouseError, _token
 
@@ -63,7 +69,8 @@ def _publish(snapshot_id, instruments, data, data_class, root):
     root = Path(root)
     root.mkdir(parents=True, exist_ok=True)
     target = root / snapshot_id
-    stage = Path(tempfile.mkdtemp(prefix=".staging-", dir=root))
+    stage = root / f".staging-{uuid.uuid4().hex}"
+    stage.mkdir(mode=0o770)
     lock = root / f".{snapshot_id}.lock"
     locked = False
     try:
@@ -76,9 +83,18 @@ def _publish(snapshot_id, instruments, data, data_class, root):
         if target.exists():
             raise WarehouseError("catalog snapshot already published")
         catalog = ParquetDataCatalog(str(stage))
-        catalog.write_data(instruments)
-        catalog.write_data(data)
-        replay = catalog.query(data_class)
+        if hasattr(catalog, "write_data"):
+            catalog.write_data(instruments)
+            catalog.write_data(data)
+            replay = catalog.query(data_class)
+        else:
+            catalog.write_instruments(instruments)
+            if data_class is Bar:
+                catalog.write_bars(data)
+                replay = catalog.query_bars()
+            else:
+                catalog.write_quote_ticks(data)
+                replay = catalog.query_quote_ticks()
 
         def identity(item):
             if data_class is Bar:
