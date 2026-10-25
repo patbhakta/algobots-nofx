@@ -379,7 +379,8 @@ def _seed_lock(db: Session, tenant_id: UUID) -> None:
     """
     if db.get_bind().dialect.name != "postgresql":
         return  # tests run on sqlite; the live race needs the pg lock
-    db.execute(text("SELECT pg_advisory_xact_lock(hashtext('nofx-studio-seed:' || :t))").bindparams(t=str(tenant_id)))
+    stmt = text("SELECT pg_advisory_xact_lock(hashtext('nofx-studio-seed:' || :t))")
+    db.execute(stmt.bindparams(t=str(tenant_id)))
 
 
 @router.get("/strategies")
