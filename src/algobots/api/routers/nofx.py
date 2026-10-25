@@ -667,7 +667,6 @@ def studio_live(ctx: AuthContext = Depends(get_auth_context)) -> dict:
             )
     decisions.sort(key=lambda d: (d["decided_at"] or "", d["strategy"]), reverse=True)
     for w in workers.values():
-        w.pop("positions")  # summarised through receipts; keep the payload small
         w["fills"] = w["fills"][-10:]
     return {
         "as_of": now,
