@@ -172,3 +172,10 @@ def test_close_stops_all_children():
     runtime.close()
     assert all(c.terminated for c in children)
     assert not runtime.children
+
+
+def test_kalshi_launch_symbol_includes_quote_currency():
+    d = deployment()
+    spec = launch_spec(d, account(d))
+    pair, _venue = spec.environment["ALGOBOTS_NODE_SYMBOL"].rsplit(".", 1)
+    assert pair == "KXBTC15M/USD"

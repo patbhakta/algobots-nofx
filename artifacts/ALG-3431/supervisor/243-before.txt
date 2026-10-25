@@ -1,0 +1,9 @@
+                  id                  | status  |  symbol  | mode  | approval_mode |                          artifact_hash
+--------------------------------------+---------+----------+-------+---------------+------------------------------------------------------------------
+ 3d030739-88c1-418f-88f9-3711c4368287 | running | KXBTC15M | paper | auto          | bb4c4150ddaeb5037084d9cd30c1c1a951d96e2d2cca8d23a16c6fd97f666e5f
+(1 row)
+
+      node      | count
+----------------+-------
+ nautilus-paper |    11
+(1 row)

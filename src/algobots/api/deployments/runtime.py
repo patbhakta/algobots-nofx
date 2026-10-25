@@ -86,7 +86,7 @@ def launch_spec(deployment: Any, account: Any) -> LaunchSpec:
             "ALGOBOTS_NODE": node,
             "ALGOBOTS_NODE_VENUE": venue,
             "ALGOBOTS_NODE_ACCOUNT": f"{venue}-001",
-            "ALGOBOTS_NODE_SYMBOL": f"KXBTC15M.{venue}",
+            "ALGOBOTS_NODE_SYMBOL": f"KXBTC15M/USD.{venue}",
             "ALGOBOTS_NODE_CURRENCY": "USD",
             "ALGOBOTS_FEED": "kalshi",
             "ALGOBOTS_DEPLOYMENT_SNAPSHOT": json.dumps(snapshot, sort_keys=True),

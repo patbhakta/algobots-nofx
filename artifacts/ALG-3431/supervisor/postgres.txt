@@ -1,0 +1,3 @@
+read_deployment_rows 1
+concurrent_supervisor_refused
+lease_reacquired_after_release 1
