@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Restore only the hub from the saved inspect and env; never echo secrets."""
 import json
-from pathlib import Path
 import subprocess
 import sys
+from pathlib import Path
 
 backup = Path('/root/tdai-rebuild-backup')
 cfg = json.loads((backup / 'tdai-memory-hub.json').read_text())[0]
