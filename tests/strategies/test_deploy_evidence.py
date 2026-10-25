@@ -1,15 +1,14 @@
 """API proof: exact-hash, same-tenant, published evidence gates Studio deploys."""
 
 import copy
-import json
-from uuid import UUID, uuid4
+from uuid import UUID
 
 import pytest
 
 from algobots.api.config import get_settings
 from algobots.api.database import get_session_factory
 from algobots.api.models import Strategy
-from algobots.strategies.evidence import publish_notebook
+from tests.strategies.evidence_attach import attach_evidence
 from tests.strategies.test_deployments_api import _make_account
 from tests.strategies.test_studio import DRAFT
 
@@ -36,42 +35,6 @@ def compiled(client, member_headers, tmp_path, monkeypatch):
     get_settings.cache_clear()
 
 
-def attach(compiled, *, wrong_hash=False, foreign_tenant=False):
-    draft, artifact, _, root = compiled
-    with get_session_factory()() as db:
-        row = db.get(Strategy, UUID(draft["id"]))
-        result = {
-            "artifact": {
-                "artifact_hash": "f" * 64 if wrong_hash else artifact["artifact_hash"],
-                "strategy_id": artifact["strategy_id"],
-            },
-            "dataset": {"snapshot_id": "fixture-snapshot", "sha256": "b" * 64},
-        }
-        record = Strategy(
-            id=uuid4(),
-            tenant_id=uuid4() if foreign_tenant else row.tenant_id,
-            user_id=row.user_id,
-            name="backtest",
-            kind="studio-backtest",
-            params_json=json.dumps(result),
-        )
-        # Foreign tenant test uses a different *existing* tenant to respect FK checks.
-        if foreign_tenant:
-            from sqlalchemy import select
-
-            from algobots.api.memberships.models import Tenant
-
-            record.tenant_id = db.scalar(select(Tenant.id).where(Tenant.id != row.tenant_id))
-        db.add(record)
-        db.flush()
-        evidence = publish_notebook(root, str(record.id), result, get_settings().evidence_base_url)
-        params = row.params
-        params["evidence"] = [evidence]
-        row.params_json = json.dumps(params)
-        db.commit()
-        return evidence
-
-
 def deploy(client, headers, compiled):
     return client.post("/api/deployments", headers=headers, json=compiled[2])
 
@@ -83,7 +46,7 @@ def test_refuses_without_evidence(client, member_headers, compiled):
 
 
 def test_allows_exact_hash_and_freezes_evidence(client, member_headers, compiled):
-    evidence = attach(compiled)
+    evidence = attach_evidence(compiled)
     response = deploy(client, member_headers, compiled)
     assert response.status_code == 201, response.text
     assert response.json()["frozen_spec"]["studio_evidence"] == evidence
@@ -91,7 +54,9 @@ def test_allows_exact_hash_and_freezes_evidence(client, member_headers, compiled
 
 @pytest.mark.parametrize("failure", ["hash", "missing", "modified", "tenant", "result"])
 def test_refuses_invalid_evidence(client, member_headers, compiled, failure):
-    evidence = attach(compiled, wrong_hash=failure == "hash", foreign_tenant=failure == "tenant")
+    evidence = attach_evidence(
+        compiled, wrong_hash=failure == "hash", foreign_tenant=failure == "tenant"
+    )
     path = compiled[3] / "evidence" / f"{evidence['backtest_row_id']}.py"
     if failure == "missing":
         path.unlink()
@@ -107,7 +72,7 @@ def test_refuses_invalid_evidence(client, member_headers, compiled, failure):
 
 
 def test_evidence_does_not_authorize_edited_compiled_spec(client, member_headers, compiled):
-    attach(compiled)
+    attach_evidence(compiled)
     spec = copy.deepcopy(compiled[1]["spec"])
     spec["warmup_bars"] += 1
     response = client.patch(

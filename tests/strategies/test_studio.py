@@ -5,6 +5,7 @@ import copy
 import pytest
 from fastapi.testclient import TestClient
 
+from algobots.api.config import get_settings
 from algobots.strategies.dsl import SPEC_KIND
 from algobots.strategies.studio import (
     IMPLEMENTATIONS,
@@ -14,6 +15,7 @@ from algobots.strategies.studio import (
     translate_nofx_config,
 )
 from tests.conftest import TEST_PASSWORD
+from tests.strategies.evidence_attach import attach_evidence
 
 SMA_CROSS = {
     "left": {"indicator": "sma", "params": {"period": 20}},
@@ -168,7 +170,7 @@ def token(client: TestClient, founder: dict) -> str:
     return r.json()["token"]
 
 
-def test_draft_save_patch_compile_deploy(client, token):
+def test_draft_save_patch_compile_deploy(client, token, tmp_path, monkeypatch):
     r = client.post("/api/studio/strategies", json=_d(), headers=_h(token))
     assert r.status_code == 201, r.text
     draft = r.json()
@@ -196,19 +198,31 @@ def test_draft_save_patch_compile_deploy(client, token):
     acct = client.post(
         "/api/accounts", headers=_h(token), json={"label": "Studio", "broker": "alpaca"}
     ).json()
-    dep = client.post(
-        "/api/deployments",
-        headers=_h(token),
-        json={
-            "strategy_id": art["strategy_id"],
-            "account_id": acct["id"],
-            "symbol": "AAPL",
-            "max_order_value": art["nautilus"]["risk_envelope"]["max_order_value"],
-            "max_daily_loss": art["nautilus"]["risk_envelope"]["max_daily_loss"],
-        },
-    )
-    assert dep.status_code == 201, dep.text
-    assert dep.json()["frozen_spec"]["spec"] == art["spec"]
+    deploy_payload = {
+        "strategy_id": art["strategy_id"],
+        "account_id": acct["id"],
+        "symbol": "AAPL",
+        "max_order_value": art["nautilus"]["risk_envelope"]["max_order_value"],
+        "max_daily_loss": art["nautilus"]["risk_envelope"]["max_daily_loss"],
+    }
+
+    # ALG-3423 deploy gate: a fresh compile with no published marimo backtest
+    # evidence for this exact artifact is refused
+    refused = client.post("/api/deployments", headers=_h(token), json=deploy_payload)
+    assert refused.status_code == 422, refused.text
+    assert "Marimo backtest evidence required" in refused.json()["detail"]
+
+    # with exact-hash published evidence the same deploy succeeds and freezes it
+    monkeypatch.setenv("ALGOBOTS_EVIDENCE_NOTEBOOK_ROOT", str(tmp_path))
+    get_settings.cache_clear()
+    try:
+        evidence = attach_evidence((draft, art, deploy_payload, tmp_path))
+        dep = client.post("/api/deployments", headers=_h(token), json=deploy_payload)
+        assert dep.status_code == 201, dep.text
+        assert dep.json()["frozen_spec"]["spec"] == art["spec"]
+        assert dep.json()["frozen_spec"]["studio_evidence"] == evidence
+    finally:
+        get_settings.cache_clear()
 
     # edits after compile append; the earlier artifact is untouched
     client.patch(url, json={"revision": 2, "draft": _d(name="v3")}, headers=_h(token))
