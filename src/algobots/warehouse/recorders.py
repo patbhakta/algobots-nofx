@@ -191,3 +191,55 @@ def export_observer_quotes(
         )
     quotes.sort(key=lambda quote: quote.ts_init)
     return publish_quotes(snapshot_id, list(instruments.values()), quotes, catalog_root)
+
+
+def export_paper_quotes(warehouse: Warehouse, snapshot_id: str, catalog_root: Path) -> Path:
+    """Catalog paper-node quotes at node time, retaining recorded time in the ledger."""
+    from decimal import Decimal
+
+    from nautilus_trader.model.currencies import Currency
+    from nautilus_trader.model.data import QuoteTick
+    from nautilus_trader.model.identifiers import InstrumentId, Symbol
+    from nautilus_trader.model.instruments import CurrencyPair
+    from nautilus_trader.model.objects import Price, Quantity
+
+    from algobots.warehouse.catalog import publish_quotes
+
+    manifest, table = warehouse.load(snapshot_id)
+    identity = InstrumentId.from_str(manifest["instrument_id"])
+    symbol = identity.symbol.value
+    if "/" in symbol:
+        base, quote = symbol.split("/")
+    elif symbol == "EURUSD":
+        base, quote = "EUR", "USD"
+    else:
+        raise WarehouseError("paper quote instrument needs explicit base/quote mapping")
+    rows = table.to_pylist()
+    precision = max(
+        max(-Decimal(row[key]).as_tuple().exponent, 0) for row in rows for key in ("bid", "ask")
+    )
+    inst = CurrencyPair(
+        instrument_id=identity,
+        raw_symbol=Symbol(symbol),
+        base_currency=Currency.from_str(base),
+        quote_currency=Currency.from_str(quote),
+        price_precision=precision,
+        size_precision=0,
+        price_increment=Price.from_str(f"{Decimal(10) ** -precision:.{precision}f}"),
+        size_increment=Quantity.from_int(1),
+        ts_event=0,
+        ts_init=0,
+    )
+    quotes = [
+        QuoteTick(
+            identity,
+            Price.from_str(f"{Decimal(row['bid']):.{precision}f}"),
+            Price.from_str(f"{Decimal(row['ask']):.{precision}f}"),
+            Quantity.from_int(0),
+            Quantity.from_int(0),
+            int(row["node_ts"]),
+            int(row["node_ts"]),
+        )
+        for row in rows
+    ]
+    return publish_quotes(snapshot_id, [inst], quotes, catalog_root)

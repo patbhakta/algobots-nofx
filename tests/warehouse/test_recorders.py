@@ -63,6 +63,13 @@ def test_paper_stream_records_bounded_cursor_without_mutating_stream(tmp_path):
     assert manifest["row_count"] == 1
     assert manifest["query"]["last_id"] == "1-0"
     assert warehouse.load("paper")[1].to_pylist()[0]["recorded_ts"] == "123"
+    from nautilus_trader.model.data import QuoteTick
+    from nautilus_trader.persistence.catalog.parquet import ParquetDataCatalog
+
+    from algobots.warehouse.recorders import export_paper_quotes
+    path = export_paper_quotes(warehouse, "paper", tmp_path / "catalog")
+    quotes = ParquetDataCatalog(str(path)).query(QuoteTick)
+    assert len(quotes) == 1 and quotes[0].ts_event == 1_000_000_000
 
 
 def test_observer_catalog_query_preserves_recorded_price_precision(tmp_path):

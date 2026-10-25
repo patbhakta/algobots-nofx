@@ -17,6 +17,7 @@ from algobots.warehouse import Warehouse, WarehouseError
 from algobots.warehouse.recorders import (
     export_observer,
     export_observer_quotes,
+    export_paper_quotes,
     export_paper_stream,
 )
 
@@ -74,10 +75,13 @@ def main() -> None:
                 provider_release=args.provider_release,
                 retrieved_at=time.time(),
             )
-    if args.catalog_root and args.feed != "nautilus-paper":
+    if args.catalog_root:
         target = args.catalog_root / snapshot_id
         if not target.exists():
-            export_observer_quotes(warehouse, snapshot_id, args.catalog_root)
+            exporter = (
+                export_paper_quotes if args.feed == "nautilus-paper" else export_observer_quotes
+            )
+            exporter(warehouse, snapshot_id, args.catalog_root)
     print(json.dumps(manifest, sort_keys=True))
 
 
