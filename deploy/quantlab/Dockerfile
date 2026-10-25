@@ -8,6 +8,8 @@ RUN uv sync --frozen --no-dev --no-install-project
 # Generate OpenBB bindings at build time; runtime UID cannot modify the venv.
 RUN python -c "from openbb import obb; assert obb.equity.price.historical"
 COPY src/algobots/warehouse /app/src/algobots/warehouse
+COPY src/algobots/strategies /app/src/algobots/strategies
+COPY deploy/quantlab/start.sh /app/start.sh
 COPY notebooks/quantlab_openbb.py /app/notebooks/quantlab_openbb.py
 USER 1000:1000
 WORKDIR /home/quantlab

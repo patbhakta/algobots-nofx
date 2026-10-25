@@ -108,7 +108,8 @@ def publish_notebook(root: Path, result_id: str, result: dict, base_url: str) ->
     """Atomic publication; an existing result may never acquire different content."""
     record = evidence_record(result_id, result, base_url)
     directory = root / "evidence"
-    directory.mkdir(parents=True, exist_ok=True, mode=0o770)
+    directory.mkdir(parents=True, exist_ok=True, mode=0o2770)
+    directory.chmod(0o2770)  # UID 1000 needs a writable marimo cache alongside evidence.
     target = directory / f"{UUID(result_id)}.py"
     source = notebook_source(result_id, result).encode()
     if target.exists():

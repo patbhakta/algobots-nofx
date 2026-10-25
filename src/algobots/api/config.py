@@ -41,6 +41,9 @@ class Settings(BaseSettings):
     warehouse_root: str = Field(default="/mnt/funnytree/algobots/openbb_store")
     evidence_notebook_root: str = Field(default="/mnt/funnytree/algobots/quantlab/notebooks")
     evidence_base_url: str = Field(default="http://100.82.57.72:8205")
+    quantlab_backtest_root: str = Field(
+        default="/mnt/funnytree/algobots/quantlab/notebooks/.backtests"
+    )
     catalog_root: str = Field(default="/mnt/funnytree/algobots/ntl_catalog")
     demo_state_dir: str = Field(default="./.demo-state")
     demo_start: str = Field(default="2026-10-03")

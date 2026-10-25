@@ -63,6 +63,7 @@ class BacktestDataset:
     rows: list[dict[str, Any]]
     path: Path
     source: str = DATASET_SOURCE
+    manifest: dict[str, Any] | None = None
 
     @property
     def name(self) -> str:
@@ -73,6 +74,18 @@ class BacktestDataset:
         )
 
     def describe(self) -> dict[str, Any]:
+        if self.manifest and self.manifest.get("catalog_data_class") == "Bar":
+            return {
+                "id": self.id,
+                "snapshot_id": self.id,
+                "source": self.source,
+                "name": self.manifest["dataset"],
+                "sha256": self.sha256,
+                "rows": len(self.rows),
+                "instrument_id": self.manifest["instrument_id"],
+                "start": datetime.fromtimestamp(self.manifest["event_start"], UTC).isoformat(),
+                "end": datetime.fromtimestamp(self.manifest["event_end"], UTC).isoformat(),
+            }
         first, last = self.rows[0], self.rows[-1]
         return {
             "id": self.id,
@@ -178,6 +191,15 @@ def load_warehouse(snapshot_id: str | None, root: Path, instrument_id: str) -> B
         manifest, table = warehouse.load(snapshot_id)
         if manifest["instrument_id"] != instrument_id:
             raise WarehouseError("snapshot instrument does not match compiled artifact")
+        if manifest.get("catalog_data_class") == "Bar" and manifest.get("namespace") == "external":
+            return BacktestDataset(
+                snapshot_id,
+                manifest["sha256"],
+                table.to_pylist(),
+                root / manifest["path"],
+                "warehouse",
+                manifest,
+            )
         rows = [row for row in table.to_pylist() if _settled(row)]
         if not rows:
             raise WarehouseError("snapshot contains no settled recorder intervals")
@@ -242,6 +264,20 @@ def run_backtest(
     executor: Callable[[str, Decimal], L.Sleeve] | None = None,
 ) -> dict[str, Any]:
     """Replay ``artifact`` over ``dataset``; deterministic for a given pair."""
+    if artifact.get("implementation") == "condition_dsl.v1":
+        from algobots.api.config import get_settings
+        from algobots.strategies.quantlab import dispatch
+
+        if not dataset.manifest or dataset.manifest.get("catalog_data_class") != "Bar":
+            raise StudioError(
+                "signals.entry", "condition_dsl.v1 requires a warehouse OHLC snapshot"
+            )
+        try:
+            return dispatch(
+                Path(get_settings().quantlab_backtest_root), artifact, dataset.id, dataset.sha256
+            )
+        except (ValueError, OSError) as exc:
+            raise StudioError("dataset_id", str(exc)) from exc
     min_edge, envelope = _check_artifact(artifact)
     if executor is None:
         from algobots.engine.sleeve import EXECUTOR, NautilusSleeve

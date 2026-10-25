@@ -1,0 +1,8 @@
+# Apply after warehouse/evidence and quantlab overlays; roll back by omitting it.
+services:
+  api:
+    image: algobots/evidence:alg3421
+    environment:
+      ALGOBOTS_QUANTLAB_BACKTEST_ROOT: /mnt/funnytree/algobots/quantlab/notebooks/.backtests
+  marimo-quantlab:
+    image: algobots/quantlab:alg3421
