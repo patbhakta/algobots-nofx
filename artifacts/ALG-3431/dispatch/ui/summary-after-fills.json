@@ -1,0 +1,17 @@
+{
+  "base": "http://100.82.57.72:8201",
+  "mode": "live",
+  "ok": true,
+  "steps": [
+    {
+      "name": "live tab renders the viewer deployments card",
+      "ok": true,
+      "rendered": [
+        {
+          "fills": "2",
+          "text": "Kalshi BTC 15m momentum RUNNING KXBTC15M · 63e6f7fb · artifact bb4c4150ddae · 2 fills\nSUBMITTED (UTC)\tORDER\tSIDE\tQTY\tLIMIT\tSTATUS\tFILLED @\n2026-10-25 22:45:31\tdp1-1d85a13567a3…\tbuy\t8\t0.58\tcancelled\t1 @ 0.57\n2026-10-25 22:30:30\tdp1-124182a93907…\tbuy\t8\t0.57\tcancelled\t1 @ 0.50"
+        }
+      ]
+    }
+  ]
+}

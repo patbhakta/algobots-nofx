@@ -1,0 +1,55 @@
+{
+  "as_of": 1792968776.2356977,
+  "deployments": [
+    {
+      "deployment_id": "63e6f7fb-fc3a-4d77-94dd-848c03da38b8",
+      "status": "running",
+      "node": "deployment-63e6f7fbfc3a4d7794dd848c03da38b8",
+      "fills": 2,
+      "orders": [
+        {
+          "id": "dp1-1d85a13567a3678736813eea7409975f856e0f02fdff4969dd1e927b98b1",
+          "side": "buy",
+          "qty": "8",
+          "limit_px": "0.58",
+          "status": "cancelled",
+          "filled_qty": "1",
+          "avg_px": "0.57",
+          "submitted_at": "2026-10-25T22:45:31.471Z",
+          "fills": [
+            {
+              "trade_id": "T-356ca9a1ff4f2ef3-002",
+              "qty": "1",
+              "px": "0.57",
+              "ts_event": "2026-10-25T22:45:31.492Z",
+              "commission": "0",
+              "commission_currency": "USD"
+            }
+          ]
+        },
+        {
+          "id": "dp1-124182a9390773b51d97c0fb47569e83682e0e0825bef313efc40d560e78",
+          "side": "buy",
+          "qty": "8",
+          "limit_px": "0.57",
+          "status": "cancelled",
+          "filled_qty": "1",
+          "avg_px": "0.50",
+          "submitted_at": "2026-10-25T22:30:30.663Z",
+          "fills": [
+            {
+              "trade_id": "T-51f6b60c818fd0fe-001",
+              "qty": "1",
+              "px": "0.50",
+              "ts_event": "2026-10-25T22:30:30.707Z",
+              "commission": "0",
+              "commission_currency": "USD"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "deployments_error": null,
+  "has_section": true
+}
