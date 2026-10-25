@@ -1173,6 +1173,14 @@
     {
       "repo": "algobots",
       "path": "deploy/compose.warehouse.yaml"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3420/warehouse-walkthrough.md"
+    },
+    {
+      "repo": "algobots",
+      "path": "artifacts/ALG-3420/warehouse-walkthrough.json"
     }
   ],
   "scope_revisions": [
