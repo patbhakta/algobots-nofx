@@ -363,12 +363,16 @@ def test_leaderboard_uses_scoped_decision_scores(client, funder, monkeypatch):
     assert "replay" in result["equity_source"]
 
 
-
 def test_live_preserves_worker_positions_and_pnl(client, funder, demo_state):
     path = demo_state / "workers" / "coin.json"
     hb = json.loads(path.read_text())
-    position = {"instrument": "KXBTC15M-YES.PAPER_COIN", "side": "LONG", "qty": "19",
-                "avg_price": "0.52", "unrealized_pnl": None}
+    position = {
+        "instrument": "KXBTC15M-YES.PAPER_COIN",
+        "side": "LONG",
+        "qty": "19",
+        "avg_price": "0.52",
+        "unrealized_pnl": None,
+    }
     hb["report"] = {"positions": [position], "funds": {"strategy_pnl": "-2.30", "equity": "97.70"}}
     hb["orders_submitted"] = 3
     hb["orders_filled"] = 2
@@ -385,7 +389,6 @@ def test_live_preserves_worker_positions_and_pnl(client, funder, demo_state):
     updated = client.get("/api/nofx/studio/live", headers=_h(funder["token"])).json()
     coin = next(w for w in updated["workers"] if w["account"] == "coin")
     assert coin["orders_filled"] == 3 and coin["positions"] == []
-
 
 
 def test_empty_tenant_seed_happens_once(client, funder):
@@ -412,3 +415,38 @@ def test_seed_lock_is_pg_only_and_rechecks():
     pg_session.get_bind.return_value = pg_bind
     nofx._seed_lock(pg_session, MagicMock())
     assert "pg_advisory_xact_lock" in str(pg_session.execute.call_args[0][0])
+
+
+@pytest.mark.parametrize("template", ["laya", "coin", "jev"])
+def test_baseline_template_create_edit_reload(client, owner_token, template):
+    headers = _h(owner_token)
+    response = client.get(
+        f"/api/nofx/strategies/default-config?template={template}", headers=headers
+    )
+    assert response.status_code == 200
+    config = response.json()
+    baseline = config["baseline"]
+    assert baseline["strategy"] == template
+    created = client.post(
+        "/api/nofx/strategies",
+        headers=headers,
+        json={"name": template, "description": "test", "config": config},
+    )
+    assert created.status_code == 201, created.text
+    record = created.json()
+    assert record["studio"]["status"] == "compiled"
+    before_hash = record["studio"]["artifact_hash"]
+    if template == "laya":
+        baseline["min_edge"] = 0.15
+    elif template == "coin":
+        baseline["entry_delay_seconds"] = 120
+    else:
+        baseline["min_confidence"] = 0.8
+    saved = client.put(
+        f"/api/nofx/strategies/{record['id']}", headers=headers, json={"config": config}
+    )
+    assert saved.status_code == 200, saved.text
+    loaded = client.get(f"/api/nofx/strategies/{record['id']}", headers=headers).json()
+    assert loaded["config"]["baseline"] == baseline
+    assert loaded["studio"]["artifact_hash"] != before_hash
+    assert client.get(f"/api/nofx/strategies/{record['id']}").status_code == 401

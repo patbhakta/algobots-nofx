@@ -350,3 +350,25 @@ def test_concurrent_backtests_across_drafts_share_one_immutable_row(
         )
     assert sorted(r.status_code for r in responses) == [200, 201]
     assert responses[0].json() == responses[1].json()
+
+
+@pytest.mark.parametrize("strategy", ["coin", "jev"])
+def test_baselines_execute_frozen_parameters_on_nautilus(frozen, strategy):
+    from tests.strategies.test_baseline_parameters import artifact
+
+    params = (
+        {"strategy": "coin", "entry_delay_seconds": 10, "stake": "5.00"}
+        if strategy == "coin"
+        else {"strategy": "jev", "min_confidence": 0.8}
+    )
+    compiled = artifact(params)
+    result = bt.run_backtest(compiled, frozen)
+    assert result["implementation"] == f"kalshi_{strategy}.v1"
+    if strategy == "coin":
+        assert result["metrics"]["filled"] > 0
+        delayed = bt.run_backtest(artifact({**params, "entry_delay_seconds": 30}), frozen)
+        assert delayed["metrics"]["filled"] == 0
+        assert delayed["metrics"]["abstain"] == 48
+    else:
+        assert result["metrics"]["filled"] == 0
+        assert result["metrics"]["abstain"] == 48  # no calls supplied; never invent inference

@@ -424,9 +424,18 @@ def active_strategy(ctx: AuthContext = Depends(get_auth_context), db: Session = 
 
 
 @router.get("/strategies/default-config")
-def default_config(ctx: AuthContext = Depends(get_auth_context)) -> dict:
+def default_config(template: str = "laya", ctx: AuthContext = Depends(get_auth_context)) -> dict:
     _tenant(ctx)
-    return _momentum_config()
+    if template not in ("laya", "coin", "jev"):
+        raise HTTPException(422, "Unknown strategy template")
+    config = _momentum_config()
+    config["baseline"] = {
+        "laya": {"strategy": "laya", "min_edge": 0.02},
+        "coin": {"strategy": "coin", "entry_delay_seconds": 0, "stake": "10.00"},
+        "jev": {"strategy": "jev", "min_confidence": 0.0},
+    }[template]
+    config["ai_config"]["custom_prompt"] = ""
+    return config
 
 
 @router.post("/strategies", status_code=status.HTTP_201_CREATED)
