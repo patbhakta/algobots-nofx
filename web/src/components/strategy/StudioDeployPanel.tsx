@@ -107,11 +107,13 @@ export function StudioDeployPanel({
     ? 'Compile the config before deploying.'
     : stale
       ? 'Save changes so the compiled artifact matches this config.'
-      : !eligible
-        ? 'Marimo backtest evidence required — run Backtest first.'
-        : !accountId
-          ? 'Select or create a paper account.'
-          : null
+      : studio?.deployable === false
+        ? 'Research replay only. This implementation has no deployment worker; use Backtest to inspect evidence.'
+        : !eligible
+          ? 'Marimo backtest evidence required — run Backtest first.'
+          : !accountId
+            ? 'Select or create a paper account.'
+            : null
 
   return (
     <div
@@ -165,7 +167,7 @@ export function StudioDeployPanel({
           />
         </label>
         <label>
-          Daily loss $ {' '}
+          Daily loss ${' '}
           <input
             aria-label="Max daily loss"
             value={maxDailyLoss}
@@ -190,7 +192,10 @@ export function StudioDeployPanel({
         </button>
       </div>
       {disabledReason ? (
-        <div data-testid="studio-deploy-reason" className="mt-1 text-nofx-text-muted">
+        <div
+          data-testid="studio-deploy-reason"
+          className="mt-1 text-nofx-text-muted"
+        >
           {disabledReason}
         </div>
       ) : null}
@@ -209,7 +214,10 @@ export function StudioDeployPanel({
         </div>
       ) : null}
       {error ? (
-        <div data-testid="studio-deploy-error" className="mt-1 text-nofx-danger">
+        <div
+          data-testid="studio-deploy-error"
+          className="mt-1 text-nofx-danger"
+        >
           {error}
         </div>
       ) : null}

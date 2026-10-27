@@ -67,7 +67,13 @@ export interface PromptSectionsConfig {
   decision_process?: string;
 }
 
+export type BaselineParameters =
+  | { strategy: 'laya'; min_edge: number }
+  | { strategy: 'coin'; entry_delay_seconds: number; stake: string }
+  | { strategy: 'jev'; min_confidence: number }
+
 export interface StrategyConfig {
+  baseline?: BaselineParameters;
   // Strategy type: "ai_trading" (default) or "grid_trading"
   strategy_type?: 'ai_trading' | 'grid_trading';
   // Language setting: "zh" for Chinese, "en" for English
