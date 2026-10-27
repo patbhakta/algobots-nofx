@@ -1646,6 +1646,16 @@
         "tests/contracts/golden/valid/FeatureSnapshot@1.0.json"
       ],
       "reason": "dispatched spec (ALG-3101) registers Instrument, MarketSnapshot and FeatureSnapshot as new schema versions with goldens (A04 precedent). Exact files only \u2014 dir-level src/algobots/contracts/ stays A01's (identical entries in two packets are forbidden). schema-lock.json (A04-carved) and contracts/__init__.py are additive edits through the schema-registry owner: the lock gains three entries via registry.write_lock() and __init__ re-exports the new modules; both stay proposals through their recorded owners, same as Makefile and api/main.py (router mount, A03/A04 precedent)."
+    },
+    {
+      "packet": "A11",
+      "from_revision": 2,
+      "to_revision": 3,
+      "removed": [],
+      "added": [
+        "docs/operations/strategy-parameters.md"
+      ],
+      "reason": "ALG-3433 strategy parameter and Studio workflow documentation belongs to the strategy Studio owner; repository-map.json remains an A01-owned proposal, following the A04 PROPOSED_TO_OWNER precedent."
     }
   ],
   "packets": {
@@ -2319,7 +2329,7 @@
         "A08",
         "A10"
       ],
-      "revision": 2,
+      "revision": 3,
       "repositories": [
         "algobots"
       ],
@@ -2357,6 +2367,11 @@
         {
           "repo": "algobots",
           "path": "docs/strategies.md",
+          "status": "real"
+        },
+        {
+          "repo": "algobots",
+          "path": "docs/operations/strategy-parameters.md",
           "status": "real"
         }
       ],
