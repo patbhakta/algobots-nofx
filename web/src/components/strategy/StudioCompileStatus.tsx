@@ -10,7 +10,7 @@ export const STUDIO_FIELD_OWNERS = {
   name: ['name'],
   universe: ['coin_source', 'universe'],
   candles: ['indicators', 'signals'],
-  params: ['risk_control', 'risk.max_positions'],
+  params: ['risk_control', 'risk', 'baseline'],
   note: [
     'custom_prompt',
     'prompt_sections',

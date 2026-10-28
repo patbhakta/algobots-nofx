@@ -155,3 +155,9 @@ describe('Studio deploy gate (ALG-3423)', () => {
     expect(result.textContent).toContain('frozen evidence')
   })
 })
+
+it('explains research-only artifacts before users attempt deployment', async () => {
+  render(<StudioDeployPanel studio={{ ...STUDIO, deployable: false }} stale={false} />)
+  expect(await screen.findByText(/Research replay only/)).toBeTruthy()
+  expect(screen.getByRole('button', { name: /Deploy/ })).toBeDisabled()
+})

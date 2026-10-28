@@ -26,6 +26,7 @@ import type {
   Strategy,
   StrategyConfig,
 } from '../types'
+import { BaselineParameterEditor } from '../components/strategy/BaselineParameterEditor'
 import { PaperLoopPanel } from '../components/strategy/PaperLoopPanel'
 import { StudioBacktestPanel } from '../components/strategy/StudioBacktestPanel'
 import { StudioDeployPanel } from '../components/strategy/StudioDeployPanel'
@@ -282,6 +283,7 @@ function simplifyConfig(
     // The Studio compiler reads the abstain band and money envelope from here;
     // dropping it turned every UI save of the momentum config invalid.
     demo_worker: config?.demo_worker,
+    baseline: config?.baseline,
   }
 }
 
@@ -824,6 +826,8 @@ export function StrategyStudioPage() {
   const [heatmap, setHeatmap] = useState<VergexHeatmapResponse | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [creating, setCreating] = useState(false)
+  const [showTemplates, setShowTemplates] = useState(false)
   const [symbolsLoading, setSymbolsLoading] = useState(false)
   const [symbolsError, setSymbolsError] = useState('')
   const [signalsLoading, setSignalsLoading] = useState(false)
@@ -1082,36 +1086,31 @@ export function StrategyStudioPage() {
     })
   }
 
-  const createStrategy = async () => {
-    if (!token) return
+  const createStrategy = async (template: 'laya' | 'coin' | 'jev') => {
+    if (!token || creating) return
+    setCreating(true)
     try {
       const response = await fetch(
-        `${API_BASE}/api/strategies/default-config?lang=${language}`,
+        `${API_BASE}/api/strategies/default-config?template=${template}`,
         { headers: { Authorization: `Bearer ${token}` } }
       )
-      const defaultConfig = response.ok
-        ? simplifyConfig(await response.json())
-        : simplifyConfig(null)
-      defaultConfig.language = language as 'zh' | 'en'
+      if (!response.ok) throw new Error('Strategy template unavailable. Please retry.')
+      const defaultConfig = simplifyConfig(await response.json())
+      defaultConfig.language = 'en'
+      const names = { laya: 'Laya momentum', coin: 'Coinflip baseline', jev: 'Jev recorded decisions' }
       const created = await api.createStrategy({
-        name: text(
-          language,
-          'Studio strategy config',
-          'Studio strategy config'
-        ),
-        description: text(
-          language,
-          'Config-only draft saved to AlgoBots (paper; no orders are placed from this config).',
-          'Config-only draft saved to AlgoBots (paper; no orders are placed from this config).'
-        ),
+        name: names[template],
+        description: 'Paper research configuration. Save, backtest, then review deployment eligibility.',
         config: defaultConfig,
       })
       await loadStrategies(created.id)
       setHasChanges(false)
+      setShowTemplates(false)
+      notify.success(`${names[template]} created. Edit parameters, then save and backtest.`)
     } catch (err) {
-      notify.error(
-        err instanceof Error ? err.message : 'Failed to create strategy'
-      )
+      notify.error(err instanceof Error ? err.message : 'Failed to create strategy')
+    } finally {
+      setCreating(false)
     }
   }
 
@@ -1332,12 +1331,12 @@ export function StrategyStudioPage() {
       </div>
 
       <div className="grid min-h-[calc(100vh-137px)] grid-cols-1 lg:grid-cols-[260px_1fr]">
-        <aside className="hidden border-r border-[rgba(26,24,19,0.14)] bg-nofx-bg-deeper p-3 lg:block">
+        <aside className="border-r border-[rgba(26,24,19,0.14)] bg-nofx-bg-deeper p-3">
           <div className="mb-2 flex items-center justify-between px-2 text-xs font-medium uppercase tracking-wide text-nofx-text-muted">
             {text(language, 'My strategy configs', 'My strategy configs')}
             <button
               type="button"
-              onClick={createStrategy}
+              onClick={() => setShowTemplates(true)}
               title={text(language, 'New strategy config', 'New strategy config')}
               className="rounded p-1 text-nofx-gold hover:bg-nofx-gold/10"
             >
@@ -1384,12 +1383,37 @@ export function StrategyStudioPage() {
         </aside>
 
         <main className="overflow-y-auto p-5">
-          <details open className="mx-auto mb-6 max-w-7xl rounded-lg border p-4">
+          <section className="mx-auto mb-4 max-w-7xl" aria-label="Add strategy">
+            <button type="button" onClick={() => setShowTemplates(!showTemplates)}
+              className="rounded border px-3 py-2 text-sm text-nofx-text">Add strategy</button>
+            {(showTemplates || !selectedStrategy) && (
+              <div className="mt-3 grid gap-3 sm:grid-cols-3">
+                {([
+                  ['laya', 'Laya momentum', 'Edit the minimum edge from 50%. Replays past BTC closes.'],
+                  ['coin', 'Coinflip baseline', 'Edit entry delay after open and stake. A reproducible fair coin.'],
+                  ['jev', 'Jev recorded decisions', 'Edit minimum confidence. Uses timestamped recorded calls; missing calls abstain.'],
+                ] as const).map(([key, name, description]) => (
+                  <button key={key} type="button" disabled={creating}
+                    onClick={() => void createStrategy(key)}
+                    className="rounded-lg border bg-nofx-bg-lighter p-4 text-left text-nofx-text disabled:opacity-50">
+                    <strong>{creating ? 'Creating…' : name}</strong>
+                    <p className="mt-2 text-xs">{description}</p>
+                  </button>
+                ))}
+              </div>
+            )}
+          </section>
+          <details className="mx-auto mb-6 max-w-7xl rounded-lg border p-4">
             <summary className="cursor-pointer font-semibold">Live paper-loop receipts</summary>
             <PaperLoopPanel />
           </details>
           {selectedStrategy && aiConfig && coinSource && indicators && risk ? (
             <div className="mx-auto max-w-7xl space-y-4">
+              <BaselineParameterEditor config={editingConfig!} onChange={config => {
+                setEditingConfig(config)
+                setHasChanges(true)
+              }} />
+              <StudioFieldError studio={selectedStrategy.studio} owner="params" />
               <section className="rounded-lg border border-[rgba(26,24,19,0.14)] bg-nofx-bg-lighter p-4">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div className="min-w-0 flex-1">
@@ -2097,7 +2121,7 @@ export function StrategyStudioPage() {
             <div className="flex h-full items-center justify-center">
               <button
                 type="button"
-                onClick={createStrategy}
+                onClick={() => setShowTemplates(true)}
                 className="inline-flex items-center gap-2 rounded-lg bg-nofx-gold px-4 py-2 text-sm font-semibold text-nofx-bg hover:bg-nofx-gold-highlight"
               >
                 <Plus className="h-4 w-4" />
