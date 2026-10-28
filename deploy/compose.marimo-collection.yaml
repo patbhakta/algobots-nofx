@@ -1,0 +1,14 @@
+# Apply to /opt/algobots-stack/docker-compose.yml, service nautilus only.
+# Keep the existing :8202 bind, token, network, bridge and zai config.
+services:
+  nautilus:
+    image: algobots/marimo-collection:20261028
+    user: "0:0"
+    entrypoint: []
+    working_dir: /app/notebooks
+    command: ["marimo", "edit", "/app/notebooks", "--host", "0.0.0.0", "--port", "2718", "--token-password", "${MARIMO_TOKEN}", "--headless"]
+    environment:
+      MPLBACKEND: Agg
+    volumes:
+      - /mnt/funnytree/algobots/ntl_catalog:/app/data/nautilus
+      - /mnt/funnytree/algobots/studio-notebooks:/app/notebooks

@@ -1,0 +1,480 @@
+{
+  "counts": {
+    "true_app": 42,
+    "wrapped": 36
+  },
+  "stage_counts": {
+    "true_app": 42,
+    "wrapped": 36
+  },
+  "notebooks": [
+    {
+      "path": "stage-Agentic_RAG.py",
+      "status": "true_app",
+      "error": null,
+      "sha256": "12ffd70e31fb465a84718246251d4295e624f5afc781995586942b578708e263"
+    },
+    {
+      "path": "stage-HyDe_Hypothetical_Document_Embedding.py",
+      "status": "wrapped",
+      "error": "The notebook '.work/marimo-collection/stage-source/stage-HyDe_Hypothetical_Document_Embedding.py' has cells with syntax errors, so it cannot be initialized:\n ",
+      "sha256": "d1cfad78b6a0580bbcde533a46241e6ee56af6e9ffd0264a458a7801e2cf4e55"
+    },
+    {
+      "path": "stage-HyPE_Hypothetical_Prompt_Embeddings.py",
+      "status": "wrapped",
+      "error": "The notebook '.work/marimo-collection/stage-source/stage-HyPE_Hypothetical_Prompt_Embeddings.py' has cells with syntax errors, so it cannot be initialized:\n                     index=faiss.IndexFlatL2(len(vectors[0]))  # Define an L2 index for similarity search                          ^\ninvalid syntax. Perhaps you forgot a comma?",
+      "sha256": "ab0b8815a16c339b2cb18645b4d07d5bcbf08be7f0804f49c0a0ce6d8df0ecd6"
+    },
+    {
+      "path": "stage-Microsoft_GraphRag.py",
+      "status": "true_app",
+      "error": null,
+      "sha256": "93a832112141f481956f7e5ed819ac14f20fa95b7b99e5663f29e009e1630f7d"
+    },
+    {
+      "path": "stage-PageIndex_Flash_demo.py",
+      "status": "true_app",
+      "error": null,
+      "sha256": "2196a13fd2e8a3351192d2d55b70be4a5f819cb49adf994daa5b9363d906daf6"
+    },
+    {
+      "path": "stage-adaptive_retrieval.py",
+      "status": "wrapped",
+      "error": "The notebook '.work/marimo-collection/stage-source/stage-adaptive_retrieval.py' has cells with syntax errors, so it cannot be initialized:\n ",
+      "sha256": "c6f849b1ae4fd7701c795497f43da3a4e387564b400c752725f24eb04193abdb"
+    },
+    {
+      "path": "stage-agentic_retrieval.py",
+      "status": "true_app",
+      "error": null,
+      "sha256": "ec7eb68a1594cc990e8e281888ff33c750dad225a60774ca0cbf54cefd555a49"
+    },
+    {
+      "path": "stage-choose_chunk_size.py",
+      "status": "true_app",
+      "error": null,
+      "sha256": "1437bd675f04f62a29c1faa08d7d8a2a34c095308bcfb7ad12c73e9b1ebe0a70"
+    },
+    {
+      "path": "stage-context_enrichment_window_around_chunk.py",
+      "status": "wrapped",
+      "error": "The notebook '.work/marimo-collection/stage-source/stage-context_enrichment_window_around_chunk.py' has cells with syntax errors, so it cannot be initialized:\n ",
+      "sha256": "40fb891dff74b809dee31043f014c1d6b6a9358b94bae7ece3812adaa3d8efbe"
+    },
+    {
+      "path": "stage-context_enrichment_window_around_chunk_with_llamaindex.py",
+      "status": "true_app",
+      "error": null,
+      "sha256": "cf25bb3a5fcba597bdae943d0ea0835a0aa22c70f1ee84a036f2b21a9ad11842"
+    },
+    {
+      "path": "stage-contextual_chunk_headers.py",
+      "status": "true_app",
+      "error": null,
+      "sha256": "7afd280941797f43af324635c0aa4b343fd18093232e2ee0478bfc8826780c83"
+    },
+    {
+      "path": "stage-contextual_compression.py",
+      "status": "wrapped",
+      "error": "The notebook '.work/marimo-collection/stage-source/stage-contextual_compression.py' has cells with syntax errors, so it cannot be initialized:\n ",
+      "sha256": "af3b774b95b0174402353c08a2492719ba090f61270657da61c22cef44b8b536"
+    },
+    {
+      "path": "stage-conversation_buffer_memory.py",
+      "status": "wrapped",
+      "error": "The notebook '.work/marimo-collection/stage-source/stage-conversation_buffer_memory.py' has cells with syntax errors, so it cannot be initialized:\n     def chat(self, user_input: str) -> str:\n   ^\nunexpected indent",
+      "sha256": "3cd086523f23559d4f833778ff4ac8c298594790d37433bacc262f2ba6640b1a"
+    },
+    {
+      "path": "stage-crag.py",
+      "status": "wrapped",
+      "error": "The notebook '.work/marimo-collection/stage-source/stage-crag.py' has cells with syntax errors, so it cannot be initialized:\n ",
+      "sha256": "193a3b8cd3e7fcdc946415f29faa8c5e84abca42320b081b598ba6299ca2f46d"
+    },
+    {
+      "path": "stage-cross_session_memory.py",
+      "status": "wrapped",
+      "error": "The notebook '.work/marimo-collection/stage-source/stage-cross_session_memory.py' has cells with syntax errors, so it cannot be initialized:\n     def _apply_loading_strategy(self, state: SessionState) -> SessionState:\n                                                                           ^\nunindent does not match any outer indentation level",
+      "sha256": "493697ae047b60324d59163db9cae8ba4fba838bb8bfbd6e2fa2dca6933f660c"
+    },
+    {
+      "path": "stage-dartboard.py",
+      "status": "wrapped",
+      "error": "The notebook '.work/marimo-collection/stage-source/stage-dartboard.py' has cells with syntax errors, so it cannot be initialized:\n ",
+      "sha256": "00ea1cdfaf3b697f61e71cc56366512d6a8b9568e347626cf9395472525a144d"
+    },
+    {
+      "path": "stage-define_evaluation_metrics.py",
+      "status": "true_app",
+      "error": null,
+      "sha256": "3086fa6aac16f536defd2bdff6ec2dbaaab613a26b9f8744fd0c5e7e3fcb393c"
+    },
+    {
+      "path": "stage-document_augmentation.py",
+      "status": "wrapped",
+      "error": "The notebook '.work/marimo-collection/stage-source/stage-document_augmentation.py' has cells with syntax errors, so it cannot be initialized:\n ",
+      "sha256": "d7df5a4a0725b78032b7716dd6ecdc95bebe9d027d3961a5a585e96fafa0c6c8"
+    },
+    {
+      "path": "stage-end-2-end_rag_evaluation.py",
+      "status": "true_app",
+      "error": null,
+      "sha256": "feb2588f6aef458c5d03373f4af3dba5455410d4514dc81dd2a4bfae5f21be35"
+    },
+    {
+      "path": "stage-entity_memory.py",
+      "status": "wrapped",
+      "error": "The notebook '.work/marimo-collection/stage-source/stage-entity_memory.py' has cells with syntax errors, so it cannot be initialized:\n     @classmethod\n                ^\nunindent does not match any outer indentation level\n-----\n    def save_memory(self, path: str) -> None:\n                                             ^\nunindent does not match any outer indentation level",
+      "sha256": "e79ab32f8a27d9ac8813eb54526a8dcb4fd1eedfff87ee17d92bd2f352eb5cca"
+    },
+    {
+      "path": "stage-episodic_memory.py",
+      "status": "wrapped",
+      "error": "The notebook '.work/marimo-collection/stage-source/stage-episodic_memory.py' has cells with syntax errors, so it cannot be initialized:\n     def _detect_topic_shift(self) -> bool:\n   ^\nunexpected indent\n-----\n    def end_session(self) -> Episode | None:\n   ^\nunexpected indent\n-----\n    def retrieve(\n   ^\nunexpected indent",
+      "sha256": "f609b4ada2348753fe5c83399ada511c6627410aa6d39a571c617549004fa953"
+    },
+    {
+      "path": "stage-evaluation_deep_eval.py",
+      "status": "true_app",
+      "error": null,
+      "sha256": "89e93994888d2811abaed03d7590becf94f961ae547844c889ea9a50da680252"
+    },
+    {
+      "path": "stage-evaluation_grouse.py",
+      "status": "true_app",
+      "error": null,
+      "sha256": "1af6bc3f7f6edeac401eef975e0a09d971daa4bafaaf3542c5ffaee963ea5075"
+    },
+    {
+      "path": "stage-explainable_retrieval.py",
+      "status": "wrapped",
+      "error": "The notebook '.work/marimo-collection/stage-source/stage-explainable_retrieval.py' has cells with syntax errors, so it cannot be initialized:\n ",
+      "sha256": "6950e225bd062601d7a46d24fcf045ec547f0b4dd24502cd7e5d252aeb4bbc87"
+    },
+    {
+      "path": "stage-forgetting_and_decay.py",
+      "status": "true_app",
+      "error": null,
+      "sha256": "28a0da9e62b1a1fdc264dbc65e46adc868cc8a8f1ca35c6b485cce91b4b563be"
+    },
+    {
+      "path": "stage-fusion_retrieval.py",
+      "status": "wrapped",
+      "error": "The notebook '.work/marimo-collection/stage-source/stage-fusion_retrieval.py' has cells with syntax errors, so it cannot be initialized:\n ",
+      "sha256": "a9df7984f6ef90d007bde84107cf53f3327c31f91f3e25f9987da4c0f26d2bcc"
+    },
+    {
+      "path": "stage-fusion_retrieval_with_llamaindex.py",
+      "status": "true_app",
+      "error": null,
+      "sha256": "b0c1e5533314450be2a5578e60cb4d5634b4e63408f5551c10b8fee21d98658d"
+    },
+    {
+      "path": "stage-graph_memory_graphiti.py",
+      "status": "true_app",
+      "error": null,
+      "sha256": "7165734d5e00218634a2af7ae547369d22ba7ae761b9c4333a81089378156893"
+    },
+    {
+      "path": "stage-graph_rag.py",
+      "status": "wrapped",
+      "error": "The notebook '.work/marimo-collection/stage-source/stage-graph_rag.py' has cells with syntax errors, so it cannot be initialized:\n ",
+      "sha256": "4adb5b5fecce4c05a1afa3c330ce22370f999c01ecd7455220c7784936604f07"
+    },
+    {
+      "path": "stage-graph_rag_local_attribution.py",
+      "status": "true_app",
+      "error": null,
+      "sha256": "c3be357b8f2503c13806e53209df954e2f7d0648e4664bbd90b497194f9adc43"
+    },
+    {
+      "path": "stage-graphrag_with_milvus_vectordb.py",
+      "status": "true_app",
+      "error": null,
+      "sha256": "2796872a44c982793a61465a2e7cfe7d1b08f7ad7950a2f75e60962c76880ee0"
+    },
+    {
+      "path": "stage-hierarchical_indices.py",
+      "status": "wrapped",
+      "error": "The notebook '.work/marimo-collection/stage-source/stage-hierarchical_indices.py' has cells with syntax errors, so it cannot be initialized:\n ",
+      "sha256": "7190f0e0fdaaa4013cb52b10c80b1aef3034488b31878d5e201ea87e31869ef3"
+    },
+    {
+      "path": "stage-hierarchical_memory_layers.py",
+      "status": "wrapped",
+      "error": "The notebook '.work/marimo-collection/stage-source/stage-hierarchical_memory_layers.py' has cells with syntax errors, so it cannot be initialized:\n     def query(self, query_text: str, top_k: int = 3) -> list[TieredMemory]:\n   ^\nunexpected indent\n-----\n    def _move(self, memory: TieredMemory, target_tier: str) -> None:\n   ^\nunexpected indent\n-----\n    def get_l1_context(self) -> str:\n   ^\nunexpected indent\n-----\n    def _format_retrieved(self, memories: list[TieredMemory]) -> str:\n                                                                     ^\nunindent does not match any outer indentation level",
+      "sha256": "7e9d2dfaab024a051a3f704f50ffa60bf2a411e11d0fa450ee476b3e728cffe2"
+    },
+    {
+      "path": "stage-json_rag.py",
+      "status": "true_app",
+      "error": null,
+      "sha256": "c7ea4bc1f4a6f07800d79103bde677584f5342d2d17b961e14af1579a4d37082"
+    },
+    {
+      "path": "stage-knowledge_graph_memory.py",
+      "status": "wrapped",
+      "error": "The notebook '.work/marimo-collection/stage-source/stage-knowledge_graph_memory.py' has cells with syntax errors, so it cannot be initialized:\n     def find_mentioned(self, text: str) -> list[str]:\n                                                     ^\nunindent does not match any outer indentation level\n-----\n    @classmethod\n                ^\nunindent does not match any outer indentation level\n-----\n    def find_connection(self, entity1: str, entity2: str) -> str:\n                                                                 ^\nunindent does not match any outer indentation level",
+      "sha256": "db5e708bd8dcb3715f299b7a48aa75c11ef5d33a83eb308cf97be34b9b970549"
+    },
+    {
+      "path": "stage-letta_memgpt_patterns.py",
+      "status": "wrapped",
+      "error": "The notebook '.work/marimo-collection/stage-source/stage-letta_memgpt_patterns.py' has cells with syntax errors, so it cannot be initialized:\n ]^\nunmatched ']'\n-----\n]^\nunmatched ']'",
+      "sha256": "ae4bf2a04b9f47a5fddd7bf5ae61354b1943685af1dd7e265eb1d9b9647e1f0e"
+    },
+    {
+      "path": "stage-local_rag_huggingface_faiss.py",
+      "status": "true_app",
+      "error": null,
+      "sha256": "5ade14c394af7941b36b0f450e7ec50f9adbe42a79cdf8d59a273c20207bb8f7"
+    },
+    {
+      "path": "stage-mem0_patterns.py",
+      "status": "true_app",
+      "error": null,
+      "sha256": "9617ebae62bef60ef218cb166eb0bceb4ea510e43d80bfbb6a34ccf82be111cd"
+    },
+    {
+      "path": "stage-memorag.py",
+      "status": "wrapped",
+      "error": "The notebook '.work/marimo-collection/stage-source/stage-memorag.py' has cells with syntax errors, so it cannot be initialized:\n ",
+      "sha256": "4b92942c370a0146deb471f741d9b42dc1896ecf205ca0c10612096253f83c90"
+    },
+    {
+      "path": "stage-memory_benchmarks_locomo.py",
+      "status": "true_app",
+      "error": null,
+      "sha256": "6a9025d180dc3c66409ee55c4a6ea3ad8cda8b41512635567d1b5919b37011b5"
+    },
+    {
+      "path": "stage-memory_compaction.py",
+      "status": "wrapped",
+      "error": "The notebook '.work/marimo-collection/stage-source/stage-memory_compaction.py' has cells with syntax errors, so it cannot be initialized:\n     def storage_report(self) -> dict:\n                                     ^\nunindent does not match any outer indentation level\n-----\nmemory_2 = store.add(                    ^\n'(' was never closed",
+      "sha256": "7862903d0634ab36e296ac742f250641a2da2656abdb88f7283a545e7f0ba089"
+    },
+    {
+      "path": "stage-memory_consolidation.py",
+      "status": "true_app",
+      "error": null,
+      "sha256": "8924b59e194670974a6a2acf1e41305b39f48314fbadfad7b95e21367cba8d7b"
+    },
+    {
+      "path": "stage-memory_evaluation.py",
+      "status": "true_app",
+      "error": null,
+      "sha256": "7475a9640ddb27379175beee2de77cf8c1dd07266d32daf960e25c70ac156970"
+    },
+    {
+      "path": "stage-memory_retrieval_patterns.py",
+      "status": "true_app",
+      "error": null,
+      "sha256": "04612f716aeebaa09a2d8e57c9059f25ffd5adcca4bef0b57aaa0f7f9e159b56"
+    },
+    {
+      "path": "stage-memory_routing.py",
+      "status": "true_app",
+      "error": null,
+      "sha256": "911525c82da7cf70e6958ebc9519fcff5e3df2cc02259b1778bf62c6c9116369"
+    },
+    {
+      "path": "stage-memory_with_tools.py",
+      "status": "wrapped",
+      "error": "The notebook '.work/marimo-collection/stage-source/stage-memory_with_tools.py' has cells with syntax errors, so it cannot be initialized:\n     def delete(self, memory_id: str) -> bool:\n                                             ^\nunindent does not match any outer indentation level",
+      "sha256": "b92871496dfddc9e4c42cc4c1d20f47f3a75feb976afe88ecd679caee281ffd6"
+    },
+    {
+      "path": "stage-multi_agent_shared_memory.py",
+      "status": "wrapped",
+      "error": "The notebook '.work/marimo-collection/stage-source/stage-multi_agent_shared_memory.py' has cells with syntax errors, so it cannot be initialized:\n     def read_all_accessible(\n                            ^\nunindent does not match any outer indentation level\n-----\n    def summary(self) -> str:\n                             ^\nunindent does not match any outer indentation level\n-----\n    def __repr__(self) -> str:\n                              ^\nunindent does not match any outer indentation level",
+      "sha256": "d54a9b97093ae8deb69d90890a62843d650906a70ca779ec7fe0d239b012a9cb"
+    },
+    {
+      "path": "stage-multi_model_rag_with_captioning.py",
+      "status": "true_app",
+      "error": null,
+      "sha256": "c5f36b45d357be1c9254745f60870c808d2d2c5df4cc5481f6b9f63e75580023"
+    },
+    {
+      "path": "stage-multi_model_rag_with_colpali.py",
+      "status": "true_app",
+      "error": null,
+      "sha256": "0dca1f194a3ae31e5a2e36b86912a87f064174858aff70fca78a9441ad38eb81"
+    },
+    {
+      "path": "stage-open-rag-eval-example.py",
+      "status": "true_app",
+      "error": null,
+      "sha256": "df2c5c413c94fc2bfa45c5d9725ea5ba7786666a14aac886026960c4819c7975"
+    },
+    {
+      "path": "stage-procedural_memory.py",
+      "status": "wrapped",
+      "error": "The notebook '.work/marimo-collection/stage-source/stage-procedural_memory.py' has cells with syntax errors, so it cannot be initialized:\n     def retrieve_procedure(self, task_description: str) -> tuple[Procedure | None, dict]:\n   ^\nunexpected indent\n-----\n    def learn_from_execution(\n   ^\nunexpected indent",
+      "sha256": "cc51f1d1cdd5debddea4a2f5da93240ce1c548f06fdaf50cbde2432bf3eadcdf"
+    },
+    {
+      "path": "stage-production_memory_patterns.py",
+      "status": "true_app",
+      "error": null,
+      "sha256": "633b7c8765f541889692fcdad1a710910caab2a088c446cee7e31e9016107d52"
+    },
+    {
+      "path": "stage-proposition_chunking.py",
+      "status": "true_app",
+      "error": null,
+      "sha256": "7dafabeb7bfb86dfc23aaf881f546fb11d715a5eaa17c77b2bace796fae117e2"
+    },
+    {
+      "path": "stage-query_transformations.py",
+      "status": "true_app",
+      "error": null,
+      "sha256": "1379c233b356d59022076720304518e27e000990a1dd4ab3aad76fd7e948ce98"
+    },
+    {
+      "path": "stage-raptor.py",
+      "status": "wrapped",
+      "error": "The notebook '.work/marimo-collection/stage-source/stage-raptor.py' has cells with syntax errors, so it cannot be initialized:\n ",
+      "sha256": "600dcf49b1b552f7ba121567d10825e502ea46fc885d5b63c4b509e3114ad36f"
+    },
+    {
+      "path": "stage-relevant_segment_extraction.py",
+      "status": "true_app",
+      "error": null,
+      "sha256": "3806a6d9b3cdc2f42ddd726367df05fa9010d9ba9e05fda4321428b8c66593a0"
+    },
+    {
+      "path": "stage-reliable_rag.py",
+      "status": "true_app",
+      "error": null,
+      "sha256": "d22d14906a3334a8dc6aeb1e322b7f4d3b64a71735796546c714e13cbff6843d"
+    },
+    {
+      "path": "stage-reranking.py",
+      "status": "wrapped",
+      "error": "The notebook '.work/marimo-collection/stage-source/stage-reranking.py' has cells with syntax errors, so it cannot be initialized:\n ",
+      "sha256": "0c77e1944c86924de262ff586e7b398d69c6ff214800e8316fb029136f22f3b5"
+    },
+    {
+      "path": "stage-reranking_with_llamaindex.py",
+      "status": "true_app",
+      "error": null,
+      "sha256": "0c2477a1241aa36d22660667487dac3c828292c2519a3d95640d31fe971c6f61"
+    },
+    {
+      "path": "stage-retrieval_with_feedback_loop.py",
+      "status": "wrapped",
+      "error": "The notebook '.work/marimo-collection/stage-source/stage-retrieval_with_feedback_loop.py' has cells with syntax errors, so it cannot be initialized:\n ",
+      "sha256": "502bacf292d9fb98d5e1b8121a1a47c85678f8edf3a870a27e0da31561223072"
+    },
+    {
+      "path": "stage-self_rag.py",
+      "status": "wrapped",
+      "error": "The notebook '.work/marimo-collection/stage-source/stage-self_rag.py' has cells with syntax errors, so it cannot be initialized:\n ",
+      "sha256": "7caff623da3201e473851a624b031dcd7b0d139607b052a25e3eaa0cc9b02b5b"
+    },
+    {
+      "path": "stage-self_reflection_memory.py",
+      "status": "true_app",
+      "error": null,
+      "sha256": "c10e36d4f93c3a2f99e6439bac397a563725966165a2ab8bd75956a5d476bcca"
+    },
+    {
+      "path": "stage-semantic_chunking.py",
+      "status": "wrapped",
+      "error": "The notebook '.work/marimo-collection/stage-source/stage-semantic_chunking.py' has cells with syntax errors, so it cannot be initialized:\n ",
+      "sha256": "993badfaa304a434c5ce49c46a7ca735bf54d22a659d96631131534089502b4d"
+    },
+    {
+      "path": "stage-semantic_memory.py",
+      "status": "wrapped",
+      "error": "The notebook '.work/marimo-collection/stage-source/stage-semantic_memory.py' has cells with syntax errors, so it cannot be initialized:\n     def extract_facts(self, messages: list[dict]) -> list[str]:\n   ^\nunexpected indent",
+      "sha256": "3a05ceeb77aa1fdf4a3483c364794bd6924932b7e54b7759f13511511dc5310a"
+    },
+    {
+      "path": "stage-setup-flyio-on-the-fly-v2.py",
+      "status": "true_app",
+      "error": null,
+      "sha256": "494aba65e54a22cc8d621cc7f9b17661a76929ada148a24a4461eab97464f637"
+    },
+    {
+      "path": "stage-simple_csv_rag.py",
+      "status": "true_app",
+      "error": null,
+      "sha256": "f967cf4390d9009ae7f15f7d2d47b983608ee855c1ff5ac4ce4a146bbcf16ccb"
+    },
+    {
+      "path": "stage-simple_csv_rag_with_llamaindex.py",
+      "status": "true_app",
+      "error": null,
+      "sha256": "02b0ecdc513b8f841920a5005e5a1e199fbfa5f6b39e0debab05860ccf8e0e40"
+    },
+    {
+      "path": "stage-simple_rag.py",
+      "status": "true_app",
+      "error": null,
+      "sha256": "a676b93da8c454a7abd26cde427cb133c8763394872dfd4191a3c8196ab7d0c9"
+    },
+    {
+      "path": "stage-simple_rag_with_llamaindex.py",
+      "status": "true_app",
+      "error": null,
+      "sha256": "80094bfcdfde007adc16a018c69e1d1a9dc3f7984b9a7962623d9784df4f4115"
+    },
+    {
+      "path": "stage-sliding_window_memory.py",
+      "status": "wrapped",
+      "error": "The notebook '.work/marimo-collection/stage-source/stage-sliding_window_memory.py' has cells with syntax errors, so it cannot be initialized:\n     def chat(self, user_input: str) -> str:\n   ^\nunexpected indent",
+      "sha256": "8b4b92ee443ce214535d1d353f9edb3f0a31bd8efdb0905851c7af04768b3355"
+    },
+    {
+      "path": "stage-summary_buffer_memory.py",
+      "status": "wrapped",
+      "error": "The notebook '.work/marimo-collection/stage-source/stage-summary_buffer_memory.py' has cells with syntax errors, so it cannot be initialized:\n     def _build_messages(self) -> list[dict]:\n                                            ^\nunindent does not match any outer indentation level\n-----\n    def get_summary(self) -> str:\n                                 ^\nunindent does not match any outer indentation level",
+      "sha256": "7be0a2e2a59fdfa7af131bf2379945f4d32263626278ad39d9cc2c40ddcae8e1"
+    },
+    {
+      "path": "stage-summary_memory.py",
+      "status": "wrapped",
+      "error": "The notebook '.work/marimo-collection/stage-source/stage-summary_memory.py' has cells with syntax errors, so it cannot be initialized:\n     def chat(self, user_input: str) -> str:\n   ^\nunexpected indent\n-----\n    def get_context_snapshot(self) -> dict:\n   ^\nunexpected indent",
+      "sha256": "f33cb40acc7ac29f6cb7750e1bb0673ca212491353233b685adceea387b08772"
+    },
+    {
+      "path": "stage-temporal_memory.py",
+      "status": "true_app",
+      "error": null,
+      "sha256": "aac981da60f68fb1c2680959c5a4926c97f177166e6196e1f95320e51bc70f31"
+    },
+    {
+      "path": "stage-token_buffer_memory.py",
+      "status": "wrapped",
+      "error": "The notebook '.work/marimo-collection/stage-source/stage-token_buffer_memory.py' has cells with syntax errors, so it cannot be initialized:\n     def _trim(self) -> None:\n   ^\nunexpected indent\n-----\n    def get_messages(self) -> list[dict]:\n   ^\nunexpected indent",
+      "sha256": "9a33fb923809b453f4efe34c0e45dd06cadaec61b3ce4e7518456a1280db2773"
+    },
+    {
+      "path": "stage-vector_store_memory.py",
+      "status": "wrapped",
+      "error": "The notebook '.work/marimo-collection/stage-source/stage-vector_store_memory.py' has cells with syntax errors, so it cannot be initialized:\n     def _embed(self, text: str) -> list[float]:\n   ^\nunexpected indent\n-----\n    def _retrieve(self, query: str, top_k: int | None = None) -> list[dict]:\n   ^\nunexpected indent\n-----\n    def chat(self, user_input: str) -> str:\n   ^\nunexpected indent\n-----\n    def search(self, query: str, top_k: int = 5) -> list[dict]:\n   ^\nunexpected indent",
+      "sha256": "61aebee39ae7a6b57ab95f621956e5e81bdbab79286f4783e5b8c5b3eb744baa"
+    },
+    {
+      "path": "stage-vision_RAG_pageindex.py",
+      "status": "true_app",
+      "error": null,
+      "sha256": "f3b2a084ab66e5d6a62c83c5f98b22b81940d6abfeeed4166ddccaef33e5cfe5"
+    },
+    {
+      "path": "stage-working_memory_context_window.py",
+      "status": "wrapped",
+      "error": "The notebook '.work/marimo-collection/stage-source/stage-working_memory_context_window.py' has cells with syntax errors, so it cannot be initialized:\n     def status(self) -> dict:\n                             ^\nunindent does not match any outer indentation level",
+      "sha256": "8db3b002c5a9e91f2cd3cd35c3b5e53d82bd3707df549ae863fea0d462411b3d"
+    },
+    {
+      "path": "stage-zep_memory.py",
+      "status": "true_app",
+      "error": null,
+      "sha256": "14aebe328b8c04e1e07e116fd2f9b635c6ad8b2e4af839f6d7ebdab897428080"
+    }
+  ]
+}
