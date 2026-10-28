@@ -21,7 +21,7 @@ def _(mo):
     query_form = mo.ui.dictionary({
         "symbol": mo.ui.dropdown(options=["SPY", "QQQ", "AAPL"], value="SPY", label="Ticker"),
         "start": mo.ui.date(value="2026-09-01", label="Start date"),
-        "end": mo.ui.date(value="2026-09-15", label="End date (exclusive)"),
+        "end": mo.ui.date(value="2026-09-15", label="End date"),
     }).form(submit_button_label="Fetch history and write catalog")
     query_form
     return (query_form,)
@@ -79,11 +79,11 @@ def _(mo, query_form):
 
 
 @app.cell
-def _(history, mo):
+def _(history, mo, query_form):
     import matplotlib.pyplot as plt
     _fig, _ax = plt.subplots(figsize=(10, 4))
     _ax.plot(history["date"], history["close"], marker="o")
-    _ax.set(title="SPY — OpenBB / yfinance daily close", xlabel="UTC date", ylabel="USD")
+    _ax.set(title=f"{query_form.value['symbol']} — OpenBB / yfinance daily close", xlabel="UTC date", ylabel="USD")
     _ax.grid(alpha=0.25)
     _fig.autofmt_xdate()
     mo.as_html(_fig)
