@@ -239,7 +239,7 @@ def _row(raw: dict[str, Any], p: float) -> L.Row:
 def _check_artifact(artifact: dict[str, Any]) -> tuple[float, RiskEnvelope]:
     impl = artifact.get("implementation")
     nautilus = artifact.get("nautilus") or {}
-    if impl != "kalshi_momentum.v1":
+    if impl not in ("kalshi_momentum.v1", "kalshi_coin.v1", "kalshi_jev.v1"):
         raise StudioError(
             "signals.entry",
             f"{impl} needs an OHLC bar dataset; the KXBTC15M recorder only backtests "
@@ -255,7 +255,34 @@ def _check_artifact(artifact: dict[str, Any]) -> tuple[float, RiskEnvelope]:
         max_order_value=Decimal(env["max_order_value"]),
         max_daily_loss=Decimal(env["max_daily_loss"]),
     )
-    return float(nautilus["params"]["min_edge"]), envelope
+    return float(nautilus["params"].get("min_edge", 0)), envelope
+
+
+def baseline_signal(artifact: dict, raw: dict) -> tuple[float, str | None, Decimal]:
+    """Use only a captured in-window observation; never invent a delayed book or Jev call."""
+    params = artifact["nautilus"]["params"]
+    observed = raw.get("ts")
+    opening, closing = raw.get("open_ts"), raw.get("close_ts")
+    if not all(isinstance(v, (int, float)) for v in (observed, opening, closing)):
+        return 0.5, None, Decimal(0)
+    if not opening <= observed < closing:
+        return 0.5, None, Decimal(0)
+    if artifact["implementation"] == "kalshi_coin.v1":
+        if observed < opening + params["entry_delay_seconds"]:
+            return 0.5, None, Decimal(0)
+        heads = hashlib.sha256(str(raw["event"]).encode()).digest()[0] & 1
+        return 0.5, "YES" if heads else "NO", Decimal(params["stake"])
+    # Jev must have a timestamped call available by the captured book. Missing
+    # inference is an abstention, not a momentum substitute or a new model call.
+    call_ts, conf, prob = raw.get("jev_ts"), raw.get("jev_conf"), raw.get("jev_p")
+    if not all(isinstance(v, (int, float)) for v in (call_ts, conf, prob)):
+        return 0.5, None, Decimal(0)
+    if not opening <= call_ts <= observed or not 0 <= conf <= 1 or not 0 <= prob <= 1:
+        return 0.5, None, Decimal(0)
+    if conf < params["min_confidence"] or raw.get("jev_choice") not in ("up", "down"):
+        return prob, None, Decimal(0)
+    stake = L._money(L.MIN_STAKE + Decimal(10) * Decimal(str(conf)))
+    return prob, "YES" if raw["jev_choice"] == "up" else "NO", stake
 
 
 def run_backtest(
@@ -278,7 +305,10 @@ def run_backtest(
             )
         except (ValueError, OSError) as exc:
             raise StudioError("dataset_id", str(exc)) from exc
+    if dataset.manifest and dataset.manifest.get("catalog_data_class") == "Bar":
+        raise StudioError("dataset_id", "Kalshi baselines need a recorder snapshot, not OHLC bars")
     min_edge, envelope = _check_artifact(artifact)
+    baseline = artifact["implementation"] in ("kalshi_coin.v1", "kalshi_jev.v1")
     if executor is None:
         from algobots.engine.sleeve import EXECUTOR, NautilusSleeve
 
@@ -301,18 +331,24 @@ def run_backtest(
     try:
         for i, raw in enumerate(dataset.rows):
             p, _conf, source = momentum_signal({}, contiguous_closes(dataset.rows[:i]))
+            if baseline:
+                p, side, req = baseline_signal(artifact, raw)
+                source = "recorded-baseline" if side else "none"
+            else:
+                edge = p - 0.5
+                side = "YES" if edge > 0 else "NO"
+                req = L._money(L.MIN_STAKE + Decimal(10) * Decimal(str(abs(edge) / 0.05)))
+                if source == "none" or abs(edge) < min_edge:
+                    side = None
             row = _row(raw, p)
             counts["intervals"] += 1
             if source != "none":
                 counts["scored"] += 1
                 brier_sum += (p - row.outcome) ** 2
-            edge = p - 0.5
-            if source == "none" or abs(edge) < min_edge:
+            if side is None:
                 counts["abstain"] += 1
                 curve.append({"ts": row.ts, "event": row.event, "equity": _usd(equity)})
                 continue
-            side = "YES" if edge > 0 else "NO"
-            req = L._money(L.MIN_STAKE + Decimal(10) * Decimal(str(abs(edge) / 0.05)))
             day = L._day(row.ts)
             g = gate.pre_trade(
                 gate.GateRequest(
@@ -373,7 +409,7 @@ def run_backtest(
         "executor": executor_name,
         "engine": getattr(sleeve, "ids", {"account": account}),
         "implementation": artifact["implementation"],
-        "params": {"min_edge": min_edge, "p_source": "mom3x15m/vol20 (recomputed per interval)"},
+        "params": dict(artifact["nautilus"]["params"]),
         "risk_envelope": {k: str(v) for k, v in envelope.model_dump().items() if v is not None},
         "metrics": {
             **counts,

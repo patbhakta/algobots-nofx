@@ -58,6 +58,8 @@ COMPILER_VERSION = "studio-compiler/1"
 IMPLEMENTATIONS = {
     "condition_dsl.v1": "algobots.strategies.dsl:StrategySpec (frozen deployment)",
     "kalshi_momentum.v1": "algobots.demo.ledger momentum worker (mom3x15m/vol20)",
+    "kalshi_coin.v1": "sha256(event) coin baseline replay",
+    "kalshi_jev.v1": "recorded pre-close Jev decisions replay",
 }
 
 #: Friendly NoFX symbols we can resolve to Nautilus instrument IDs today.
@@ -126,6 +128,33 @@ class RiskV1(_Strict):
     max_gross_exposure: Money | None = None
 
 
+class LayaParameters(_Strict):
+    strategy: Literal["laya"]
+    min_edge: float = Field(default=0.02, ge=0, le=0.5)
+
+
+class CoinParameters(_Strict):
+    strategy: Literal["coin"]
+    entry_delay_seconds: int = Field(default=0, ge=0, le=899)
+    stake: Money = "10.00"
+
+    @model_validator(mode="after")
+    def _positive_stake(self) -> CoinParameters:
+        if float(self.stake) <= 0:
+            raise ValueError("stake must be positive")
+        return self
+
+
+class JevParameters(_Strict):
+    strategy: Literal["jev"]
+    min_confidence: float = Field(default=0.0, ge=0, le=1)
+
+
+BaselineParameters = Annotated[
+    LayaParameters | CoinParameters | JevParameters, Field(discriminator="strategy")
+]
+
+
 class StudioStrategyDraftV1(_Strict):
     schema_version: Literal[1]
     name: str = Field(min_length=1, max_length=120)
@@ -133,6 +162,7 @@ class StudioStrategyDraftV1(_Strict):
     signals: SignalsV1
     decision: DecisionV1 = Field(default_factory=DecisionV1)
     risk: RiskV1
+    baseline: BaselineParameters | None = None
 
 
 class CompiledStrategyArtifactV1(BaseModel):
@@ -161,7 +191,10 @@ def parse_draft(data: Any) -> StudioStrategyDraftV1:
 
 
 def _canonical(draft: StudioStrategyDraftV1) -> str:
-    return json.dumps(draft.model_dump(mode="json"), sort_keys=True, separators=(",", ":"))
+    data = draft.model_dump(mode="json")
+    if draft.baseline is None:
+        data.pop("baseline")  # retain hashes/evidence for pre-baseline drafts
+    return json.dumps(data, sort_keys=True, separators=(",", ":"))
 
 
 def _is_empty(cond: dict[str, Any]) -> bool:
@@ -180,6 +213,11 @@ def compile_studio_strategy(draft: StudioStrategyDraftV1) -> CompiledStrategyArt
         )
 
     sig = draft.signals
+    if draft.baseline is not None:
+        if draft.universe.datafeed != "kalshi" or draft.universe.symbols != ["KXBTC15M.KALSHI"]:
+            raise StudioError("baseline", "baseline strategies require KXBTC15M.KALSHI")
+        if not (_is_empty(sig.entry) and _is_empty(sig.exit)):
+            raise StudioError("signals.entry", "baseline strategies cannot also use DSL conditions")
     warnings: list[str] = []
     spec: dict[str, Any] | None = None
     if not (_is_empty(sig.entry) and _is_empty(sig.exit)):
@@ -192,6 +230,17 @@ def compile_studio_strategy(draft: StudioStrategyDraftV1) -> CompiledStrategyArt
         spec = spec.model_dump(mode="json")
         implementation = "condition_dsl.v1"
         params: dict[str, Any] = {}
+    elif draft.baseline is not None:
+        baseline = draft.baseline
+        implementation = {
+            "laya": "kalshi_momentum.v1",
+            "coin": "kalshi_coin.v1",
+            "jev": "kalshi_jev.v1",
+        }[baseline.strategy]
+        params = baseline.model_dump(mode="json", exclude={"strategy"})
+        if baseline.strategy == "laya":
+            params["p_source"] = "mom3x15m/vol20"
+        warmup = sig.bars
     elif draft.universe.datafeed == "kalshi":
         if draft.decision.min_confidence is None:
             raise StudioError(
@@ -297,4 +346,6 @@ def translate_nofx_config(name: str, config: dict[str, Any]) -> tuple[dict[str, 
         "decision": decision,
         "risk": risk,
     }
+    if config.get("baseline") is not None:
+        draft["baseline"] = config["baseline"]
     return draft, warnings
