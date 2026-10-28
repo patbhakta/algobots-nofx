@@ -1,0 +1,41 @@
+[
+  {
+    "query": {
+      "symbol": "QQQ",
+      "start_date": "2026-09-01",
+      "end_date": "2026-09-15",
+      "provider": "yfinance"
+    },
+    "retrieved_at": "2026-10-28T18:05:19.643557+00:00",
+    "rows": 10,
+    "catalog_bars": 10,
+    "catalog": "/app/data/nautilus/studio-QQQ-NASDAQ-ed0d36bebfca13b6",
+    "content_hash": "ed0d36bebfca13b6"
+  },
+  {
+    "query": {
+      "symbol": "SPY",
+      "start_date": "2026-09-01",
+      "end_date": "2026-09-15",
+      "provider": "yfinance"
+    },
+    "retrieved_at": "2026-10-28T18:05:05.332946+00:00",
+    "rows": 10,
+    "catalog_bars": 10,
+    "catalog": "/app/data/nautilus/studio-SPY-ARCA-1d9585f421282bb0",
+    "content_hash": "1d9585f421282bb0"
+  },
+  {
+    "query": {
+      "symbol": "AAPL",
+      "start_date": "2026-09-01",
+      "end_date": "2026-09-15",
+      "provider": "yfinance"
+    },
+    "retrieved_at": "2026-10-28T18:05:34.008720+00:00",
+    "rows": 10,
+    "catalog_bars": 10,
+    "catalog": "/app/data/nautilus/studio-AAPL-NASDAQ-0029ccbd459a088d",
+    "content_hash": "0029ccbd459a088d"
+  }
+]

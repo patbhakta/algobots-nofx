@@ -1,0 +1,23 @@
+[
+  {
+    "symbol": "SPY",
+    "live_form_submit": true,
+    "catalog_readback_rows": 10,
+    "chart_rendered": true,
+    "url": "http://100.82.57.72:8202/?file=openbb_spy_history.py"
+  },
+  {
+    "symbol": "QQQ",
+    "live_form_submit": true,
+    "catalog_readback_rows": 10,
+    "chart_rendered": true,
+    "url": "http://100.82.57.72:8202/?file=openbb_qqq_history.py"
+  },
+  {
+    "symbol": "AAPL",
+    "live_form_submit": true,
+    "catalog_readback_rows": 10,
+    "chart_rendered": true,
+    "url": "http://100.82.57.72:8202/?file=openbb_aapl_history.py"
+  }
+]
