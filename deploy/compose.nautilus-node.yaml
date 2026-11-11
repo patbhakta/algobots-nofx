@@ -1,4 +1,4 @@
-# The rc6 paper node (ALG-3405, DEMO hop 3) — one Nautilus 2.0.0rc6 LiveNode on
+# Paper execution node (DEMO hop 3) — one Nautilus 2.0.0rc9 LiveNode on
 # the sandbox venue, reading algobots:cmd:<node> and publishing trader-* streams.
 #
 # Its own project so deploying it never recreates the API, Postgres or Redis.
@@ -16,7 +16,7 @@ services:
     build:
       context: ..
       dockerfile: deploy/nautilus-node.Dockerfile
-    image: algobots/nautilus-node:rc6
+    image: algobots/nautilus-node:rc9
     container_name: nautilus-node
     environment:
       # Must match the gateway's NodeRegistry entry: commands are XADDed to
@@ -44,7 +44,7 @@ services:
   # Shares the pinned image; never runs in the API's older Nautilus environment.
   deployment-supervisor:
     profiles: [deployments]
-    image: algobots/nautilus-node:rc6
+    image: algobots/nautilus-node:rc9
     build:
       context: ..
       dockerfile: deploy/nautilus-node.Dockerfile

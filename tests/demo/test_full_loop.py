@@ -53,6 +53,7 @@ def test_every_hop_wired_passes():
     facts = FL.Facts(
         api_paths=["/api/studio/strategies"],
         gateway_health=200,
+        gateway_status="ok",
         redis_cmd_streams=["algobots:cmd:node-laya"],
         node_nautilus=FL.NAUTILUS_PIN,
         node_fills=1,
@@ -69,6 +70,16 @@ def test_wrong_nautilus_or_stale_feed_is_not_wired():
     assert _status(FL.Facts(api_nautilus="1.231.0", **base))["nautilus"] == FL.STUBBED
     stale = FL.Facts(feed_age_s=FL.FEED_MAX_AGE_S + 1, **base)
     assert _status(stale)["datafeed"] == FL.STUBBED
+
+
+def test_http_200_does_not_hide_gateway_replay_or_missing_fleet_health():
+    for status in ("degraded", None):
+        facts = FL.Facts(
+            gateway_health=200,
+            gateway_status=status,
+            redis_cmd_streams=["algobots:cmd:nautilus-paper"],
+        )
+        assert _status(facts)["gateway"] == FL.STUBBED
 
 
 def test_the_rc6_node_with_fills_is_wired_whatever_the_api_image_runs():

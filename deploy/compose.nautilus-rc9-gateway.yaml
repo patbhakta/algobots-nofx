@@ -1,0 +1,4 @@
+# Layer on the existing stack compose and env file; recreate only gateway.
+services:
+  gateway:
+    image: algobots/gateway:rc9-metadata-20261111

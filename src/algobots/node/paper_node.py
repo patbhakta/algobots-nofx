@@ -3,7 +3,7 @@
 This is the process the ``nautilus-node`` container runs (``deploy/compose.nautilus-node.yaml``).
 It is the first place every P1 piece meets a real engine:
 
-* a Nautilus **2.0.0rc6** ``LiveNode`` (roadmap rule 5) in the ``SANDBOX``
+* a Nautilus **2.0.0rc9** ``LiveNode`` (roadmap rule 5) in the ``SANDBOX``
   environment, with the engine's own sandbox execution client as the venue —
   paper only, ADR 0001's "every order goes through an ``ExecutionClient``";
 * :class:`~algobots.node.command_stream.CommandStream` and
@@ -57,7 +57,7 @@ from algobots.node.event_egress import STREAMS_PREFIX, EventEgress
 from algobots.node.nautilus_actor import NautilusExecution
 from algobots.node.sandbox import trader_id_for
 
-NAUTILUS_PIN = "2.0.0rc6"
+NAUTILUS_PIN = "2.0.0rc9"
 
 log = logging.getLogger("algobots.paper_node")
 

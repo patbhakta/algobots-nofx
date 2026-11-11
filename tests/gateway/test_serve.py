@@ -111,6 +111,10 @@ def test_create_app_boots_and_serves_health(monkeypatch: pytest.MonkeyPatch, tmp
     assert client.groups == {("algobots:cmd:nautilus-paper-1", GROUP)}
     with TestClient(app) as http:
         body = http.get("/v1/health").json()
+        alias = http.get("/health")
+        assert alias.status_code == 200
+        assert alias.json() == body
+        assert body["nautilus_version"] == "2.0.0rc9"
         assert body["nodes"][0]["node"] == "nautilus-paper-1"
         assert body["status"] == "degraded"  # no heartbeat yet
         assert http.post("/v1/orders", json={}).status_code == 401  # no sessions configured

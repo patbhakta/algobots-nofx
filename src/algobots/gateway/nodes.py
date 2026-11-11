@@ -34,7 +34,7 @@ HEARTBEAT_STALE_S = 45.0
 #: The Nautilus build Phase 1 is pinned to (roadmap rule 5). ``/health``
 #: reports it and the contract declares it as a `const`, so a drift between
 #: the two is a failing test rather than a surprise in production.
-NAUTILUS_PIN = "2.0.0rc6"
+NAUTILUS_PIN = "2.0.0rc9"
 
 PAPER = "PAPER"
 

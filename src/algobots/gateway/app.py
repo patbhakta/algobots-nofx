@@ -339,6 +339,8 @@ def build_gateway(
     )
     app.add_exception_handler(GatewayError, gateway_error_handler)
     app.include_router(router, prefix=PREFIX)
+    # Compatibility probe uses the same fleet/projection health handler.
+    app.add_api_route("/health", get_health, methods=["GET"], tags=["system"])
     return app
 
 
