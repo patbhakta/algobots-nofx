@@ -66,12 +66,12 @@ export function ChartWithOrdersSimple({
   }, [symbol, interval, traderID])
 
   return (
-    <div className="relative" style={{ background: '#f6f8fc', borderRadius: '8px', overflow: 'hidden', minHeight: height }}>
+    <div className="relative" style={{ background: '#F1ECE2', borderRadius: '8px', overflow: 'hidden', minHeight: height }}>
       {/* Title bar */}
       <div className="flex items-center justify-between p-4" style={{ borderBottom: '1px solid rgba(25,36,52, 0.14)' }}>
         <div className="flex items-center gap-3">
           <span className="text-xl">📈</span>
-          <h3 className="text-lg font-bold" style={{ color: '#192434' }}>
+          <h3 className="text-lg font-bold" style={{ color: '#1A1813' }}>
             {symbol} {interval} (Test Mode)
           </h3>
         </div>
@@ -109,7 +109,7 @@ export function ChartWithOrdersSimple({
 
             <div className="p-4 rounded-sm" style={{ background: '#ffffff', border: '1px solid rgba(25,36,52, 0.14)' }}>
               <div className="text-sm mb-2" style={{ color: '#707e92' }}>Status</div>
-              <div className="text-lg" style={{ color: '#192434' }}>
+              <div className="text-lg" style={{ color: '#1A1813' }}>
                 ✅ Data fetched successfully, chart component in development
               </div>
             </div>

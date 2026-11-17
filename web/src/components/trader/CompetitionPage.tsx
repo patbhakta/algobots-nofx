@@ -266,7 +266,7 @@ export function CompetitionPage() {
                         <div>
                           <div
                             className="font-bold text-sm"
-                            style={{ color: '#192434' }}
+                            style={{ color: '#1A1813' }}
                           >
                             {trader.trader_name}
                           </div>
@@ -289,7 +289,7 @@ export function CompetitionPage() {
                           </div>
                           <div
                             className="text-xs md:text-sm font-bold mono"
-                            style={{ color: '#192434' }}
+                            style={{ color: '#1A1813' }}
                           >
                             {trader.total_equity?.toFixed(2) || '0.00'}
                           </div>
@@ -328,7 +328,7 @@ export function CompetitionPage() {
                           </div>
                           <div
                             className="text-xs md:text-sm font-bold mono"
-                            style={{ color: '#192434' }}
+                            style={{ color: '#1A1813' }}
                           >
                             {trader.position_count}
                           </div>

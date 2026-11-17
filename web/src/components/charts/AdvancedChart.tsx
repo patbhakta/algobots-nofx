@@ -356,8 +356,8 @@ export function AdvancedChart({
       width: chartContainerRef.current.clientWidth || 800,
       height: chartContainerRef.current.clientHeight || height,
       layout: {
-        background: { color: '#f6f8fc' },
-        textColor: '#192434',
+        background: { color: '#F1ECE2' },
+        textColor: '#1A1813',
         fontSize: 12,
       },
       grid: {
@@ -918,7 +918,7 @@ export function AdvancedChart({
     <div
       className="relative shadow-xl"
       style={{
-        background: '#f6f8fc',
+        background: '#F1ECE2',
         borderRadius: '12px',
         overflow: 'hidden',
         border: '1px solid rgba(25,36,52, 0.14)',
@@ -1102,7 +1102,7 @@ export function AdvancedChart({
               background: 'rgba(255,255,255, 0.95)',
               border: '1px solid rgba(41,91,232, 0.3)',
               borderRadius: '6px',
-              color: '#192434',
+              color: '#1A1813',
               fontSize: '12px',
               fontFamily: 'monospace',
               pointerEvents: 'none',
@@ -1121,7 +1121,7 @@ export function AdvancedChart({
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '4px 12px', fontSize: '11px' }}>
               <span style={{ color: '#707e92' }}>O:</span>
-              <span style={{ color: '#192434', fontWeight: '500' }}>{tooltipData.open?.toFixed(2)}</span>
+              <span style={{ color: '#1A1813', fontWeight: '500' }}>{tooltipData.open?.toFixed(2)}</span>
 
               <span style={{ color: '#707e92' }}>H:</span>
               <span style={{ color: '#2E8B57', fontWeight: '500' }}>{tooltipData.high?.toFixed(2)}</span>

@@ -63,7 +63,7 @@ export function TradersList({
       <div className="flex items-center justify-between mb-4 md:mb-5">
         <h2
           className="text-lg md:text-xl font-bold flex items-center gap-2"
-          style={{ color: '#192434' }}
+          style={{ color: '#1A1813' }}
         >
           <Users
             className="w-5 h-5 md:w-6 md:h-6"
@@ -226,7 +226,7 @@ function TraderRow({
         <div className="min-w-0">
           <div
             className="font-bold text-base md:text-lg truncate"
-            style={{ color: '#192434' }}
+            style={{ color: '#1A1813' }}
           >
             {trader.trader_name}
           </div>

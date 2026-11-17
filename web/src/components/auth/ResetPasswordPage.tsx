@@ -25,7 +25,7 @@ export function ResetPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen" style={{ background: '#f6f8fc' }}>
+    <div className="min-h-screen" style={{ background: '#F1ECE2' }}>
       <Header simple />
 
       <div
@@ -51,7 +51,7 @@ export function ResetPasswordPage() {
             >
               <KeyRound className="w-8 h-8" style={{ color: '#295be8' }} />
             </div>
-            <h1 className="text-2xl font-bold" style={{ color: '#192434' }}>
+            <h1 className="text-2xl font-bold" style={{ color: '#1A1813' }}>
               {t('resetPasswordTitle', language)}
             </h1>
           </div>
@@ -63,7 +63,7 @@ export function ResetPasswordPage() {
           >
             <p
               className="text-sm leading-relaxed mb-4"
-              style={{ color: '#192434' }}
+              style={{ color: '#1A1813' }}
             >
               {t('resetPasswordCliIntro', language)}
             </p>

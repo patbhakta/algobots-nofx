@@ -19,20 +19,6 @@ export function SiteFooter({ language }: { language: Language }) {
           >
             GitHub ↗
           </a>
-          <a
-            href={OFFICIAL_LINKS.twitter}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            X / Twitter ↗
-          </a>
-          <a
-            href={OFFICIAL_LINKS.telegram}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Telegram Community ↗
-          </a>
         </div>
       </div>
     </footer>

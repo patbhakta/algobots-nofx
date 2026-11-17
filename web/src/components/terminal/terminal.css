@@ -1,20 +1,20 @@
-/* NOFX dashboard tokens: cool surfaces, cobalt actions, semantic trading colors. */
+/* NOFX dashboard tokens: paper palette (ALG-3336) unified across all surfaces. */
 .nofx-terminal {
-  /* surfaces */
-  --tm-paper: #f6f8fc;
-  --tm-panel: #ffffff;
-  --tm-ink: #192434;
-  --tm-ink-2: #39475b;
-  --tm-muted: #707e92;
-  --tm-hair: #e1e7f0;
-  --tm-rule: #192434;
-  --tm-head: #172338;
+  /* surfaces (warm cream/ink paper palette) */
+  --tm-paper: #F1ECE2;
+  --tm-panel: #FDFBF7;
+  --tm-ink: #1A1813;
+  --tm-ink-2: #3D3A33;
+  --tm-muted: #7A756A;
+  --tm-hair: #E5E0D6;
+  --tm-rule: #1A1813;
+  --tm-head: #1A1813;
 
-  /* brand + semantic */
-  --tm-red: #295be8;
-  --tm-red-soft: #e9efff;
+  /* brand + semantic (vermilion accent on paper) */
+  --tm-red: #E0483B;
+  --tm-red-soft: #FBE9E7;
   --tm-up: #2e8b57;
-  --tm-dn: #d6433a;
+  --tm-dn: #E0483B;
 
   --tm-mono: 'IBM Plex Mono', 'Courier New', monospace;
   --tm-px: var(--font-sans);

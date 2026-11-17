@@ -22,7 +22,7 @@ export function Tooltip({ content, children }: TooltipProps) {
           className="absolute z-10 px-3 py-2 text-sm rounded-lg shadow-lg w-64 left-1/2 transform -translate-x-1/2 bottom-full mb-2"
           style={{
             background: '#ffffff',
-            color: '#192434',
+            color: '#1A1813',
             border: '1px solid rgba(25,36,52,0.14)',
           }}
         >

@@ -44,7 +44,7 @@ export function ModelCard({ model, selected, onClick, configured }: ModelCardPro
           </div>
         )}
       </div>
-      <span className="text-sm font-semibold" style={{ color: '#192434' }}>
+      <span className="text-sm font-semibold" style={{ color: '#1A1813' }}>
         {getShortName(model.name)}
       </span>
       <span

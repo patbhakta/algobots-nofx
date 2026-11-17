@@ -82,8 +82,8 @@ export function NofxSelect({ value, onChange, options, disabled, className, styl
               className={cn(
                 'px-3 py-1.5 text-sm cursor-pointer transition-colors whitespace-nowrap',
                 String(opt.value) === String(value)
-                  ? 'bg-[#295be8]/10 text-[#295be8]'
-                  : 'text-[#192434] hover:bg-nofx-bg-deeper',
+                  ? 'bg-[#E0483B]/10 text-[#E0483B]'
+                  : 'text-[#1A1813] hover:bg-nofx-bg-deeper',
               )}
               onClick={(e) => {
                 e.stopPropagation()

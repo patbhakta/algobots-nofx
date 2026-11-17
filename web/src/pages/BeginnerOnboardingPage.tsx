@@ -125,7 +125,7 @@ export function BeginnerOnboardingPage() {
 
   const handleContinue = () => {
     markBeginnerOnboardingCompleted()
-    navigate('/traders')
+    navigate('/dashboard') // AlgoBots: dashboard-first
   }
 
   return (

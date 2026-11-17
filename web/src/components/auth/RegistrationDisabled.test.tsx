@@ -97,7 +97,7 @@ describe('RegistrationDisabled Component', () => {
       const { container } = renderComponent()
       const mainDiv = container.firstChild as HTMLElement
       // Browser converts hex to rgb (ink text)
-      expect(mainDiv.style.color).toMatch(/rgb\(25,\s*36,\s*52\)|#192434/i)
+      expect(mainDiv.style.color).toMatch(/rgb\(25,\s*36,\s*52\)|#1A1813/i)
     })
 
     it('should have centered layout', () => {

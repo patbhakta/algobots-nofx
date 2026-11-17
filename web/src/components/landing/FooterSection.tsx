@@ -13,14 +13,14 @@ export default function FooterSection({ language }: FooterSectionProps) {
       { name: 'GitHub', href: OFFICIAL_LINKS.github, icon: Github },
       {
         name: 'X (Twitter)',
-        href: OFFICIAL_LINKS.twitter,
+        href: OFFICIAL_LINKS.twitter || undefined,
         icon: () => (
           <svg viewBox="0 0 24 24" className="w-4 h-4" fill="currentColor">
             <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
           </svg>
         ),
       },
-      { name: 'Telegram Community', href: OFFICIAL_LINKS.telegram, icon: Send },
+      { name: 'Telegram Community', href: OFFICIAL_LINKS.telegram || undefined, icon: Send },
     ],
     resources: [
       {
@@ -55,7 +55,7 @@ export default function FooterSection({ language }: FooterSectionProps) {
   return (
     <footer
       style={{
-        background: '#f6f8fc',
+        background: '#F1ECE2',
         borderTop: '1px solid rgba(25,36,52, 0.14)',
       }}
     >
@@ -95,7 +95,7 @@ export default function FooterSection({ language }: FooterSectionProps) {
           <div>
             <h4
               className="text-sm font-semibold mb-4"
-              style={{ color: '#192434' }}
+              style={{ color: '#1A1813' }}
             >
               {t('links', language)}
             </h4>
@@ -120,7 +120,7 @@ export default function FooterSection({ language }: FooterSectionProps) {
           <div>
             <h4
               className="text-sm font-semibold mb-4"
-              style={{ color: '#192434' }}
+              style={{ color: '#1A1813' }}
             >
               {t('resources', language)}
             </h4>
@@ -146,7 +146,7 @@ export default function FooterSection({ language }: FooterSectionProps) {
           <div>
             <h4
               className="text-sm font-semibold mb-4"
-              style={{ color: '#192434' }}
+              style={{ color: '#1A1813' }}
             >
               {t('supporters', language)}
             </h4>

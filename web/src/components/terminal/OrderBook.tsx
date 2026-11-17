@@ -14,8 +14,8 @@ const rnd = (a: number, b: number) => a + Math.random() * (b - a)
  * Real data only — no synthetic depth.
  */
 
-const HL_INFO = 'https://api.hyperliquid.xyz/info'
-const HL_WS = 'wss://api.hyperliquid.xyz/ws'
+const HL_INFO = '/api/hl/info' // AlgoBots: repointed from api.hyperliquid.xyz — Nautilus is the data source
+const HL_WS = (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/api/hl/ws' // AlgoBots: repointed
 const DEPTH = 11 // levels per side
 
 interface Level {

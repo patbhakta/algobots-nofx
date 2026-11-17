@@ -23,7 +23,7 @@ export function ModelStepIndicator({ currentStep, labels }: ModelStepIndicatorPr
             </div>
             <span
               className="text-xs font-medium hidden sm:block"
-              style={{ color: index === currentStep ? '#192434' : '#707e92' }}
+              style={{ color: index === currentStep ? '#1A1813' : '#707e92' }}
             >
               {label}
             </span>

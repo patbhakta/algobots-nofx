@@ -97,7 +97,7 @@ export function WhitelistFullPage({ onBack }: WhitelistFullPageProps) {
 
               <div className="grid grid-cols-2 gap-3 mt-4">
                 <a
-                  href={OFFICIAL_LINKS.twitter}
+                  href={OFFICIAL_LINKS.twitter || OFFICIAL_LINKS.github}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center justify-center gap-2 py-2 border border-[rgba(25,36,52,0.14)] bg-nofx-bg hover:bg-nofx-bg-deeper text-nofx-text-muted hover:text-nofx-text transition-colors text-[10px] uppercase"
@@ -106,7 +106,7 @@ export function WhitelistFullPage({ onBack }: WhitelistFullPageProps) {
                   Updates
                 </a>
                 <a
-                  href={OFFICIAL_LINKS.telegram}
+                  href={OFFICIAL_LINKS.telegram || OFFICIAL_LINKS.github}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center justify-center gap-2 py-2 border border-[rgba(25,36,52,0.14)] bg-nofx-bg hover:bg-nofx-bg-deeper text-nofx-text-muted hover:text-nofx-text transition-colors text-[10px] uppercase"

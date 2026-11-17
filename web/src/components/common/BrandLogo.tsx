@@ -3,14 +3,17 @@ interface BrandLogoProps {
   className?: string
 }
 
-/** The approved Flow identity, with a vector mark for crisp small-size use. */
+/** AlgoBots identity — paper theme, ink on cream, single red accent. */
 export function BrandLogo({ compact = false, className = '' }: BrandLogoProps) {
   return (
-    <span className={`nofx-brand ${className}`} aria-label="NOFX">
-      <img src="/icons/nofx-flow.svg" alt="" width="38" height="33" />
+    <span className={`nofx-brand ${className}`} aria-label="AlgoBots">
+      <svg width="22" height="22" viewBox="0 0 32 32" aria-hidden="true">
+        <rect width="32" height="32" rx="6" fill="#F1ECE2" />
+        <circle cx="16" cy="16" r="9" fill="#E0483B" />
+      </svg>
       {!compact && (
         <span className="nofx-wordmark" aria-hidden="true">
-          nofx
+          AlgoBots
         </span>
       )}
     </span>

@@ -20,7 +20,6 @@ import { CompetitionPage } from '../components/trader/CompetitionPage'
 import { AITradersPage } from '../components/trader/AITradersPage'
 import { TraderLaunchGuestPage } from '../components/trader/TraderLaunchGuestPage'
 import { FAQPage } from '../pages/FAQPage'
-import { LandingPage } from '../pages/LandingPage'
 import { BeginnerOnboardingPage } from '../pages/BeginnerOnboardingPage'
 import { DataPage } from '../pages/DataPage'
 import { SettingsPage } from '../pages/SettingsPage'
@@ -78,7 +77,7 @@ function LoadingScreen() {
   return (
     <div
       className="min-h-screen flex items-center justify-center"
-      style={{ background: '#f6f8fc' }}
+      style={{ background: '#F1ECE2' }}
     >
       <div className="text-center">
         <img
@@ -86,7 +85,7 @@ function LoadingScreen() {
           alt="NoFx Logo"
           className="w-16 h-16 mx-auto mb-4 animate-pulse"
         />
-        <p style={{ color: '#192434' }}>{t('loading', language)}</p>
+        <p style={{ color: '#1A1813' }}>{t('loading', language)}</p>
       </div>
     </div>
   )
@@ -165,7 +164,7 @@ function AppChrome({
   return (
     <div
       className="nofx-shell min-h-screen"
-      style={{ background: '#f6f8fc', color: '#192434' }}
+      style={{ background: '#F1ECE2', color: '#1A1813' }}
     >
       <HeaderBar
         isLoggedIn={!!user}
@@ -431,7 +430,7 @@ export function AppRoutes() {
           }
         />
 
-        <Route path={ROUTES.home} element={<LandingPage />} />
+        <Route path={ROUTES.home} element={<Navigate to={ROUTES.dashboard} replace />} />
         <Route path={ROUTES.login} element={<LoginPage />} />
         <Route path={ROUTES.register} element={<RegisterPage />} />
         <Route path={ROUTES.resetPassword} element={<ResetPasswordPage />} />
@@ -496,7 +495,7 @@ export function AppRoutes() {
                 <CompetitionPage />
               </AppChrome>
             ) : (
-              <LandingPage />
+              <Navigate to={ROUTES.login} replace />
             )
           }
         />
@@ -506,7 +505,7 @@ export function AppRoutes() {
             isAuthenticated ? (
               <Navigate to={ROUTES.strategy} replace />
             ) : (
-              <LandingPage />
+              <Navigate to={ROUTES.login} replace />
             )
           }
         />
@@ -528,7 +527,7 @@ export function AppRoutes() {
         />
         <Route
           path={ROUTES.dashboard}
-          element={isAuthenticated ? <DashboardRoute /> : <LandingPage />}
+          element={isAuthenticated ? <DashboardRoute /> : <Navigate to={ROUTES.login} replace />}
         />
         <Route
           path={ROUTES.strategy}
@@ -538,7 +537,7 @@ export function AppRoutes() {
                 <StrategyStudioPage />
               </AppChrome>
             ) : (
-              <LandingPage />
+              <Navigate to={ROUTES.login} replace />
             )
           }
         />

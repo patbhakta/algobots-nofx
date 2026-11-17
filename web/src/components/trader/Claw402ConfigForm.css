@@ -1,5 +1,5 @@
 .ai-wallet-setup {
-  color: #192434;
+  color: #1A1813;
   font-size: 14px;
   line-height: 1.55;
   display: grid;
@@ -180,7 +180,7 @@
 .ai-wallet-key {
   border: 1px solid #e1e7f0;
   border-radius: 8px;
-  background: #f6f8fc;
+  background: #F1ECE2;
   width: 100%;
   margin-bottom: 12px;
 }
@@ -275,7 +275,7 @@
   justify-content: space-between;
   align-items: center;
   gap: 15px;
-  background: #f6f8fc;
+  background: #F1ECE2;
   border-radius: 10px;
   padding: 16px;
 }
@@ -285,7 +285,7 @@
 }
 .ai-wallet-balance strong {
   font-size: 22px;
-  color: #192434;
+  color: #1A1813;
 }
 .ai-wallet-balance small,
 .ai-wallet-balance span {

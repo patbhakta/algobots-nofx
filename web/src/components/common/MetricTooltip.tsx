@@ -281,7 +281,7 @@ export function MetricTooltip({
             borderRadius: '50%',
             background: '#295be8'
           }} />
-          <span style={{ fontWeight: 'bold', fontSize: '14px', color: '#192434' }}>
+          <span style={{ fontWeight: 'bold', fontSize: '14px', color: '#1A1813' }}>
             {name}
           </span>
         </div>
@@ -301,7 +301,7 @@ export function MetricTooltip({
             justifyContent: 'center',
             alignItems: 'center',
             padding: '8px 4px',
-            color: '#192434',
+            color: '#1A1813',
             overflowX: 'auto',
             overflowY: 'hidden',
             maxWidth: '100%',

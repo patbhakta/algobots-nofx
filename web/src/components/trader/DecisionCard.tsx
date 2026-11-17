@@ -63,7 +63,7 @@ function ActionCard({ action, language, onSymbolClick }: { action: DecisionActio
           <span className="text-xl">{config.icon}</span>
           <span
             className="font-mono font-bold text-lg cursor-pointer transition-all duration-200 hover:scale-110"
-            style={{ color: '#192434' }}
+            style={{ color: '#1A1813' }}
             onClick={() => onSymbolClick?.(action.symbol)}
             title="Click to view chart"
           >
@@ -105,7 +105,7 @@ function ActionCard({ action, language, onSymbolClick }: { action: DecisionActio
             <div className="text-xs mb-1" style={{ color: '#707e92' }}>
               {t('entryPrice', language)}
             </div>
-            <div className="font-mono font-semibold" style={{ color: '#192434' }}>
+            <div className="font-mono font-semibold" style={{ color: '#1A1813' }}>
               {formatPrice(action.price)}
             </div>
           </div>
@@ -263,7 +263,7 @@ export function DecisionCard({ decision, language, onSymbolClick }: DecisionCard
             <span className="text-xl">🤖</span>
           </div>
           <div>
-            <div className="font-bold" style={{ color: '#192434' }}>
+            <div className="font-bold" style={{ color: '#1A1813' }}>
               {t('cycle', language)} #{decision.cycle_number}
             </div>
             <div className="text-xs" style={{ color: '#707e92' }}>
@@ -344,7 +344,7 @@ export function DecisionCard({ decision, language, onSymbolClick }: DecisionCard
                 style={{
                   background: '#edf1f7',
                   border: '1px solid rgba(25,36,52,0.14)',
-                  color: '#192434',
+                  color: '#1A1813',
                 }}
               >
                 {decision.system_prompt}
@@ -403,7 +403,7 @@ export function DecisionCard({ decision, language, onSymbolClick }: DecisionCard
                 style={{
                   background: '#edf1f7',
                   border: '1px solid rgba(25,36,52,0.14)',
-                  color: '#192434',
+                  color: '#1A1813',
                 }}
               >
                 {decision.input_prompt}
@@ -438,7 +438,7 @@ export function DecisionCard({ decision, language, onSymbolClick }: DecisionCard
                 style={{
                   background: '#edf1f7',
                   border: '1px solid rgba(25,36,52,0.14)',
-                  color: '#192434',
+                  color: '#1A1813',
                 }}
               >
                 {decision.cot_trace}
@@ -455,7 +455,7 @@ export function DecisionCard({ decision, language, onSymbolClick }: DecisionCard
           style={{ background: '#edf1f7', border: '1px solid rgba(25,36,52,0.14)' }}
         >
           {decision.execution_log.map((log, index) => (
-            <div key={`${log}-${index}`} style={{ color: '#192434', overflowWrap: 'anywhere' }}>
+            <div key={`${log}-${index}`} style={{ color: '#1A1813', overflowWrap: 'anywhere' }}>
               {formatRequestError(log, language)}
             </div>
           ))}

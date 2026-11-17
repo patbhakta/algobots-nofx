@@ -41,7 +41,7 @@ export default function LoginModal({ onClose, language }: LoginModalProps) {
         </motion.button>
         <h2
           className="text-2xl font-bold mb-6"
-          style={{ color: '#192434' }}
+          style={{ color: '#1A1813' }}
         >
           {t('accessNofxPlatform', language)}
         </h2>

@@ -135,7 +135,7 @@ export function WebCryptoEnvironmentCheck({
     checking: () => (
       <div
         className="flex items-center gap-2 text-xs"
-        style={{ color: '#192434' }}
+        style={{ color: '#1A1813' }}
       >
         <Loader2 className="w-4 h-4 animate-spin" />
         <span>{t('environmentCheck.checking', language)}</span>

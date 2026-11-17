@@ -1,11 +1,11 @@
 /* NOFX Flow. Shared identity and desktop workspace presentation. */
 :root {
-  --brand: #295be8;
-  --brand-hover: #204bc4;
+  --brand: #E0483B;
+  --brand-hover: #C93A2F;
   --brand-soft: #edf2ff;
   --surface: #ffffff;
-  --canvas: #f6f8fc;
-  --ink: #192434;
+  --canvas: #F1ECE2;
+  --ink: #1A1813;
   --muted: #637087;
   --line: #e3e8f1;
   --header-bg: #ffffff;
@@ -402,7 +402,7 @@ html {
   color: var(--muted);
 }
 .nofx-shell .planning-toolbar form input {
-  background: #f6f8fc;
+  background: #F1ECE2;
   border-color: var(--line);
 }
 .nofx-shell .planning-toolbar form button {
@@ -542,7 +542,7 @@ html {
 }
 .nofx-shell .planning-page .planning-primary:hover:not(:disabled) {
   background: var(--brand-hover);
-  box-shadow: 0 3px 9px #295be81c;
+  box-shadow: 0 3px 9px #E0483B1c;
 }
 .nofx-shell .planning-selected {
   padding: 20px 22px;
@@ -657,7 +657,7 @@ html {
 }
 .nofx-shell .planning-assistant .planning-composer:focus-within {
   border-color: #91acf2;
-  box-shadow: 0 0 0 3px #295be80a;
+  box-shadow: 0 0 0 3px #E0483B0a;
 }
 .nofx-shell .planning-assistant .planning-composer textarea {
   font-size: 13px;
@@ -1013,15 +1013,15 @@ html {
 
 /* Dashboard: keep dense numerical tools, replace the retro chrome. */
 .nofx-shell .nofx-terminal {
-  --tm-paper: #f6f8fc;
+  --tm-paper: #F1ECE2;
   --tm-panel: #ffffff;
-  --tm-ink: #192434;
+  --tm-ink: #1A1813;
   --tm-ink-2: #52627a;
   --tm-muted: #71819a;
   --tm-hair: #e3e8f1;
   --tm-rule: #e3e8f1;
   --tm-head: #172338;
-  --tm-red: #295be8;
+  --tm-red: #E0483B;
   --tm-red-soft: #edf2ff;
   --tm-px: var(--font-sans);
   font-family: var(--font-sans);

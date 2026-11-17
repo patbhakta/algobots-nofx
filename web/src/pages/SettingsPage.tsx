@@ -339,7 +339,7 @@ export function SettingsPage() {
   return (
     <div
       className="nofx-settings min-h-screen pt-20 pb-12 px-4"
-      style={{ background: '#f6f8fc' }}
+      style={{ background: '#F1ECE2' }}
     >
       <div className="max-w-2xl mx-auto">
         <h1 className="text-xl font-bold text-nofx-text mb-6">Settings</h1>

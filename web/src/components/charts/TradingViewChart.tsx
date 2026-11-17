@@ -169,7 +169,7 @@ function TradingViewChartComponent({
           ? 'fixed inset-0 z-50 rounded-none flex flex-col'
           : ''
         }`}
-      style={isFullscreen ? { background: '#f6f8fc' } : undefined}
+      style={isFullscreen ? { background: '#F1ECE2' } : undefined}
     >
       {/* Header */}
       <div
@@ -181,7 +181,7 @@ function TradingViewChartComponent({
             <TrendingUp className="w-5 h-5" style={{ color: '#295be8' }} />
             <h3
               className="text-base sm:text-lg font-bold"
-              style={{ color: '#192434' }}
+              style={{ color: '#1A1813' }}
             >
               {t('marketChart', language)}
             </h3>
@@ -201,7 +201,7 @@ function TradingViewChartComponent({
               style={{
                 background: '#ffffff',
                 border: '1px solid rgba(25,36,52, 0.14)',
-                color: '#192434',
+                color: '#1A1813',
               }}
             >
               {EXCHANGES.find((e) => e.id === exchange)?.name || exchange}
@@ -225,7 +225,7 @@ function TradingViewChartComponent({
                     }}
                     className="w-full px-4 py-2 text-left text-sm transition-all hover:bg-opacity-50"
                     style={{
-                      color: exchange === ex.id ? '#295be8' : '#192434',
+                      color: exchange === ex.id ? '#295be8' : '#1A1813',
                       background:
                         exchange === ex.id
                           ? 'rgba(41,91,232, 0.1)'
@@ -276,9 +276,9 @@ function TradingViewChartComponent({
                       placeholder={t('enterSymbol', language)}
                       className="flex-1 px-3 py-1.5 rounded-sm text-sm"
                       style={{
-                        background: '#f6f8fc',
+                        background: '#F1ECE2',
                         border: '1px solid rgba(25,36,52, 0.14)',
-                        color: '#192434',
+                        color: '#1A1813',
                       }}
                     />
                     <button
@@ -286,7 +286,7 @@ function TradingViewChartComponent({
                       className="px-3 py-1.5 rounded-sm text-sm font-medium"
                       style={{
                         background: '#295be8',
-                        color: '#f6f8fc',
+                        color: '#F1ECE2',
                       }}
                     >
                       OK
@@ -312,7 +312,7 @@ function TradingViewChartComponent({
                         }}
                         className="px-2 py-1.5 rounded-sm text-xs font-medium transition-all"
                         style={{
-                          color: symbol === sym ? '#295be8' : '#192434',
+                          color: symbol === sym ? '#295be8' : '#1A1813',
                           background:
                             symbol === sym
                               ? 'rgba(41,91,232, 0.1)'
@@ -340,7 +340,7 @@ function TradingViewChartComponent({
                 className="px-2 py-1 rounded-sm text-xs font-medium transition-all"
                 style={{
                   background: timeInterval === int.id ? '#295be8' : 'transparent',
-                  color: timeInterval === int.id ? '#f6f8fc' : '#707e92',
+                  color: timeInterval === int.id ? '#F1ECE2' : '#707e92',
                 }}
               >
                 {int.label}
@@ -354,7 +354,7 @@ function TradingViewChartComponent({
             className="p-1.5 rounded-sm transition-all"
             style={{
               background: isFullscreen ? '#295be8' : 'transparent',
-              color: isFullscreen ? '#f6f8fc' : '#707e92',
+              color: isFullscreen ? '#F1ECE2' : '#707e92',
               border: '1px solid rgba(25,36,52, 0.14)',
             }}
             title={isFullscreen ? t('exitFullscreen', language) : t('fullscreen', language)}
@@ -375,7 +375,7 @@ function TradingViewChartComponent({
         ref={containerRef}
         style={{
           height: isFullscreen ? 'calc(100vh - 65px)' : height,
-          background: '#f6f8fc',
+          background: '#F1ECE2',
           overflow: 'hidden',
         }}
       />

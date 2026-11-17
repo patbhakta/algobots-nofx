@@ -70,7 +70,7 @@ const FallbackIcon: React.FC<IconProps & { label: string }> = ({
       justifyContent: 'center',
       fontSize: Math.max(10, (width || 24) * 0.4),
       fontWeight: 'bold',
-      color: '#192434',
+      color: '#1A1813',
       flexShrink: 0,
     }}
   >

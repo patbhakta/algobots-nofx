@@ -418,7 +418,7 @@ function CommunityStats() {
       value: 'Join community',
       icon: MessageCircle,
       color: 'text-nofx-accent',
-      href: OFFICIAL_LINKS.telegram,
+      href: OFFICIAL_LINKS.telegram || undefined,
     },
   ]
 
