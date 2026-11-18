@@ -1,0 +1,410 @@
+{
+  "categories": [
+    {
+      "id": "getting-started",
+      "title": "Getting Started",
+      "iconKey": "BookOpen",
+      "items": [
+        {
+          "id": "what-is-algobots",
+          "question": "What is AlgoBots?",
+          "blocks": [
+            {
+              "type": "p",
+              "text": "AlgoBots is a live paper-trading platform built on the Nautilus engine. It provides real-time market simulation with institutional-grade order management, backtesting infrastructure, and AI-powered strategy development — all running on your own infrastructure."
+            },
+            {
+              "type": "p",
+              "text": "The platform separates data (research signals) from execution (broker fills), so you can develop and validate strategies against historical data, then deploy them to paper trading with the same code path that would run live fills."
+            }
+          ]
+        },
+        {
+          "id": "how-it-works",
+          "question": "How does the platform architecture work?",
+          "blocks": [
+            {
+              "type": "p",
+              "text": "AlgoBots follows a strict separation of concerns:"
+            },
+            {
+              "type": "list",
+              "items": [
+                "Data layer: Research signals and market data feed your strategies. Data is treated as research input, not execution truth.",
+                "Nautilus engine: The core trading engine handles order management, position tracking, and risk controls with sub-millisecond precision.",
+                "Gateway (:8210): All execution flows through the Nautilus gateway. The UI never calls third-party APIs directly — the gateway is the single source of fill truth.",
+                "Broker adapter: When ready for live trading, the same gateway routes to real brokers. Paper mode and live mode share identical code paths."
+              ]
+            }
+          ]
+        },
+        {
+          "id": "paper-vs-live",
+          "question": "What is the difference between paper trading and live trading?",
+          "blocks": [
+            {
+              "type": "p",
+              "text": "Paper trading simulates order execution against real market data without risking capital. Fills are simulated based on order book state, slippage models, and latency assumptions you configure."
+            },
+            {
+              "type": "p",
+              "text": "Live trading routes orders through the gateway to connected brokers. The key design principle: your strategy code is identical in both modes. Only the gateway's routing destination changes."
+            },
+            {
+              "type": "note",
+              "text": "Start with paper trading. Validate your strategy's behavior, drawdown characteristics, and execution assumptions before committing real capital."
+            }
+          ]
+        },
+        {
+          "id": "supported-assets",
+          "question": "Which asset classes and markets are supported?",
+          "blocks": [
+            {
+              "type": "p",
+              "text": "AlgoBots supports any market the Nautilus engine can connect to. Current adapters include:"
+            },
+            {
+              "type": "list",
+              "items": [
+                "Equities (US markets via supported brokers)",
+                "Futures and options",
+                "Forex pairs",
+                "Crypto perpetuals and spot markets"
+              ]
+            },
+            {
+              "type": "p",
+              "text": "Paper trading works with any market that has historical data available. Live trading requires a configured broker connection for that asset class."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "strategy-development",
+      "title": "Strategy Development",
+      "iconKey": "Zap",
+      "items": [
+        {
+          "id": "marimo-studio",
+          "question": "What is marimo Studio?",
+          "blocks": [
+            {
+              "type": "p",
+              "text": "marimo Studio is an interactive Python notebook environment integrated with AlgoBots. Use it to explore data, prototype strategies, and analyze backtest results — all with reactive execution and version control."
+            },
+            {
+              "type": "list",
+              "items": [
+                "Write strategy logic in Python cells that re-execute automatically when dependencies change.",
+                "Visualize backtest equity curves, drawdown charts, and trade distributions inline.",
+                "Export validated strategies directly to the Strategy Builder for deployment."
+              ]
+            }
+          ]
+        },
+        {
+          "id": "strategy-builder",
+          "question": "What is the Strategy Builder?",
+          "blocks": [
+            {
+              "type": "p",
+              "text": "The Strategy Builder turns your marimo notebooks into deployable trading strategies. It compiles your Python logic into a Nautilus-compatible artifact with defined entry/exit rules, position sizing, and risk parameters."
+            },
+            {
+              "type": "p",
+              "text": "Built strategies are versioned and auditable. Each deployment references a specific artifact hash, so you always know exactly what code is running."
+            }
+          ]
+        },
+        {
+          "id": "backtesting",
+          "question": "How does backtesting work?",
+          "blocks": [
+            {
+              "type": "p",
+              "text": "Backtests run your strategy against historical market data using the Nautilus BacktestEngine. The engine replays order book events and simulates fills with configurable slippage and latency models."
+            },
+            {
+              "type": "list",
+              "items": [
+                "Event-driven replay: orders execute against historical L2 book state, not just OHLCV bars.",
+                "Realistic fills: configurable fill models account for queue position, market impact, and latency.",
+                "Full metrics: win rate, profit factor, Sharpe ratio, max drawdown, and trade-by-trade breakdown."
+              ]
+            },
+            {
+              "type": "note",
+              "text": "Backtest results are not predictions. Past performance, even with realistic simulation, does not guarantee live results."
+            }
+          ]
+        },
+        {
+          "id": "frontier-ai",
+          "question": "What is the Frontier AI-trader lane?",
+          "blocks": [
+            {
+              "type": "p",
+              "text": "The Frontier lane is an AI-powered trading system that uses large language models to interpret market signals, assess trade setups, and make sizing decisions. It runs the same risk controls as manual strategies but delegates the pattern-recognition and timing decisions to frontier AI models."
+            },
+            {
+              "type": "list",
+              "items": [
+                "AI reads market context: price action, signals, and your account state.",
+                "Hard risk limits (position caps, leverage limits, drawdown guards) override any AI decision.",
+                "Full audit trail: every AI decision is logged with the prompt, reasoning, and outcome."
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "execution",
+      "title": "Execution & Gateway",
+      "iconKey": "TrendingUp",
+      "items": [
+        {
+          "id": "gateway-overview",
+          "question": "What does the Nautilus gateway do?",
+          "blocks": [
+            {
+              "type": "p",
+              "text": "The gateway (:8210) is the execution layer. All order flow — from UI, from strategies, from AI traders — routes through it. The gateway:"
+            },
+            {
+              "type": "list",
+              "items": [
+                "Validates orders against risk controls before submission.",
+                "Routes to paper-fill simulation or live broker connections.",
+                "Tracks positions, PnL, and margin in real time.",
+                "Exposes a unified API so the UI never touches broker APIs directly."
+              ]
+            },
+            {
+              "type": "p",
+              "text": "This architecture means your UI is broker-agnostic. Swap brokers by reconfiguring the gateway, not by rewriting frontend code."
+            }
+          ]
+        },
+        {
+          "id": "risk-controls",
+          "question": "What risk controls are enforced?",
+          "blocks": [
+            {
+              "type": "p",
+              "text": "Risk controls run at the gateway layer, outside your strategy code. They cannot be bypassed by a misbehaving strategy or overconfident AI:"
+            },
+            {
+              "type": "list",
+              "items": [
+                "Position limits: maximum notional or contract count per instrument and portfolio-wide.",
+                "Leverage caps: per-asset and aggregate leverage ceilings.",
+                "Drawdown guards: halt new positions if realized drawdown exceeds threshold.",
+                "Order throttling: rate limits prevent runaway order spam."
+              ]
+            }
+          ]
+        },
+        {
+          "id": "fill-truth",
+          "question": "What does 'broker = fill truth' mean?",
+          "blocks": [
+            {
+              "type": "p",
+              "text": "In paper trading, the gateway simulates fills. In live trading, the broker reports actual fills. Either way, the gateway is the source of truth for your position state — not the UI, not your strategy, not external dashboards."
+            },
+            {
+              "type": "p",
+              "text": "This separation prevents state drift. If the UI loses connection, reconnecting will resync from gateway state. If a strategy crashes, its replacement starts with accurate positions from the gateway."
+            }
+          ]
+        },
+        {
+          "id": "latency",
+          "question": "What latency should I expect?",
+          "blocks": [
+            {
+              "type": "p",
+              "text": "Gateway-to-broker latency depends on your deployment and broker. The Nautilus engine itself operates at sub-millisecond internal latency. For paper trading, simulated fill latency is configurable to match expected live conditions."
+            },
+            {
+              "type": "note",
+              "text": "High-frequency strategies requiring single-digit microsecond latency need co-located deployments and direct market access — that is beyond AlgoBots' current scope."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dashboard",
+      "title": "Dashboard & Metrics",
+      "iconKey": "Monitor",
+      "items": [
+        {
+          "id": "metrics-explained",
+          "question": "What do the dashboard metrics mean?",
+          "blocks": [
+            {
+              "type": "list",
+              "items": [
+                "Equity: Current account value including unrealized PnL from open positions.",
+                "Realized PnL: Net profit/loss from closed trades only.",
+                "Unrealized PnL: Paper gains/losses on positions still open.",
+                "Profit Factor: Gross wins divided by gross losses. Above 1.0 means net positive.",
+                "Max Drawdown: Worst peak-to-trough decline in your equity curve."
+              ]
+            }
+          ]
+        },
+        {
+          "id": "execution-log",
+          "question": "Where can I see trade history and decisions?",
+          "blocks": [
+            {
+              "type": "p",
+              "text": "The Execution Log shows every order, fill, and strategy decision. For AI-driven trades, it includes the full reasoning chain. For manual or rule-based strategies, it shows the trigger conditions that fired."
+            },
+            {
+              "type": "p",
+              "text": "Use the log to debug strategy behavior, verify that risk controls fired correctly, and understand why a trade did or didn't execute."
+            }
+          ]
+        },
+        {
+          "id": "positions-panel",
+          "question": "How do I manage open positions?",
+          "blocks": [
+            {
+              "type": "p",
+              "text": "The Positions panel shows all open positions with entry price, current price, unrealized PnL, and size. You can close positions manually from here — manual closes sync back into your strategy's position state."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "security",
+      "title": "Security",
+      "iconKey": "Shield",
+      "items": [
+        {
+          "id": "credential-storage",
+          "question": "How are broker credentials stored?",
+          "blocks": [
+            {
+              "type": "list",
+              "items": [
+                "API keys and secrets are AES-256 encrypted at rest in your database.",
+                "Keys are decrypted only in memory when needed for broker connections.",
+                "AlgoBots is self-hosted: credentials never leave your infrastructure."
+              ]
+            }
+          ]
+        },
+        {
+          "id": "single-operator",
+          "question": "Why is registration closed after the first user?",
+          "blocks": [
+            {
+              "type": "p",
+              "text": "Each AlgoBots instance is single-operator by design. The first registered account owns the instance; further registration is disabled. This prevents unauthorized access to an exposed deployment."
+            },
+            {
+              "type": "note",
+              "text": "Run one instance per operator. Multi-user deployments require separate instances."
+            }
+          ]
+        },
+        {
+          "id": "withdrawal-safety",
+          "question": "Can AlgoBots withdraw funds from my broker account?",
+          "blocks": [
+            {
+              "type": "p",
+              "text": "No. Configure your broker API keys with trading permissions only — disable withdrawal permissions. AlgoBots only needs to place and manage orders, not move funds."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "self-hosting",
+      "title": "Self-Hosting",
+      "iconKey": "Wrench",
+      "items": [
+        {
+          "id": "requirements",
+          "question": "What are the system requirements?",
+          "blocks": [
+            {
+              "type": "list",
+              "items": [
+                "Linux server (Ubuntu 22.04+ recommended) or macOS",
+                "Docker and Docker Compose",
+                "4GB RAM minimum, 8GB+ recommended for backtesting",
+                "Persistent storage for database and historical data"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "installation",
+          "question": "How do I install AlgoBots?",
+          "blocks": [
+            {
+              "type": "p",
+              "text": "Deploy using Docker Compose:"
+            },
+            {
+              "type": "steps",
+              "items": [
+                "Clone the repository and navigate to the deployment directory.",
+                "Copy `.env.example` to `.env` and configure your settings.",
+                "Run `docker compose up -d` to start all services.",
+                "Access the dashboard at the configured port (default :8213)."
+              ]
+            }
+          ]
+        },
+        {
+          "id": "updating",
+          "question": "How do I update to a new version?",
+          "blocks": [
+            {
+              "type": "p",
+              "text": "Pull the latest images and restart:"
+            },
+            {
+              "type": "list",
+              "items": [
+                "`docker compose pull`",
+                "`docker compose up -d`"
+              ]
+            },
+            {
+              "type": "p",
+              "text": "Your database and configuration persist in mounted volumes. Running strategies will restart automatically after the services come back."
+            }
+          ]
+        },
+        {
+          "id": "logs",
+          "question": "Where are the logs?",
+          "blocks": [
+            {
+              "type": "list",
+              "items": [
+                "Service logs: `docker compose logs <service-name>`",
+                "Gateway logs: `docker compose logs gateway`",
+                "Strategy execution logs: visible in the dashboard Execution Log",
+                "Browser console: for frontend issues"
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
