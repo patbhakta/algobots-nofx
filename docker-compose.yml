@@ -40,7 +40,7 @@ services:
     build:
       context: .
       dockerfile: ./docker/Dockerfile.frontend
-    container_name: nofx-frontend
+    container_name: nofx-g2-frontend
     restart: unless-stopped
     ports:
       - "${NOFX_BIND_ADDRESS:-127.0.0.1}:${NOFX_FRONTEND_PORT:-3000}:80"
