@@ -115,6 +115,7 @@ def test_create_app_boots_and_serves_health(monkeypatch: pytest.MonkeyPatch, tmp
         assert canonical.status_code == alias.status_code == 200
         assert alias.json() == canonical.json()
         body = canonical.json()
+        assert body["nautilus_version"] == "2.0.0rc9"
         assert body["nodes"][0]["node"] == "nautilus-paper-1"
         assert body["status"] == "degraded"  # no heartbeat yet
         assert http.post("/v1/orders", json={}).status_code == 401  # no sessions configured

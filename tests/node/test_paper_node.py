@@ -1,6 +1,6 @@
 """ALG-3405: the rc6 paper node's wiring that does not need the engine.
 
-The node itself runs only where ``nautilus_trader`` 2.0.0rc6 is installed (the
+The node itself runs only where ``nautilus_trader`` 2.0.0rc9 is installed (the
 ``nautilus-node`` image); ``scripts/rc6_node_smoke.py`` and the capture in
 ``tests/gateway/fixtures/rc6_event_streams.json`` are its end-to-end evidence.
 What runs everywhere is that importing it costs nothing and that its names
@@ -26,7 +26,7 @@ def test_defaults_name_one_paper_node_on_the_sandbox_venue():
         "EUR/USD.SIM",
     )
     assert s.starting_balance == Decimal("100000")
-    assert paper_node.NAUTILUS_PIN == "2.0.0rc6"
+    assert paper_node.NAUTILUS_PIN == "2.0.0rc9"
 
 
 def test_the_node_reads_the_stream_the_gateway_writes_and_keys_events_by_trader():

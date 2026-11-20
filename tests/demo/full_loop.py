@@ -11,7 +11,7 @@ The five hops of the demo, each reported ``wired`` / ``stubbed`` / ``missing``:
    (``POST /api/studio/strategies``, docs/design/strategy-studio-nautilus-bridge.md).
 2. ``gateway`` — the gateway is deployed, healthy, and has a node command stream
    (``algobots:cmd:<node>``) to dispatch to.
-3. ``nautilus`` — the ``nautilus-node`` container runs Nautilus 2.0.0rc6
+3. ``nautilus`` — the ``nautilus-node`` container runs Nautilus 2.0.0rc9
    (roadmap rule 5) in paper mode and its ``trader-*`` event streams carry fills
    (ALG-3405).
 4. ``datafeed`` — market data reaches the node and is fresh: the rc6 node's
@@ -56,7 +56,7 @@ NODE_CONTAINER = "nautilus-node"  # deploy/compose.nautilus-node.yaml (ALG-3405)
 #: these streams' lengths is the node's fill count.
 FILL_STREAMS = "trader-*:algobots:events.order_filled.*"
 NOTEBOOK_DIR = "/mnt/funnytree/algobots/notebooks"
-NAUTILUS_PIN = "2.0.0rc6"
+NAUTILUS_PIN = "2.0.0rc9"
 FEED_MAX_AGE_S = 15 * 60  # a replay or live feed older than this is not reaching the node
 #: algobots.node.replay.FEED_PREFIX; the node signals about once a second while quotes arrive.
 NODE_FEED_STREAMS = "algobots:feed:*"
@@ -80,6 +80,7 @@ class Facts:
 
     api_paths: list[str] | None = None
     gateway_health: int | None = None
+    gateway_status: str | None = None
     redis_cmd_streams: list[str] | None = None
     redis_trader_streams: list[str] | None = None
     api_nautilus: str | None = None
@@ -194,7 +195,12 @@ def collect(
     # The gateway contract serves /health under /v1 on the gateway own port
     # (contracts/gateway.openapi.yaml). Probing the API :8000/health answers 404
     # forever: the gateway never serves it (ALG-3404).
-    f.gateway_health = _status_only(f"{gateway}/health")
+    f.gateway_health, health_body = _http(f"{gateway}/health")
+    if f.gateway_health == 200:
+        try:
+            f.gateway_status = json.loads(health_body).get("status")
+        except (ValueError, AttributeError):
+            f.errors.append("gateway health returned invalid JSON")
 
     code, body = _http(f"{api}/demo/api/workers")
     if code == 200:
@@ -262,12 +268,13 @@ def _studio(f: Facts) -> Hop:
 def _gateway(f: Facts) -> Hop:
     h = Hop("gateway", "Gateway accepts and dispatches", MISSING)
     h.evidence.append(f"GET :8210/v1/health -> {f.gateway_health} (gateway contract health route)")
+    h.evidence.append(f"fleet status: {f.gateway_status or 'unknown'}")
     cmd = f.redis_cmd_streams
     h.evidence.append(
         "redis algobots:cmd:* streams: "
         + ("unknown (probe failed)" if cmd is None else str(len(cmd)))
     )
-    if f.gateway_health == 200 and cmd:
+    if f.gateway_health == 200 and f.gateway_status == "ok" and cmd:
         h.status = WIRED
     elif f.gateway_health == 200 or cmd:
         h.status = STUBBED
@@ -300,7 +307,7 @@ def _nautilus(f: Facts) -> Hop:
     h.evidence.append(f"paper workers ready: {len(ready)}, orders filled: {filled}")
     if f.node_nautilus == NAUTILUS_PIN:
         h.status = STUBBED
-        h.evidence.append("rc6 node is up but has no fills on its event streams yet")
+        h.evidence.append("rc9 node is up but has no fills on its event streams yet")
         return h
     if not ready:
         return h
@@ -309,7 +316,7 @@ def _nautilus(f: Facts) -> Hop:
     else:
         h.status = STUBBED
         if f.api_nautilus != NAUTILUS_PIN:
-            h.evidence.append("workers run on the API image's Nautilus, not the pinned rc6 node")
+            h.evidence.append("workers run on the API image's Nautilus, not the pinned rc9 node")
         if filled == 0:
             h.evidence.append("no fills recorded by any ready worker")
     return h

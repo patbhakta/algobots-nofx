@@ -408,7 +408,7 @@ components:
           description: |
             Pinned NautilusTrader build (roadmap rule 5). An upgrade is its own
             sprint, so a drift between this and the pin is a failed deploy.
-          const: "2.0.0rc6"
+          const: "2.0.0rc9"
         nodes:
           type: array
           description: One entry per registered node, reachable or not.
