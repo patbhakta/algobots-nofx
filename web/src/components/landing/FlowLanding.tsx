@@ -200,7 +200,7 @@ export default function FlowLanding() {
             On your terms.
           </h2>
           <p>
-            Install NOFX on your computer, connect your accounts and choose how
+            Install AlgoBots on your computer, connect your accounts and choose how
             you want to trade.
           </p>
         </div>

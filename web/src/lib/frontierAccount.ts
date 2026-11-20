@@ -10,7 +10,7 @@ export interface AccountPosition {
   leverage: number
 }
 
-// NOFX native traders and normalized API views use different field names.
+// AlgoBots native traders and normalized API views use different field names.
 export function accountPositions(value: unknown): AccountPosition[] {
   if (!Array.isArray(value)) throw new Error('Position response is incomplete')
   return value

@@ -839,7 +839,7 @@ export function AITradersPage({ onTraderSelect }: AITradersPageProps) {
               </h2>
               <p>
                 {configView === 'connections'
-                  ? 'Manage the services you use across NOFX.'
+                  ? 'Manage the services you use across AlgoBots.'
                   : 'Configure and manage your automated traders.'}
               </p>
             </div>

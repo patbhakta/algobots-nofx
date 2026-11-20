@@ -1,0 +1,4 @@
+services:
+  nofx-frontend:
+    ports:
+      - "100.82.57.72:8213:8213"

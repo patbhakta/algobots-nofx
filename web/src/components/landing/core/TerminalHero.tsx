@@ -210,7 +210,7 @@ export default function TerminalHero() {
               <span className="relative inline-flex rounded-full h-2 w-2 bg-nofx-gold"></span>
             </span>
             <span className="text-xs font-mono text-nofx-gold tracking-widest">
-              NOFX PROFESSIONAL MULTI-ASSET AGENT OS
+              AlgoBots PROFESSIONAL MULTI-ASSET AGENT OS
             </span>
           </motion.div>
 
@@ -305,7 +305,7 @@ export default function TerminalHero() {
 
           {/* Plain-language promise — the anti-jargon line */}
           <p className="mt-5 text-sm text-nofx-text-muted font-mono">
-            Self-hosted &amp; open source · about $13 is enough to start ·
+            AlgoBots Trading System
             guided setup, no API keys — first trade in minutes
           </p>
 
@@ -387,7 +387,7 @@ import { OFFICIAL_LINKS } from '../../../constants/branding'
 
 function CommunityStats() {
   const { stars, forks, contributors, isLoading, error } = useGitHubStats(
-    'NoFxAiOS',
+    'patbhakta',
     'nofx'
   )
 

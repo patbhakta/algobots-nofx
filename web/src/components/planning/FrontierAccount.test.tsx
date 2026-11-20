@@ -146,7 +146,7 @@ it('flags a live position with no reported exit orders without taking action', a
   expect(mocks.planning).not.toHaveBeenCalled()
 })
 
-it('requires an explicit close click, uses the existing NOFX close API and never repeats a timeout', async () => {
+it('requires an explicit close click, uses the existing AlgoBots close API and never repeats a timeout', async () => {
   mocks.close.mockRejectedValue(new Error('timeout'))
   open()
   await screen.findByText('ETH', { selector: 'strong' })
@@ -257,7 +257,7 @@ it('reads a saved account without any Autopilot and never creates one', async ()
     '/api/open-orders?exchange_id=account&symbol=BTC',
     expect.anything()
   )
-  expect(screen.queryByText(/Connect a NOFX trader/)).toBeNull()
+  expect(screen.queryByText(/Connect a AlgoBots trader/)).toBeNull()
   expect(
     screen.getAllByRole('link', { name: 'Close on exchange ↗' })
   ).toHaveLength(2)

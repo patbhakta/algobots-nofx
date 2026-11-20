@@ -439,7 +439,7 @@ export const PlanningDataPanel = memo(function PlanningDataPanel({
           <p>
             Enable a source to make it available to the planning assistant.
             These reads cannot place orders. Claw402 holder analytics only cover
-            matching Hyperliquid markets. Paid reads use your NOFX fee wallet
+            matching Hyperliquid markets. Paid reads use your AlgoBots fee wallet
             and are cached for five minutes.
           </p>
           <label>

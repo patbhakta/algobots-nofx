@@ -24,7 +24,7 @@ const run = (status: string): LiveRun =>
     orders: [{ role: 'entry', status }],
   }) as LiveRun
 
-it('reads native NOFX position fields for the entire account', () => {
+it('reads native AlgoBots position fields for the entire account', () => {
   expect(
     accountPositions([
       {

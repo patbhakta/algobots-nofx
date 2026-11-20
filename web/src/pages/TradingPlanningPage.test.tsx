@@ -181,13 +181,13 @@ function open() {
     </MemoryRouter>
   )
 }
-describe('NOFX live planning', () => {
+describe('AlgoBots live planning', () => {
   it('refreshes account sizing and executes only after the explicit review click', async () => {
     open()
     const card = await screen.findByRole('button', { name: /Test plan one/ })
     fireEvent.click(card)
     await waitFor(() =>
-      expect(screen.getByLabelText('NOFX AI model')).toHaveValue('model')
+      expect(screen.getByLabelText('AlgoBots AI model')).toHaveValue('model')
     )
     fireEvent.click(screen.getByRole('button', { name: 'Review order' }))
     const execute = await screen.findByRole('button', {
@@ -494,7 +494,7 @@ it('opens setup before a paid request and retains the original idea when AI is m
 it('offers a safe starting point, keeps real account activity separate and keeps plans visible outside the assistant', async () => {
   open()
   await waitFor(() =>
-    expect(screen.getByLabelText('NOFX AI model')).toHaveValue('model')
+    expect(screen.getByLabelText('AlgoBots AI model')).toHaveValue('model')
   )
   const positions = screen.getByRole('region', {
     name: 'Account positions and orders',
@@ -532,7 +532,7 @@ it('shows generated plans automatically and uses the user idea instead of a gene
   })
   open()
   await waitFor(() =>
-    expect(screen.getByLabelText('NOFX AI model')).toHaveValue('model')
+    expect(screen.getByLabelText('AlgoBots AI model')).toHaveValue('model')
   )
   fireEvent.change(screen.getByLabelText('Trade idea'), {
     target: { value: 'Compare timed entries for a pullback.' },
@@ -573,7 +573,7 @@ it('starts a separate draft from a locked trade without revising or executing th
   mocks.stream.mockResolvedValue(undefined)
   open()
   await waitFor(() =>
-    expect(screen.getByLabelText('NOFX AI model')).toHaveValue('model')
+    expect(screen.getByLabelText('AlgoBots AI model')).toHaveValue('model')
   )
   fireEvent.click(await screen.findByText('Plan history · 1'))
   fireEvent.click(await screen.findByRole('button', { name: /Test plan one/ }))

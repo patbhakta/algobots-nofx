@@ -223,7 +223,7 @@ export function OrchestrationTopology({ layers, className }: OrchestrationTopolo
         <animate attributeName="opacity" values="0.6;0" dur="2.2s" repeatCount="indefinite" />
       </circle>
       <circle cx={ENGINE_X} cy={cy} r={18} fill="var(--tm-red)" />
-      <text x={ENGINE_X} y={cy + 3} textAnchor="middle" fontFamily="var(--tm-px)" fontSize={7} fill="var(--tm-paper)">NOFX</text>
+      <text x={ENGINE_X} y={cy + 3} textAnchor="middle" fontFamily="var(--tm-px)" fontSize={7} fill="var(--tm-paper)">AlgoBots</text>
     </svg>
   )
 }

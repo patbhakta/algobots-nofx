@@ -521,7 +521,7 @@ export function FrontierSetup({
                 <p className="frontier-setup-note">
                   Pay per request; the gateway checks the price before payment.
                   A positive balance does not guarantee enough funds for every
-                  request. This wallet is encrypted on your NOFX server, not in
+                  request. This wallet is encrypted on your AlgoBots server, not in
                   your browser. Use Private key backup above to save your key.
                   Keep a backup of your deployment too.
                 </p>
@@ -649,7 +649,7 @@ export function FrontierSetup({
                     <ol>
                       <li>Create an API key with Futures trading enabled.</li>
                       <li>
-                        Allow this NOFX server IP. Keep withdrawals disabled.
+                        Allow this AlgoBots server IP. Keep withdrawals disabled.
                       </li>
                       <li>
                         Save the key here. We then verify the live account.

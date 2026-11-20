@@ -5,7 +5,7 @@ import './AIWalletBackup.css'
 
 export function downloadWalletBackup(address: string, privateKey: string) {
   const text = [
-    'NOFX AI wallet backup — keep private',
+    'AlgoBots AI wallet backup — keep private',
     'Network: Base',
     `Address: ${address}`,
     `Private key: ${privateKey}`,
@@ -19,7 +19,7 @@ export function downloadWalletBackup(address: string, privateKey: string) {
   try {
     const link = document.createElement('a')
     link.href = url
-    link.download = `NOFX-AI-wallet-${address.slice(0, 8)}.txt`
+    link.download = `AlgoBots-AI-wallet-${address.slice(0, 8)}.txt`
     link.click()
   } finally {
     setTimeout(() => URL.revokeObjectURL(url), 1000)

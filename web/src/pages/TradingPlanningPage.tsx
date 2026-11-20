@@ -1506,13 +1506,13 @@ export function TradingPlanningPage() {
               <span>Change model</span>
             </summary>
             <select
-              aria-label="NOFX AI model"
+              aria-label="AlgoBots AI model"
               value={modelID}
               onChange={(e) => setModelID(e.target.value)}
               disabled={busy}
             >
               {models.length === 0 && (
-                <option>Enable AI in NOFX settings first</option>
+                <option>Enable AI in AlgoBots settings first</option>
               )}
               {models.map((m) => (
                 <option value={m.id} key={m.id}>

@@ -107,7 +107,7 @@ export default function HeaderBar({
         <button
           className="nofx-home"
           onClick={() => navigate(ROUTES.home)}
-          aria-label="NOFX home"
+          aria-label="AlgoBots home"
         >
           <BrandLogo />
         </button>

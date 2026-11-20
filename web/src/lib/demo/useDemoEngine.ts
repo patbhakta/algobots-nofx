@@ -466,7 +466,7 @@ function build(S: SimState): DemoDataset {
     config: {
       scan_interval_minutes: 5,
       ai_model: 'claw402',
-      strategy_name: 'NOFX Claw402 Auto Strategy',
+      strategy_name: 'AlgoBots Claw402 Auto Strategy',
       btc_eth_leverage: 10,
       altcoin_leverage: 10,
     },

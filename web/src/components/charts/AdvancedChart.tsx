@@ -1158,7 +1158,7 @@ export function AdvancedChart({
           </div>
         )}
 
-        {/* NOFX watermark */}
+        {/* AlgoBots watermark */}
         <div
           style={{
             position: 'absolute',
@@ -1178,7 +1178,7 @@ export function AdvancedChart({
               fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, sans-serif',
             }}
           >
-            NOFX
+            AlgoBots
           </div>
         </div>
       </div>

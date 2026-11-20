@@ -140,7 +140,7 @@ export function RegisterPage() {
             Create your account
           </h1>
           <p className="text-nofx-text-muted text-sm">
-            Set up your local NOFX workspace. Connect your AI wallet and trading
+            Set up your local AlgoBots workspace. Connect your AI wallet and trading
             accounts when you are ready.
           </p>
         </div>

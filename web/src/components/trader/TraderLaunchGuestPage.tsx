@@ -14,7 +14,7 @@ import { ROUTES } from '../../router/paths'
 
 const setupSteps = [
   {
-    title: 'Create your NOFX account',
+    title: 'Create your AlgoBots account',
     detail:
       'Your account keeps the Autopilot configuration, wallet authorization state, and trading dashboard in one place.',
     icon: KeyRound,
@@ -24,7 +24,7 @@ const setupSteps = [
   {
     title: 'Fund the AI fee wallet',
     detail:
-      'NOFX prepares a Base USDC wallet for Claw402.ai data and model calls. This wallet is separate from trading collateral.',
+      'AlgoBots prepares a Base USDC wallet for Claw402.ai data and model calls. This wallet is separate from trading collateral.',
     icon: CircleDollarSign,
     action: 'Open deposit QR',
     to: ROUTES.login,
@@ -33,7 +33,7 @@ const setupSteps = [
   {
     title: 'Authorize Hyperliquid',
     detail:
-      'Connect your trading wallet, approve the NOFX Agent, and approve the builder fee. Funds remain in your Hyperliquid account.',
+      'Connect your trading wallet, approve the AlgoBots Agent, and approve the builder fee. Funds remain in your Hyperliquid account.',
     icon: Wallet,
     action: 'Connect exchange',
     to: ROUTES.login,
@@ -42,7 +42,7 @@ const setupSteps = [
   {
     title: 'Deposit trading USDC',
     detail:
-      'Add USDC on Hyperliquid, then start NOFX Autopilot. The strategy is created and launched automatically.',
+      'Add USDC on Hyperliquid, then start AlgoBots Autopilot. The strategy is created and launched automatically.',
     icon: Zap,
     action: 'Open Hyperliquid',
     href: 'https://app.hyperliquid.xyz/',
@@ -63,13 +63,13 @@ export function TraderLaunchGuestPage() {
           <div className="flex flex-col justify-center">
             <div className="mb-5 inline-flex w-fit items-center gap-2 rounded-full border border-nofx-gold/25 bg-nofx-gold/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-nofx-gold">
               <ShieldCheck className="h-3.5 w-3.5" />
-              NOFX Autopilot
+              AlgoBots Autopilot
             </div>
             <h1 className="max-w-3xl text-4xl font-bold tracking-tight text-nofx-text md:text-5xl">
               One strategy. Four setup steps. Then it trades.
             </h1>
             <p className="mt-5 max-w-2xl text-base leading-7 text-nofx-text-muted">
-              NOFX runs a single Claw402-driven strategy: board, per-market
+              AlgoBots runs a single Claw402-driven strategy: board, per-market
               details, liquidation structure, candles, execution. No strategy
               picker, no manual symbol picking required.
             </p>
@@ -166,8 +166,8 @@ export function TraderLaunchGuestPage() {
               No trading wallet yet?
             </div>
             <p className="mt-3 text-sm leading-6 text-nofx-text-muted">
-              NOFX does not need your main-wallet private key. Install or unlock
-              an EVM wallet, fund Hyperliquid with USDC, then authorize the NOFX
+              AlgoBots does not need your main-wallet private key. Install or unlock
+              an EVM wallet, fund Hyperliquid with USDC, then authorize the AlgoBots
               Agent after sign-in.
             </p>
           </div>
@@ -194,7 +194,7 @@ export function TraderLaunchGuestPage() {
               <div className="font-semibold text-nofx-text">MetaMask</div>
               <p className="mt-2 text-sm leading-6 text-nofx-text-muted">
                 Already use MetaMask? Unlock it, then continue setup inside
-                NOFX.
+                AlgoBots.
               </p>
             </a>
             <a

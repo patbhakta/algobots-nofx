@@ -36,13 +36,13 @@ export function formatRequestError(
     )?.[1]
     const detail = diagnostic ? ` Diagnostic: ${diagnostic}.` : ''
     if (language === 'zh') {
-      return `${protocol ? 'NOFX 与支付网关的连接协议异常，未能读取响应。' : '未能确认付费请求的响应或结算结果。'}支付结果待核对；不会自动重试，请先核对原付款，勿重复付款。`
+      return `${protocol ? 'AlgoBots 与支付网关的连接协议异常，未能读取响应。' : '未能确认付费请求的响应或结算结果。'}支付结果待核对；不会自动重试，请先核对原付款，勿重复付款。`
     }
     const cause =
       diagnostic === 'gateway_tools_unsupported'
         ? 'The selected model endpoint does not support native tool calls. Use a compatible planning model such as DeepSeek.'
         : protocol
-          ? 'NOFX could not read the gateway response because of a network protocol error.'
+          ? 'AlgoBots could not read the gateway response because of a network protocol error.'
           : 'The paid response or settlement could not be verified.'
     return `${cause} Payment result is unconfirmed. No automatic retry; check the original payment before making another request.${detail}`
   }

@@ -108,14 +108,14 @@ describe('Hyperliquid guided connection', () => {
     mocks.getHyperliquidAgent.mockReset()
     mocks.getHyperliquidAgent.mockResolvedValue({
       agent: {
-        name: 'NOFX Agent',
+        name: 'AlgoBots Agent',
         address: '0xagent',
         validUntil: Date.now() + 60_000,
       },
       builderApproved: true,
       agents: [
         {
-          name: 'NOFX Agent',
+          name: 'AlgoBots Agent',
           address: '0xagent',
           validUntil: Date.now() + 60_000,
         },
@@ -141,11 +141,11 @@ describe('Hyperliquid guided connection', () => {
     expect(screen.getByText('Connect your wallet to begin')).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Connect wallet' })).toBeTruthy()
 
-    expect(screen.queryByText('Create a trading key for NOFX')).toBeNull()
+    expect(screen.queryByText('Create a trading key for AlgoBots')).toBeNull()
     expect(
       screen.queryByText('Approve the small per-trade builder fee')
     ).toBeNull()
-    expect(screen.queryByText('Save to NOFX — done')).toBeNull()
+    expect(screen.queryByText('Save to AlgoBots — done')).toBeNull()
   })
 
   it('explains the authorization outcome before asking for a signature', () => {
@@ -310,14 +310,14 @@ describe('Hyperliquid guided connection', () => {
     ])
     mocks.getHyperliquidAgent.mockResolvedValue({
       agent: {
-        name: 'NOFX Agent',
+        name: 'AlgoBots Agent',
         address: '0xold-agent',
         validUntil: Date.now() + 60_000,
       },
       builderApproved: true,
       agents: [
         {
-          name: 'NOFX Agent',
+          name: 'AlgoBots Agent',
           address: '0xold-agent',
           validUntil: Date.now() + 60_000,
         },
@@ -359,14 +359,14 @@ describe('Hyperliquid guided connection', () => {
     ])
     mocks.getHyperliquidAgent.mockResolvedValue({
       agent: {
-        name: 'NOFX Agent',
+        name: 'AlgoBots Agent',
         address: '0xagent',
         validUntil: Date.now() + 60_000,
       },
       builderApproved: false,
       agents: [
         {
-          name: 'NOFX Agent',
+          name: 'AlgoBots Agent',
           address: '0xagent',
           validUntil: Date.now() + 60_000,
         },
@@ -547,19 +547,19 @@ describe('Hyperliquid guided connection', () => {
     ])
     mocks.getHyperliquidAgent.mockResolvedValue({
       agent: {
-        name: 'NOFX Agent',
+        name: 'AlgoBots Agent',
         address: '0xexact-agent',
         validUntil: Date.now() + 60_000,
       },
       builderApproved: true,
       agents: [
         {
-          name: 'NOFX Agent',
+          name: 'AlgoBots Agent',
           address: '0xwrong-agent',
           validUntil: Date.now() + 60_000,
         },
         {
-          name: 'NOFX Agent',
+          name: 'AlgoBots Agent',
           address: '0xexact-agent',
           validUntil: Date.now() + 60_000,
         },

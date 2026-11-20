@@ -8,7 +8,7 @@ import {
 import { resolveLaunchExchange, resolveLaunchModel } from './resolve'
 import type { LaunchOutcome } from './types'
 
-export const AUTOPILOT_TRADER_NAME = 'NOFX Autopilot'
+export const AUTOPILOT_TRADER_NAME = 'AlgoBots Autopilot'
 
 export interface LaunchAutopilotOptions {
   /**
@@ -84,7 +84,7 @@ export async function launchAutopilot(
     }
 
     // Re-fetch the live trader list before deciding create vs update. Stale
-    // props/snapshots would create a duplicate "NOFX Autopilot" — paying the
+    // props/snapshots would create a duplicate "AlgoBots Autopilot" — paying the
     // slow first-create cost again and orphaning dashboards onto a deleted id.
     const existingTraders = await api.getTraders(true)
     const existing =
@@ -137,7 +137,7 @@ export async function launchAutopilot(
       ok: false,
       kind: 'error',
       message:
-        err instanceof Error ? err.message : 'Failed to launch NOFX Autopilot',
+        err instanceof Error ? err.message : 'Failed to launch AlgoBots Autopilot',
     }
   }
 }
@@ -167,7 +167,7 @@ export async function ensureClaw402Strategy(): Promise<string> {
 
   const config = await api.getDefaultStrategyConfig()
   const created = await api.createStrategy({
-    name: 'NOFX Claw402 Auto Strategy',
+    name: 'AlgoBots Claw402 Auto Strategy',
     description:
       'Single built-in strategy: Claw402 board, per-symbol details, raw candles, then execution.',
     config,

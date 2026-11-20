@@ -204,7 +204,7 @@ export function FrontierMarkets({
           )}
           {selectedMarket && !selectedMarket.execution_supported && (
             <small>
-              Chart only · This builder market does not have a verified NOFX
+              Chart only · This builder market does not have a verified AlgoBots
               execution adapter.
             </small>
           )}

@@ -277,7 +277,7 @@ export function FrontierAccount({
         )
       )
         throw new Error(
-          'The NOFX account binding changed. Refresh before closing.'
+          'The AlgoBots account binding changed. Refresh before closing.'
         )
       if (traders.some((t) => t.exchange_id === accountID && t.is_running))
         throw new Error(
@@ -785,7 +785,7 @@ export function FrontierAccount({
               position {format(confirm.quantity)}
             </p>
             <p>
-              This sends a market close through NOFX. Remaining Frontier entry
+              This sends a market close through AlgoBots. Remaining Frontier entry
               orders for this market are stopped first. Slippage and fees apply.
               No typed phrase is needed.
             </p>

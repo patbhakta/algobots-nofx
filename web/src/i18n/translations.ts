@@ -3,7 +3,7 @@ export type Language = 'en' | 'zh' | 'id'
 export const translations = {
   en: {
     // Header
-    appTitle: 'NOFX',
+    appTitle: 'AlgoBots',
     subtitle: 'Multi-AI Model Trading Platform',
     aiTraders: 'AI Traders',
     details: 'Details',
@@ -515,11 +515,11 @@ export const translations = {
     resetPasswordFailed: 'Password reset failed',
     backToLogin: 'Back to Login',
     resetPasswordCliIntro:
-      'For security, password recovery is no longer available from the browser. Run this command on the server where NOFX is installed:',
+      'For security, password recovery is no longer available from the browser. Run this command on the server where AlgoBots is installed:',
     resetPasswordCliSecurityNote:
-      'This requires shell access to the server, which keeps your account safe even when NOFX is exposed to the internet.',
+      'This requires shell access to the server, which keeps your account safe even when AlgoBots is exposed to the internet.',
     resetAccountCliIntro:
-      'To wipe everything and start over, run this command on the server where NOFX is installed:',
+      'To wipe everything and start over, run this command on the server where AlgoBots is installed:',
     copy: 'Copy',
     loginSuccess: 'Login successful',
     registrationSuccess: 'Registration successful',
@@ -553,23 +553,23 @@ export const translations = {
       'User registration is currently disabled. Please contact the administrator for access.',
 
     // Hero Section
-    githubStarsInDays: '2.5K+ GitHub Stars in 3 days',
+    githubStarsInDays: '',
     heroTitle1: 'Read the Market.',
     heroTitle2: 'Write the Trade.',
     heroDescription:
-      'NOFX is the future standard for AI trading — an open, community-driven agentic trading OS. Supporting Binance, Aster DEX and other exchanges, self-hosted, multi-agent competition, let AI automatically make decisions, execute and optimize trades for you.',
+      'AlgoBots is the future standard for AI trading — an open, community-driven agentic trading OS. Supporting Binance, Aster DEX and other exchanges, self-hosted, multi-agent competition, let AI automatically make decisions, execute and optimize trades for you.',
     poweredBy: 'Powered by Aster DEX and Binance.',
 
     // Landing Page CTA
     readyToDefine: 'Ready to define the future of AI trading?',
     startWithCrypto:
-      'Starting with crypto markets, expanding to TradFi. NOFX is the infrastructure of AgentFi.',
+      'Starting with crypto markets, expanding to TradFi. AlgoBots is the infrastructure of AgentFi.',
     getStartedNow: 'Get Started Now',
     viewSourceCode: 'View Source Code',
 
     // Features Section
     coreFeatures: 'Core Features',
-    whyChooseNofx: 'Why Choose NOFX?',
+    whyChooseNofx: 'Why Choose AlgoBots?',
     openCommunityDriven:
       'Open source, transparent, community-driven AI trading OS',
     openSourceSelfHosted: '100% Open Source & Self-Hosted',
@@ -595,10 +595,10 @@ export const translations = {
     secureFeatures4: 'Trading log auditing',
 
     // About Section
-    aboutNofx: 'About NOFX',
-    whatIsNofx: 'What is NOFX?',
+    aboutNofx: 'About AlgoBots',
+    whatIsNofx: 'What is AlgoBots?',
     nofxNotAnotherBot:
-      "NOFX is not another trading bot, but the 'Linux' of AI trading —",
+      "AlgoBots is not another trading bot, but the 'Linux' of AI trading —",
     nofxDescription1:
       'a transparent, trustworthy open source OS that provides a unified',
     nofxDescription2:
@@ -616,12 +616,12 @@ export const translations = {
     startupMessages3: 'Web console http://127.0.0.1:3000',
 
     // How It Works Section
-    howToStart: 'How to Get Started with NOFX',
+    howToStart: 'How to Get Started with AlgoBots',
     fourSimpleSteps:
       'Four simple steps to start your AI automated trading journey',
     step1Title: 'Clone GitHub Repository',
     step1Desc:
-      'git clone https://github.com/NoFxAiOS/nofx and switch to dev branch to test new features.',
+      'git clone https://github.com/patbhakta/algobots-nofx and switch to dev branch to test new features.',
     step2Title: 'Configure Environment',
     step2Desc:
       'Frontend setup for exchange APIs (like Binance, Hyperliquid), AI models and custom prompts.',
@@ -633,7 +633,7 @@ export const translations = {
       'Monitor trading, submit PRs to improve framework. Join Telegram to share strategies.',
     importantRiskWarning: 'Important Risk Warning',
     riskWarningText:
-      'Dev branch is unstable, do not use funds you cannot afford to lose. NOFX is non-custodial, no official strategies. Trading involves risks, invest carefully.',
+      'Dev branch is unstable, do not use funds you cannot afford to lose. AlgoBots is non-custodial, no official strategies. Trading involves risks, invest carefully.',
 
     // Community Section (testimonials are kept as-is since they are quotes)
 
@@ -646,7 +646,7 @@ export const translations = {
     strategicInvestment: '(Strategic Investment)',
 
     // Login Modal
-    accessNofxPlatform: 'Access NOFX Platform',
+    accessNofxPlatform: 'Access AlgoBots Platform',
     loginRegisterPrompt:
       'Please login or register to access the full AI trading platform',
     registerNewAccount: 'Register New Account',
@@ -713,7 +713,7 @@ export const translations = {
         'Avoid embedding the app in insecure HTTP iframes or reverse proxies that strip HTTPS.',
       unsupportedTitle: 'Browser does not expose Web Crypto',
       unsupportedDesc:
-        'Open NOFX over HTTPS (or http://localhost during development) and avoid insecure iframes/reverse proxies so the browser can enable Web Crypto.',
+        'Open AlgoBots over HTTPS (or http://localhost during development) and avoid insecure iframes/reverse proxies so the browser can enable Web Crypto.',
       summary: 'Current origin: {origin} • Protocol: {protocol}',
       disabledTitle: 'Transport encryption disabled',
       disabledDesc:
@@ -1136,7 +1136,7 @@ export const translations = {
   },
   zh: {
     // Header
-    appTitle: 'NOFX',
+    appTitle: 'AlgoBots',
     subtitle: '多AI模型交易平台',
     aiTraders: 'AI交易员',
     details: '详情',
@@ -1608,11 +1608,11 @@ export const translations = {
     resetPasswordFailed: '密码重置失败',
     backToLogin: '返回登录',
     resetPasswordCliIntro:
-      '出于安全考虑，密码找回不再通过浏览器进行。请在部署 NOFX 的服务器上运行以下命令：',
+      '出于安全考虑，密码找回不再通过浏览器进行。请在部署 AlgoBots 的服务器上运行以下命令：',
     resetPasswordCliSecurityNote:
-      '该操作需要服务器的 shell 访问权限，因此即使 NOFX 暴露在公网上，你的账户依然安全。',
+      '该操作需要服务器的 shell 访问权限，因此即使 AlgoBots 暴露在公网上，你的账户依然安全。',
     resetAccountCliIntro:
-      '如需清空所有数据并重新开始，请在部署 NOFX 的服务器上运行以下命令：',
+      '如需清空所有数据并重新开始，请在部署 AlgoBots 的服务器上运行以下命令：',
     copy: '复制',
     loginSuccess: '登录成功',
     registrationSuccess: '注册成功',
@@ -1645,23 +1645,23 @@ export const translations = {
       '平台当前不开放新用户注册，如需访问请联系管理员获取账号。',
 
     // Hero Section
-    githubStarsInDays: '3 天内 2.5K+ GitHub Stars',
+    githubStarsInDays: '',
     heroTitle1: 'Read the Market.',
     heroTitle2: 'Write the Trade.',
     heroDescription:
-      'NOFX 是 AI 交易的未来标准——一个开放、社区驱动的代理式交易操作系统。支持 Binance、Aster DEX 等交易所，自托管、多代理竞争，让 AI 为你自动决策、执行和优化交易。',
+      'AlgoBots 是 AI 交易的未来标准——一个开放、社区驱动的代理式交易操作系统。支持 Binance、Aster DEX 等交易所，自托管、多代理竞争，让 AI 为你自动决策、执行和优化交易。',
     poweredBy: '由 Aster DEX 和 Binance 提供支持。',
 
     // Landing Page CTA
     readyToDefine: '准备好定义 AI 交易的未来吗？',
     startWithCrypto:
-      '从加密市场起步，扩展到 TradFi。NOFX 是 AgentFi 的基础架构。',
+      '从加密市场起步，扩展到 TradFi。AlgoBots 是 AgentFi 的基础架构。',
     getStartedNow: '立即开始',
     viewSourceCode: '查看源码',
 
     // Features Section
     coreFeatures: '核心功能',
-    whyChooseNofx: '为什么选择 NOFX？',
+    whyChooseNofx: '为什么选择 AlgoBots？',
     openCommunityDriven: '开源、透明、社区驱动的 AI 交易操作系统',
     openSourceSelfHosted: '100% 开源与自托管',
     openSourceDesc: '你的框架，你的规则。非黑箱，支持自定义提示词和多模型。',
@@ -1683,9 +1683,9 @@ export const translations = {
     secureFeatures4: '交易日志审计',
 
     // About Section
-    aboutNofx: '关于 NOFX',
-    whatIsNofx: '什么是 NOFX？',
-    nofxNotAnotherBot: "NOFX 不是另一个交易机器人，而是 AI 交易的 'Linux' ——",
+    aboutNofx: '关于 AlgoBots',
+    whatIsNofx: '什么是 AlgoBots？',
+    nofxNotAnotherBot: "AlgoBots 不是另一个交易机器人，而是 AI 交易的 'Linux' ——",
     nofxDescription1: "一个透明、可信任的开源 OS，提供统一的 '决策-风险-执行'",
     nofxDescription2: '层，支持所有资产类别。',
     nofxDescription3:
@@ -1700,11 +1700,11 @@ export const translations = {
     startupMessages3: 'Web 控制台 http://127.0.0.1:3000',
 
     // How It Works Section
-    howToStart: '如何开始使用 NOFX',
+    howToStart: '如何开始使用 AlgoBots',
     fourSimpleSteps: '四个简单步骤，开启 AI 自动交易之旅',
     step1Title: '拉取 GitHub 仓库',
     step1Desc:
-      'git clone https://github.com/NoFxAiOS/nofx 并切换到 dev 分支测试新功能。',
+      'git clone https://github.com/patbhakta/algobots-nofx 并切换到 dev 分支测试新功能。',
     step2Title: '配置环境',
     step2Desc:
       '前端设置交易所 API（如 Binance、Hyperliquid）、AI 模型和自定义提示词。',
@@ -1715,7 +1715,7 @@ export const translations = {
     step4Desc: '监控交易，提交 PR 改进框架。加入 Telegram 分享策略。',
     importantRiskWarning: '重要风险提示',
     riskWarningText:
-      'dev 分支不稳定，勿用无法承受损失的资金。NOFX 非托管，无官方策略。交易有风险，投资需谨慎。',
+      'dev 分支不稳定，勿用无法承受损失的资金。AlgoBots 非托管，无官方策略。交易有风险，投资需谨慎。',
 
     // Community Section (testimonials are kept as-is since they are quotes)
 
@@ -1728,7 +1728,7 @@ export const translations = {
     strategicInvestment: '(战略投资)',
 
     // Login Modal
-    accessNofxPlatform: '访问 NOFX 平台',
+    accessNofxPlatform: '访问 AlgoBots 平台',
     loginRegisterPrompt: '请选择登录或注册以访问完整的 AI 交易平台',
     registerNewAccount: '注册新账号',
 
@@ -1789,7 +1789,7 @@ export const translations = {
         '避免把应用嵌入在不安全的 HTTP iframe 或会降级协议的反向代理中。',
       unsupportedTitle: '浏览器未提供 Web Crypto',
       unsupportedDesc:
-        '请通过 HTTPS 或本机 localhost 访问 NOFX，并避免嵌入不安全 iframe/反向代理，以符合浏览器的 Web Crypto 规则。',
+        '请通过 HTTPS 或本机 localhost 访问 AlgoBots，并避免嵌入不安全 iframe/反向代理，以符合浏览器的 Web Crypto 规则。',
       summary: '当前来源：{origin} · 协议：{protocol}',
       disabledTitle: '传输加密已禁用',
       disabledDesc:
@@ -2195,7 +2195,7 @@ export const translations = {
   },
   id: {
     // Header
-    appTitle: 'NOFX',
+    appTitle: 'AlgoBots',
     subtitle: 'Platform Trading Multi-AI',
     aiTraders: 'Trader AI',
     details: 'Detail',
@@ -2216,7 +2216,7 @@ export const translations = {
     faqNav: 'FAQ',
 
     // Footer
-    footerTitle: 'NOFX - Sistem Trading AI',
+    footerTitle: 'AlgoBots - Sistem Trading AI',
     footerWarning: '⚠️ Trading memiliki risiko. Gunakan dengan bijak.',
 
     // Stats Cards
@@ -2694,11 +2694,11 @@ export const translations = {
     resetPasswordFailed: 'Gagal mereset kata sandi',
     backToLogin: 'Kembali ke Login',
     resetPasswordCliIntro:
-      'Demi keamanan, pemulihan kata sandi tidak lagi tersedia dari browser. Jalankan perintah ini di server tempat NOFX dipasang:',
+      'Demi keamanan, pemulihan kata sandi tidak lagi tersedia dari browser. Jalankan perintah ini di server tempat AlgoBots dipasang:',
     resetPasswordCliSecurityNote:
-      'Ini memerlukan akses shell ke server, sehingga akun Anda tetap aman bahkan saat NOFX terekspos ke internet.',
+      'Ini memerlukan akses shell ke server, sehingga akun Anda tetap aman bahkan saat AlgoBots terekspos ke internet.',
     resetAccountCliIntro:
-      'Untuk menghapus semua data dan memulai dari awal, jalankan perintah ini di server tempat NOFX dipasang:',
+      'Untuk menghapus semua data dan memulai dari awal, jalankan perintah ini di server tempat AlgoBots dipasang:',
     copy: 'Salin',
     loginSuccess: 'Berhasil masuk',
     registrationSuccess: 'Berhasil mendaftar',
@@ -2730,19 +2730,19 @@ export const translations = {
     registrationClosed: 'Pendaftaran Ditutup',
     registrationClosedMessage:
       'Pendaftaran pengguna saat ini dinonaktifkan. Silakan hubungi administrator untuk akses.',
-    githubStarsInDays: '2.5K+ GitHub Stars dalam 3 hari',
+    githubStarsInDays: '',
     heroTitle1: 'Read the Market.',
     heroTitle2: 'Write the Trade.',
     heroDescription:
-      'NOFX adalah standar masa depan untuk trading AI — OS trading agensi yang terbuka dan didorong komunitas. Mendukung Binance, Aster DEX dan bursa lainnya, self-hosted, kompetisi multi-agen, biarkan AI secara otomatis membuat keputusan, mengeksekusi dan mengoptimalkan trading untuk Anda.',
+      'AlgoBots adalah standar masa depan untuk trading AI — OS trading agensi yang terbuka dan didorong komunitas. Mendukung Binance, Aster DEX dan bursa lainnya, self-hosted, kompetisi multi-agen, biarkan AI secara otomatis membuat keputusan, mengeksekusi dan mengoptimalkan trading untuk Anda.',
     poweredBy: 'Didukung oleh Aster DEX dan Binance.',
     readyToDefine: 'Siap mendefinisikan masa depan trading AI?',
     startWithCrypto:
-      'Dimulai dari pasar kripto, berkembang ke TradFi. NOFX adalah infrastruktur AgentFi.',
+      'Dimulai dari pasar kripto, berkembang ke TradFi. AlgoBots adalah infrastruktur AgentFi.',
     getStartedNow: 'Mulai Sekarang',
     viewSourceCode: 'Lihat Kode Sumber',
     coreFeatures: 'Fitur Inti',
-    whyChooseNofx: 'Mengapa Memilih NOFX?',
+    whyChooseNofx: 'Mengapa Memilih AlgoBots?',
     openCommunityDriven:
       'Open source, transparan, OS trading AI yang didorong komunitas',
     openSourceSelfHosted: '100% Open Source & Self-Hosted',
@@ -2766,10 +2766,10 @@ export const translations = {
     secureFeatures2: 'Kontrol izin API granular',
     secureFeatures3: 'Pemantauan risiko realtime',
     secureFeatures4: 'Audit log trading',
-    aboutNofx: 'Tentang NOFX',
-    whatIsNofx: 'Apa itu NOFX?',
+    aboutNofx: 'Tentang AlgoBots',
+    whatIsNofx: 'Apa itu AlgoBots?',
     nofxNotAnotherBot:
-      "NOFX bukan bot trading biasa, melainkan 'Linux' dari trading AI —",
+      "AlgoBots bukan bot trading biasa, melainkan 'Linux' dari trading AI —",
     nofxDescription1:
       'OS open source yang transparan dan terpercaya yang menyediakan lapisan',
     nofxDescription2:
@@ -2784,12 +2784,12 @@ export const translations = {
     startupMessages1: 'Memulai sistem trading otomatis...',
     startupMessages2: 'Server API dimulai di port 8080',
     startupMessages3: 'Konsol Web http://127.0.0.1:3000',
-    howToStart: 'Cara Memulai NOFX',
+    howToStart: 'Cara Memulai AlgoBots',
     fourSimpleSteps:
       'Empat langkah sederhana untuk memulai perjalanan trading AI otomatis Anda',
     step1Title: 'Clone Repository GitHub',
     step1Desc:
-      'git clone https://github.com/NoFxAiOS/nofx dan beralih ke branch dev untuk menguji fitur baru.',
+      'git clone https://github.com/patbhakta/algobots-nofx dan beralih ke branch dev untuk menguji fitur baru.',
     step2Title: 'Konfigurasi Lingkungan',
     step2Desc:
       'Setup frontend untuk API bursa (seperti Binance, Hyperliquid), model AI dan prompt kustom.',
@@ -2801,14 +2801,14 @@ export const translations = {
       'Pantau trading, kirim PR untuk meningkatkan framework. Bergabung ke Telegram untuk berbagi strategi.',
     importantRiskWarning: 'Peringatan Risiko Penting',
     riskWarningText:
-      'Branch dev tidak stabil, jangan gunakan dana yang tidak sanggup Anda rugi. NOFX non-custodial, tanpa strategi resmi. Trading memiliki risiko, investasi dengan hati-hati.',
+      'Branch dev tidak stabil, jangan gunakan dana yang tidak sanggup Anda rugi. AlgoBots non-custodial, tanpa strategi resmi. Trading memiliki risiko, investasi dengan hati-hati.',
     futureStandardAI: 'Standar masa depan trading AI',
     links: 'Tautan',
     resources: 'Sumber Daya',
     documentation: 'Dokumentasi',
     supporters: 'Pendukung',
     strategicInvestment: '(Investasi Strategis)',
-    accessNofxPlatform: 'Akses Platform NOFX',
+    accessNofxPlatform: 'Akses Platform AlgoBots',
     loginRegisterPrompt:
       'Silakan masuk atau daftar untuk mengakses platform trading AI lengkap',
     registerNewAccount: 'Daftar Akun Baru',
@@ -2853,7 +2853,7 @@ export const translations = {
         'Hindari menyematkan aplikasi dalam iframe HTTP yang tidak aman.',
       unsupportedTitle: 'Browser tidak mengekspos Web Crypto',
       unsupportedDesc:
-        'Buka NOFX melalui HTTPS (atau http://localhost saat pengembangan).',
+        'Buka AlgoBots melalui HTTPS (atau http://localhost saat pengembangan).',
       summary: 'Origin saat ini: {origin} · Protokol: {protocol}',
       disabledTitle: 'Enkripsi transport dinonaktifkan',
       disabledDesc:
