@@ -2336,7 +2336,9 @@
    "write_scope": [
     {
      "repo": "algobots",
-     "path": "strategies/"
+     "path": "strategies/",
+     "status": "real",
+     "note": "PatB V3 reference sources (patbhakta, MPL 2.0)"
     },
     {
      "repo": "algobots",
