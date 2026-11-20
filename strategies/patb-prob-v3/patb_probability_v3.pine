@@ -1,0 +1,580 @@
+// This Pine Script™ code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © patbhakta
+
+//@version=5
+indicator("PatB Probability V3","PatB Prob V3", overlay=true, max_bars_back=500, max_labels_count=500, max_lines_count=500, max_boxes_count=500)
+
+// ~~ Tooltips {
+string t1 = "Set the pivot period"
+string t2 = "Set the response period. A low value returns a short-term structure and a high value returns a long-term structure. If you disable this option the pivot length above will be used."
+
+// ~~ Inputs {
+prd    = input.int(20,minval=1,title="Structure Period",tooltip=t1)
+s1     = input.bool(true,title="Structure Response  ", inline="resp")
+resp   = input.int(7,minval=1,title="",inline="resp",tooltip=t2)
+bull   = input.bool(true,"Bullish Structure     ",inline="Bullish"), bull2 = input.color(color.rgb(8, 236, 126),"",inline="Bullish"), bull3 = input.color(color.rgb(8, 236, 126),"",inline="Bullish")
+bear   = input.bool(true,"Bearish Structure    ",inline="Bearish"), bear2 = input.color(color.rgb(255, 34, 34),"",inline="Bearish"), bear3 = input.color(color.rgb(255, 34, 34),"",inline="Bearish")
+showPD = input.bool(true,"Premium & Discount",inline="pd"), prem = input.color(color.new(color.rgb(255, 34, 34),80),"",inline="pd"), disc = input.color(color.new(color.rgb(8, 236, 126),80),"",inline="pd")
+hlloc  = input.string("Right","", options=["Left","Right"],inline="pd")
+var bool [] alert_bool  = array.from(
+ input.bool(true,title="Ticker ID",group="Any alert() function call"),
+ input.bool(true,title="Timeframe",group="Any alert() function call"),
+ input.bool(true,title="Probability Percentage",group="Any alert() function call"))
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~}
+
+// ~~ Variables {
+b       = bar_index
+var Up  = float(na)
+var Dn  = float(na)
+var iUp = int(na)
+var iDn = int(na)
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~}
+
+// ~~ Matrix & Array {
+var vals          = matrix.new<float>(9,4,0.0)
+var string [] txt = array.new<string>(2,"")
+var tbl           = matrix.new<table>(1,1,table.new(position.top_right,2,3,
+ frame_color      =color.new(color.gray,50),frame_width=3,
+ border_color     =chart.bg_color,border_width=-2))
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~}
+
+// ~~ Functions {
+//Labels
+CreateLabel(x,y,txt,col,z)=>
+    label.new(x,y,txt,textcolor=col,style=z?label.style_label_down:label.style_label_up,color=color(na))
+//Lines
+CreateLine(x1,x2,y,col)=>
+    line.new(x1,x2,b,y,color=col)
+//Current
+Current(v)=>
+    str = ""
+    val1 = float(na)
+    val2 = float(na)
+    if v>=0
+        if v==1
+            str  := "SMS: "
+            val1 := matrix.get(vals,0,1)
+            val2 := matrix.get(vals,0,3) 
+        else if v==2
+            str  := "BMS: "
+            val1 := matrix.get(vals,1,1)
+            val2 := matrix.get(vals,1,3) 
+        else if v>2
+            str  := "BMS: "
+            val1 := matrix.get(vals,2,1)
+            val2 := matrix.get(vals,2,3) 
+    else if v<=0
+        if v==-1
+            str  := "SMS: "
+            val1 := matrix.get(vals,3,1)
+            val2 := matrix.get(vals,3,3) 
+        else if v==-2
+            str  := "BMS: "
+            val1 := matrix.get(vals,4,1)
+            val2 := matrix.get(vals,4,3) 
+        else if v<-2
+            str  := "BMS: "
+            val1 := matrix.get(vals,5,1)
+            val2 := matrix.get(vals,5,3)
+    [str,val1,val2]
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~}
+
+// ~~ Pivots {
+Up   := math.max(Up[1],high)
+Dn   := math.min(Dn[1],low)
+pvtHi = ta.pivothigh(high,prd,prd)
+pvtLo = ta.pivotlow(low,prd,prd)
+if pvtHi
+    Up := pvtHi
+if pvtLo
+    Dn := pvtLo
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~}
+
+// ~~ Structure {
+var pos = 0
+if Up>Up[1]
+    iUp := b
+    centerBull = math.round(math.avg(iUp[1],b))
+    if pos<=0
+        if bull
+            CreateLabel(centerBull,Up[1],"CHoCH",bull3,true)
+            CreateLine(iUp[1],Up[1],Up[1],bull2)
+        pos := 1
+        matrix.set(vals,6,0,matrix.get(vals,6,0)+1)
+    else if pos==1 and Up>Up[1] and Up[1]==Up[s1?resp:prd]
+        if bull
+            CreateLabel(centerBull,Up[1],"SMS",bull3,true)
+            CreateLine(iUp[1],Up[1],Up[1],bull2)
+        pos := 2
+        matrix.set(vals,6,1,matrix.get(vals,6,1)+1)
+    else if pos>1 and Up>Up[1] and Up[1]==Up[s1?resp:prd]
+        if bull
+            CreateLabel(centerBull,Up[1],"BMS",bull3,true)
+            CreateLine(iUp[1],Up[1],Up[1],bull2)
+        pos := pos + 1
+        matrix.set(vals,6,2,matrix.get(vals,6,2)+1)
+else if Up<Up[1]
+    iUp := b-prd
+if Dn<Dn[1]
+    iDn := b
+    centerBear = math.round(math.avg(iDn[1],b))
+    if pos>=0
+        if bear
+            CreateLabel(centerBear,Dn[1],"CHoCH",bear3,false)
+            CreateLine(iDn[1],Dn[1],Dn[1],bear2)
+        pos := -1
+        matrix.set(vals,7,0,matrix.get(vals,7,0)+1)
+    else if pos==-1 and Dn<Dn[1] and Dn[1]==Dn[s1?resp:prd]
+        if bear
+            CreateLabel(centerBear,Dn[1],"SMS",bear3,false)
+            CreateLine(iDn[1],Dn[1],Dn[1],bear2)
+        pos := -2
+        matrix.set(vals,7,1,matrix.get(vals,7,1)+1)
+    else if pos<-1 and Dn<Dn[1] and Dn[1]==Dn[s1?resp:prd]
+        if bear
+            CreateLabel(centerBear,Dn[1],"SMS",bear3,false)
+            CreateLine(iDn[1],Dn[1],Dn[1],bear2)
+        pos := pos - 1
+        matrix.set(vals,7,2,matrix.get(vals,7,2)+1)
+else if Dn>Dn[1]
+    iDn := b-prd
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~}
+
+// ~~ Probability Calculation {
+if ta.change(pos)
+    //Results
+    if pos>0 and pos[1]>0 or pos<0 and pos[1]<0
+        if  matrix.get(vals,8,0)<matrix.get(vals,8,1)
+            matrix.set(vals,8,2,matrix.get(vals,8,2)+1)
+        else
+            matrix.set(vals,8,3,matrix.get(vals,8,3)+1)
+    else
+        if  matrix.get(vals,8,0)>matrix.get(vals,8,1)
+            matrix.set(vals,8,2,matrix.get(vals,8,2)+1)
+        else
+            matrix.set(vals,8,3,matrix.get(vals,8,3)+1)
+
+    //Score Calulation
+    //Variables
+    buC0 = matrix.get(vals,0,0)
+    buC1 = matrix.get(vals,0,2)
+    buS0 = matrix.get(vals,1,0)
+    buS1 = matrix.get(vals,1,2)
+    buB0 = matrix.get(vals,2,0)
+    buB1 = matrix.get(vals,2,2)
+    beC0 = matrix.get(vals,3,0)
+    beC1 = matrix.get(vals,3,2)
+    beS0 = matrix.get(vals,4,0)
+    beS1 = matrix.get(vals,4,2)
+    beB0 = matrix.get(vals,5,0)
+    beB1 = matrix.get(vals,5,2)
+    tbuC = matrix.get(vals,6,0)
+    tbuS = matrix.get(vals,6,1)
+    tbuB = matrix.get(vals,6,2)
+    tbeC = matrix.get(vals,7,0)
+    tbeS = matrix.get(vals,7,1)
+    tbeB = matrix.get(vals,7,2)
+
+    //Bull
+    if (pos[1]==1 or pos[1]==0) and pos<0
+        matrix.set(vals,0,0,buC0+1)
+        matrix.set(vals,0,1,math.round(((buC0+1)/tbuC)*100,2))
+    if (pos[1]==1 or pos[1]==0) and pos==2
+        matrix.set(vals,0,2,buC1+1)
+        matrix.set(vals,0,3,math.round(((buC1+1)/tbuC)*100,2))
+    if pos[1]==2 and pos<0
+        matrix.set(vals,1,0,buS0+1)
+        matrix.set(vals,1,1,math.round(((buS0+1)/tbuS)*100,2))
+    if pos[1]==2 and pos>2
+        matrix.set(vals,1,2,buS1+1)
+        matrix.set(vals,1,3,math.round(((buS1+1)/tbuS)*100,2))
+    if pos[1]>2 and pos<0
+        matrix.set(vals,2,0,buB0+1)
+        matrix.set(vals,2,1,math.round(((buB0+1)/tbuB)*100,2))
+    if pos[1]>2 and pos>pos[1]
+        matrix.set(vals,2,2,buB1+1)
+        matrix.set(vals,2,3,math.round(((buB1+1)/tbuB)*100,2))
+    //Bear
+    if (pos[1]==-1 or pos[1]==0) and pos>0
+        matrix.set(vals,3,0,beC0+1)
+        matrix.set(vals,3,1,math.round(((beC0+1)/tbeC)*100,2))
+    if (pos[1]==-1 or pos[1]==0) and pos==-2
+        matrix.set(vals,3,2,beC1+1)
+        matrix.set(vals,3,3,math.round(((beC1+1)/tbeC)*100,2))
+    if pos[1]==-2 and pos>0
+        matrix.set(vals,4,0,beS0+1)
+        matrix.set(vals,4,1,math.round(((beS0+1)/tbeS)*100,2))
+    if pos[1]==-2 and pos<-2
+        matrix.set(vals,4,2,beS1+1)
+        matrix.set(vals,4,3,math.round(((beS1+1)/tbeS)*100,2))
+    if pos[1]<-2 and pos>0
+        matrix.set(vals,5,0,beB0+1)
+        matrix.set(vals,5,1,math.round(((beB0+1)/tbeB)*100,2))
+    if pos[1]<-2 and pos<pos[1]
+        matrix.set(vals,5,2,beB1+1)
+        matrix.set(vals,5,3,math.round(((beB1+1)/tbeB)*100,2))
+    [str,val1,val2] = Current(pos)
+    array.set(txt,0,"CHoCH: "+str.tostring(val1,format.percent))
+    array.set(txt,1,str+str.tostring(val2,format.percent))
+    matrix.set(vals,8,0,val1)
+    matrix.set(vals,8,1,val2)
+    //Alerts
+    if array.includes(alert_bool,true)
+        st1 = syminfo.ticker
+        st2 = timeframe.period 
+        st3 = str.tostring(array.join(txt,'\n'))
+        string [] str_vals = array.from(st1,st2,st3)
+        output = array.new_string()
+        for x=0 to array.size(alert_bool)-1
+            if array.get(alert_bool,x)
+                array.push(output,array.get(str_vals,x))
+        alert(array.join(output,'\n'),alert.freq_once_per_bar_close)
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~}
+
+// ~~ Premium & Discount {
+var hi       = line.new(na,na,na,na,color=bear2)
+var lo       = line.new(na,na,na,na,color=bull2)
+var fill     = linefill.new(hi,lo,na)
+var premium  = box.new(na,na,na,na,na,bgcolor=prem)
+var discount = box.new(na,na,na,na,na,bgcolor=disc)
+var mid      = box.new(na,na,na,na,na,bgcolor=color.new(color.gray,80))
+
+PremiumTop   = Up-(Up-Dn)*.1
+PremiumBot   = Up-(Up-Dn)*.25
+DiscountTop  = Dn+(Up-Dn)*.25
+DiscountBot  = Dn+(Up-Dn)*.1
+MidTop       = Up-(Up-Dn)*.45
+MidBot       = Dn+(Up-Dn)*.45
+
+if barstate.islast and showPD
+    loc = hlloc=="Left"?math.min(iUp,iDn):math.max(iUp,iDn)
+    //High & Low
+    line.set_xy1(hi,loc,Up)
+    line.set_xy2(hi,b,Up)
+    line.set_xy1(lo,loc,Dn)
+    line.set_xy2(lo,b,Dn)
+    linefill.set_color(fill,color.new(color.gray,90))
+    //Premium & Mid & Discount
+    box.set_lefttop(premium,loc,PremiumTop)
+    box.set_rightbottom(premium,b,PremiumBot)
+    box.set_lefttop(discount,loc,DiscountTop)
+    box.set_rightbottom(discount,b,DiscountBot)
+    box.set_lefttop(mid,loc,MidTop)
+    box.set_rightbottom(mid,b,MidBot)
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~}
+
+// ~~ Probability {
+var prob1 = label.new(na,na,na,color=color(na),textcolor=chart.fg_color,style=label.style_label_left)
+var prob2 = label.new(na,na,na,color=color(na),textcolor=chart.fg_color,style=label.style_label_left)
+
+if barstate.islast
+    str1 = pos<0?array.get(txt,0):array.get(txt,1)
+    str2 = pos>0?array.get(txt,0):array.get(txt,1)
+    label.set_xy(prob1,b,Up)
+    label.set_text(prob1,str1)
+    label.set_xy(prob2,b,Dn)
+    label.set_text(prob2,str2)
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~}
+
+// ~~ Table {
+if barstate.islast
+    //Calulate WinRatio
+    W  = matrix.get(vals,8,2)
+    L  = matrix.get(vals,8,3)
+    WR = math.round(W/(W+L)*100,2)
+    string [] tbl_vals = array.from(" SM WIN: "+str.tostring(W),
+     "SM LOSS: "+str.tostring(L),
+     "Profitability: "+str.tostring(WR,format.percent))
+    color [] tbl_col = array.from(color.green,color.red,chart.fg_color)
+    for i=0 to 2
+        table.cell(matrix.get(tbl,0,0),0,i,array.get(tbl_vals,i),
+         text_halign=text.align_center,bgcolor=chart.bg_color,
+         text_color=array.get(tbl_col,i),text_size=size.auto)
+
+// Next Candle
+
+// ~~ Tooltips {
+t1_nc = "The space between the levels can be adjusted with a percentage step. 1% means that each level is located 1% above/under the previous one."
+t2_nc = "Set the number of levels you want to display."
+t3_nc = "If a level got 0 % likelihood of being hit, the level is not displayed as default. Enable the option if you want to see all levels regardless of their values."
+t4_nc = "If you enable this option you want to display the backtest statistics for that a new high or low is made."
+string [] tbl_tips_nc = array.from("Number of times price has reached the first highest percentage level",
+ "Number of times price failed to reach the first highest percentage level",
+ "Win/Loss ratio")
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~}
+
+// ~~ Inputs {
+perc_nc                    = input.float(1.0,title="Percentage Step",step=.1,minval=0,group="Settings",tooltip=t1_nc)
+nbr_nc                     = input.int(5, title="Number of Lines",maxval=5,minval=1,group="Settings",tooltip=t2_nc)
+upCol_nc                   = input.color(color.new(color.green,0),title="",inline="col"),dnCol_nc=input.color(color.new(color.red,0),title="",inline="col"),fill_nc=input.bool(true,title="BG Color",inline="col")
+var bool [] bools_nc       = array.from(input.bool(true,title="Disable 0.00%",group="Settings",tooltip=t3_nc),input.bool(true, title="Show Statistic Panel",group="Settings",tooltip=t4_nc))
+var bool [] alert_bool_nc  = array.from(
+ input.bool(true,title="Ticker ID",group="Any alert() function call"),
+ input.bool(true,title="High/Low Price",group="Any alert() function call"),
+ input.bool(true,title="Bullish/Bearish Bias",group="Any alert() function call"),
+ input.bool(true,title="Next Candle Percentage",group="Any alert() function call"))
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~}
+
+// ~~ Variables {
+b_nc = bar_index
+o_nc = open
+h_nc = high
+l_nc = low
+c_nc = close
+step_nc = c_nc*(perc_nc/100)
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~}
+
+// ~~ Save Values In Matrix {
+var total_nc  = matrix.new<int>(7,4,0)
+var vals_nc   = matrix.new<float>(5,4,0.0)
+var lines_nc  = matrix.new<line>(1,10,line(na))
+var labels_nc = matrix.new<label>(1,10,label(na))
+var tbl_nc    = matrix.new<table>(1,1,table.new(position.top_center,2,3,
+ frame_color=color.new(color.gray,50),frame_width=3,
+ border_color=chart.bg_color,border_width=-2))
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~}
+
+// ~~ Save Number Of Green & Red Candles {
+green_nc = c_nc[1]>o_nc[1]
+red_nc   = c_nc[1]<o_nc[1]
+if green_nc
+    prev_nc = matrix.get(total_nc,5,0)
+    matrix.set(total_nc,5,0,prev_nc+1)
+if red_nc
+    prev_nc = matrix.get(total_nc,5,1)
+    matrix.set(total_nc,5,1,prev_nc+1)
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~}
+
+// ~~ Functions {
+//Lines
+CreateLine_nc(p,i,c)=>
+    prevLine_nc = matrix.get(lines_nc,0,i)
+    line.delete(prevLine_nc)
+    li_nc = line.new(b_nc[1],p,b_nc,p,color=c,width=2)
+    matrix.set(lines_nc,0,i,li_nc)
+//Labels
+CreateLabel_nc(p,i,c,r,v)=>
+    prevLabel_nc = matrix.get(labels_nc,0,i)
+    label.delete(prevLabel_nc)
+    la_nc = label.new(b_nc+1,p,text=str.tostring(matrix.get(vals_nc,r,v),format.percent),
+     style=label.style_label_left,color=color.new(color.black,100),textcolor=c)
+    matrix.set(labels_nc,0,i,la_nc)
+//Score Calculation
+Score_nc(x,i)=>
+    ghh_nc = matrix.get(total_nc,i,0)
+    gll_nc = matrix.get(total_nc,i,1)
+    rhh_nc = matrix.get(total_nc,i,2)
+    rll_nc = matrix.get(total_nc,i,3)
+    gtotal_nc = matrix.get(total_nc,5,0)
+    rtotal_nc = matrix.get(total_nc,5,1)
+    hh_nc = h_nc>=h_nc[1] + x
+    ll_nc = l_nc<=l_nc[1] - x
+    if green_nc and hh_nc
+        matrix.set(total_nc,i,0,ghh_nc+1)
+        matrix.set(vals_nc,i,0,math.round(((ghh_nc+1)/gtotal_nc)*100,2))
+    if green_nc and ll_nc
+        matrix.set(total_nc,i,1,gll_nc+1)
+        matrix.set(vals_nc,i,1,math.round(((gll_nc+1)/gtotal_nc)*100,2))
+    if red_nc and hh_nc
+        matrix.set(total_nc,i,2,rhh_nc+1)
+        matrix.set(vals_nc,i,2,math.round(((rhh_nc+1)/rtotal_nc)*100,2))
+    if red_nc and ll_nc
+        matrix.set(total_nc,i,3,rll_nc+1)
+        matrix.set(vals_nc,i,3,math.round(((rll_nc+1)/rtotal_nc)*100,2))
+//Backtest
+Backtest_nc(v)=>
+    p1_nc = matrix.get(total_nc,6,0)
+    p2_nc = matrix.get(total_nc,6,1)
+    if v==h_nc[1]
+        if h_nc>=v
+            matrix.set(total_nc,6,0,p1_nc+1)
+        else
+            matrix.set(total_nc,6,1,p2_nc+1)
+    else
+        if l_nc<=v
+            matrix.set(total_nc,6,0,p1_nc+1)
+        else 
+            matrix.set(total_nc,6,1,p2_nc+1)
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~}
+
+// ~~ Code {
+//Run Score Function
+Score_nc(0,0)
+Score_nc(step_nc,1)
+Score_nc(step_nc*2,2)
+Score_nc(step_nc*3,3)
+Score_nc(step_nc*4,4)
+
+//Fetch Score Values
+a1_nc = matrix.get(vals_nc,0,0)
+b1_nc = matrix.get(vals_nc,0,1)
+a2_nc = matrix.get(vals_nc,0,2)
+b2_nc = matrix.get(vals_nc,0,3)
+
+//Lines & Labels & Alerts
+for i=0 to nbr_nc-1
+    hide_nc = array.get(bools_nc,0)
+    if not hide_nc or (hide_nc and (green_nc?math.min(matrix.get(vals_nc,i,0),
+     matrix.get(vals_nc,i,1))>0:
+     math.min(matrix.get(vals_nc,i,2),
+     matrix.get(vals_nc,i,3))>0))
+        hi_nc = h_nc[1]+(step_nc*i)
+        lo_nc = l_nc[1]-(step_nc*i)
+        //Plot Lines
+        CreateLine_nc(hi_nc,i,upCol_nc)
+        CreateLine_nc(lo_nc,5+i,dnCol_nc)
+        //Plot Labels
+        if green_nc
+            CreateLabel_nc(hi_nc,i,upCol_nc,i,0)
+            CreateLabel_nc(lo_nc,5+i,dnCol_nc,i,1)
+        else 
+            CreateLabel_nc(hi_nc,i,upCol_nc,i,2)
+            CreateLabel_nc(lo_nc,5+i,dnCol_nc,i,3)
+        //Create Alert
+        if array.includes(alert_bool_nc, true)
+            s1_nc = str.tostring(syminfo.ticker)
+            s2_nc = "High Price: "+str.tostring(math.round_to_mintick(h_nc[1]))+
+             " | Low Price: "+str.tostring(math.round_to_mintick(l_nc[1]))
+            s3_nc = green_nc?(math.max(a1_nc,b1_nc)==a1_nc?"BULLISH":"BEARISH"):
+             (math.max(a2_nc,b2_nc)==a2_nc?"BULLISH":"BEARISH")
+            s4_nc = green_nc?(math.max(a1_nc,b1_nc)==a1_nc?a1_nc:b1_nc):(math.min(a2_nc,b2_nc)==a2_nc?a2_nc:b2_nc)
+            s5_nc = red_nc  ?(math.max(a2_nc,b2_nc)==a2_nc?a2_nc:b2_nc):(math.min(a1_nc,b1_nc)==a1_nc?a1_nc:b1_nc)
+            string [] str_vals_nc = array.from(s1_nc,s2_nc,"BIAS: "+s3_nc,
+             "Percentage: High: "+str.tostring(s4_nc,format.percent)
+             +" | Low: "+str.tostring(s5_nc,format.percent))
+            output_nc = array.new_string()
+            for x_nc=0 to array.size(alert_bool_nc)-1
+                if array.get(alert_bool_nc,x_nc)
+                    array.push(output_nc,array.get(str_vals_nc,x_nc))
+            //Alert Is Triggered On Every Bar Open With Bias And Percentage Ratio
+            alert(array.join(output_nc,'\n'),alert.freq_once_per_bar)
+    else
+        //Delete Old Lines & Labels
+        line.delete(matrix.get(lines_nc,0,i))
+        line.delete(matrix.get(lines_nc,0,5+i))
+        label.delete(matrix.get(labels_nc,0,i))
+        label.delete(matrix.get(labels_nc,0,5+i))
+
+//Run Backtest Function
+Backtest_nc(green_nc?(math.max(a1_nc,b1_nc)==a1_nc?h_nc[1]:l_nc[1]):(math.max(a2_nc,b2_nc)==a2_nc?h_nc[1]:l_nc[1]))
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~}
+
+// ~~ Linefill {
+if fill_nc
+    var filler_nc = linefill(na)
+    for i_nc=0 to 8
+        get_nc = matrix.get(lines_nc,0,i_nc)
+        get1_nc= matrix.get(lines_nc,0,i_nc+1)
+        col_nc = i_nc>4?color.new(dnCol_nc,80) : i_nc==4?color.new(color.gray,100) : color.new(upCol_nc,80)
+        filler_nc := linefill.new(get_nc,get1_nc,color=col_nc)
+        linefill.delete(filler_nc[1])
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~}
+
+// ~~ Table {
+if barstate.islast and array.get(bools_nc,1)
+    //Calulate WinRatio
+    W_nc  = matrix.get(total_nc,6,0)
+    L_nc  = matrix.get(total_nc,6,1)
+    WR_nc = math.round(W_nc/(W_nc+L_nc)*100,2)
+    string [] tbl_vals_nc = array.from(" NC WIN: "+str.tostring(W_nc),
+     "NC LOSS: "+str.tostring(L_nc),
+     "Profitability: "+str.tostring(WR_nc,format.percent))
+    color [] tbl_col_nc = array.from(color.green,color.red,chart.fg_color)
+    for i_nc=0 to 2
+        table.cell(matrix.get(tbl_nc,0,0),0,i_nc,array.get(tbl_vals_nc,i_nc),
+         text_halign=text.align_center,bgcolor=chart.bg_color,
+         text_color=array.get(tbl_col_nc,i_nc),text_size=size.auto,
+         tooltip=array.get(tbl_tips_nc,i_nc))
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~}
+
+// OB
+
+// ~~ Inputs {
+ob_src   = input.source(close,"Source")
+ob_rows  = input.int(10,"Rows",0,20,inline="rows")
+ob_mult  = input.float(.5,"Width",.1,2,step=.05,inline="rows")
+ob_poc   = input.bool(false,"POC",inline="rows")
+ob_tbl   = input.bool(false,"Table",inline="table")
+ob_left  = input.int(15,"Left",0,50,5,inline="table")
+ob_tbli  = input.bool(false,"Grid",inline="table")
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~}
+
+// ~~ Variables & Array's {
+ob_b = bar_index
+var ob_step = 0.0
+
+type ob_Table
+    array<box> ob_boxes
+    array<line> ob_lines
+    array<label> ob_lab
+
+var ob_levels  = array.new<float>()
+var ob_volumes = array.new<float>()
+var ob_vols    = array.new<float>(ob_rows*2+1)
+var ob_tab     = ob_Table.new(array.new<box>(ob_rows*2+2),array.new<line>(ob_rows*2+1),array.new<label>(ob_rows*2+1))
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~}
+
+// ~~ Code {
+//Save first candle size
+if barstate.isfirst
+    ob_step := (high-low)*ob_mult
+
+//Stores each candle volume in levels
+if ob_levels.size()<=0
+    ob_levels.push(ob_src+ob_step)
+    ob_levels.push(ob_src-ob_step)
+    ob_volumes.push(volume)
+else
+    ob_found = false
+    for ob_i=0 to ob_levels.size()-2
+        ob_lvl1 = ob_levels.get(ob_i)
+        ob_lvl2 = ob_levels.get(ob_i+1)
+        if ob_src<ob_lvl1 and ob_src>ob_lvl2
+            ob_volumes.set(ob_i,ob_volumes.get(ob_i)+volume)
+            ob_found := true
+            break
+    if not ob_found
+        if ob_src>ob_levels.get(0)
+            ob_lvl = ob_levels.get(0)
+            while ob_src>ob_lvl
+                ob_levels.unshift(ob_lvl+ob_step)
+                ob_volumes.unshift(0)
+                ob_lvl := ob_lvl+ob_step
+            ob_levels.unshift(ob_lvl+ob_step)
+            ob_volumes.unshift(volume)
+        else if ob_src<ob_levels.get(ob_levels.size()-1)
+            ob_lvl = ob_levels.get(ob_levels.size()-1)
+            while ob_src<ob_lvl
+                ob_levels.push(ob_lvl-ob_step)
+                ob_volumes.push(0)
+                ob_lvl := ob_lvl-ob_step
+            ob_levels.push(ob_lvl-ob_step)
+            ob_volumes.push(volume)
+
+//Plots the orderbook
+if barstate.islast
+    for ob_i=0 to ob_levels.size()-2
+        if ob_src<ob_levels.get(ob_i) and ob_src>ob_levels.get(ob_i+1)
+            for ob_x=0 to (ob_rows*2)
+                ob_vols.set(ob_x,ob_volumes.get(math.max(0,ob_i-ob_rows+ob_x)))
+            ob_vol = ob_vols.copy()
+            ob_vols.sort()
+            for ob_x=0 to (ob_rows*2)
+                ob_tab.ob_boxes.get(ob_x).delete()
+                ob_col = ob_x<ob_rows?color.red:ob_x>ob_rows?color.lime:color.gray
+                ob_colgrade = color.from_gradient(ob_vols.indexof(ob_vol.get(ob_x)),0,ob_vols.size(),color.new(ob_col,80),color.new(ob_col,40))
+                ob_tab.ob_boxes.set(ob_x,box.new((ob_b+ob_left+ob_rows*2)-ob_vols.indexof(ob_vol.get(ob_x)),ob_levels.get(math.max(0,ob_i-ob_rows+ob_x)),
+                 (ob_b+ob_left+ob_rows*2)+ob_vols.indexof(ob_vol.get(ob_x)),ob_levels.get(math.max(1,ob_i-ob_rows+ob_x+1)),
+                 ob_colgrade,bgcolor=ob_colgrade,border_style=line.style_dotted,
+                 text=str.tostring(ob_vol.get(ob_x),format.volume),text_color=chart.fg_color,
+                 extend=ob_poc and ob_vols.indexof(ob_vol.get(ob_x))==ob_rows*2?extend.left:extend.none))
+                if ob_tbli
+                    ob_tab.ob_lines.get(ob_x).delete()
+                    ob_tab.ob_lines.set(ob_x,line.new(ob_b+ob_left,ob_levels.get(ob_i-ob_rows+ob_x),ob_b+ob_left+ob_rows*2+ob_vols.size()-1,ob_levels.get(ob_i-ob_rows+ob_x),
+                     color=color.gray))
+            if ob_tbl
+                ob_tab.ob_boxes.get(ob_rows*2+1).delete()
+                ob_tab.ob_boxes.set(ob_rows*2+1,box.new(ob_b+ob_left,box.get_top(ob_tab.ob_boxes.get(0)),
+                 ob_b+ob_left+ob_rows*2+ob_vols.size()-1,box.get_bottom(ob_tab.ob_boxes.get(ob_rows*2)),
+                 color.gray,border_width=2,bgcolor=color(na)))
+            break
