@@ -195,9 +195,9 @@ def test_no_schema_can_leak_a_credential(spec: dict) -> None:
 
 
 def test_nautilus_pin_is_declared_in_health(spec: dict) -> None:
-    """Roadmap rule 5: pinned to 2.0.0rc6; an upgrade is its own sprint."""
+    """Roadmap rule 5: pinned to 2.0.0rc9 (upgraded from rc6 in dd7e26b5); an upgrade is its own sprint."""
     health = spec["components"]["schemas"]["Health"]["properties"]
-    assert health["nautilus_version"]["const"] == "2.0.0rc6"
+    assert health["nautilus_version"]["const"] == "2.0.0rc9"
     assert "nautilus_version" in spec["components"]["schemas"]["Health"]["required"]
 
 

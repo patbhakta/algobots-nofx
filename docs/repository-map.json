@@ -1751,6 +1751,18 @@
      "repo": "algobots",
      "path": ".github/workflows/ci.yml",
      "status": "real"
+    },
+    {
+     "repo": "algobots",
+     "path": "deploy/compose.nautilus-rc9-gateway.yaml",
+     "status": "real",
+     "note": "rc9 gateway deploy (dd7e26b5)"
+    },
+    {
+     "repo": "algobots",
+     "path": "deploy/nautilus-gateway-metadata.Dockerfile",
+     "status": "real",
+     "note": "gateway metadata image"
     }
    ],
    "shared_resources": [
@@ -2986,6 +2998,18 @@
      "repo": "algobots",
      "path": "artifacts/A24/",
      "status": "proposed"
+    },
+    {
+     "repo": "algobots",
+     "path": "scripts/ops/",
+     "status": "real",
+     "note": "ops tooling scripts"
+    },
+    {
+     "repo": "algobots",
+     "path": "scripts/research/",
+     "status": "real",
+     "note": "research scripts"
     }
    ],
    "shared_resources": [],
@@ -3127,6 +3151,30 @@
      "repo": "algobots",
      "path": "artifacts/A27/",
      "status": "proposed"
+    },
+    {
+     "repo": "algobots",
+     "path": "notebooks/",
+     "status": "real",
+     "note": "marimo/openbb evidence notebooks"
+    },
+    {
+     "repo": "algobots",
+     "path": "artifacts/marimo-collection/",
+     "status": "real",
+     "note": "marimo collection evidence artifacts"
+    },
+    {
+     "repo": "algobots",
+     "path": "deploy/marimo_collection/",
+     "status": "real",
+     "note": "marimo collection deploy"
+    },
+    {
+     "repo": "algobots",
+     "path": "deploy/compose.marimo-collection.yaml",
+     "status": "real",
+     "note": "marimo collection compose"
     }
    ],
    "shared_resources": [],
