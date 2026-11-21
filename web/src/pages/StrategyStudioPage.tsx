@@ -784,7 +784,9 @@ function CostLiquidationHeatmap({
 }
 
 export function StrategyStudioPage() {
-  const { token } = useAuth()
+  const { token: shellToken } = useAuth()
+  // ALG-3480: control-plane token = algobots-api JWT when present
+  const token = localStorage.getItem('api_token') || shellToken
   const { language } = useLanguage()
   // ALG-3472: navigate unused after removing Autopilot redirect
   const [strategies, setStrategies] = useState<Strategy[]>([])

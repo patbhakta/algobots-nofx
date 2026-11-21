@@ -140,6 +140,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const userInfo = { id: data.user_id, email: data.email }
           handlePostAuthSuccess(data.token, userInfo, mode)
 
+          // ALG-3480: mint a real algobots-api JWT for control-plane calls
+          // (deployments, studio live). The shell token above serves the
+          // gateway (:8210 static sessions); the API only accepts its own JWT.
+          try {
+            const apiLogin = await fetch('/api/nofx/login', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ email, password }),
+            })
+            if (apiLogin.ok) {
+              const d = await apiLogin.json()
+              const jwt = d?.token || d?.access_token
+              if (jwt) localStorage.setItem('api_token', jwt)
+              else localStorage.removeItem('api_token')
+            } else {
+              localStorage.removeItem('api_token')
+            }
+          } catch {
+            localStorage.removeItem('api_token')
+          }
+
           return { success: true, message: data.message }
         }
 
