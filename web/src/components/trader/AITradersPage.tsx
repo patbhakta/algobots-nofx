@@ -3,7 +3,6 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import useSWR from 'swr'
 import { api } from '../../lib/api'
 import { ApiError } from '../../lib/httpClient'
-import { AI_PROVIDER_ID } from '../../lib/ai-provider'
 import { ROUTES } from '../../router/paths'
 import type {
   TraderInfo,
@@ -632,33 +631,6 @@ export function AITradersPage({ onTraderSelect }: AITradersPageProps) {
   const handleAddExchange = () => {
     setInitialExchangeType(null)
     setEditingExchange(null)
-    setShowExchangeModal(true)
-  }
-
-  const handleOpenMarketDataConfig = () => {
-    const configuredMarketData = allModels?.find(
-      (model) => model.provider === AI_PROVIDER_ID
-    )
-    const supportedMarketData = supportedModels?.find(
-      (model) => model.provider === AI_PROVIDER_ID
-    )
-    const modelId =
-      configuredMarketData?.id || supportedMarketData?.id || AI_PROVIDER_ID
-
-    setEditingModel(configuredMarketData?.id || null)
-    setInitialModelId(modelId)
-    setShowModelModal(true)
-  }
-
-  const handleOpenHyperliquidConfig = () => {
-    const existingHyperliquid = allExchanges?.find(
-      (exchange) =>
-        exchange.exchange_type === 'hyperliquid' ||
-        exchange.id === 'hyperliquid'
-    )
-
-    setEditingExchange(existingHyperliquid?.id || null)
-    setInitialExchangeType(existingHyperliquid ? null : 'hyperliquid')
     setShowExchangeModal(true)
   }
 
