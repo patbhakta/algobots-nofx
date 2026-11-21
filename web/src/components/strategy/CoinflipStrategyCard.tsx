@@ -42,7 +42,7 @@ interface Props {
 
 export function CoinflipStrategyCard({ token, onError }: Props) {
   const [enabled, setEnabled] = useState(false)
-  const [deploymentId, setDeploymentId] = useState<string | null>(null)
+  const [strategyId, setStrategyId] = useState<string | null>(null)
   const [params, setParams] = useState<CoinflipParams>({
     qty: 1,
     windowTiming: 'middle',
@@ -87,27 +87,33 @@ export function CoinflipStrategyCard({ token, onError }: Props) {
           side: d.side || '',
           status: d.execution || d.status || '',
           outcome:
-            d.outcome === 'HIT'
-              ? 'HIT'
-              : d.outcome === 'MISS'
-                ? 'MISS'
-                : null,
+            d.outcome === 'HIT' ? 'HIT' : d.outcome === 'MISS' ? 'MISS' : null,
           decidedAt: d.decided_at || '',
         })),
       })
 
-      const coinflipDeployment = data.deployments?.find(
-        (d: any) =>
-          d.strategy?.toLowerCase().includes('coinflip') ||
-          d.symbol?.includes('KXBTC')
-      )
-      if (coinflipDeployment) {
-        setDeploymentId(coinflipDeployment.deployment_id)
-        setEnabled(coinflipDeployment.status === 'running')
-      } else {
-        setDeploymentId(null)
-        const isRunning = data.workers?.some((w: any) => w.state === 'running')
-        setEnabled(isRunning)
+      // ALG-3481: real control surface = nofx strategies (activate = start).
+      // /api/deployments is a separate gated pipeline (backtest evidence) — not this worker.
+      const activeRes = await fetch(`${API_BASE}/api/nofx/strategies/active`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      if (activeRes.ok) {
+        const active = await activeRes.json()
+        const isActiveCoinflip = (active?.name || '')
+          .toLowerCase()
+          .includes('coinflip')
+        setEnabled(isActiveCoinflip)
+        if (isActiveCoinflip) setStrategyId(active.id)
+      }
+      const listRes = await fetch(`${API_BASE}/api/nofx/strategies`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      if (listRes.ok) {
+        const list = await listRes.json()
+        const coinflip = (list.strategies || []).find((s2: any) =>
+          (s2.name || '').toLowerCase().includes('coinflip')
+        )
+        if (coinflip) setStrategyId(coinflip.id)
       }
     } catch (err) {
       onError?.(err instanceof Error ? err.message : 'Failed to load')
@@ -123,24 +129,40 @@ export function CoinflipStrategyCard({ token, onError }: Props) {
   }, [fetchLive])
 
   const handleToggle = async () => {
-    if (!deploymentId) {
-      onError?.('No coinflip deployment found')
+    if (!strategyId) {
+      onError?.('Coinflip strategy not found — create it first')
       return
     }
     setToggling(true)
     try {
-      const newStatus = enabled ? 'paused' : 'running'
-      const res = await fetch(`${API_BASE}/api/deployments/${deploymentId}`, {
-        method: 'PATCH',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ status: newStatus }),
-      })
+      // ON = activate coinflip. OFF = revert to baseline momentum worker
+      // (true deactivate endpoint lands with ALG-3481 backend addendum).
+      let target = strategyId
+      if (enabled) {
+        const listRes = await fetch(`${API_BASE}/api/nofx/strategies`, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        const list = listRes.ok ? await listRes.json() : { strategies: [] }
+        const baseline = (list.strategies || []).find(
+          (s2: any) =>
+            !(s2.name || '').toLowerCase().includes('coinflip') &&
+            !(s2.name || '').toLowerCase().startsWith('studio')
+        )
+        if (!baseline) {
+          onError?.('No baseline strategy to fall back to')
+          return
+        }
+        target = baseline.id
+      }
+      const res = await fetch(
+        `${API_BASE}/api/nofx/strategies/${target}/activate`,
+        { method: 'POST', headers: { Authorization: `Bearer ${token}` } }
+      )
       if (!res.ok) {
         const data = await res.json().catch(() => ({}))
-        throw new Error(data.detail || data.error || data.message || `Failed to ${newStatus}`)
+        throw new Error(
+          data.detail || data.error || data.message || 'Activation failed'
+        )
       }
       setEnabled(!enabled)
       await fetchLive()
@@ -201,7 +223,7 @@ export function CoinflipStrategyCard({ token, onError }: Props) {
           <button
             type="button"
             onClick={handleToggle}
-            disabled={toggling || !deploymentId}
+            disabled={toggling || !strategyId}
             className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold disabled:opacity-50 ${
               enabled
                 ? 'bg-nofx-danger/20 text-nofx-danger hover:bg-nofx-danger/30'
@@ -302,11 +324,7 @@ export function CoinflipStrategyCard({ token, onError }: Props) {
           value={stats?.hitRate ? `${stats.hitRate.toFixed(1)}%` : '—'}
           sublabel="settled correct"
           tone={
-            stats?.hitRate
-              ? stats.hitRate >= 50
-                ? 'green'
-                : 'red'
-              : 'neutral'
+            stats?.hitRate ? (stats.hitRate >= 50 ? 'green' : 'red') : 'neutral'
           }
         />
         <StatTile

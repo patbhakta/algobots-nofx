@@ -143,6 +143,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           // ALG-3480: mint a real algobots-api JWT for control-plane calls
           // (deployments, studio live). The shell token above serves the
           // gateway (:8210 static sessions); the API only accepts its own JWT.
+          if (data.api_token) localStorage.setItem('api_token', data.api_token)
           try {
             const apiLogin = await fetch('/api/nofx/login', {
               method: 'POST',
