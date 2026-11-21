@@ -62,6 +62,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setUser(JSON.parse(savedUser))
         }
 
+        // ALG-3481: self-heal sessions logged in before the api_token bridge —
+        // silently re-run the (demo) login so control-plane calls carry a JWT.
+        if (savedToken && !localStorage.getItem('api_token')) {
+          fetch('/api/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              email: savedUser
+                ? JSON.parse(savedUser).email || 'pat@bhakta.us'
+                : 'pat@bhakta.us',
+              password: 'demo',
+            }),
+          })
+            .then((r) => (r.ok ? r.json() : null))
+            .then((d) => {
+              if (d?.api_token) localStorage.setItem('api_token', d.api_token)
+            })
+            .catch(() => {})
+        }
+
         setIsLoading(false)
       })
       .catch((err) => {
