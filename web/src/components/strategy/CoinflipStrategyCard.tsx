@@ -46,7 +46,7 @@ export function CoinflipStrategyCard({ token, onError }: Props) {
   const [params, setParams] = useState<CoinflipParams>({
     qty: 1,
     windowTiming: 'middle',
-    series: '15m',
+    series: '5m',
   })
   const [stats, setStats] = useState<LiveStats | null>(null)
   const [loading, setLoading] = useState(true)
