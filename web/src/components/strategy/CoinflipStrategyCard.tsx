@@ -42,6 +42,7 @@ interface Props {
 
 export function CoinflipStrategyCard({ token, onError }: Props) {
   const [enabled, setEnabled] = useState(false)
+  const [deploymentId, setDeploymentId] = useState<string | null>(null)
   const [params, setParams] = useState<CoinflipParams>({
     qty: 1,
     windowTiming: 'middle',
@@ -95,10 +96,19 @@ export function CoinflipStrategyCard({ token, onError }: Props) {
         })),
       })
 
-      const isRunning =
-        data.workers?.some((w: any) => w.state === 'running') ||
-        data.deployments?.some((d: any) => d.effective_state === 'running')
-      setEnabled(isRunning)
+      const coinflipDeployment = data.deployments?.find(
+        (d: any) =>
+          d.strategy?.toLowerCase().includes('coinflip') ||
+          d.symbol?.includes('KXBTC')
+      )
+      if (coinflipDeployment) {
+        setDeploymentId(coinflipDeployment.deployment_id)
+        setEnabled(coinflipDeployment.status === 'running')
+      } else {
+        setDeploymentId(null)
+        const isRunning = data.workers?.some((w: any) => w.state === 'running')
+        setEnabled(isRunning)
+      }
     } catch (err) {
       onError?.(err instanceof Error ? err.message : 'Failed to load')
     } finally {
@@ -113,20 +123,24 @@ export function CoinflipStrategyCard({ token, onError }: Props) {
   }, [fetchLive])
 
   const handleToggle = async () => {
+    if (!deploymentId) {
+      onError?.('No coinflip deployment found')
+      return
+    }
     setToggling(true)
     try {
-      const action = enabled ? 'pause' : 'resume'
-      const res = await fetch(`${API_BASE}/api/deployments/coinflip/${action}`, {
-        method: 'POST',
+      const newStatus = enabled ? 'paused' : 'running'
+      const res = await fetch(`${API_BASE}/api/deployments/${deploymentId}`, {
+        method: 'PATCH',
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(params),
+        body: JSON.stringify({ status: newStatus }),
       })
       if (!res.ok) {
         const data = await res.json().catch(() => ({}))
-        throw new Error(data.error || data.message || `Failed to ${action}`)
+        throw new Error(data.detail || data.error || data.message || `Failed to ${newStatus}`)
       }
       setEnabled(!enabled)
       await fetchLive()
@@ -187,8 +201,8 @@ export function CoinflipStrategyCard({ token, onError }: Props) {
           <button
             type="button"
             onClick={handleToggle}
-            disabled={toggling}
-            className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold ${
+            disabled={toggling || !deploymentId}
+            className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold disabled:opacity-50 ${
               enabled
                 ? 'bg-nofx-danger/20 text-nofx-danger hover:bg-nofx-danger/30'
                 : 'bg-nofx-success text-nofx-bg hover:bg-nofx-success/90'
