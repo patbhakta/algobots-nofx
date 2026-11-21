@@ -40,7 +40,13 @@ import { CoinflipStrategyCard } from '../components/strategy/CoinflipStrategyCar
 const API_BASE = import.meta.env.VITE_API_BASE || ''
 
 type Scope =
-  'all' | 'crypto' | 'stock' | 'commodity' | 'index' | 'forex' | 'pre_ipo'
+  | 'all'
+  | 'crypto'
+  | 'stock'
+  | 'commodity'
+  | 'index'
+  | 'forex'
+  | 'pre_ipo'
 type ListMode = 'claw402' | 'pool'
 
 const scopeOptions: Array<{ value: Scope; zh: string; en: string }> = [
@@ -1785,8 +1791,9 @@ export function StrategyStudioPage() {
                       </>
                     ) : (
                       <div className="rounded-lg border border-[rgba(25,36,52,0.14)] bg-nofx-bg-deeper px-4 py-4 text-sm text-nofx-text-muted">
-                        AlgoBots Autopilot follows the Claw402 direction board and
-                        uses liquidation structure and raw candles as context.
+                        AlgoBots Autopilot follows the Claw402 direction board
+                        and uses liquidation structure and raw candles as
+                        context.
                       </div>
                     )}
                   </div>

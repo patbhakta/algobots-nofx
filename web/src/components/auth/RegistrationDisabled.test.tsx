@@ -90,14 +90,16 @@ describe('RegistrationDisabled Component', () => {
       const { container } = renderComponent()
       const mainDiv = container.firstChild as HTMLElement
       // Browser converts hex to rgb (Flow canvas theme)
-      expect(mainDiv.style.background).toMatch(/rgb\(246,\s*248,\s*252\)|#F6F8FC/i)
+      expect(mainDiv.style.background).toMatch(
+        /rgb\(241,\s*236,\s*226\)|#F1ECE2/i
+      )
     })
 
     it('should have correct text color', () => {
       const { container } = renderComponent()
       const mainDiv = container.firstChild as HTMLElement
       // Browser converts hex to rgb (ink text)
-      expect(mainDiv.style.color).toMatch(/rgb\(25,\s*36,\s*52\)|#1A1813/i)
+      expect(mainDiv.style.color).toMatch(/rgb\(26,\s*24,\s*19\)|#1A1813/i)
     })
 
     it('should have centered layout', () => {
