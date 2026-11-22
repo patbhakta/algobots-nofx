@@ -5,6 +5,7 @@ import {
   ArrowUpRight,
   Check,
   Loader2,
+  Plus,
   RefreshCw,
   Save,
   Shield,
@@ -35,7 +36,8 @@ import type {
   VergexDirectionHistoryResponse,
 } from '../lib/api/data'
 // ALG-3472: buildDashboardPath, ROUTES unused after removing Autopilot redirect
-import { CoinflipStrategyCard } from '../components/strategy/CoinflipStrategyCard'
+import { EngineCard } from '../components/strategy/EngineCard'
+import { AddStrategyModal } from '../components/strategy/AddStrategyModal'
 
 const API_BASE = import.meta.env.VITE_API_BASE || ''
 
@@ -815,6 +817,10 @@ export function StrategyStudioPage() {
   const [detailLiqBand, setDetailLiqBand] = useState('15')
   const [listMode, setListMode] = useState<ListMode>('claw402')
   const [hasChanges, setHasChanges] = useState(false)
+  const [showAddModal, setShowAddModal] = useState(false)
+  const [coinflipStrategyId, setCoinflipStrategyId] = useState<string | null>(null)
+  const [layaStrategyId, setLayaStrategyId] = useState<string | null>(null)
+  const [jevStrategyId, setJevStrategyId] = useState<string | null>(null)
 
   const aiConfig = editingConfig?.ai_config || null
   const coinSource = aiConfig?.coin_source
@@ -878,6 +884,20 @@ export function StrategyStudioPage() {
         setSelectedStrategy(next)
         setEditingConfig(next ? simplifyConfig(next.config) : null)
         setHasChanges(false)
+
+        // Track strategies by engine type
+        for (const strategy of result) {
+          const config = strategy.config as Record<string, unknown>
+          const baseline = config?.baseline as Record<string, unknown> | undefined
+          const engineType = (baseline?.strategy as string)?.toLowerCase()
+          if (engineType === 'coin' || engineType === 'coinflip') {
+            setCoinflipStrategyId(strategy.id)
+          } else if (engineType === 'laya') {
+            setLayaStrategyId(strategy.id)
+          } else if (engineType === 'jev') {
+            setJevStrategyId(strategy.id)
+          }
+        }
       } catch (err) {
         notify.error(
           err instanceof Error ? err.message : 'Failed to load strategies'
@@ -1295,8 +1315,60 @@ export function StrategyStudioPage() {
 
         <main className="overflow-y-auto p-5">
           <div className="mx-auto max-w-7xl space-y-6">
-            <CoinflipStrategyCard
+            {/* G3 Strategy Studio: Engine Cards */}
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-semibold text-nofx-text">
+                  Engine Arms
+                </h2>
+                <p className="text-sm text-nofx-text-muted">
+                  Live trading strategies — toggle on/off, edit params, track
+                  performance
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowAddModal(true)}
+                className="inline-flex items-center gap-2 rounded-lg bg-nofx-gold px-4 py-2 text-sm font-semibold text-nofx-bg hover:bg-nofx-gold/90"
+              >
+                <Plus className="h-4 w-4" />
+                Add Strategy
+              </button>
+            </div>
+
+            <EngineCard
               token={token}
+              engineName="coin"
+              engineLabel="Kalshi BTC Coinflip"
+              engineDescription="Random yes/no each window · paper venue · real Kalshi prices"
+              strategyId={coinflipStrategyId}
+              onError={(msg) => notify.error(msg)}
+            />
+
+            <EngineCard
+              token={token}
+              engineName="laya"
+              engineLabel="Laya System One"
+              engineDescription="Momentum-based edge detection with daily-loss envelope"
+              strategyId={layaStrategyId}
+              onError={(msg) => notify.error(msg)}
+            />
+
+            <EngineCard
+              token={token}
+              engineName="jev"
+              engineLabel="Jev"
+              engineDescription="High-confidence pattern recognition (experimental)"
+              strategyId={jevStrategyId}
+              isBenched={true}
+              onError={(msg) => notify.error(msg)}
+            />
+
+            <AddStrategyModal
+              token={token}
+              isOpen={showAddModal}
+              onClose={() => setShowAddModal(false)}
+              onCreated={() => loadStrategies()}
               onError={(msg) => notify.error(msg)}
             />
           </div>
